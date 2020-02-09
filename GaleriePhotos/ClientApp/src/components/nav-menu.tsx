@@ -1,0 +1,35 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { LoginMenu } from "./api-authorization/login-menu";
+import { AppBar, Toolbar, Typography, makeStyles } from "@material-ui/core";
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    flexGrow: 1
+  },
+  menuButton: {
+    marginRight: theme.spacing(2)
+  },
+  title: {
+    flexGrow: 1
+  }
+}));
+
+export function NavMenu() {
+  const classes = useStyles();
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        <Typography
+          variant="h6"
+          className={classes.title}
+          component={Link}
+          to="/"
+        >
+          Galerie photos
+        </Typography>
+        <LoginMenu></LoginMenu>
+      </Toolbar>
+    </AppBar>
+  );
+}
