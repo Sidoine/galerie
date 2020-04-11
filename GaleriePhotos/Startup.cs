@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.EntityFrameworkCore;
 using GaleriePhotos.Data;
@@ -11,6 +8,9 @@ using GaleriePhotos.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using GaleriePhotos.Services;
+using System;
+using System.Text.RegularExpressions;
 
 namespace GaleriePhotos
 {
@@ -27,10 +27,34 @@ namespace GaleriePhotos
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connectionString = Configuration.GetConnectionString("DefaultConnection");
+                string? url = Environment.GetEnvironmentVariable("DATABASE_URL");
+                if (url != null)
+                {
+                    var match = Regex.Match(url, @"mysql://(\w+):(\w+)@([\w\-]+):(\d+)/(\w+)");
+                    if (match.Success)
+                    {
+                        var userName = match.Groups[1].Value;
+                        var password = match.Groups[2].Value;
+                        var server = match.Groups[3].Value;
+                        var port = match.Groups[4].Value;
+                        var database = match.Groups[5].Value;
+                        connectionString = $"Host={server};Port={port};User ID={userName};Password={password};Database={database}";
+                    }
+                }
+                options.UseNpgsql(connectionString);
+            });
 
-            services.AddDefaultIdentity<ApplicationUser>()
+            services.AddDefaultIdentity<ApplicationUser>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequiredLength = 4;
+                options.SignIn.RequireConfirmedAccount = true;
+            })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddIdentityServer()
@@ -49,6 +73,7 @@ namespace GaleriePhotos
             });
 
             services.Configure<GalerieOptions>(Configuration.GetSection("Galerie"));
+            services.AddScoped<PhotoService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

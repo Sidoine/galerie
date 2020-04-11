@@ -5,33 +5,46 @@ import ApiAuthorizationRoutes from "./components/api-authorization/api-authoriza
 import { ApplicationPaths } from "./stores/authorize";
 import { CssBaseline, makeStyles } from "@material-ui/core";
 import { NavMenu } from "./components/nav-menu";
-import { DirectoryView } from "./components/directory-view";
+import { DirectoryView, RootDirectoryView } from "./components/directory-view";
+import { ImageView } from "./components/image-view";
 
-const useStyles = makeStyles(theme => ({
-  offset: theme.mixins.toolbar
+const useStyles = makeStyles((theme) => ({
+    offset: theme.mixins.toolbar,
 }));
 
 export default function Application() {
-  const classes = useStyles();
-  return (
-    <>
-      <CssBaseline />
-      <NavMenu />
-      <div className={classes.offset} />
-      <AuthorizeRoute
-        exact
-        path="/"
-        render={() => <DirectoryView path={null} />}
-      />
-      <AuthorizeRoute<{ dir: string }>
-        exact
-        path="/directory/:dir*"
-        render={r => <DirectoryView path={r.match.params.dir} />}
-      />
-      <Route
-        path={ApplicationPaths.ApiAuthorizationPrefix}
-        component={ApiAuthorizationRoutes}
-      />
-    </>
-  );
+    const classes = useStyles();
+    return (
+        <>
+            <CssBaseline />
+            <NavMenu />
+            <div className={classes.offset} />
+            <AuthorizeRoute
+                exact
+                path="/"
+                render={() => <RootDirectoryView />}
+            />
+            <AuthorizeRoute<{ id: string }>
+                exact
+                path="/directory/:id"
+                render={(r) => (
+                    <DirectoryView id={parseInt(r.match.params.id)} />
+                )}
+            />
+            <AuthorizeRoute<{ directoryId: string; id: string }>
+                exact
+                path="/directory/:directoryId/images/:id"
+                render={(r) => (
+                    <ImageView
+                        id={parseInt(r.match.params.id)}
+                        directoryId={parseInt(r.match.params.directoryId)}
+                    />
+                )}
+            />
+            <Route
+                path={ApplicationPaths.ApiAuthorizationPrefix}
+                component={ApiAuthorizationRoutes}
+            />
+        </>
+    );
 }

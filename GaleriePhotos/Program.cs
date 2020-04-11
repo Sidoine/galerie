@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Folke.CsTsService;
 using Microsoft.Extensions.Options;
+using GaleriePhotos.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace GaleriePhotos
 {
@@ -22,10 +24,31 @@ namespace GaleriePhotos
             using (var scope = webHost.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
+                try { 
+                    using var context = services.GetRequiredService<ApplicationDbContext>();
+                    context.Database.Migrate();
+                    context.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while seeding the database.");
+                }
+
                 var env = services.GetService<IOptions<GalerieOptions>>();
                 if (env.Value.GenerateTypeScript)
                 {
-                    services.GetService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
+                    try
+                    {
+
+                        services.GetService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        var logger = services.GetRequiredService<ILogger<Program>>();
+                        logger.LogError(ex, "An error occurred while generating the services.");
+                    }
                 }
             }
             webHost.Run();

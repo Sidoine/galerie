@@ -2,80 +2,66 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Galerie.Server.ViewModels;
 using GaleriePhotos;
+using GaleriePhotos.Data;
+using GaleriePhotos.Services;
+using GaleriePhotos.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Galerie.Server.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/directories")]
     public class DirectoryController : Controller
     {
-        private readonly string? rootPath;
-        private readonly IOptions<GalerieOptions> options;
+        private readonly PhotoService photoService;
+        private readonly ApplicationDbContext applicationDbContext;
 
-        public DirectoryController(IOptions<GalerieOptions> options)
+        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext)
         {
-            this.options = options;
-            rootPath = options.Value.Root;
+            this.photoService = photoService;
+            this.applicationDbContext = applicationDbContext;
+        }
+
+        [HttpGet("root")]
+        public async Task<ActionResult<DirectoryViewModel>> GetRoot()
+        {
+            return Ok(new DirectoryViewModel(await photoService.GetRootDirectory()));
         }
 
         // GET: api/values
-        [HttpGet("")]
-        public ActionResult<IEnumerable<DirectoryViewModel>> Get([FromQuery] string? baseDirectory = null)
+        [HttpGet("{id}/directories")]
+        public async Task<ActionResult<IEnumerable<DirectoryViewModel>>> Get(int id)
         {
-            if (baseDirectory != null && (baseDirectory.Contains("..") || baseDirectory.StartsWith("/"))) return BadRequest("No");
-            if (rootPath == null) return BadRequest("The root path has not been defined");
-            var path = baseDirectory!=null ? Path.Combine(rootPath,baseDirectory): rootPath;
-            if (!Directory.Exists(path)) return NotFound();
-            return Ok(Directory.EnumerateDirectories(path).Select(x => Path.GetFileName(x)).Where(x => !x.StartsWith(".")).Select(x => new DirectoryViewModel(
-                    
-                        path: baseDirectory != null ? Path.Combine(baseDirectory, x) : x,
-                        name: x
-                    
-                )));
+            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            if (directory == null) return NotFound();
+            var subDirectories = await photoService.GetSubDirectories(directory);
+            if (subDirectories == null) return NotFound();
+            return Ok(subDirectories.Select(x => new DirectoryViewModel(x)));
         }
 
-        [HttpGet("file-names")]
-        public ActionResult<IEnumerable<PhotoViewModel>> GetContent([FromQuery] string? baseDirectory = null)
+        [HttpGet("{id}/photos")]
+        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetContent(int id)
         {
-            if (baseDirectory != null && (baseDirectory.Contains("..") || baseDirectory.StartsWith("/"))) return BadRequest("No");
-            if (rootPath == null) return BadRequest();
-            var path = baseDirectory != null ? Path.Combine(rootPath, baseDirectory) : rootPath;
-            if (!Directory.Exists(path)) return NotFound();
-            return Ok(Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => new[] { ".jpg", ".jpeg", ".png" }.Contains(Path.GetExtension(x))).Select(x => new PhotoViewModel
-            (
-                path: baseDirectory != null ? Path.Combine(baseDirectory, x) : x,
-                name: x,
-                url: "/api/photo/image?path=" + Uri.EscapeUriString(baseDirectory != null ? Path.Combine(baseDirectory, x) : x)
-            )
-            ));
+            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            if (directory == null) return NotFound();
+            var photos = await photoService.GetDirectoryImages(directory);
+            return Ok(photos.Select(x => new PhotoViewModel(x)));
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public string GetById(int id)
+        [HttpPatch("{id}")]
+        public async Task<ActionResult> Patch(int id, [FromBody]DirectoryPatchViewModel viewModel)
         {
-            return "value";
-        }
-
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody]string value)
-        {
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            if (directory == null) return NotFound();
+            if (viewModel.Visibility.IsSet)
+            {
+                directory.Visibility = viewModel.Visibility.Value;
+            }
+            await applicationDbContext.SaveChangesAsync();
+            return Ok();
         }
     }
 }

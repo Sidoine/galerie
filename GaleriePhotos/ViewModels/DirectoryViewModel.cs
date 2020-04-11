@@ -1,11 +1,15 @@
-﻿namespace Galerie.Server.ViewModels
+﻿using GaleriePhotos.Models;
+using System.IO;
+
+namespace Galerie.Server.ViewModels
 {
     public class DirectoryViewModel
     {
-        public string Path { get; set; }
+        public int Id { get; set; }
+        public DirectoryVisibility Visibility { get; set; }
         public string Name { get; set; }
 
-        public DirectoryViewModel(string path, string name) =>
-            (Path, Name) =  (path, name);
+        public DirectoryViewModel(PhotoDirectory photoDirectory) =>
+            (Id, Visibility, Name) =  (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path));
     }
 }

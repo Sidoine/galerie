@@ -1,13 +1,20 @@
-﻿namespace Galerie.Server.ViewModels
+﻿using GaleriePhotos.Models;
+using System;
+
+namespace Galerie.Server.ViewModels
 {
     public class PhotoFullViewModel
     {
-        public string Path { get; set; }
-        public string DirectoryPath { get; set; }
+        public int Id { get; set; }
         public string Name { get; set; }
-        public string Url { get; set; }
+        public int? NextId { get; set; }
+        public int? PreviousId { get; set; }
+        public DateTime? DateTime { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        public string? Camera { get; set; }
 
-        public PhotoFullViewModel(string path, string directoryPath, string name, string url) =>
-            (Path, DirectoryPath, Name, Url) = (path, directoryPath, name, url);
+        public PhotoFullViewModel(Photo photo, Photo? next, Photo? previous) =>
+            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera);
     }
 }

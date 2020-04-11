@@ -1,68 +1,97 @@
 import { observer } from "mobx-react-lite";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useStores } from "../stores";
 import {
-  makeStyles,
-  Card,
-  CardActionArea,
-  CardMedia,
-  CardContent,
-  Typography,
-  Grid,
-  Container
+    makeStyles,
+    Card,
+    CardActionArea,
+    CardMedia,
+    Grid,
+    CardActions,
+    Switch,
 } from "@material-ui/core";
+import VisibilityIcon from "@material-ui/icons/Visibility";
+
 import { Photo } from "../services/views";
-import InfiniteScroll from "react-infinite-scroller";
+import { Visibility } from "../atoms/visibility";
+import { useHistory } from "react-router-dom";
 const useStyles = makeStyles({
-  root: {
-    maxWidth: 345
-  },
-  media: {
-    height: 140
-  }
+    root: {
+        width: 270,
+    },
+    media: {
+        height: 140,
+    },
 });
 
-function ImageCard({ value }: { value: Photo }) {
-  const classes = useStyles();
-  return (
-    <Card className={classes.root}>
-      <CardActionArea>
-        <CardMedia
-          className={classes.media}
-          image={value.url}
-          title={value.name}
-        />
-        <CardContent>
-          <Typography gutterBottom variant="h5" component="h2">
-            {value.name}
-          </Typography>
-        </CardContent>
-      </CardActionArea>
-    </Card>
-  );
-}
+const ImageCard = observer(
+    ({ value, directoryId }: { value: Photo; directoryId: number }) => {
+        const classes = useStyles();
+        const history = useHistory();
+        const { directoriesStore } = useStores();
+        const handleSwitchVisible = useCallback(
+            (_: unknown, checked: boolean) => {
+                directoriesStore.patchPhoto(directoryId, value, {
+                    visible: checked,
+                });
+            },
+            [directoriesStore, directoryId, value]
+        );
 
-export const ImagesView = observer(({ path }: { path: string | null }) => {
-  const { directoriesStore } = useStores();
-  const [pages, setPages] = useState(1);
-  const value =
-    directoriesStore.contentLoader.getValue(path)?.slice(0, pages * 10) || [];
-  return (
-    <Container maxWidth="lg">
-      <InfiniteScroll
-        pageStart={0}
-        loadMore={p => setPages(p)}
-        hasMore={pages <= value.length / 10}
-      >
-        <Grid container spacing={4} wrap="wrap">
-          {value.map(x => (
-            <Grid item>
-              {" "}
-              <ImageCard value={x} key={x.name} />
-            </Grid>
-          ))}
-        </Grid>
-      </InfiniteScroll>
-    </Container>
-  );
-});
+        return (
+            <Card className={classes.root}>
+                <CardActionArea
+                    onClick={() =>
+                        history.push(
+                            `/directory/${directoryId}/images/${value.id}`
+                        )
+                    }
+                >
+                    <CardMedia
+                        className={classes.media}
+                        image={directoriesStore.getThumbnail(
+                            directoryId,
+                            value.id
+                        )}
+                        title={value.name}
+                    />
+                </CardActionArea>
+                <CardActions>
+                    <Switch
+                        color="primary"
+                        checked={value.visible}
+                        onChange={handleSwitchVisible}
+                    />
+                    <VisibilityIcon />
+                </CardActions>
+            </Card>
+        );
+    }
+);
+
+export const ImagesView = observer(
+    ({ directoryId }: { directoryId: number }) => {
+        const { directoriesStore } = useStores();
+        const [pages, setPages] = useState(1);
+        const value =
+            directoriesStore.contentLoader
+                .getValue(directoryId)
+                ?.slice(0, pages * 10) || [];
+        return (
+            <>
+                <Grid container spacing={4} wrap="wrap">
+                    {value.map((x) => (
+                        <Grid item key={x.id}>
+                            <ImageCard directoryId={directoryId} value={x} />
+                        </Grid>
+                    ))}
+                </Grid>
+                <Visibility
+                    onChange={(x) => {
+                        if (x) setPages(pages + 1);
+                    }}
+                />
+            </>
+        );
+    }
+);

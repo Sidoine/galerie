@@ -5,24 +5,20 @@ import * as views from "./views";
 export class DirectoryController {
 	constructor(private client: helpers.ApiClient) {}
 
-    delete(id: number) {
-        return this.client.fetch(`api/Directory/${id}`, "DELETE", undefined);
+    get(id: number) {
+        return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
     }
 
-    get(baseDirectory: string | null) {
-        return this.client.fetchJson<views.Directory[]>("api/Directory/" + helpers.getQueryString({ baseDirectory: baseDirectory }), "GET", undefined);
+    getContent(id: number) {
+        return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos`, "GET", undefined);
     }
 
-    getById(id: number) {
-        return this.client.fetchJson<string>(`api/Directory/${id}`, "GET", undefined);
+    getRoot() {
+        return this.client.fetchJson<views.Directory>("api/directories/root", "GET", undefined);
     }
 
-    getContent(baseDirectory: string | null) {
-        return this.client.fetchJson<views.Photo[]>("api/Directory/file-names" + helpers.getQueryString({ baseDirectory: baseDirectory }), "GET", undefined);
-    }
-
-    put(id: number, value: string) {
-        return this.client.fetch(`api/Directory/${id}`, "PUT", JSON.stringify(value));
+    patch(id: number, viewModel: views.DirectoryPatch) {
+        return this.client.fetch(`api/directories/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 }
 
