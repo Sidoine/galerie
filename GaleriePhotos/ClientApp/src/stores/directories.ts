@@ -5,19 +5,21 @@ import {
     PhotoFull,
     DirectoryPatch,
     PhotoPatch,
+    DirectoryFull,
 } from "../services/views";
 import { DirectoryController, PhotoController } from "../services/services";
 import { action } from "mobx";
 
 export class DirectoriesStore {
     constructor(
-        public loader: ValueLoader<Directory[], number>,
+        public subDirectoriesLoader: ValueLoader<Directory[], number>,
         public contentLoader: ValueLoader<Photo[], number>,
         public imageLoader: ValueLoader<
             PhotoFull,
             { directoryId: number; id: number }
         >,
         public rootLoader: SingletonLoader<Directory>,
+        public infoLoader: ValueLoader<DirectoryFull, number>,
         private directoryService: DirectoryController,
         private photoService: PhotoController
     ) {}

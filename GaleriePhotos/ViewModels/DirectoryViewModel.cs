@@ -1,7 +1,7 @@
 ﻿using GaleriePhotos.Models;
 using System.IO;
 
-namespace Galerie.Server.ViewModels
+namespace GaleriePhotos.ViewModels
 {
     public class DirectoryViewModel
     {
@@ -10,6 +10,6 @@ namespace Galerie.Server.ViewModels
         public string Name { get; set; }
 
         public DirectoryViewModel(PhotoDirectory photoDirectory) =>
-            (Id, Visibility, Name) =  (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path));
+            (Id, Visibility, Name) = (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path));
     }
 }

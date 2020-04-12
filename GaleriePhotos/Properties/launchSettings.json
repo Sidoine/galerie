@@ -18,7 +18,9 @@
     "GaleriePhotos": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "Administrator__Login": "sidoine@sidoine.net",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Administrator__Password": "tototo"
       },
       "applicationUrl": "https://localhost:5001;http://localhost:5000"
     }

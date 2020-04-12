@@ -6,15 +6,19 @@ export class DirectoryController {
 	constructor(private client: helpers.ApiClient) {}
 
     get(id: number) {
-        return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
+        return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
 
-    getContent(id: number) {
+    getPhotos(id: number) {
         return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos`, "GET", undefined);
     }
 
     getRoot() {
         return this.client.fetchJson<views.Directory>("api/directories/root", "GET", undefined);
+    }
+
+    getSubdirectories(id: number) {
+        return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
     }
 
     patch(id: number, viewModel: views.DirectoryPatch) {

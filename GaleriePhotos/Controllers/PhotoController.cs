@@ -14,6 +14,7 @@ using GaleriePhotos.ViewModels;
 using System.Threading.Tasks;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Galerie.Server.Controllers
 {
@@ -45,6 +46,7 @@ namespace Galerie.Server.Controllers
             if (directory == null || photo == null) return NotFound();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
+            //if (!User.IsAdministrator() && !photo.Visible) return Forbid();
             return File(System.IO.File.ReadAllBytes(imagePath), "image/jpeg", Path.GetFileName(imagePath));
         }
 
@@ -53,6 +55,7 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
+            //if (!User.IsAdministrator() && !photo.Visible) return Forbid();
             if (options.Value.ThumbnailsDirectory == null) return BadRequest("Le chemin racine des miniatures n'a pas été configuré");
             var thumbnailPath = Path.Combine(options.Value.ThumbnailsDirectory, photo.FileName);
             if (!System.IO.File.Exists(thumbnailPath)) 
@@ -73,6 +76,7 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
+            if (!User.IsAdministrator() && !photo.Visible) return Forbid();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
             var images = await photoService.GetDirectoryImages(directory);
@@ -91,6 +95,7 @@ namespace Galerie.Server.Controllers
             return Ok(viewModel);
         }        
 
+        [Authorize(Policy =  Policies.Administrator)]
         [HttpPatch("{directoryId}/photos/{id}")]
         public async Task<ActionResult> Patch(int directoryId, int id, [FromBody]PhotoPatchViewModel viewModel)
         {

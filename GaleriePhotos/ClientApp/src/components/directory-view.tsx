@@ -11,9 +11,11 @@ import {
     Typography,
     makeStyles,
     CardActionArea,
+    Breadcrumbs,
+    Link,
 } from "@material-ui/core";
 import { ImagesView } from "./images-view";
-import { useHistory } from "react-router-dom";
+import { useHistory, Link as RouterLink } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 
@@ -50,7 +52,7 @@ const useStyles = makeStyles({
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     const history = useHistory();
     const classes = useStyles();
-    const { directoriesStore } = useStores();
+    const { directoriesStore, usersStore } = useStores();
     const handleMyleneSwitch = useCallback(
         (e: unknown, checked: boolean) => {
             let visibility = directory.visibility & ~DirectoryVisibility.Mylene;
@@ -77,22 +79,30 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                 <Typography variant="h6">{directory.name}</Typography>{" "}
             </CardActionArea>
             <CardActions>
-                <Switch
-                    color="primary"
-                    checked={
-                        (directory.visibility & DirectoryVisibility.Mylene) > 0
-                    }
-                    onChange={handleMyleneSwitch}
-                />
-                <Woman />
-                <Switch
-                    color="secondary"
-                    checked={
-                        (directory.visibility & DirectoryVisibility.Sidoine) > 0
-                    }
-                    onChange={handleSidoineSwitch}
-                />
-                <Man />
+                {usersStore.isAdministrator && (
+                    <>
+                        <Switch
+                            color="primary"
+                            checked={
+                                (directory.visibility &
+                                    DirectoryVisibility.Mylene) >
+                                0
+                            }
+                            onChange={handleMyleneSwitch}
+                        />
+                        <Woman />
+                        <Switch
+                            color="secondary"
+                            checked={
+                                (directory.visibility &
+                                    DirectoryVisibility.Sidoine) >
+                                0
+                            }
+                            onChange={handleSidoineSwitch}
+                        />
+                        <Man />
+                    </>
+                )}
             </CardActions>
         </Card>
     );
@@ -100,7 +110,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
 
 const Subdirectories = observer(({ id }: { id: number }) => {
     const { directoriesStore } = useStores();
-    const directories = directoriesStore.loader.getValue(id);
+    const directories = directoriesStore.subDirectoriesLoader.getValue(id);
     if (!directories) return <div>Loading directory {id}</div>;
     return (
         <Grid container spacing={4}>
@@ -113,10 +123,34 @@ const Subdirectories = observer(({ id }: { id: number }) => {
     );
 });
 
-export function DirectoryView({ id }: DirectoryViewProps) {
+export const DirectoryView = observer(({ id }: DirectoryViewProps) => {
+    const { directoriesStore } = useStores();
+    const directory = directoriesStore.infoLoader.getValue(id);
     return (
         <Container maxWidth="lg">
             <Grid container direction="column" spacing={2}>
+                <Grid item>
+                    <Breadcrumbs>
+                        <Link component={RouterLink} to="/">
+                            Galerie
+                        </Link>
+                        {directory &&
+                            directory.parent &&
+                            directory.parent.name && (
+                                <Link
+                                    component={RouterLink}
+                                    to={`/directory/${directory.parent.id}`}
+                                >
+                                    {directory.parent.name}
+                                </Link>
+                            )}
+                        {directory && directory.name && (
+                            <Typography color="textPrimary">
+                                {directory.name}
+                            </Typography>
+                        )}
+                    </Breadcrumbs>
+                </Grid>
                 <Grid item>
                     <Subdirectories id={id} />
                 </Grid>
@@ -126,7 +160,7 @@ export function DirectoryView({ id }: DirectoryViewProps) {
             </Grid>
         </Container>
     );
-}
+});
 
 export const RootDirectoryView = observer(() => {
     const { directoriesStore } = useStores();

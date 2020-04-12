@@ -1,6 +1,32 @@
 import * as enums from "./enums";
 
+export interface User {
+    id: string;
+
+    name: string;
+
+    administrator: boolean;
+
+    directoryVisibility: enums.DirectoryVisibility;
+}
+
+export interface UserPatch {
+    administrator?: boolean | undefined;
+
+    directoryVisibility?: enums.DirectoryVisibility | undefined;
+}
+
 export interface Directory {
+    id: number;
+
+    visibility: enums.DirectoryVisibility;
+
+    name: string;
+}
+
+export interface DirectoryFull {
+    parent: Directory | null;
+
     id: number;
 
     visibility: enums.DirectoryVisibility;

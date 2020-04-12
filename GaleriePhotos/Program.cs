@@ -12,12 +12,13 @@ using Folke.CsTsService;
 using Microsoft.Extensions.Options;
 using GaleriePhotos.Data;
 using Microsoft.EntityFrameworkCore;
+using GaleriePhotos.Services;
 
 namespace GaleriePhotos
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             IWebHost webHost = CreateWebHostBuilder(args).Build();
 
@@ -26,9 +27,8 @@ namespace GaleriePhotos
                 var services = scope.ServiceProvider;
 
                 try { 
-                    using var context = services.GetRequiredService<ApplicationDbContext>();
-                    context.Database.Migrate();
-                    context.SaveChanges();
+                    var seedingService = services.GetRequiredService<SeedingService>();
+                    await seedingService.Seed();
                 }
                 catch (Exception ex)
                 {

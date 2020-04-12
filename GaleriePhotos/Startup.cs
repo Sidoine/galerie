@@ -58,7 +58,12 @@ namespace GaleriePhotos
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddIdentityServer()
-                .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+                .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+                {
+                    var apiResource = options.ApiResources[0];
+                    apiResource.UserClaims.Add(Claims.Administrator);
+                    apiResource.UserClaims.Add(Claims.Visibility);
+                });
 
             services.AddAuthentication()
                 .AddIdentityServerJwt();
@@ -73,7 +78,13 @@ namespace GaleriePhotos
             });
 
             services.Configure<GalerieOptions>(Configuration.GetSection("Galerie"));
+            services.Configure<AdministratorOptions>(Configuration.GetSection("Administrator"));
             services.AddScoped<PhotoService>();
+            services.AddScoped<SeedingService>();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

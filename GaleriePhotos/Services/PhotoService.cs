@@ -78,26 +78,25 @@ namespace GaleriePhotos.Services
                 {
                     var photo = new Photo(fileName);
                     var imagePath = Path.Combine(path, fileName);
-                    using (var image = Image.Load(imagePath))
+                    using var fileStream = new FileStream(imagePath, FileMode.Open);
+                    var image = Image.Identify(fileStream);
+                    var dateTimeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.DateTime);
+                    if (dateTimeValue != null)
                     {
-                        var dateTimeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.DateTime);
-                        if (dateTimeValue != null)
+                        if (DateTime.TryParseExact((string)dateTimeValue.Value, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                         {
-                            if (DateTime.TryParseExact((string)dateTimeValue.Value, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-                            {
-                                photo.DateTime = date;
-                            }
+                            photo.DateTime = date;
                         }
-                        var latitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitude);
-                        var latitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitudeRef);
-                        if (latitudeValue != null && latitudeRef != null) photo.Latitude = Convert((string)latitudeRef.Value, (Rational[])latitudeValue.Value);
-                        var longitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitude);
-                        var longitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitudeRef);
-                        if (longitudeValue != null && longitudeRef != null) photo.Longitude = Convert((string)longitudeRef.Value, (Rational[])longitudeValue.Value);
-                        var camera = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.Model);
-                        if (camera != null) photo.Camera = (string)camera.Value;
                     }
-
+                    var latitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitude);
+                    var latitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitudeRef);
+                    if (latitudeValue != null && latitudeRef != null) photo.Latitude = Convert((string)latitudeRef.Value, (Rational[])latitudeValue.Value);
+                    var longitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitude);
+                    var longitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitudeRef);
+                    if (longitudeValue != null && longitudeRef != null) photo.Longitude = Convert((string)longitudeRef.Value, (Rational[])longitudeValue.Value);
+                    var camera = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.Model);
+                    if (camera != null) photo.Camera = (string)camera.Value;
+                
                     if (photo.DateTime == default)
                     {
                         photo.DateTime =  File.GetCreationTimeUtc(imagePath);

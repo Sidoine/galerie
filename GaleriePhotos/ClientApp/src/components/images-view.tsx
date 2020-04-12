@@ -28,7 +28,7 @@ const ImageCard = observer(
     ({ value, directoryId }: { value: Photo; directoryId: number }) => {
         const classes = useStyles();
         const history = useHistory();
-        const { directoriesStore } = useStores();
+        const { directoriesStore, usersStore } = useStores();
         const handleSwitchVisible = useCallback(
             (_: unknown, checked: boolean) => {
                 directoriesStore.patchPhoto(directoryId, value, {
@@ -57,12 +57,16 @@ const ImageCard = observer(
                     />
                 </CardActionArea>
                 <CardActions>
-                    <Switch
-                        color="primary"
-                        checked={value.visible}
-                        onChange={handleSwitchVisible}
-                    />
-                    <VisibilityIcon />
+                    {usersStore.isAdministrator && (
+                        <>
+                            <Switch
+                                color="primary"
+                                checked={value.visible}
+                                onChange={handleSwitchVisible}
+                            />
+                            <VisibilityIcon />
+                        </>
+                    )}
                 </CardActions>
             </Card>
         );
