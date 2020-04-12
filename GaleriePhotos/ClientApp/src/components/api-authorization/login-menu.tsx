@@ -12,7 +12,7 @@ function LoginDropdown({ children }: { children: ReactNode }) {
     );
     return (
         <Fragment>
-            <IconButton onClick={e => setAnchorEl(e.currentTarget)}>
+            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
                 <AccountCircle />
             </IconButton>
             <Menu
@@ -20,12 +20,12 @@ function LoginDropdown({ children }: { children: ReactNode }) {
                 anchorEl={anchorEl}
                 anchorOrigin={{
                     vertical: "top",
-                    horizontal: "right"
+                    horizontal: "right",
                 }}
                 keepMounted
                 transformOrigin={{
                     vertical: "top",
-                    horizontal: "right"
+                    horizontal: "right",
                 }}
                 onClose={() => setAnchorEl(null)}
             >
@@ -38,9 +38,9 @@ function LoginDropdown({ children }: { children: ReactNode }) {
 function AuthenticatedView({
     profilePath,
     userName,
-    logoutPath
+    logoutPath,
 }: {
-    userName: string | null;
+    userName: string | null | undefined;
     profilePath: string;
     logoutPath: { pathname: string; state: { local: boolean } };
 }) {
@@ -58,7 +58,7 @@ function AuthenticatedView({
 
 function AnonymousView({
     registerPath,
-    loginPath
+    loginPath,
 }: {
     registerPath: string;
     loginPath: string;
@@ -90,7 +90,7 @@ export const LoginMenu = observer(() => {
         const profilePath = `${ApplicationPaths.Profile}`;
         const logoutPath = {
             pathname: `${ApplicationPaths.LogOut}`,
-            state: { local: true }
+            state: { local: true },
         };
         return (
             <AuthenticatedView

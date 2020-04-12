@@ -54,13 +54,7 @@ export const ApplicationPaths = {
     IdentityManagePath: "/Identity/Account/Manage",
 };
 
-interface UserProfile {
-    name: string;
-}
-
-interface User extends OidcUser {
-    profile: UserProfile;
-}
+interface User extends OidcUser {}
 
 export interface SigninState {
     returnUrl: string;
@@ -227,7 +221,7 @@ export class AuthorizeService implements ApiUserManager {
         try {
             const response = await userManager.signoutCallback(url);
             this.updateState(null);
-            return this.success(response && response.data);
+            return this.success(response && response.state);
         } catch (error) {
             console.log(`There was an error trying to log out '${error}'.`);
             return this.error(error);

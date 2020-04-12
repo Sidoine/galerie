@@ -1,0 +1,7 @@
+**/.vs
+**/bin
+**/*.user
+**/obj
+**/node_modules
+**/.vscode
+Dockerfile
