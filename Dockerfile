@@ -10,4 +10,4 @@ WORKDIR /app/
 RUN dotnet publish -c Release -o /output
 WORKDIR /output
 COPY nginx.conf.sigil .
-ENTRYPOINT [ "dotnet", "GaleriePhoto.dll"]
+ENTRYPOINT [ "dotnet", "GaleriePhotos.dll"]

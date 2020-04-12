@@ -32,7 +32,7 @@ namespace GaleriePhotos
                 string? url = Environment.GetEnvironmentVariable("DATABASE_URL");
                 if (url != null)
                 {
-                    var match = Regex.Match(url, @"mysql://(\w+):(\w+)@([\w\-]+):(\d+)/(\w+)");
+                    var match = Regex.Match(url, @"postgres://(\w+):(\w+)@([\w\-]+):(\d+)/(\w+)");
                     if (match.Success)
                     {
                         var userName = match.Groups[1].Value;
