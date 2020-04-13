@@ -67,7 +67,7 @@ interface Callback {
     subscription: number;
 }
 
-type ReturnStatus =
+export type ReturnStatus =
     | { status: "fail"; message: string }
     | { status: "success"; state: SigninState }
     | { status: "redirect" };
@@ -169,7 +169,7 @@ export class AuthorizeService implements ApiUserManager {
                         "Redirect authentication error: ",
                         redirectError
                     );
-                    return this.error(redirectError);
+                    return this.error(redirectError.toString());
                 }
             }
         }
@@ -224,7 +224,7 @@ export class AuthorizeService implements ApiUserManager {
             return this.success(response && response.state);
         } catch (error) {
             console.log(`There was an error trying to log out '${error}'.`);
-            return this.error(error);
+            return this.error(error.toString());
         }
     }
 
