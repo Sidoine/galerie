@@ -60,6 +60,7 @@ namespace GaleriePhotos
             services.AddIdentityServer(options =>
             {
                 options.PublicOrigin = Configuration["IdentityServer:PublicOrigin"];
+                options.IssuerUri = options.PublicOrigin;
             })
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
