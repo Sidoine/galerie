@@ -1,15 +1,14 @@
 import { useStores } from "../stores";
-import React, { CSSProperties } from "react";
+import React from "react";
 import { observer } from "mobx-react-lite";
 import {
     makeStyles,
     Grid,
-    BottomNavigation,
-    BottomNavigationAction,
     Card,
     CardHeader,
     CardContent,
     CardMedia,
+    Button,
 } from "@material-ui/core";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
@@ -21,10 +20,9 @@ import CameraAltIcon from "@material-ui/icons/CameraAlt";
 
 const useStyles = makeStyles({
     image: {
-        width: "100%",
-        height: "100%",
-        backgroundSize: "100%",
-        backgroundRepeat: "no-repeat",
+        maxWidth: "100%",
+        maxHeight: "calc(100vh - 128px)",
+        imageOrientation: "from-image",
     },
     root: {
         height: "calc(100vh - 64px)",
@@ -51,17 +49,15 @@ export const ImageView = observer(
         });
         const history = useHistory();
         if (image) {
-            const style: CSSProperties = {
-                backgroundImage: `url(${directoriesStore.getImage(
-                    directoryId,
-                    id
-                )})`,
-            };
             return (
                 <div className={classes.root}>
                     <Grid container spacing={4} className={classes.top}>
                         <Grid item xs={9}>
-                            <div className={classes.image} style={style}></div>
+                            <img
+                                alt=""
+                                src={directoriesStore.getImage(directoryId, id)}
+                                className={classes.image}
+                            />
                         </Grid>
                         <Grid item xs={3}>
                             <Card>
@@ -109,35 +105,46 @@ export const ImageView = observer(
                             </Card>
                         </Grid>
                     </Grid>
-                    <BottomNavigation showLabels>
-                        <BottomNavigationAction
-                            disabled={image.previousId === null}
-                            label="Précédent"
-                            icon={<ArrowBackIcon />}
-                            onClick={() =>
-                                history.push(
-                                    `/directory/${directoryId}/images/${image.previousId}`
-                                )
-                            }
-                        />
-                        <BottomNavigationAction
-                            disabled={image.nextId === null}
-                            label="Suivant"
-                            icon={<ArrowForwardIcon />}
-                            onClick={() =>
-                                history.push(
-                                    `/directory/${directoryId}/images/${image.nextId}`
-                                )
-                            }
-                        />
-                        <BottomNavigationAction
-                            label="Retour"
-                            icon={<ArrowUpwardIcon />}
-                            onClick={() =>
-                                history.push(`/directory/${directoryId}`)
-                            }
-                        />
-                    </BottomNavigation>
+                    <Grid container justify="center" spacing={2}>
+                        <Grid item>
+                            <Button
+                                disabled={image.previousId === null}
+                                color="primary"
+                                startIcon={<ArrowBackIcon />}
+                                onClick={() =>
+                                    history.push(
+                                        `/directory/${directoryId}/images/${image.previousId}`
+                                    )
+                                }
+                            >
+                                Précédent
+                            </Button>
+                        </Grid>
+                        <Grid item>
+                            <Button
+                                disabled={image.nextId === null}
+                                color="primary"
+                                startIcon={<ArrowForwardIcon />}
+                                onClick={() =>
+                                    history.push(
+                                        `/directory/${directoryId}/images/${image.nextId}`
+                                    )
+                                }
+                            >
+                                Suivant
+                            </Button>
+                        </Grid>
+                        <Grid item>
+                            <Button
+                                startIcon={<ArrowUpwardIcon />}
+                                onClick={() =>
+                                    history.push(`/directory/${directoryId}`)
+                                }
+                            >
+                                Retour
+                            </Button>
+                        </Grid>
+                    </Grid>
                 </div>
             );
         }
