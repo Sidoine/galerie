@@ -54,8 +54,17 @@ namespace GaleriePhotos
             webHost.Run();
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        {
+            var builder = WebHost.CreateDefaultBuilder(args);
+            string? port = Environment.GetEnvironmentVariable("PORT");
+            if (port != null)
+            {
+                builder.UseUrls($"http://*:{port}");
+            }
+            builder.UseStartup<Startup>();
+            return builder;
+        }
+
     }
 }
