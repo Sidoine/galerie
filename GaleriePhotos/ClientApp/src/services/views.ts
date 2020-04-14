@@ -62,6 +62,8 @@ export interface PhotoFull {
     longitude: number | null;
 
     camera: string | null;
+
+    visible: boolean;
 }
 
 export interface PhotoPatch {

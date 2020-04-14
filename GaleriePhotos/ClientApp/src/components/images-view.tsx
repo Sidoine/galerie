@@ -9,6 +9,7 @@ import {
     Grid,
     CardActions,
     Switch,
+    Button,
 } from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 
@@ -81,8 +82,27 @@ export const ImagesView = observer(
             directoriesStore.contentLoader
                 .getValue(directoryId)
                 ?.slice(0, pages * 10) || [];
+        const handleShowAll = useCallback(() => {
+            directoriesStore.patchAll(directoryId, { visible: true });
+        }, [directoriesStore, directoryId]);
+        const handleHideAll = useCallback(() => {
+            directoriesStore.patchAll(directoryId, { visible: false });
+        }, [directoriesStore, directoryId]);
+
         return (
             <>
+                {value.length > 0 && (
+                    <Grid container spacing={1}>
+                        <Grid item>
+                            <Button onClick={handleShowAll}>
+                                Tout montrer
+                            </Button>
+                        </Grid>
+                        <Grid item>
+                            <Button onClick={handleHideAll}>Tout cacher</Button>
+                        </Grid>
+                    </Grid>
+                )}
                 <Grid container spacing={4} wrap="wrap">
                     {value.map((x) => (
                         <Grid item key={x.id}>

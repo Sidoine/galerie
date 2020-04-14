@@ -108,5 +108,24 @@ namespace Galerie.Server.Controllers
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPatch("{directoryId}/photos/all")]
+        public async Task<ActionResult> PatchAll(int directoryId, [FromBody]PhotoPatchViewModel viewModel)
+        {
+            var directory = await applicationDbContext.PhotoDirectories.FindAsync(directoryId);
+            if (directory == null) return NotFound();
+            var photos = await photoService.GetDirectoryImages(directory);
+            if (photos == null) return NotFound();
+            foreach (var photo in photos)
+            {
+                if (viewModel.Visible.IsSet)
+                {
+                    photo.Visible = viewModel.Visible.Value;
+                }
+            }
+            await applicationDbContext.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

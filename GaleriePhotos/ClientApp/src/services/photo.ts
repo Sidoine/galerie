@@ -20,5 +20,9 @@ export class PhotoController {
     patch(directoryId: number, id: number, viewModel: views.PhotoPatch) {
         return this.client.fetch(`api/directory/${directoryId}/photos/${id}`, "PATCH", JSON.stringify(viewModel));
     }
+
+    patchAll(directoryId: number, viewModel: views.PhotoPatch) {
+        return this.client.fetch(`api/directory/${directoryId}/photos/all`, "PATCH", JSON.stringify(viewModel));
+    }
 }
 

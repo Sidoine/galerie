@@ -1,5 +1,5 @@
 import { useStores } from "../stores";
-import React from "react";
+import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import {
     makeStyles,
@@ -9,6 +9,7 @@ import {
     CardContent,
     CardMedia,
     Button,
+    Switch,
 } from "@material-ui/core";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
@@ -17,6 +18,7 @@ import ArrowUpwardIcon from "@material-ui/icons/ArrowUpward";
 import { Map, TileLayer } from "react-leaflet";
 import CalendarTodayIcon from "@material-ui/icons/CalendarToday";
 import CameraAltIcon from "@material-ui/icons/CameraAlt";
+import VisibilityIcon from "@material-ui/icons/Visibility";
 
 const useStyles = makeStyles({
     image: {
@@ -41,13 +43,22 @@ const useStyles = makeStyles({
 
 export const ImageView = observer(
     ({ id, directoryId }: { id: number; directoryId: number }) => {
-        const { directoriesStore } = useStores();
+        const { directoriesStore, usersStore } = useStores();
         const classes = useStyles();
         const image = directoriesStore.imageLoader.getValue({
             directoryId,
             id,
         });
         const history = useHistory();
+        const handleVisibleSwitch = useCallback(
+            (e: unknown, checked: boolean) => {
+                if (image)
+                    directoriesStore.patchPhoto(directoryId, image, {
+                        visible: checked,
+                    });
+            },
+            [image, directoryId, directoriesStore]
+        );
         if (image) {
             return (
                 <div className={classes.root}>
@@ -144,6 +155,15 @@ export const ImageView = observer(
                                 Retour
                             </Button>
                         </Grid>
+                        {usersStore.isAdministrator && (
+                            <Grid item>
+                                <Switch
+                                    onChange={handleVisibleSwitch}
+                                    checked={image.visible}
+                                />
+                                <VisibilityIcon />
+                            </Grid>
+                        )}
                     </Grid>
                 </div>
             );

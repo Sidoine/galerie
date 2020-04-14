@@ -2,17 +2,22 @@ import { SingletonLoader } from "folke-service-helpers";
 import { computed, action } from "mobx";
 import { User, UserPatch } from "../services/views";
 import { UserController } from "../services/user";
+import { AuthorizeService } from "./authorize";
 
 export class UsersStore {
     constructor(
         private administrator: SingletonLoader<boolean>,
         public usersLoader: SingletonLoader<User[]>,
-        private userService: UserController
+        private userService: UserController,
+        private authorize: AuthorizeService
     ) {}
 
     @computed
     get isAdministrator() {
-        return this.administrator.getValue() || false;
+        return (
+            (this.authorize.authenticated && this.administrator.getValue()) ||
+            false
+        );
     }
 
     @action

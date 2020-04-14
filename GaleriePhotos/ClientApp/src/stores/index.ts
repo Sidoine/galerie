@@ -55,7 +55,12 @@ export const stores = {
         photoService
     ),
     authorizeService: authorizeService,
-    usersStore: new UsersStore(administratorLoader, usersLoader, usersService),
+    usersStore: new UsersStore(
+        administratorLoader,
+        usersLoader,
+        usersService,
+        authorizeService
+    ),
 };
 
 export type Stores = typeof stores;
