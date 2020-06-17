@@ -10,6 +10,7 @@ import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import { observer } from "mobx-react-lite";
+import { LoginMenu } from "./api-authorization/login-menu";
 
 const drawerWidth = 240;
 
@@ -65,6 +66,9 @@ const useStyles = makeStyles((theme) => ({
             width: "100%",
         },
     },
+    title: {
+        flexGrow: 1,
+    },
 }));
 
 export const ResponsiveDrawer = observer(
@@ -107,9 +111,14 @@ export const ResponsiveDrawer = observer(
                         >
                             <MenuIcon />
                         </IconButton>
-                        <Typography variant="h6" noWrap>
+                        <Typography
+                            variant="h6"
+                            noWrap
+                            className={classes.title}
+                        >
                             {title}
                         </Typography>
+                        <LoginMenu />
                     </Toolbar>
                 </AppBar>
                 <nav className={classes.drawer} aria-label="mailbox folders">

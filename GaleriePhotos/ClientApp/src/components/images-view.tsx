@@ -15,7 +15,7 @@ import VisibilityIcon from "@material-ui/icons/Visibility";
 
 import { Photo } from "../services/views";
 import { Visibility } from "../atoms/visibility";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 const useStyles = makeStyles({
     root: {
         width: 270,
@@ -76,35 +76,75 @@ const ImageCard = observer(
 
 export const ImagesView = observer(
     ({ directoryId }: { directoryId: number }) => {
-        const { directoriesStore } = useStores();
+        const { directoriesStore, usersStore } = useStores();
+        const history = useHistory();
+        const location = useLocation();
+        const order = location.search.replace("?", "");
         const [pages, setPages] = useState(1);
-        const value =
-            directoriesStore.contentLoader
-                .getValue(directoryId)
-                ?.slice(0, pages * 10) || [];
+        const values =
+            directoriesStore.contentLoader.getValue(directoryId) || [];
+        const sortedValues = order === "date-desc" ? values.reverse() : values;
+        const page = sortedValues.slice(0, pages * 9);
         const handleShowAll = useCallback(() => {
             directoriesStore.patchAll(directoryId, { visible: true });
         }, [directoriesStore, directoryId]);
         const handleHideAll = useCallback(() => {
             directoriesStore.patchAll(directoryId, { visible: false });
         }, [directoriesStore, directoryId]);
+        const handleSortDateDesc = useCallback(
+            () => history.push(`/directory/${directoryId}?date-desc`),
+            [history, directoryId]
+        );
+        const handleSortDateAsc = useCallback(
+            () => history.push(`/directory/${directoryId}`),
+            [history, directoryId]
+        );
 
         return (
             <>
-                {value.length > 0 && (
-                    <Grid container spacing={1}>
+                <Grid container spacing={1}>
+                    {values.length > 0 && usersStore.isAdministrator && (
+                        <>
+                            <Grid item>
+                                <Button onClick={handleShowAll}>
+                                    Tout montrer
+                                </Button>
+                            </Grid>
+                            <Grid item>
+                                <Button onClick={handleHideAll}>
+                                    Tout cacher
+                                </Button>
+                            </Grid>
+                        </>
+                    )}
+                    {
                         <Grid item>
-                            <Button onClick={handleShowAll}>
-                                Tout montrer
+                            <Button
+                                onClick={handleSortDateDesc}
+                                color={
+                                    order === "date-desc"
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                Plus récent en premier
+                            </Button>
+                            <Button
+                                onClick={handleSortDateAsc}
+                                color={
+                                    order !== "date-desc"
+                                        ? "primary"
+                                        : "default"
+                                }
+                            >
+                                Plus ancien en premier
                             </Button>
                         </Grid>
-                        <Grid item>
-                            <Button onClick={handleHideAll}>Tout cacher</Button>
-                        </Grid>
-                    </Grid>
-                )}
+                    }
+                </Grid>
+
                 <Grid container spacing={4} wrap="wrap">
-                    {value.map((x) => (
+                    {page.map((x) => (
                         <Grid item key={x.id}>
                             <ImageCard directoryId={directoryId} value={x} />
                         </Grid>
@@ -114,6 +154,7 @@ export const ImagesView = observer(
                     onChange={(x) => {
                         if (x) setPages(pages + 1);
                     }}
+                    length={values.length}
                 />
             </>
         );

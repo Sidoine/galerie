@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import React from "react";
 
 export interface VisibilityProps {
     onChange: (visible: boolean) => void;
+    length: number;
 }
 function isElementInViewport(el: HTMLElement) {
     let eap: Element | null;
@@ -39,20 +40,28 @@ function isElementInViewport(el: HTMLElement) {
     );
 }
 
-export function Visibility({ onChange }: VisibilityProps) {
-    const [isInViewPort, setIsInViewPort] = useState(false);
+export function Visibility({ onChange, length }: VisibilityProps) {
+    const isInViewPort = useRef(false);
     const refElement = useRef<HTMLDivElement>(null);
+
+    const checkIsInViewPort = useCallback(() => {
+        const isInViewPortNow = refElement.current
+            ? isElementInViewport(refElement.current)
+            : false;
+        if (isInViewPort.current !== isInViewPortNow) {
+            isInViewPort.current = isInViewPortNow;
+            onChange(isInViewPortNow);
+        }
+    }, [isInViewPort, onChange]);
+
+    useEffect(() => {
+        isInViewPort.current = false;
+        checkIsInViewPort();
+    }, [checkIsInViewPort, length]);
 
     useEffect(() => {
         const element = refElement.current;
         if (element) {
-            const checkIsInViewPort = () => {
-                const isInViewPortNow = isElementInViewport(element);
-                if (isInViewPort !== isInViewPortNow) {
-                    setIsInViewPort(isInViewPortNow);
-                    onChange(isInViewPortNow);
-                }
-            };
             let ancestor = element.parentElement;
             const ancestors = new Array<HTMLElement>();
             while (ancestor != null && ancestor.style) {
@@ -70,7 +79,7 @@ export function Visibility({ onChange }: VisibilityProps) {
             window.addEventListener("resize", checkIsInViewPort);
 
             return () => {
-                for (var ancestor of ancestors) {
+                for (const ancestor of ancestors) {
                     ancestor.removeEventListener("scroll", checkIsInViewPort);
                 }
                 document.removeEventListener("ready", checkIsInViewPort);
@@ -79,7 +88,7 @@ export function Visibility({ onChange }: VisibilityProps) {
                 window.removeEventListener("scroll", checkIsInViewPort);
             };
         }
-    });
+    }, [checkIsInViewPort]);
 
-    return <div ref={refElement}>&nbsp;</div>;
+    return <div ref={refElement}>{isInViewPort ? "..." : "&nbsp;"}</div>;
 }

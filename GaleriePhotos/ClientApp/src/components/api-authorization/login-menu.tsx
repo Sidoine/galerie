@@ -50,7 +50,7 @@ function AuthenticatedView({
                 {userName}
             </MenuItem>
             <MenuItem component={Link} to={logoutPath}>
-                Logout
+                Déconnexion
             </MenuItem>
         </LoginDropdown>
     );
@@ -66,10 +66,10 @@ function AnonymousView({
     return (
         <LoginDropdown>
             <MenuItem component={Link} to={registerPath}>
-                Register
+                S'enregistrer
             </MenuItem>
             <MenuItem component={Link} to={loginPath}>
-                Login
+                Connexion
             </MenuItem>
         </LoginDropdown>
     );

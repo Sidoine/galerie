@@ -3,17 +3,17 @@ import { useHistory } from "react-router-dom";
 import { LoginMenu } from "./api-authorization/login-menu";
 import { AppBar, Toolbar, Typography, makeStyles } from "@material-ui/core";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
     root: {
-        flexGrow: 1
+        flexGrow: 1,
     },
     menuButton: {
-        marginRight: theme.spacing(2)
+        marginRight: theme.spacing(2),
     },
     title: {
         flexGrow: 1,
-        cursor: "pointer"
-    }
+        cursor: "pointer",
+    },
 }));
 
 export function NavMenu() {
@@ -29,6 +29,7 @@ export function NavMenu() {
                 >
                     Galerie photos
                 </Typography>
+                Merde
                 <LoginMenu></LoginMenu>
             </Toolbar>
         </AppBar>

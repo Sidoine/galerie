@@ -46,7 +46,7 @@ const Application = observer(() => {
                         )}
                     </List>
                 }
-                title="Galerie photo"
+                title="Galerie photos"
             >
                 {/* <div className={classes.offset} /> */}
                 <AuthorizeRoute
