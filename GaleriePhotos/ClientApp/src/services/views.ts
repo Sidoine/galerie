@@ -64,6 +64,10 @@ export interface PhotoFull {
     camera: string | null;
 
     visible: boolean;
+
+    nextVisibleId: number | null;
+
+    previousVisibleId: number | null;
 }
 
 export interface PhotoPatch {

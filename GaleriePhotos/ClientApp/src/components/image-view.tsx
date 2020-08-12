@@ -59,6 +59,9 @@ export const ImageView = observer(
             },
             [image, directoryId, directoriesStore]
         );
+        const handleSlideshow = useCallback(() => {
+            history.push(`/directory/${directoryId}/images/${id}/slideshow`);
+        }, [directoryId, id, history]);
         if (image) {
             return (
                 <div className={classes.root}>
@@ -164,6 +167,9 @@ export const ImageView = observer(
                                 <VisibilityIcon />
                             </Grid>
                         )}
+                        <Grid item>
+                            <Button onClick={handleSlideshow}>Diapo</Button>
+                        </Grid>
                     </Grid>
                 </div>
             );

@@ -46,7 +46,7 @@ namespace Galerie.Server.Controllers
             if (directory == null || photo == null) return NotFound();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
-            //if (!User.IsAdministrator() && !photo.Visible) return Forbid();
+            if (!User.IsAdministrator() && !photo.Visible) return Forbid();
             return File(System.IO.File.ReadAllBytes(imagePath), "image/jpeg", Path.GetFileName(imagePath));
         }
 
@@ -71,6 +71,19 @@ namespace Galerie.Server.Controllers
             return File(System.IO.File.ReadAllBytes(thumbnailPath), "image/jpeg", photo.FileName);
         }
 
+        private (Photo? previous, Photo? next) GetNextAndPrevious(Photo photo, Photo[] images)
+        {
+            var index = Array.IndexOf(images, photo);
+            Photo? previous = null;
+            Photo? next = null;
+            if (index != -1)
+            {
+                if (index > 0) previous = images[index - 1];
+                if (index < images.Length - 1) next = images[index + 1];
+            }
+            return (previous, next); 
+        }
+
         [HttpGet("{directoryId}/photos/{id}")]
         public async Task<ActionResult<PhotoFullViewModel>> Get(int directoryId, int id)
         {
@@ -81,17 +94,11 @@ namespace Galerie.Server.Controllers
             if (imagePath == null) return NotFound();
             var images = await photoService.GetDirectoryImages(directory);
             if (images == null) return NotFound();
-            var index = Array.IndexOf(images, photo);
-            Photo? previous = null;
-            Photo? next = null;
-            if (index != -1)
-            {
-                if (index > 0) previous = images[index - 1];
-                if (index < images.Length - 1) next = images[index + 1];
-            }
-            var viewModel = new PhotoFullViewModel(photo, previous, next);
-            
-
+            var visibleImages = images.Where(x => x.Visible).ToArray();
+            if (!User.IsAdministrator()) images = visibleImages;
+            var (previous, next) = GetNextAndPrevious(photo, images);
+            var (previousVisible, nextVisible) = GetNextAndPrevious(photo, visibleImages);
+            var viewModel = new PhotoFullViewModel(photo, previous, next, previousVisible, nextVisible);
             return Ok(viewModel);
         }        
 

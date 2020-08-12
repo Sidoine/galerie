@@ -10,6 +10,10 @@ import {
     CardActions,
     Switch,
     Button,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogActions,
 } from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 
@@ -74,6 +78,12 @@ const ImageCard = observer(
     }
 );
 
+enum DialogMode {
+    Closed,
+    SeeAll,
+    HideAll,
+}
+
 export const ImagesView = observer(
     ({ directoryId }: { directoryId: number }) => {
         const { directoriesStore, usersStore } = useStores();
@@ -85,12 +95,26 @@ export const ImagesView = observer(
             directoriesStore.contentLoader.getValue(directoryId) || [];
         const sortedValues = order === "date-desc" ? values.reverse() : values;
         const page = sortedValues.slice(0, pages * 9);
+        const [dialogMode, setDialogMode] = useState(DialogMode.Closed);
+        const handleConfirm = useCallback(async () => {
+            if (dialogMode === DialogMode.SeeAll) {
+                await directoriesStore.patchAll(directoryId, { visible: true });
+            } else if (dialogMode === DialogMode.HideAll) {
+                await directoriesStore.patchAll(directoryId, {
+                    visible: false,
+                });
+            }
+            setDialogMode(DialogMode.Closed);
+        }, [directoriesStore, directoryId, dialogMode]);
+        const handleCancel = useCallback(() => {
+            setDialogMode(DialogMode.Closed);
+        }, []);
         const handleShowAll = useCallback(() => {
-            directoriesStore.patchAll(directoryId, { visible: true });
-        }, [directoriesStore, directoryId]);
+            setDialogMode(DialogMode.SeeAll);
+        }, []);
         const handleHideAll = useCallback(() => {
-            directoriesStore.patchAll(directoryId, { visible: false });
-        }, [directoriesStore, directoryId]);
+            setDialogMode(DialogMode.HideAll);
+        }, []);
         const handleSortDateDesc = useCallback(
             () => history.push(`/directory/${directoryId}?date-desc`),
             [history, directoryId]
@@ -102,6 +126,25 @@ export const ImagesView = observer(
 
         return (
             <>
+                <Dialog
+                    open={dialogMode !== DialogMode.Closed}
+                    onClose={handleCancel}
+                >
+                    <DialogTitle>Veuillez confirmer</DialogTitle>
+                    <DialogContent>
+                        {dialogMode === DialogMode.HideAll
+                            ? "Cacher toutes les photos ?"
+                            : "Montrer toutes les photos ?"}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="secondary" onClick={handleCancel}>
+                            Annuler
+                        </Button>
+                        <Button color="primary" onClick={handleConfirm}>
+                            Confirmer
+                        </Button>
+                    </DialogActions>
+                </Dialog>
                 <Grid container spacing={1}>
                     {values.length > 0 && usersStore.isAdministrator && (
                         <>

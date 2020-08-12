@@ -36,6 +36,12 @@ namespace GaleriePhotos.Services
                     await this.userManager.AddClaimAsync(user, new Claim(Claims.Administrator, true.ToString()));
                 }
             }
+            
+            if (!await this.applicationDbContext.UserClaims.AnyAsync())
+            {
+                var user = await this.applicationDbContext.Users.FirstAsync();
+                await userManager.AddClaimAsync(user, new Claim(Claims.Administrator, true.ToString())); 
+            }
             await this.applicationDbContext.SaveChangesAsync();
         }
     }
