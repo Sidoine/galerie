@@ -11,10 +11,10 @@ const baseUrl = document.getElementsByTagName("base")[0].getAttribute("href");
 const rootElement = document.getElementById("root");
 
 ReactDOM.render(
-  <BrowserRouter basename={baseUrl || undefined}>
-    <Application />
-  </BrowserRouter>,
-  rootElement
+    <BrowserRouter basename={baseUrl || undefined}>
+        <Application />
+    </BrowserRouter>,
+    rootElement
 );
 
 // Uncomment the line above that imports the registerServiceWorker function

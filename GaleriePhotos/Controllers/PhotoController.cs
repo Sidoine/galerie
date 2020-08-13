@@ -8,8 +8,6 @@ using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System.Linq;
-using System.Globalization;
-using SixLabors.ImageSharp.Primitives;
 using GaleriePhotos.ViewModels;
 using System.Threading.Tasks;
 using GaleriePhotos.Data;

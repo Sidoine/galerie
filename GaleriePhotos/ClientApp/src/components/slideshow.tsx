@@ -1,9 +1,11 @@
 import { useStores } from "../stores";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { makeStyles, IconButton } from "@material-ui/core";
 import { useHistory } from "react-router-dom";
 import CloseIcon from "@material-ui/icons/Close";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
 
 const useStyles = makeStyles((x) => ({
     image: {
@@ -15,10 +17,11 @@ const useStyles = makeStyles((x) => ({
         top: 0,
         left: 0,
         position: "absolute",
-        height: "100vh",
-        width: "100vw",
+        height: "100%",
+        width: "100%",
         backgroundColor: "black",
         textAlign: "center",
+        overflow: "hidden",
     },
     close: {
         position: "absolute",
@@ -28,6 +31,40 @@ const useStyles = makeStyles((x) => ({
         "&:hover": {
             opacity: 1,
         },
+    },
+    previous: {
+        position: "absolute",
+        left: 0,
+        padding: x.spacing(2),
+        top: 0,
+        opacity: 0,
+        "&:hover": {
+            opacity: 1,
+        },
+        height: "100%",
+        width: x.spacing(15),
+        color: x.palette.common.white,
+        display: "flex",
+        alignItems: "center",
+        background:
+            "linear-gradient(to right, rgba(255,255,255,0.3), rgba(0,0,0,0))",
+    },
+    next: {
+        position: "absolute",
+        right: 0,
+        padding: x.spacing(2),
+        top: 0,
+        opacity: 0,
+        "&:hover": {
+            opacity: 1,
+        },
+        height: "100%",
+        width: x.spacing(15),
+        color: x.palette.common.white,
+        display: "flex",
+        alignItems: "center",
+        background:
+            "linear-gradient(to left, rgba(255,255,255,0.3), rgba(0,0,0,0))",
     },
 }));
 
@@ -41,15 +78,36 @@ export const SlideShow = observer(
         });
         const history = useHistory();
         const handleNext = useCallback(() => {
-            if (image?.nextVisibleId)
+            if (image && image.nextVisibleId)
                 history.push(
-                    `/directory/${directoryId}/images/${image?.nextVisibleId}/slideshow`
+                    `/directory/${directoryId}/images/${image.nextVisibleId}/slideshow`
+                );
+            else history.push(`/directory/${directoryId}/images/${id}`);
+        }, [history, directoryId, image, id]);
+        const handlePrevious = useCallback(() => {
+            if (image && image.previousVisibleId)
+                history.push(
+                    `/directory/${directoryId}/images/${image.previousVisibleId}/slideshow`
                 );
             else history.push(`/directory/${directoryId}/images/${id}`);
         }, [history, directoryId, image, id]);
         const handleClose = useCallback(() => {
             history.push(`/directory/${directoryId}/images/${id}`);
         }, [history, directoryId, id]);
+        const handleKeyPress = useCallback(
+            (e: KeyboardEvent) => {
+                if (e.code === "ArrowLeft") {
+                    handlePrevious();
+                } else if (e.code === "ArrowRight") {
+                    handleNext();
+                }
+            },
+            [handleNext, handlePrevious]
+        );
+        useEffect(() => {
+            window.addEventListener("keydown", handleKeyPress);
+            return () => window.removeEventListener("keydown", handleKeyPress);
+        }, [handleKeyPress]);
 
         if (image) {
             return (
@@ -60,6 +118,12 @@ export const SlideShow = observer(
                         className={classes.image}
                         onClick={handleNext}
                     />
+                    <div className={classes.previous} onClick={handlePrevious}>
+                        <ArrowBackIcon />
+                    </div>
+                    <div className={classes.next} onClick={handleNext}>
+                        <ArrowForwardIcon />
+                    </div>
                     <IconButton
                         color="primary"
                         onClickCapture={handleClose}
