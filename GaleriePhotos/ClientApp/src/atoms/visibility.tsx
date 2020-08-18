@@ -42,7 +42,5 @@ export function Visibility({ onChange, length }: VisibilityProps) {
         }
     }, [checkIsInViewPort]);
 
-    return (
-        <div ref={refElement}>{isInViewPort.current ? "..." : "&nbsp;"}</div>
-    );
+    return <div ref={refElement}>{isInViewPort.current ? "" : "&nbsp;"}</div>;
 }

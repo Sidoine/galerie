@@ -13,6 +13,7 @@ import {
     CardActionArea,
     Breadcrumbs,
     Link,
+    CircularProgress,
 } from "@material-ui/core";
 import { ImagesView } from "./images-view";
 import { useHistory, Link as RouterLink } from "react-router-dom";
@@ -111,7 +112,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
 const Subdirectories = observer(({ id }: { id: number }) => {
     const { directoriesStore } = useStores();
     const directories = directoriesStore.subDirectoriesLoader.getValue(id);
-    if (!directories) return <div>Loading directory {id}</div>;
+    if (!directories) return <CircularProgress />;
     return (
         <Grid container spacing={4}>
             {directories.map((x) => (

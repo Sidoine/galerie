@@ -14,6 +14,7 @@ import {
     DialogContent,
     DialogTitle,
     DialogActions,
+    CircularProgress,
 } from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 
@@ -91,8 +92,10 @@ export const ImagesView = observer(
         const location = useLocation();
         const order = location.search.replace("?", "");
         const [pages, setPages] = useState(1);
-        const values =
-            directoriesStore.contentLoader.getValue(directoryId) || [];
+        const directoryContent = directoriesStore.contentLoader.getValue(
+            directoryId
+        );
+        const values = directoryContent || [];
         const sortedValues = order === "date-desc" ? values.reverse() : values;
         const page = sortedValues.slice(0, pages * 9);
         const [dialogMode, setDialogMode] = useState(DialogMode.Closed);
@@ -146,6 +149,7 @@ export const ImagesView = observer(
                     </DialogActions>
                 </Dialog>
                 <Grid container spacing={1}>
+                    {directoryContent === null && <CircularProgress />}
                     {values.length > 0 && usersStore.isAdministrator && (
                         <>
                             <Grid item>
@@ -160,7 +164,7 @@ export const ImagesView = observer(
                             </Grid>
                         </>
                     )}
-                    {
+                    {values.length > 0 && (
                         <Grid item>
                             <Button
                                 onClick={handleSortDateDesc}
@@ -183,7 +187,7 @@ export const ImagesView = observer(
                                 Plus ancien en premier
                             </Button>
                         </Grid>
-                    }
+                    )}
                 </Grid>
 
                 <Grid container spacing={4} wrap="wrap">
