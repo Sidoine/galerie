@@ -112,12 +112,22 @@ export const SlideShow = observer(
         if (image) {
             return (
                 <div className={classes.root}>
-                    <img
-                        alt=""
-                        src={directoriesStore.getImage(directoryId, id)}
-                        className={classes.image}
-                        onClick={handleNext}
-                    />
+                    {image.video && (
+                        <video
+                            autoPlay
+                            controls
+                            src={directoriesStore.getImage(directoryId, id)}
+                            className={classes.image}
+                        />
+                    )}
+                    {!image.video && (
+                        <img
+                            alt=""
+                            src={directoriesStore.getImage(directoryId, id)}
+                            className={classes.image}
+                            onClick={handleNext}
+                        />
+                    )}
                     <div className={classes.previous} onClick={handlePrevious}>
                         <ArrowBackIcon />
                     </div>

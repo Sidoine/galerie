@@ -70,6 +70,23 @@ namespace GaleriePhotos.Services
         {
             var path = GetAbsoluteDirectoryPath(photoDirectory);
             if (path == null) return null;
+            var videoNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => new[] { ".mp4", ".mpg" }.Contains(Path.GetExtension(x).ToLowerInvariant()));
+            var videos = await applicationDbContext.Photos.Where(x => videoNames.Contains(x.FileName)).ToListAsync();
+            foreach (var videoName in videoNames)
+            {
+                if (!videos.Any(x => x.FileName == videoName))
+                {
+                    var imagePath = Path.Combine(path, videoName);
+                    var photo = new Photo(videoName)
+                    {
+                        Video = true,
+                        DateTime = File.GetCreationTimeUtc(imagePath)
+                    };
+                    applicationDbContext.Photos.Add(photo);
+                    videos.Add(photo);
+                }
+            }
+
             var fileNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => new[] { ".jpg", ".jpeg" }.Contains(Path.GetExtension(x).ToLowerInvariant()));
             var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
             foreach (var fileName in fileNames)
@@ -111,7 +128,7 @@ namespace GaleriePhotos.Services
                 }
             }
             await applicationDbContext.SaveChangesAsync();
-            return photos.OrderBy(x => x.DateTime).ToArray();
+            return photos.Union(videos).OrderBy(x => x.DateTime).ToArray();
         }
 
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)

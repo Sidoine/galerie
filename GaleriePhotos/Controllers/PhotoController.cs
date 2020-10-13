@@ -45,7 +45,7 @@ namespace Galerie.Server.Controllers
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
             if (!User.IsAdministrator() && !photo.Visible) return Forbid();
-            return File(System.IO.File.ReadAllBytes(imagePath), "image/jpeg", Path.GetFileName(imagePath));
+            return PhysicalFile(imagePath, photo.Video ? "video/mp4" : "image/jpeg", Path.GetFileName(imagePath));
         }
 
         [HttpGet("{directoryId}/photos/{id}/thumbnail")]
@@ -53,6 +53,8 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
+            if (photo.Video) return BadRequest();
+
             //if (!User.IsAdministrator() && !photo.Visible) return Forbid();
             if (options.Value.ThumbnailsDirectory == null) return BadRequest("Le chemin racine des miniatures n'a pas été configuré");
             var thumbnailPath = Path.Combine(options.Value.ThumbnailsDirectory, photo.FileName);

@@ -10,7 +10,9 @@ namespace Galerie.Server.ViewModels
 
         public bool Visible { get; set; }
 
+        public bool Video { get; set; }
+
         public PhotoViewModel(Photo photo) =>
-            (Id, Name, Visible) = (photo.Id, photo.FileName, photo.Visible);
+            (Id, Name, Visible, Video) = (photo.Id, photo.FileName, photo.Visible, photo.Video);
     }
 }

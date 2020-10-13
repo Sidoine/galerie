@@ -14,6 +14,7 @@ namespace GaleriePhotos.Models
         public double? Longitude { get; set; }
         public string? Camera { get; set; }
         public DateTime DateTime { get; set; }
+        public bool Video { get; set; }
 
         public Photo(string fileName)
         {

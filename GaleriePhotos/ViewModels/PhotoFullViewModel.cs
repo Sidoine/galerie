@@ -14,11 +14,11 @@ namespace Galerie.Server.ViewModels
         public double? Longitude { get; set; }
         public string? Camera { get; set; }
         public bool Visible { get; set; }
-
+        public bool Video { get; set; }
         public int? NextVisibleId {get;set;}
         public int? PreviousVisibleId {get;set;}
 
         public PhotoFullViewModel(Photo photo, Photo? previous, Photo? next, Photo? previousVisible = null, Photo? nextVisible = null) =>
-            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Visible, PreviousVisibleId, NextVisibleId) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, photo.Visible, previousVisible?.Id, nextVisible?.Id);
+            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Visible, PreviousVisibleId, NextVisibleId, Video) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, photo.Visible, previousVisible?.Id, nextVisible?.Id, photo.Video);
     }
 }

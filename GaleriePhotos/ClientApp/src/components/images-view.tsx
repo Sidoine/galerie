@@ -15,18 +15,28 @@ import {
     DialogTitle,
     DialogActions,
     CircularProgress,
+    CardContent,
+    Checkbox,
+    FormControlLabel,
 } from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-
+import PlayArrowIcon from "@material-ui/icons/PlayArrow";
 import { Photo } from "../services/views";
 import { Visibility } from "../atoms/visibility";
 import { useHistory, useLocation } from "react-router-dom";
+
 const useStyles = makeStyles({
     root: {
         width: 270,
     },
     media: {
         height: 140,
+    },
+    video: {
+        fontSize: 140,
+    },
+    action: {
+        textAlign: "center",
     },
 });
 
@@ -47,20 +57,28 @@ const ImageCard = observer(
         return (
             <Card className={classes.root}>
                 <CardActionArea
+                    className={classes.action}
                     onClick={() =>
                         history.push(
                             `/directory/${directoryId}/images/${value.id}`
                         )
                     }
                 >
-                    <CardMedia
-                        className={classes.media}
-                        image={directoriesStore.getThumbnail(
-                            directoryId,
-                            value.id
-                        )}
-                        title={value.name}
-                    />
+                    {!value.video && (
+                        <CardMedia
+                            className={classes.media}
+                            image={directoriesStore.getThumbnail(
+                                directoryId,
+                                value.id
+                            )}
+                            title={value.name}
+                        />
+                    )}
+                    {value.video && (
+                        <CardContent>
+                            <PlayArrowIcon className={classes.video} />
+                        </CardContent>
+                    )}
                 </CardActionArea>
                 <CardActions>
                     {usersStore.isAdministrator && (
@@ -95,7 +113,17 @@ export const ImagesView = observer(
         const directoryContent = directoriesStore.contentLoader.getValue(
             directoryId
         );
-        const values = directoryContent || [];
+        let values = directoryContent || [];
+        const [onlyHidden, setOnlyHidden] = useState(false);
+        const handleSetOnlyHidden = useCallback(
+            (_: unknown, checked: boolean) => {
+                setOnlyHidden(checked);
+            },
+            []
+        );
+        if (onlyHidden) {
+            values = values.filter((x) => !x.visible);
+        }
         const sortedValues = order === "date-desc" ? values.reverse() : values;
         const page = sortedValues.slice(0, pages * 9);
         const [dialogMode, setDialogMode] = useState(DialogMode.Closed);
@@ -126,7 +154,6 @@ export const ImagesView = observer(
             () => history.push(`/directory/${directoryId}`),
             [history, directoryId]
         );
-
         return (
             <>
                 <Dialog
@@ -161,6 +188,17 @@ export const ImagesView = observer(
                                 <Button onClick={handleHideAll}>
                                     Tout cacher
                                 </Button>
+                            </Grid>
+                            <Grid item>
+                                <FormControlLabel
+                                    label="Que les cachées"
+                                    control={
+                                        <Checkbox
+                                            checked={onlyHidden}
+                                            onChange={handleSetOnlyHidden}
+                                        />
+                                    }
+                                />
                             </Grid>
                         </>
                     )}

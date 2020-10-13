@@ -67,11 +67,26 @@ export const ImageView = observer(
                 <div className={classes.root}>
                     <Grid container spacing={4} className={classes.top}>
                         <Grid item xs={9}>
-                            <img
-                                alt=""
-                                src={directoriesStore.getImage(directoryId, id)}
-                                className={classes.image}
-                            />
+                            {!image.video && (
+                                <img
+                                    alt=""
+                                    src={directoriesStore.getImage(
+                                        directoryId,
+                                        id
+                                    )}
+                                    className={classes.image}
+                                />
+                            )}
+                            {image.video && (
+                                <video
+                                    src={directoriesStore.getImage(
+                                        directoryId,
+                                        id
+                                    )}
+                                    controls
+                                    className={classes.image}
+                                />
+                            )}
                         </Grid>
                         <Grid item xs={3}>
                             <Card>

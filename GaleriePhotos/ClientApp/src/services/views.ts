@@ -40,6 +40,8 @@ export interface Photo {
     name: string;
 
     visible: boolean;
+
+    video: boolean;
 }
 
 export interface DirectoryPatch {
@@ -64,6 +66,8 @@ export interface PhotoFull {
     camera: string | null;
 
     visible: boolean;
+
+    video: boolean;
 
     nextVisibleId: number | null;
 
