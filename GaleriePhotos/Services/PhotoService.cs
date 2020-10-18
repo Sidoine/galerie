@@ -3,13 +3,15 @@ using GaleriePhotos.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Primitives;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Xabe.FFmpeg;
+using Xabe.FFmpeg.Downloader;
 
 namespace GaleriePhotos.Services
 {
@@ -17,6 +19,15 @@ namespace GaleriePhotos.Services
     {
         private readonly IOptions<GalerieOptions> options;
         private readonly ApplicationDbContext applicationDbContext;
+        public static Dictionary<string, string> MimeTypes { get; } = new Dictionary<string, string>
+        {
+            { ".jpg", "image/jpeg" },
+            { ".jpeg", "image/jpeg" },
+            { ".png", "image/png" },
+            { ".mp4", "video/mp4" },
+            { ".mpg", "video/mpg" },
+            { ".webm", "video/webm" }
+        };
 
         public PhotoService(IOptions<GalerieOptions> options, ApplicationDbContext applicationDbContext)
         {
@@ -66,28 +77,48 @@ namespace GaleriePhotos.Services
             return root;
         }
 
+        public static bool IsVideo(Photo photo)
+        {
+            return MimeTypes.TryGetValue(Path.GetExtension(photo.FileName).ToLowerInvariant(), out var mimeType) && mimeType.StartsWith("video");
+        }
+
+        public string GetMimeType(Photo photo)
+        {
+            return MimeTypes[Path.GetExtension(photo.FileName).ToLowerInvariant()];
+        }
+
+        public async Task<string?> GetThumbnailPath(PhotoDirectory photoDirectory, Photo photo)
+        {
+            if (options.Value.ThumbnailsDirectory == null) return null;
+            var thumbnailPath = Path.Combine(options.Value.ThumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
+            if (!System.IO.File.Exists(thumbnailPath))
+            {
+                var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
+                if (imagePath == null) return null;
+
+                if (IsVideo(photo))
+                {
+                    await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+                    FFmpeg.SetExecutablesPath(".");
+                    IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(imagePath, thumbnailPath, TimeSpan.FromSeconds(0));
+                    IConversionResult result = await conversion.Start();
+                }
+                else
+                {
+                    using var image = await Image.LoadAsync(imagePath);
+                    image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new Size { Width = 270, Height = 140 } }));
+                    image.Save(thumbnailPath);
+                }
+            }
+            return thumbnailPath;
+        }
+
         public async Task<Photo[]?> GetDirectoryImages(PhotoDirectory photoDirectory)
         {
             var path = GetAbsoluteDirectoryPath(photoDirectory);
             if (path == null) return null;
-            var videoNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => new[] { ".mp4", ".mpg" }.Contains(Path.GetExtension(x).ToLowerInvariant()));
-            var videos = await applicationDbContext.Photos.Where(x => videoNames.Contains(x.FileName)).ToListAsync();
-            foreach (var videoName in videoNames)
-            {
-                if (!videos.Any(x => x.FileName == videoName))
-                {
-                    var imagePath = Path.Combine(path, videoName);
-                    var photo = new Photo(videoName)
-                    {
-                        Video = true,
-                        DateTime = File.GetCreationTimeUtc(imagePath)
-                    };
-                    applicationDbContext.Photos.Add(photo);
-                    videos.Add(photo);
-                }
-            }
-
-            var fileNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => new[] { ".jpg", ".jpeg" }.Contains(Path.GetExtension(x).ToLowerInvariant()));
+            
+            var fileNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant()));
             var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
             foreach (var fileName in fileNames)
             {
@@ -95,29 +126,33 @@ namespace GaleriePhotos.Services
                 {
                     var photo = new Photo(fileName);
                     var imagePath = Path.Combine(path, fileName);
-                    using var fileStream = new FileStream(imagePath, FileMode.Open);
-                    var image = Image.Identify(fileStream);
-                    if (image.Metadata.ExifProfile != null)
-                    {
-                        var dateTimeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.DateTime);
-                        if (dateTimeValue != null)
-                        {
-                            if (DateTime.TryParseExact((string)dateTimeValue.Value, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-                            {
-                                photo.DateTime = date;
-                            }
-                        }
 
-                        var latitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitude);
-                        var latitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitudeRef);
-                        if (latitudeValue != null && latitudeRef != null) photo.Latitude = Convert((string)latitudeRef.Value, (Rational[])latitudeValue.Value);
-                        var longitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitude);
-                        var longitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitudeRef);
-                        if (longitudeValue != null && longitudeRef != null) photo.Longitude = Convert((string)longitudeRef.Value, (Rational[])longitudeValue.Value);
-                        var camera = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.Model);
-                        if (camera != null) photo.Camera = (string)camera.Value;
+                    if (!IsVideo(photo))
+                    {
+                        using var fileStream = new FileStream(imagePath, FileMode.Open);
+                        var image = Image.Identify(fileStream);
+                        if (image.Metadata.ExifProfile != null)
+                        {
+                            var dateTimeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.DateTime);
+                            if (dateTimeValue != null)
+                            {
+                                if (DateTime.TryParseExact((string)dateTimeValue.GetValue(), "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                                {
+                                    photo.DateTime = date;
+                                }
+                            }
+
+                            var latitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitude);
+                            var latitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitudeRef);
+                            if (latitudeValue != null && latitudeRef != null) photo.Latitude = Convert((string)latitudeRef.GetValue(), (Rational[])latitudeValue.GetValue());
+                            var longitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitude);
+                            var longitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitudeRef);
+                            if (longitudeValue != null && longitudeRef != null) photo.Longitude = Convert((string)longitudeRef.GetValue(), (Rational[])longitudeValue.GetValue());
+                            var camera = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.Model);
+                            if (camera != null) photo.Camera = (string)camera.GetValue();
+                        }
                     }
-                
+
                     if (photo.DateTime == default)
                     {
                         photo.DateTime =  File.GetCreationTimeUtc(imagePath);
@@ -128,7 +163,7 @@ namespace GaleriePhotos.Services
                 }
             }
             await applicationDbContext.SaveChangesAsync();
-            return photos.Union(videos).OrderBy(x => x.DateTime).ToArray();
+            return photos.OrderBy(x => x.DateTime).ToArray();
         }
 
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)

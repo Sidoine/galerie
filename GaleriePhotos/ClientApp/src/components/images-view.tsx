@@ -64,22 +64,20 @@ const ImageCard = observer(
                         )
                     }
                 >
-                    {!value.video && (
-                        <CardMedia
-                            className={classes.media}
-                            image={directoriesStore.getThumbnail(
-                                directoryId,
-                                value.id
-                            )}
-                            title={value.name}
-                        />
-                    )}
-                    {value.video && (
-                        <CardContent>
+                    <CardMedia
+                        className={classes.media}
+                        image={directoriesStore.getThumbnail(
+                            directoryId,
+                            value.id
+                        )}
+                        title={value.name}
+                    >
+                        {value.video && (
                             <PlayArrowIcon className={classes.video} />
-                        </CardContent>
-                    )}
+                        )}
+                    </CardMedia>
                 </CardActionArea>
+
                 <CardActions>
                     {usersStore.isAdministrator && (
                         <>

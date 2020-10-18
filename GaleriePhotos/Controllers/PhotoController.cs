@@ -45,7 +45,7 @@ namespace Galerie.Server.Controllers
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
             if (!User.IsAdministrator() && !photo.Visible) return Forbid();
-            return PhysicalFile(imagePath, photo.Video ? "video/mp4" : "image/jpeg", Path.GetFileName(imagePath));
+            return PhysicalFile(imagePath, photoService.GetMimeType(photo), Path.GetFileName(imagePath));
         }
 
         [HttpGet("{directoryId}/photos/{id}/thumbnail")]
@@ -53,21 +53,9 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            if (photo.Video) return BadRequest();
-
-            //if (!User.IsAdministrator() && !photo.Visible) return Forbid();
-            if (options.Value.ThumbnailsDirectory == null) return BadRequest("Le chemin racine des miniatures n'a pas été configuré");
-            var thumbnailPath = Path.Combine(options.Value.ThumbnailsDirectory, photo.FileName);
-            if (!System.IO.File.Exists(thumbnailPath)) 
-            {
-                var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
-                if (imagePath == null) return NotFound();
-                using (var image = Image.Load(imagePath))
-                {
-                    image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new SixLabors.Primitives.Size { Width = 270, Height = 140 } }));
-                    image.Save(thumbnailPath);
-                }
-            }
+            
+            if (!User.IsAdministrator() && !photo.Visible) return Forbid();
+            var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
             return File(System.IO.File.ReadAllBytes(thumbnailPath), "image/jpeg", photo.FileName);
         }
 
