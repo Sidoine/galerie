@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import React from "react";
+import { CircularProgress } from "@material-ui/core";
 
 export interface VisibilityProps {
     onChange: (visible: boolean) => void;
@@ -42,5 +43,9 @@ export function Visibility({ onChange, length }: VisibilityProps) {
         }
     }, [checkIsInViewPort]);
 
-    return <div ref={refElement}>{isInViewPort.current ? "" : "&nbsp;"}</div>;
+    return (
+        <div ref={refElement}>
+            {isInViewPort.current ? "" : <CircularProgress />}
+        </div>
+    );
 }

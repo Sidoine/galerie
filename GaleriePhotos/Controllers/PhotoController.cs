@@ -38,6 +38,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{directoryId}/photos/{id}/image")]
+        [Authorize(Policies.Images)]
         public async Task<IActionResult> GetImage(int directoryId, int id)
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
@@ -49,6 +50,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{directoryId}/photos/{id}/thumbnail")]
+        [Authorize(Policies.Images)]
         public async Task<IActionResult> GetThumbnail(int directoryId, int id)
         {
             var (directory, photo) = await GetPhoto(directoryId, id);

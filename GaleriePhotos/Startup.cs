@@ -11,6 +11,8 @@ using Microsoft.Extensions.Hosting;
 using GaleriePhotos.Services;
 using System;
 using System.Text.RegularExpressions;
+using System.Net;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace GaleriePhotos
 {
@@ -88,6 +90,7 @@ namespace GaleriePhotos
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
+                options.AddPolicy(Policies.Images, policy => policy.RequireAuthenticatedUser().AddAuthenticationSchemes("Identity.Application"));
             });
         }
 

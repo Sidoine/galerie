@@ -6,6 +6,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -99,6 +100,22 @@ namespace GaleriePhotos.Services
                 if (IsVideo(photo))
                 {
                     await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+                    try
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo()
+                        {
+                            FileName = "/bin/bash",
+                            Arguments = "-c \" chmod +x ./ffmpeg ./ffprobe \" ",
+                            CreateNoWindow = true
+                        };
+
+                        Process proc = new Process() { StartInfo = startInfo, };
+                        proc.Start();
+                    }
+                    catch
+                    {
+                    }
+
                     FFmpeg.SetExecutablesPath(".");
                     IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(imagePath, thumbnailPath, TimeSpan.FromSeconds(0));
                     IConversionResult result = await conversion.Start();

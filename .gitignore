@@ -2,3 +2,6 @@
 *.user
 *.ncrunchsolution
 *.cache
+/GaleriePhotos/__MACOSX
+/GaleriePhotos/ffmpeg.exe
+/GaleriePhotos/ffprobe.exe
