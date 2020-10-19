@@ -1,14 +1,13 @@
 import { useEffect, useRef, useCallback } from "react";
 import React from "react";
-import { CircularProgress } from "@material-ui/core";
+import { CircularProgress, LinearProgress } from "@material-ui/core";
 
 export interface VisibilityProps {
     onChange: (visible: boolean) => void;
-    length: number;
+    visible: boolean;
 }
 
-export function Visibility({ onChange, length }: VisibilityProps) {
-    const isInViewPort = useRef(false);
+export function Visibility({ onChange, visible }: VisibilityProps) {
     const refElement = useRef<HTMLDivElement>(null);
 
     const checkIsInViewPort = useCallback(
@@ -17,17 +16,12 @@ export function Visibility({ onChange, length }: VisibilityProps) {
             observer: IntersectionObserver
         ) => {
             const entry = entries[0];
-            if (entry.isIntersecting !== isInViewPort.current) {
-                isInViewPort.current = entry.isIntersecting;
+            if (entry.isIntersecting !== visible) {
                 onChange(entry.isIntersecting);
             }
         },
-        [isInViewPort, onChange]
+        [onChange, visible]
     );
-
-    useEffect(() => {
-        isInViewPort.current = false;
-    }, [length]);
 
     useEffect(() => {
         const element = refElement.current;
@@ -37,15 +31,17 @@ export function Visibility({ onChange, length }: VisibilityProps) {
             });
 
             observer.observe(element);
+
             return () => {
                 observer.disconnect();
             };
         }
-    }, [checkIsInViewPort]);
+    }, [checkIsInViewPort, onChange]);
 
     return (
         <div ref={refElement}>
-            {isInViewPort.current ? "" : <CircularProgress />}
+            {visible && <LinearProgress variant="indeterminate" />}
+            {!visible && <CircularProgress variant="indeterminate" />}
         </div>
     );
 }

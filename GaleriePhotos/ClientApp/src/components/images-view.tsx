@@ -15,7 +15,6 @@ import {
     DialogTitle,
     DialogActions,
     CircularProgress,
-    CardContent,
     Checkbox,
     FormControlLabel,
 } from "@material-ui/core";
@@ -104,6 +103,7 @@ enum DialogMode {
 export const ImagesView = observer(
     ({ directoryId }: { directoryId: number }) => {
         const { directoriesStore, usersStore } = useStores();
+        const [needNextPage, setNextPageNeeded] = useState(false);
         const history = useHistory();
         const location = useLocation();
         const order = location.search.replace("?", "");
@@ -123,7 +123,8 @@ export const ImagesView = observer(
             values = values.filter((x) => !x.visible);
         }
         const sortedValues = order === "date-desc" ? values.reverse() : values;
-        const page = sortedValues.slice(0, pages * 9);
+        const pageSize = 9;
+        const page = sortedValues.slice(0, pages * pageSize);
         const [dialogMode, setDialogMode] = useState(DialogMode.Closed);
         const handleConfirm = useCallback(async () => {
             if (dialogMode === DialogMode.SeeAll) {
@@ -151,6 +152,14 @@ export const ImagesView = observer(
         const handleSortDateAsc = useCallback(
             () => history.push(`/directory/${directoryId}`),
             [history, directoryId]
+        );
+        const handleNextPage = useCallback(
+            (visible) => {
+                setNextPageNeeded(visible);
+                setPages(pages + 1);
+                setTimeout(() => setNextPageNeeded(false), 0);
+            },
+            [pages]
         );
         return (
             <>
@@ -225,7 +234,6 @@ export const ImagesView = observer(
                         </Grid>
                     )}
                 </Grid>
-
                 <Grid container spacing={4} wrap="wrap">
                     {page.map((x) => (
                         <Grid item key={x.id}>
@@ -233,12 +241,12 @@ export const ImagesView = observer(
                         </Grid>
                     ))}
                 </Grid>
-                <Visibility
-                    onChange={(x) => {
-                        if (x) setPages(pages + 1);
-                    }}
-                    length={values.length}
-                />
+                {pages * pageSize < values.length && (
+                    <Visibility
+                        onChange={handleNextPage}
+                        visible={needNextPage}
+                    />
+                )}
             </>
         );
     }
