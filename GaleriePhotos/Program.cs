@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using GaleriePhotos.Data;
 using Microsoft.EntityFrameworkCore;
 using GaleriePhotos.Services;
+using Microsoft.Extensions.Hosting;
 
 namespace GaleriePhotos
 {
@@ -36,13 +37,13 @@ namespace GaleriePhotos
                     logger.LogError(ex, "An error occurred while seeding the database.");
                 }
 
-                var env = services.GetService<IOptions<GalerieOptions>>();
+                var env = services.GetRequiredService<IOptions<GalerieOptions>>();
                 if (env.Value.GenerateTypeScript)
                 {
                     try
                     {
 
-                        services.GetService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
+                        services.GetRequiredService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
                     }
                     catch (Exception ex)
                     {
@@ -63,6 +64,13 @@ namespace GaleriePhotos
                 builder.UseUrls($"http://*:{port}");
             }
             builder.UseStartup<Startup>();
+            builder.ConfigureAppConfiguration((hostContext, builder) =>
+            {
+                if (hostContext.HostingEnvironment.IsDevelopment())
+                {
+                    builder.AddUserSecrets<Program>();
+                }
+            });
             return builder;
         }
 

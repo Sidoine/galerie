@@ -13,6 +13,7 @@ using System;
 using System.Text.RegularExpressions;
 using System.Net;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace GaleriePhotos
 {
@@ -28,6 +29,7 @@ namespace GaleriePhotos
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 var connectionString = Configuration.GetConnectionString("DefaultConnection");
@@ -59,12 +61,12 @@ namespace GaleriePhotos
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            services.AddIdentityServer(options =>
-            {
-                options.PublicOrigin = Configuration["IdentityServer:PublicOrigin"];
-                options.IssuerUri = options.PublicOrigin;
-            })
-                .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+            //services.AddIdentityServer(options =>
+            //{
+            //    options.PublicOrigin = Configuration["IdentityServer:PublicOrigin"];
+            //    options.IssuerUri = options.PublicOrigin;
+            //})
+            services.AddIdentityServer().AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
                     apiResource.UserClaims.Add(Claims.Administrator);
@@ -83,6 +85,7 @@ namespace GaleriePhotos
                 configuration.RootPath = "ClientApp/build";
             });
 
+            services.Configure<SendGridOptions>(Configuration.GetSection("SendGrid"));
             services.Configure<GalerieOptions>(Configuration.GetSection("Galerie"));
             services.Configure<AdministratorOptions>(Configuration.GetSection("Administrator"));
             services.AddScoped<PhotoService>();
@@ -92,6 +95,7 @@ namespace GaleriePhotos
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
                 options.AddPolicy(Policies.Images, policy => policy.RequireAuthenticatedUser().AddAuthenticationSchemes("Identity.Application"));
             });
+            services.AddScoped<IEmailSender, EmailSender>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -100,7 +104,7 @@ namespace GaleriePhotos
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage();
+                app.UseMigrationsEndPoint();
             }
             else
             {

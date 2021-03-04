@@ -58,6 +58,7 @@ namespace Galerie.Server.Controllers
             
             if (!User.IsAdministrator() && !photo.Visible) return Forbid();
             var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
+            if (thumbnailPath == null) return NotFound();
             return File(System.IO.File.ReadAllBytes(thumbnailPath), "image/jpeg", photo.FileName);
         }
 

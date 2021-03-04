@@ -67,6 +67,7 @@ namespace Galerie.Server.Controllers
             var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
             if (directory == null) return NotFound();
             var photos = await photoService.GetDirectoryImages(directory);
+            if (photos == null) return NotFound();
             var isAdministrator = User.IsAdministrator();
             return Ok(photos.Where(x => x.Visible || isAdministrator).Select(x => new PhotoViewModel(x)));
         }
