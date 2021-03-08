@@ -16,7 +16,7 @@ import {
     CircularProgress,
 } from "@material-ui/core";
 import { ImagesView } from "./images-view";
-import { useHistory, Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 
@@ -51,7 +51,6 @@ const useStyles = makeStyles({
 });
 
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
-    const history = useHistory();
     const classes = useStyles();
     const { directoriesStore, usersStore } = useStores();
     const handleMyleneSwitch = useCallback(
@@ -75,7 +74,8 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     return (
         <Card className={classes.card}>
             <CardActionArea
-                onClick={() => history.push(`/directory/${directory.id}`)}
+                component={RouterLink}
+                to={`/directory/${directory.id}`}
             >
                 <Typography variant="h6">{directory.name}</Typography>{" "}
             </CardActionArea>

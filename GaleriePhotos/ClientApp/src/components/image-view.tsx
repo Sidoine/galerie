@@ -13,7 +13,7 @@ import {
 } from "@material-ui/core";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import ArrowUpwardIcon from "@material-ui/icons/ArrowUpward";
 import { Map, TileLayer } from "react-leaflet";
 import CalendarTodayIcon from "@material-ui/icons/CalendarToday";
@@ -140,11 +140,8 @@ export const ImageView = observer(
                                 disabled={image.previousId === null}
                                 color="primary"
                                 startIcon={<ArrowBackIcon />}
-                                onClick={() =>
-                                    history.push(
-                                        `/directory/${directoryId}/images/${image.previousId}`
-                                    )
-                                }
+                                component={Link}
+                                to={`/directory/${directoryId}/images/${image.previousId}`}
                             >
                                 Précédent
                             </Button>
@@ -154,21 +151,17 @@ export const ImageView = observer(
                                 disabled={image.nextId === null}
                                 color="primary"
                                 startIcon={<ArrowForwardIcon />}
-                                onClick={() =>
-                                    history.push(
-                                        `/directory/${directoryId}/images/${image.nextId}`
-                                    )
-                                }
+                                component={Link}
+                                to={`/directory/${directoryId}/images/${image.nextId}`}
                             >
                                 Suivant
                             </Button>
                         </Grid>
                         <Grid item>
                             <Button
+                                component={Link}
                                 startIcon={<ArrowUpwardIcon />}
-                                onClick={() =>
-                                    history.push(`/directory/${directoryId}`)
-                                }
+                                to={`/directory/${directoryId}`}
                             >
                                 Retour
                             </Button>

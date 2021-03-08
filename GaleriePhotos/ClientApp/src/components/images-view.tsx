@@ -22,7 +22,7 @@ import VisibilityIcon from "@material-ui/icons/Visibility";
 import PlayArrowIcon from "@material-ui/icons/PlayArrow";
 import { Photo } from "../services/views";
 import { Visibility } from "../atoms/visibility";
-import { useHistory, useLocation } from "react-router-dom";
+import { Link, useHistory, useLocation } from "react-router-dom";
 
 const useStyles = makeStyles({
     root: {
@@ -57,11 +57,8 @@ const ImageCard = observer(
             <Card className={classes.root}>
                 <CardActionArea
                     className={classes.action}
-                    onClick={() =>
-                        history.push(
-                            `/directory/${directoryId}/images/${value.id}`
-                        )
-                    }
+                    component={Link}
+                    to={`/directory/${directoryId}/images/${value.id}`}
                 >
                     <CardMedia
                         className={classes.media}
