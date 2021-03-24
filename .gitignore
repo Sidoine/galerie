@@ -5,3 +5,5 @@
 /GaleriePhotos/__MACOSX
 /GaleriePhotos/ffmpeg.exe
 /GaleriePhotos/ffprobe.exe
+*.crt
+*.key

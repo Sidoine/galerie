@@ -14,6 +14,8 @@ using System.Text.RegularExpressions;
 using System.Net;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace GaleriePhotos
 {
@@ -36,7 +38,7 @@ namespace GaleriePhotos
                 string? url = Environment.GetEnvironmentVariable("DATABASE_URL");
                 if (url != null)
                 {
-                    var match = Regex.Match(url, @"postgres://(\w+):(\w+)@([\w\-]+):(\d+)/(\w+)");
+                    var match = Regex.Match(url, @"postgres://(\w+):(\w+)@([\w\-\.]+):(\d+)/(\w+)");
                     if (match.Success)
                     {
                         var userName = match.Groups[1].Value;
@@ -66,7 +68,9 @@ namespace GaleriePhotos
             //    options.PublicOrigin = Configuration["IdentityServer:PublicOrigin"];
             //    options.IssuerUri = options.PublicOrigin;
             //})
-            services.AddIdentityServer().AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+            services.AddIdentityServer()
+                .AddSigningCredential(new X509Certificate2("galerie.pfx"))
+                .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
                     apiResource.UserClaims.Add(Claims.Administrator);
