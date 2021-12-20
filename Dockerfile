@@ -6,7 +6,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY . .
-WORKDIR /app/ClientApp
+WORKDIR /app/GaleriePhotos/ClientApp
 RUN yarn install
 WORKDIR /app/
 RUN dotnet restore
