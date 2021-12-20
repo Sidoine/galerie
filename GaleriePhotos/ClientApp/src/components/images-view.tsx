@@ -42,7 +42,6 @@ const useStyles = makeStyles({
 const ImageCard = observer(
   ({ value, directoryId }: { value: Photo; directoryId: number }) => {
     const classes = useStyles();
-    const history = useHistory();
     const { directoriesStore, usersStore } = useStores();
     const handleSwitchVisible = useCallback(
       (_: unknown, checked: boolean) => {
@@ -148,11 +147,11 @@ export const ImagesView = observer(
     }, []);
     const handleSortDateDesc = useCallback(
       () => history.push(createUrl(directoryId, "date-desc", pages)),
-      [history, directoryId]
+      [history, directoryId, pages]
     );
     const handleSortDateAsc = useCallback(
       () => history.push(createUrl(directoryId, "date-asc", pages)),
-      [history, directoryId]
+      [history, directoryId, pages]
     );
     const handleNextPage = useCallback(
       (visible) => {
@@ -161,7 +160,7 @@ export const ImagesView = observer(
         history.replace(createUrl(directoryId, order, pages + 1));
         setTimeout(() => setNextPageNeeded(false), 0);
       },
-      [pages]
+      [directoryId, history, order, pages]
     );
     return (
       <>
