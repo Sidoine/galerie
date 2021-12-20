@@ -69,7 +69,9 @@ namespace GaleriePhotos
             //    options.IssuerUri = options.PublicOrigin;
             //})
             services.AddIdentityServer()
-                //.AddSigningCredential(new X509Certificate2("galerie.pfx"))
+#if !DEBUG
+                .AddSigningCredential(new X509Certificate2("galerie.pfx"))
+#endif
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
