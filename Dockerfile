@@ -3,10 +3,17 @@ RUN apt-get update -y
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get install -y nodejs ffmpeg
 RUN corepack enable 
-WORKDIR /app
+WORKDIR /app/GaleriePhotos/ClientApp
+COPY GaleriePhotos/ClientApp/yarn.lock .
+COPY GaleriePhotos/ClientApp/package.json .
+RUN yarn install
 
-COPY . .
+WORKDIR /app/GaleriePhotos
+COPY GaleriePhotos/GaleriePhotos.csproj .
+RUN dotnet restore GaleriePhotos.csproj
+
 WORKDIR /app/
+COPY . .
 RUN dotnet publish -c Release -o /output
 WORKDIR /output
 COPY nginx.conf.sigil .
