@@ -6,7 +6,10 @@ RUN corepack enable
 WORKDIR /app
 
 COPY . .
+WORKDIR /app/ClientApp
+RUN yarn install
 WORKDIR /app/
+RUN dotnet restore
 RUN dotnet publish -c Release -o /output
 WORKDIR /output
 COPY nginx.conf.sigil .
