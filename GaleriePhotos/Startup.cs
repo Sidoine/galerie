@@ -69,7 +69,7 @@ namespace GaleriePhotos
             //    options.IssuerUri = options.PublicOrigin;
             //})
             var file = File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), "galerie.pfx"));
-            services.AddIdentityServer()
+            services.AddIdentityServer(x => x.KeyManagement.DataProtectKeys = false)
                 .AddSigningCredential(new X509Certificate2(file, ""))
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
