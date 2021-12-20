@@ -70,9 +70,7 @@ namespace GaleriePhotos
             //})
             var file = File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), "galerie.pfx"));
             services.AddIdentityServer()
-                // #if !DEBUG
-                //                 .AddSigningCredential(new X509Certificate2(file))
-                // #endif
+                .AddSigningCredential(new X509Certificate2(file))
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
@@ -126,8 +124,8 @@ namespace GaleriePhotos
 
             app.UseRouting();
 
-            app.UseAuthentication();
             app.UseIdentityServer();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
