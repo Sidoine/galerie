@@ -69,7 +69,7 @@ namespace GaleriePhotos
             //    options.IssuerUri = options.PublicOrigin;
             //})
             services.AddIdentityServer()
-                .AddSigningCredential(new X509Certificate2("galerie.pfx"))
+                //.AddSigningCredential(new X509Certificate2("galerie.pfx"))
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
@@ -137,6 +137,7 @@ namespace GaleriePhotos
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
+                spa.Options.PackageManagerCommand = "yarn";
 
                 if (env.IsDevelopment())
                 {
