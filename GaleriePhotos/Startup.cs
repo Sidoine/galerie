@@ -68,10 +68,9 @@ namespace GaleriePhotos
             //    options.PublicOrigin = Configuration["IdentityServer:PublicOrigin"];
             //    options.IssuerUri = options.PublicOrigin;
             //})
+            var file = File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), "galerie.pfx"));
             services.AddIdentityServer()
-#if !DEBUG
-                .AddSigningCredential(new X509Certificate2("galerie.pfx"))
-#endif
+                .AddSigningCredential(new X509Certificate2(file))
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
