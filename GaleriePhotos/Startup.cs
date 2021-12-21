@@ -63,14 +63,10 @@ namespace GaleriePhotos
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            //services.AddIdentityServer(options =>
-            //{
-            //    options.PublicOrigin = Configuration["IdentityServer:PublicOrigin"];
-            //    options.IssuerUri = options.PublicOrigin;
-            //})
-            var file = File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), "galerie.pfx"));
-            services.AddIdentityServer(x => x.KeyManagement.DataProtectKeys = false)
-                //.AddSigningCredential(new X509Certificate2(file, ""))
+            services.AddIdentityServer(options =>
+                {
+                    options.IssuerUri = Configuration["IdentityServer:IssuerUri"];
+                })
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
                     var apiResource = options.ApiResources[0];
