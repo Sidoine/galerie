@@ -11,7 +11,6 @@ RUN yarn install
 WORKDIR /app/GaleriePhotos
 COPY GaleriePhotos/GaleriePhotos.csproj .
 RUN dotnet restore GaleriePhotos.csproj
-COPY GaleriePhotos/galerie.pfx /root/.aspnet/DataProtection-Keys
 
 WORKDIR /app/
 COPY . .

@@ -7,3 +7,4 @@
 /GaleriePhotos/ffprobe.exe
 *.crt
 *.key
+*.pfx
