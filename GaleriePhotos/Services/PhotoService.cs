@@ -119,6 +119,14 @@ namespace GaleriePhotos.Services
             
             var fileNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant()));
             var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
+
+            var duplicates = photos.GroupBy(x => x.FileName).Where(x => x.Count() > 1).ToArray();
+            foreach (var duplicate in duplicates)
+            {
+                var toDelete = duplicate.OrderBy(x => x.Id).Skip(1).ToArray();
+                applicationDbContext.Photos.RemoveRange(toDelete);
+            }
+
             foreach (var fileName in fileNames)
             {
                 if (!photos.Any(x => x.FileName == fileName))
@@ -139,7 +147,7 @@ namespace GaleriePhotos.Services
                                 {
                                     if (DateTime.TryParseExact((string)dateTimeValue.GetValue(), "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                                     {
-                                        photo.DateTime = date;
+                                        photo.DateTime = DateTime.SpecifyKind(date, DateTimeKind.Utc);
                                     }
                                 }
 

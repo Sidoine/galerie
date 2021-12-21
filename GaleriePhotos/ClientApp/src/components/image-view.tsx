@@ -66,7 +66,13 @@ export const ImageView = observer(
             return (
                 <div className={classes.root}>
                     <Grid container spacing={4} className={classes.top}>
-                        <Grid item xs={9}>
+                        <Grid
+                            item
+                            xs={9}
+                            onClick={
+                                image.visible ? handleSlideshow : undefined
+                            }
+                        >
                             {!image.video && (
                                 <img
                                     alt=""
@@ -175,9 +181,11 @@ export const ImageView = observer(
                                 <VisibilityIcon />
                             </Grid>
                         )}
-                        <Grid item>
-                            <Button onClick={handleSlideshow}>Diapo</Button>
-                        </Grid>
+                        {image.visible && (
+                            <Grid item>
+                                <Button onClick={handleSlideshow}>Diapo</Button>
+                            </Grid>
+                        )}
                     </Grid>
                 </div>
             );
