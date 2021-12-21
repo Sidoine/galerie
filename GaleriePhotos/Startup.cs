@@ -67,7 +67,6 @@ namespace GaleriePhotos
             services.AddIdentityServer(options =>
                 {
                     options.IssuerUri = Configuration["IdentityServer:IssuerUri"];
-                    options.
                 })
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
