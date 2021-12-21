@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using Duende.IdentityServer.Extensions;
 
 namespace GaleriePhotos
 {
@@ -66,6 +67,7 @@ namespace GaleriePhotos
             services.AddIdentityServer(options =>
                 {
                     options.IssuerUri = Configuration["IdentityServer:IssuerUri"];
+                    options.
                 })
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
                 {
@@ -102,6 +104,15 @@ namespace GaleriePhotos
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            if (Configuration["IdentityServer:IssuerUri"] != null)
+            {
+                app.Use(async (ctx, next) =>
+                {
+                    ctx.SetIdentityServerOrigin(Configuration["IdentityServer:IssuerUri"]);
+                    await next();
+                });
+            }
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
