@@ -5,7 +5,12 @@ import Application from "./application";
 //import registerServiceWorker from './registerServiceWorker';
 import { configure } from "mobx";
 
-configure({ enforceActions: "observed" });
+configure({
+    enforceActions: "observed",
+    computedRequiresReaction: true,
+    observableRequiresReaction: true,
+    reactionRequiresObservable: true,
+});
 
 const baseUrl = document.getElementsByTagName("base")[0].getAttribute("href");
 const rootElement = document.getElementById("root");

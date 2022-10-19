@@ -84,7 +84,7 @@ namespace GaleriePhotos
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
-                configuration.RootPath = "ClientApp/build";
+                configuration.RootPath = "ClientApp/public";
             });
 
             services.Configure<SendGridOptions>(Configuration.GetSection("SendGrid"));
@@ -146,10 +146,10 @@ namespace GaleriePhotos
                 spa.Options.SourcePath = "ClientApp";
                 spa.Options.PackageManagerCommand = "yarn";
 
-                if (env.IsDevelopment())
-                {
-                    spa.UseReactDevelopmentServer(npmScript: "start");
-                }
+                // if (env.IsDevelopment())
+                // {
+                //     spa.UseReactDevelopmentServer(npmScript: "start");
+                // }
             });
         }
     }

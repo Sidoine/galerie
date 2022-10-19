@@ -7,6 +7,7 @@ WORKDIR /app/GaleriePhotos/ClientApp
 COPY GaleriePhotos/ClientApp/yarn.lock .
 COPY GaleriePhotos/ClientApp/package.json .
 RUN yarn install
+RUN yarn build
 
 WORKDIR /app/GaleriePhotos
 COPY GaleriePhotos/GaleriePhotos.csproj .

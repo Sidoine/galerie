@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import React, { useState, useCallback } from "react";
 import { useStores } from "../stores";
 import {
-    makeStyles,
     Card,
     CardActionArea,
     CardMedia,
@@ -17,31 +16,15 @@ import {
     CircularProgress,
     Checkbox,
     FormControlLabel,
-} from "@material-ui/core";
-import VisibilityIcon from "@material-ui/icons/Visibility";
-import PlayArrowIcon from "@material-ui/icons/PlayArrow";
+} from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Photo } from "../services/views";
 import { Visibility } from "../atoms/visibility";
-import { Link, useHistory, useLocation } from "react-router-dom";
-
-const useStyles = makeStyles({
-    root: {
-        width: 270,
-    },
-    media: {
-        height: 140,
-    },
-    video: {
-        fontSize: 140,
-    },
-    action: {
-        textAlign: "center",
-    },
-});
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const ImageCard = observer(
     ({ value, directoryId }: { value: Photo; directoryId: number }) => {
-        const classes = useStyles();
         const { directoriesStore, usersStore } = useStores();
         const handleSwitchVisible = useCallback(
             (_: unknown, checked: boolean) => {
@@ -53,14 +36,14 @@ const ImageCard = observer(
         );
 
         return (
-            <Card className={classes.root}>
+            <Card sx={{ width: 270 }}>
                 <CardActionArea
-                    className={classes.action}
+                    sx={{ textAlign: "center" }}
                     component={Link}
                     to={`/directory/${directoryId}/images/${value.id}`}
                 >
                     <CardMedia
-                        className={classes.media}
+                        sx={{ height: 140 }}
                         image={directoriesStore.getThumbnail(
                             directoryId,
                             value.id
@@ -68,7 +51,7 @@ const ImageCard = observer(
                         title={value.name}
                     >
                         {value.video && (
-                            <PlayArrowIcon className={classes.video} />
+                            <PlayArrowIcon sx={{ fontSize: 140 }} />
                         )}
                     </CardMedia>
                 </CardActionArea>
@@ -99,12 +82,12 @@ enum DialogMode {
 function createUrl(
     directoryId: number,
     order: "date-desc" | "date-asc",
-    pages: number,
+    image: number,
     onlyHidden: boolean | undefined
 ) {
     const urlSearchParams = new URLSearchParams();
     urlSearchParams.set("order", order);
-    urlSearchParams.set("page", pages.toString());
+    urlSearchParams.set("image", image.toString());
     if (onlyHidden) urlSearchParams.set("only-hidden", "true");
     return `/directory/${directoryId}?${urlSearchParams}`;
 }
@@ -113,12 +96,14 @@ export const ImagesView = observer(
     ({ directoryId }: { directoryId: number }) => {
         const { directoriesStore, usersStore } = useStores();
         const [needNextPage, setNextPageNeeded] = useState(false);
-        const history = useHistory();
+        const navigate = useNavigate();
         const location = useLocation();
         const params = new URLSearchParams(location.search);
         const order =
             params.get("order") === "date-desc" ? "date-desc" : "date-asc";
-        const [pages, setPages] = useState(parseInt(params.get("page") || "1"));
+        const [image, setImage] = useState(
+            parseInt(params.get("image") || "0")
+        );
         const directoryContent =
             directoriesStore.contentLoader.getValue(directoryId);
         let values = directoryContent || [];
@@ -128,16 +113,18 @@ export const ImagesView = observer(
         const handleSetOnlyHidden = useCallback(
             (_: unknown, checked: boolean) => {
                 setOnlyHidden(checked);
-                history.push(createUrl(directoryId, order, pages, checked));
+                navigate(createUrl(directoryId, order, image, checked));
             },
-            [directoryId, history, order, pages]
+            [directoryId, navigate, order, image]
         );
         if (onlyHidden) {
             values = values.filter((x) => !x.visible);
         }
         const sortedValues = order === "date-desc" ? values.reverse() : values;
         const pageSize = 9;
-        const page = sortedValues.slice(0, pages * pageSize);
+        let imageIndex = sortedValues.findIndex((x) => x.id === image);
+        if (imageIndex < 0) imageIndex = 0;
+        const page = sortedValues.slice(0, imageIndex + pageSize);
         const [dialogMode, setDialogMode] = useState(DialogMode.Closed);
         const handleConfirm = useCallback(async () => {
             if (dialogMode === DialogMode.SeeAll) {
@@ -160,28 +147,32 @@ export const ImagesView = observer(
         }, []);
         const handleSortDateDesc = useCallback(
             () =>
-                history.push(
-                    createUrl(directoryId, "date-desc", pages, onlyHidden)
+                navigate(
+                    createUrl(directoryId, "date-desc", image, onlyHidden)
                 ),
-            [history, directoryId, pages, onlyHidden]
+            [navigate, directoryId, image, onlyHidden]
         );
         const handleSortDateAsc = useCallback(
             () =>
-                history.push(
-                    createUrl(directoryId, "date-asc", pages, onlyHidden)
-                ),
-            [history, directoryId, pages, onlyHidden]
+                navigate(createUrl(directoryId, "date-asc", image, onlyHidden)),
+            [navigate, directoryId, image, onlyHidden]
         );
         const handleNextPage = useCallback(
-            (visible) => {
+            (visible: boolean) => {
                 setNextPageNeeded(visible);
-                setPages(pages + 1);
-                history.replace(
-                    createUrl(directoryId, order, pages + 1, onlyHidden)
+                const newImageIndex = Math.min(
+                    sortedValues.length - pageSize,
+                    imageIndex + pageSize
+                );
+                const newImageId = sortedValues[newImageIndex].id;
+                setImage(newImageId);
+                navigate(
+                    createUrl(directoryId, order, newImageId, onlyHidden),
+                    { replace: true }
                 );
                 setTimeout(() => setNextPageNeeded(false), 0);
             },
-            [directoryId, history, onlyHidden, order, pages]
+            [sortedValues, imageIndex, navigate, directoryId, order, onlyHidden]
         );
         return (
             <>
@@ -238,7 +229,7 @@ export const ImagesView = observer(
                                 color={
                                     order === "date-desc"
                                         ? "primary"
-                                        : "default"
+                                        : "inherit"
                                 }
                             >
                                 Plus récent en premier
@@ -248,7 +239,7 @@ export const ImagesView = observer(
                                 color={
                                     order !== "date-desc"
                                         ? "primary"
-                                        : "default"
+                                        : "inherit"
                                 }
                             >
                                 Plus ancien en premier
@@ -258,12 +249,12 @@ export const ImagesView = observer(
                 </Grid>
                 <Grid container spacing={4} wrap="wrap">
                     {page.map((x) => (
-                        <Grid item key={x.id}>
+                        <Grid item key={x.id} id={`image${x.id}`}>
                             <ImageCard directoryId={directoryId} value={x} />
                         </Grid>
                     ))}
                 </Grid>
-                {pages * pageSize < values.length && (
+                {imageIndex + pageSize < values.length && (
                     <Visibility
                         onChange={handleNextPage}
                         visible={needNextPage}

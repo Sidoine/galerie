@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
-import { observer } from "mobx-react-lite";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import { makeAutoObservable, trace } from "mobx";
 import { useStores } from "../stores";
 import {
     Switch,
@@ -9,14 +10,14 @@ import {
     Card,
     CardActions,
     Typography,
-    makeStyles,
     CardActionArea,
     Breadcrumbs,
     Link,
     CircularProgress,
-} from "@material-ui/core";
+    Button,
+} from "@mui/material";
 import { ImagesView } from "./images-view";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 
@@ -44,14 +45,7 @@ const Man = () => {
     );
 };
 
-const useStyles = makeStyles({
-    card: {
-        width: "300px",
-    },
-});
-
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
-    const classes = useStyles();
     const { directoriesStore, usersStore } = useStores();
     const handleMyleneSwitch = useCallback(
         (e: unknown, checked: boolean) => {
@@ -72,7 +66,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     );
 
     return (
-        <Card className={classes.card}>
+        <Card sx={{ width: 300 }}>
             <CardActionArea
                 component={RouterLink}
                 to={`/directory/${directory.id}`}
@@ -124,7 +118,7 @@ const Subdirectories = observer(({ id }: { id: number }) => {
     );
 });
 
-export const DirectoryView = observer(({ id }: DirectoryViewProps) => {
+export const DirectoryView = observer(({ id }: { id: number }) => {
     const { directoriesStore } = useStores();
     const directory = directoriesStore.infoLoader.getValue(id);
     return (
@@ -153,19 +147,34 @@ export const DirectoryView = observer(({ id }: DirectoryViewProps) => {
                     </Breadcrumbs>
                 </Grid>
                 <Grid item>
-                    <Subdirectories id={id} />
+                    <Subdirectories id={Number(id)} />
                 </Grid>
                 <Grid item>
-                    <ImagesView directoryId={id} />
+                    <ImagesView directoryId={Number(id)} />
                 </Grid>
             </Grid>
         </Container>
     );
 });
 
-export const RootDirectoryView = observer(() => {
+export function DirectoryPage() {
+    const { id } = useParams();
+    return <DirectoryView id={Number(id)} />;
+}
+
+export const RootDirectoryPage = observer(function RootDirectoryPage() {
+    trace();
     const { directoriesStore } = useStores();
-    const root = directoriesStore.rootLoader.getValue();
-    if (!root) return <></>;
+    const root = directoriesStore.root;
+    const timer = useLocalObservable(() => ({
+        secondsPassed: 0,
+        increaseTimer: () => {
+            timer.secondsPassed++;
+        },
+    }));
+    if (!root)
+        return (
+            <Button onClick={timer.increaseTimer}>{timer.secondsPassed}</Button>
+        );
     return <DirectoryView id={root.id} />;
 });

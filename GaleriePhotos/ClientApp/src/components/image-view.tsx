@@ -2,7 +2,6 @@ import { useStores } from "../stores";
 import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import {
-    makeStyles,
     Grid,
     Card,
     CardHeader,
@@ -10,62 +9,53 @@ import {
     CardMedia,
     Button,
     Switch,
-} from "@material-ui/core";
-import ArrowBackIcon from "@material-ui/icons/ArrowBack";
-import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
-import { Link, useHistory } from "react-router-dom";
-import ArrowUpwardIcon from "@material-ui/icons/ArrowUpward";
-import { Map, TileLayer } from "react-leaflet";
-import CalendarTodayIcon from "@material-ui/icons/CalendarToday";
-import CameraAltIcon from "@material-ui/icons/CameraAlt";
-import VisibilityIcon from "@material-ui/icons/Visibility";
+    Box,
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import { MapContainer, TileLayer } from "react-leaflet";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
-const useStyles = makeStyles({
-    image: {
-        maxWidth: "100%",
-        maxHeight: "calc(100vh - 128px)",
-        imageOrientation: "from-image",
-    },
-    root: {
-        height: "calc(100vh - 64px)",
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px",
-    },
-    top: {
-        flex: 1,
-    },
-    map: {
-        width: "100%",
-        height: "20rem",
-    },
-});
+export function ImagePage() {
+    const { directoryId, id } = useParams();
+    return <ImageView directoryId={Number(directoryId)} id={Number(id)} />;
+}
 
 export const ImageView = observer(
-    ({ id, directoryId }: { id: number; directoryId: number }) => {
+    ({ directoryId, id }: { directoryId: number; id: number }) => {
         const { directoriesStore, usersStore } = useStores();
-        const classes = useStyles();
-        const image = directoriesStore.imageLoader.getValue({
-            directoryId,
-            id,
-        });
-        const history = useHistory();
+        const image = directoriesStore.imageLoader.getValue(
+            Number(directoryId),
+            Number(id)
+        );
+        const navigate = useNavigate();
         const handleVisibleSwitch = useCallback(
             (e: unknown, checked: boolean) => {
                 if (image)
-                    directoriesStore.patchPhoto(directoryId, image, {
+                    directoriesStore.patchPhoto(Number(directoryId), image, {
                         visible: checked,
                     });
             },
             [image, directoryId, directoriesStore]
         );
         const handleSlideshow = useCallback(() => {
-            history.push(`/directory/${directoryId}/images/${id}/slideshow`);
-        }, [directoryId, id, history]);
+            navigate(`/directory/${directoryId}/images/${id}/slideshow`);
+        }, [directoryId, id, navigate]);
         if (image) {
             return (
-                <div className={classes.root}>
-                    <Grid container spacing={4} className={classes.top}>
+                <Box
+                    sx={{
+                        height: "calc(100vh - 64px)",
+                        display: "flex",
+                        flexDirection: "column",
+                        padding: "16px",
+                    }}
+                >
+                    <Grid container spacing={4} sx={{ flex: 1 }}>
                         <Grid
                             item
                             xs={9}
@@ -74,23 +64,33 @@ export const ImageView = observer(
                             }
                         >
                             {!image.video && (
-                                <img
+                                <Box
+                                    component="img"
                                     alt=""
                                     src={directoriesStore.getImage(
                                         directoryId,
                                         id
                                     )}
-                                    className={classes.image}
+                                    sx={{
+                                        maxWidth: "100%",
+                                        maxHeight: "calc(100vh - 128px)",
+                                        imageOrientation: "from-image",
+                                    }}
                                 />
                             )}
                             {image.video && (
-                                <video
+                                <Box
+                                    component="video"
                                     src={directoriesStore.getImage(
                                         directoryId,
                                         id
                                     )}
                                     controls
-                                    className={classes.image}
+                                    sx={{
+                                        maxWidth: "100%",
+                                        maxHeight: "calc(100vh - 128px)",
+                                        imageOrientation: "from-image",
+                                    }}
                                 />
                             )}
                         </Grid>
@@ -99,21 +99,23 @@ export const ImageView = observer(
                                 <CardHeader title={image.name} />
                                 {image.latitude && image.longitude && (
                                     <CardMedia>
-                                        <Map
-                                            viewport={{
-                                                zoom: 13,
-                                                center: [
-                                                    image.latitude,
-                                                    image.longitude,
-                                                ],
+                                        <Box
+                                            component={MapContainer}
+                                            center={[
+                                                image.latitude,
+                                                image.longitude,
+                                            ]}
+                                            zoom={13}
+                                            sx={{
+                                                width: "100%",
+                                                height: "20rem",
                                             }}
-                                            className={classes.map}
                                         >
                                             <TileLayer
                                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                                 attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                                             ></TileLayer>
-                                        </Map>
+                                        </Box>
                                     </CardMedia>
                                 )}
                                 <CardContent>
@@ -140,7 +142,7 @@ export const ImageView = observer(
                             </Card>
                         </Grid>
                     </Grid>
-                    <Grid container justify="center" spacing={2}>
+                    <Grid container spacing={2}>
                         <Grid item>
                             <Button
                                 disabled={image.previousId === null}
@@ -167,7 +169,7 @@ export const ImageView = observer(
                             <Button
                                 component={Link}
                                 startIcon={<ArrowUpwardIcon />}
-                                to={`/directory/${directoryId}`}
+                                to={`/directory/${directoryId}?image=${image.id}#image${image.id}`}
                             >
                                 Retour
                             </Button>
@@ -187,7 +189,7 @@ export const ImageView = observer(
                             </Grid>
                         )}
                     </Grid>
-                </div>
+                </Box>
             );
         }
         return <div>...</div>;

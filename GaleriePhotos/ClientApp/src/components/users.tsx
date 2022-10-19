@@ -1,4 +1,4 @@
-import React, { useCallback, ChangeEvent } from "react";
+import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { useStores } from "../stores";
 import {
@@ -12,7 +12,8 @@ import {
     Switch,
     Select,
     MenuItem,
-} from "@material-ui/core";
+    SelectChangeEvent,
+} from "@mui/material";
 import { DirectoryVisibility } from "../services/enums";
 import { User } from "../services/views";
 
@@ -25,7 +26,7 @@ const UserRow = observer(({ user }: { user: User }) => {
         [usersStore, user]
     );
     const handleChangeVisibility = useCallback(
-        (e: ChangeEvent<{ name?: string; value: unknown }>) => {
+        (e: SelectChangeEvent<DirectoryVisibility>) => {
             usersStore.patch(user, {
                 directoryVisibility: e.target.value as DirectoryVisibility,
             });
@@ -42,7 +43,7 @@ const UserRow = observer(({ user }: { user: User }) => {
                 />
             </TableCell>
             <TableCell>
-                <Select
+                <Select<DirectoryVisibility>
                     value={user.directoryVisibility}
                     onChange={handleChangeVisibility}
                 >

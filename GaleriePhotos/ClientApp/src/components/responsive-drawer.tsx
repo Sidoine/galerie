@@ -1,75 +1,18 @@
 import React from "react";
-import AppBar from "@material-ui/core/AppBar";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import Divider from "@material-ui/core/Divider";
-import Drawer from "@material-ui/core/Drawer";
-import Hidden from "@material-ui/core/Hidden";
-import IconButton from "@material-ui/core/IconButton";
-import MenuIcon from "@material-ui/icons/Menu";
-import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
-import { makeStyles, useTheme } from "@material-ui/core/styles";
+import AppBar from "@mui/material/AppBar";
+import CssBaseline from "@mui/material/CssBaseline";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import Hidden from "@mui/material/Hidden";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import { LoginMenu } from "./api-authorization/login-menu";
+import { Box, useTheme } from "@mui/material";
+import { LoginMenu } from "folke-service-helpers";
 
 const drawerWidth = 240;
-
-const useStyles = makeStyles((theme) => ({
-    root: {
-        display: "flex",
-        "@media print": {
-            display: "block",
-        },
-    },
-    drawer: {
-        [theme.breakpoints.up("sm")]: {
-            width: drawerWidth,
-            flexShrink: 0,
-        },
-        "@media print": {
-            display: "none",
-        },
-    },
-    appBar: {
-        [theme.breakpoints.up("sm")]: {
-            width: `calc(100% - ${drawerWidth}px)`,
-            marginLeft: drawerWidth,
-        },
-        "@media print": {
-            display: "none",
-        },
-    },
-    menuButton: {
-        marginRight: theme.spacing(2),
-        [theme.breakpoints.up("sm")]: {
-            display: "none",
-        },
-    },
-    toolbar: Object.assign(Object.assign({}, theme.mixins.toolbar), {
-        "@media print": {
-            minHeight: 0,
-        },
-    }),
-    drawerPaper: {
-        width: drawerWidth,
-    },
-    content: {
-        flexGrow: 1,
-        //   padding: theme.spacing(3),
-        [theme.breakpoints.down("sm")]: {
-            width: "100%",
-        },
-        [theme.breakpoints.up("sm")]: {
-            width: `calc(100% - ${drawerWidth}px)`,
-        },
-        "@media print": {
-            width: "100%",
-        },
-    },
-    title: {
-        flexGrow: 1,
-    },
-}));
 
 export const ResponsiveDrawer = observer(
     ({
@@ -81,7 +24,6 @@ export const ResponsiveDrawer = observer(
         menu: JSX.Element;
         title: string;
     }) => {
-        const classes = useStyles();
         const theme = useTheme();
         const [mobileOpen, setMobileOpen] = React.useState(false);
 
@@ -91,37 +33,55 @@ export const ResponsiveDrawer = observer(
 
         const drawer = (
             <div>
-                <div className={classes.toolbar} />
+                <Box sx={theme.mixins.toolbar} />
                 <Divider />
                 {menu}
             </div>
         );
 
         return (
-            <div className={classes.root}>
+            <Box sx={{ display: "flex" }}>
                 <CssBaseline />
-                <AppBar position="fixed" className={classes.appBar}>
+                <AppBar
+                    position="fixed"
+                    sx={{
+                        [theme.breakpoints.up("sm")]: {
+                            width: `calc(100% - ${drawerWidth}px)`,
+                            marginLeft: drawerWidth,
+                        },
+                    }}
+                >
                     <Toolbar>
                         <IconButton
                             color="inherit"
                             aria-label="open drawer"
                             edge="start"
                             onClick={handleDrawerToggle}
-                            className={classes.menuButton}
+                            sx={{
+                                marginRight: theme.spacing(2),
+                                [theme.breakpoints.up("sm")]: {
+                                    display: "none",
+                                },
+                            }}
                         >
                             <MenuIcon />
                         </IconButton>
-                        <Typography
-                            variant="h6"
-                            noWrap
-                            className={classes.title}
-                        >
+                        <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
                             {title}
                         </Typography>
                         <LoginMenu />
                     </Toolbar>
                 </AppBar>
-                <nav className={classes.drawer} aria-label="mailbox folders">
+                <Box
+                    component="nav"
+                    sx={{
+                        [theme.breakpoints.up("sm")]: {
+                            width: drawerWidth,
+                            flexShrink: 0,
+                        },
+                    }}
+                    aria-label="mailbox folders"
+                >
                     {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
                     <Hidden smUp implementation="css">
                         <Drawer
@@ -131,9 +91,6 @@ export const ResponsiveDrawer = observer(
                             }
                             open={mobileOpen}
                             onClose={handleDrawerToggle}
-                            classes={{
-                                paper: classes.drawerPaper,
-                            }}
                             ModalProps={{
                                 keepMounted: true, // Better open performance on mobile.
                             }}
@@ -142,22 +99,28 @@ export const ResponsiveDrawer = observer(
                         </Drawer>
                     </Hidden>
                     <Hidden xsDown implementation="css">
-                        <Drawer
-                            classes={{
-                                paper: classes.drawerPaper,
-                            }}
-                            variant="permanent"
-                            open
-                        >
+                        <Drawer variant="permanent" open>
                             {drawer}
                         </Drawer>
                     </Hidden>
-                </nav>
-                <main className={classes.content}>
-                    <div className={classes.toolbar} />
+                </Box>
+                <Box
+                    component="main"
+                    sx={{
+                        flexGrow: 1,
+                        //   padding: theme.spacing(3),
+                        [theme.breakpoints.down("sm")]: {
+                            width: "100%",
+                        },
+                        [theme.breakpoints.up("sm")]: {
+                            width: `calc(100% - ${drawerWidth}px)`,
+                        },
+                    }}
+                >
+                    <Box sx={theme.mixins.toolbar} />
                     {children}
-                </main>
-            </div>
+                </Box>
+            </Box>
         );
     }
 );

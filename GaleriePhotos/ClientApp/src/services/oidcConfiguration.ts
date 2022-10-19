@@ -4,7 +4,7 @@ import * as helpers from "folke-service-helpers";
 export class OidcConfigurationController {
 	constructor(private client: helpers.ApiClient) {}
 
-    getClientRequestParameters(clientId: string) {
+    getClientRequestParameters = (clientId: string) => {
         return this.client.fetch(`todo/_configuration/${clientId}`, "GET", undefined);
     }
 }

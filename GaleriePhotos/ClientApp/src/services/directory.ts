@@ -5,23 +5,23 @@ import * as views from "./views";
 export class DirectoryController {
 	constructor(private client: helpers.ApiClient) {}
 
-    get(id: number) {
+    get = (id: number) => {
         return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
 
-    getPhotos(id: number) {
+    getPhotos = (id: number) => {
         return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos`, "GET", undefined);
     }
 
-    getRoot() {
+    getRoot = () => {
         return this.client.fetchJson<views.Directory>("api/directories/root", "GET", undefined);
     }
 
-    getSubdirectories(id: number) {
+    getSubdirectories = (id: number) => {
         return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
     }
 
-    patch(id: number, viewModel: views.DirectoryPatch) {
+    patch = (id: number, viewModel: views.DirectoryPatch) => {
         return this.client.fetch(`api/directories/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 }

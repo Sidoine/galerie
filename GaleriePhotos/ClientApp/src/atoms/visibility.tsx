@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import React from "react";
-import { CircularProgress, LinearProgress } from "@material-ui/core";
+import { CircularProgress, LinearProgress } from "@mui/material";
 
 export interface VisibilityProps {
     onChange: (visible: boolean) => void;
@@ -9,7 +9,7 @@ export interface VisibilityProps {
 
 export function Visibility({ onChange, visible }: VisibilityProps) {
     const refElement = useRef<HTMLDivElement>(null);
-    const visibleRef = useRef(visible);
+    const [isVisible, setVisible] = useState(false);
 
     const checkIsInViewPort = useCallback(
         (
@@ -17,12 +17,14 @@ export function Visibility({ onChange, visible }: VisibilityProps) {
             observer: IntersectionObserver
         ) => {
             const entry = entries[0];
-            if (entry.isIntersecting !== visibleRef.current) {
-                onChange(entry.isIntersecting);
-            }
+            setVisible(entry.isIntersecting);
         },
-        [onChange]
+        []
     );
+
+    useEffect(() => {
+        if (isVisible !== visible) onChange(isVisible);
+    }, [isVisible, onChange, visible]);
 
     useEffect(() => {
         const element = refElement.current;
@@ -38,10 +40,6 @@ export function Visibility({ onChange, visible }: VisibilityProps) {
             };
         }
     }, [checkIsInViewPort]);
-
-    useEffect(() => {
-        visibleRef.current = visible;
-    }, [visible]);
 
     return (
         <div ref={refElement}>

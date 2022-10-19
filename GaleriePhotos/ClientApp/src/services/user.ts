@@ -5,15 +5,15 @@ import * as views from "./views";
 export class UserController {
 	constructor(private client: helpers.ApiClient) {}
 
-    getAll() {
+    getAll = () => {
         return this.client.fetchJson<views.User[]>("api/users/", "GET", undefined);
     }
 
-    isAdministrator() {
+    isAdministrator = () => {
         return this.client.fetchJson<boolean>("api/users/administrator", "GET", undefined);
     }
 
-    patch(id: string, viewModel: views.UserPatch) {
+    patch = (id: string, viewModel: views.UserPatch) => {
         return this.client.fetch(`api/users/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 }

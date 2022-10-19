@@ -1,8 +1,7 @@
-import { SingletonLoader } from "folke-service-helpers";
-import { computed, action } from "mobx";
+import { AuthorizeService, SingletonLoader } from "folke-service-helpers";
+import { computed, action, makeObservable } from "mobx";
 import { User, UserPatch } from "../services/views";
 import { UserController } from "../services/user";
-import { AuthorizeService } from "./authorize";
 
 export class UsersStore {
     constructor(
@@ -10,7 +9,9 @@ export class UsersStore {
         public usersLoader: SingletonLoader<User[]>,
         private userService: UserController,
         private authorize: AuthorizeService
-    ) {}
+    ) {
+        makeObservable(this);
+    }
 
     @computed
     get isAdministrator() {

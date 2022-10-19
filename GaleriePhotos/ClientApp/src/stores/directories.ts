@@ -8,21 +8,27 @@ import {
     DirectoryFull,
 } from "../services/views";
 import { DirectoryController, PhotoController } from "../services/services";
-import { action } from "mobx";
+import { action, makeObservable } from "mobx";
+import { computed } from "mobx";
 
 export class DirectoriesStore {
     constructor(
-        public subDirectoriesLoader: ValueLoader<Directory[], number>,
-        public contentLoader: ValueLoader<Photo[], number>,
-        public imageLoader: ValueLoader<
-            PhotoFull,
-            { directoryId: number; id: number }
-        >,
+        public subDirectoriesLoader: ValueLoader<Directory[], [number]>,
+        public contentLoader: ValueLoader<Photo[], [number]>,
+        public imageLoader: ValueLoader<PhotoFull, [number, number]>,
         public rootLoader: SingletonLoader<Directory>,
-        public infoLoader: ValueLoader<DirectoryFull, number>,
+        public infoLoader: ValueLoader<DirectoryFull, [number]>,
         private directoryService: DirectoryController,
         private photoService: PhotoController
-    ) {}
+    ) {
+        makeObservable(this);
+    }
+
+    @computed
+    get root() {
+        const value = this.rootLoader.getValue();
+        return value;
+    }
 
     getImage(directoryId: number, id: number) {
         return `/api/directory/${directoryId}/photos/${id}/image`;

@@ -5,23 +5,23 @@ import * as views from "./views";
 export class PhotoController {
 	constructor(private client: helpers.ApiClient) {}
 
-    get(directoryId: number, id: number) {
+    get = (directoryId: number, id: number) => {
         return this.client.fetchJson<views.PhotoFull>(`api/directory/${directoryId}/photos/${id}`, "GET", undefined);
     }
 
-    getImage(directoryId: number, id: number) {
+    getImage = (directoryId: number, id: number) => {
         return this.client.fetch(`api/directory/${directoryId}/photos/${id}/image`, "GET", undefined);
     }
 
-    getThumbnail(directoryId: number, id: number) {
+    getThumbnail = (directoryId: number, id: number) => {
         return this.client.fetch(`api/directory/${directoryId}/photos/${id}/thumbnail`, "GET", undefined);
     }
 
-    patch(directoryId: number, id: number, viewModel: views.PhotoPatch) {
+    patch = (directoryId: number, id: number, viewModel: views.PhotoPatch) => {
         return this.client.fetch(`api/directory/${directoryId}/photos/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 
-    patchAll(directoryId: number, viewModel: views.PhotoPatch) {
+    patchAll = (directoryId: number, viewModel: views.PhotoPatch) => {
         return this.client.fetch(`api/directory/${directoryId}/photos/all`, "PATCH", JSON.stringify(viewModel));
     }
 }
