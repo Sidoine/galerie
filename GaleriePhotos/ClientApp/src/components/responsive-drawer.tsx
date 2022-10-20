@@ -3,7 +3,6 @@ import AppBar from "@mui/material/AppBar";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
-import Hidden from "@mui/material/Hidden";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
@@ -33,7 +32,7 @@ export const ResponsiveDrawer = observer(
 
         const drawer = (
             <div>
-                <Box sx={theme.mixins.toolbar} />
+                <Box sx={{ width: drawerWidth }} />
                 <Divider />
                 {menu}
             </div>
@@ -45,10 +44,8 @@ export const ResponsiveDrawer = observer(
                 <AppBar
                     position="fixed"
                     sx={{
-                        [theme.breakpoints.up("sm")]: {
-                            width: `calc(100% - ${drawerWidth}px)`,
-                            marginLeft: drawerWidth,
-                        },
+                        width: { sm: `calc(100% - ${drawerWidth}px)` },
+                        marginLeft: { sm: drawerWidth },
                     }}
                 >
                     <Toolbar>
@@ -59,9 +56,7 @@ export const ResponsiveDrawer = observer(
                             onClick={handleDrawerToggle}
                             sx={{
                                 marginRight: theme.spacing(2),
-                                [theme.breakpoints.up("sm")]: {
-                                    display: "none",
-                                },
+                                display: { sm: "none" },
                             }}
                         >
                             <MenuIcon />
@@ -75,45 +70,43 @@ export const ResponsiveDrawer = observer(
                 <Box
                     component="nav"
                     sx={{
-                        [theme.breakpoints.up("sm")]: {
-                            width: drawerWidth,
-                            flexShrink: 0,
-                        },
+                        width: { sm: drawerWidth },
+                        flexShrink: { sm: 0 },
                     }}
                     aria-label="mailbox folders"
                 >
                     {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
-                    <Hidden smUp implementation="css">
-                        <Drawer
-                            variant="temporary"
-                            anchor={
-                                theme.direction === "rtl" ? "right" : "left"
-                            }
-                            open={mobileOpen}
-                            onClose={handleDrawerToggle}
-                            ModalProps={{
-                                keepMounted: true, // Better open performance on mobile.
-                            }}
-                        >
-                            {drawer}
-                        </Drawer>
-                    </Hidden>
-                    <Hidden xsDown implementation="css">
-                        <Drawer variant="permanent" open>
-                            {drawer}
-                        </Drawer>
-                    </Hidden>
+                    <Drawer
+                        sx={{
+                            display: { xs: "block", sm: "none" },
+                        }}
+                        variant="temporary"
+                        anchor={theme.direction === "rtl" ? "right" : "left"}
+                        open={mobileOpen}
+                        onClose={handleDrawerToggle}
+                        ModalProps={{
+                            keepMounted: true, // Better open performance on mobile.
+                        }}
+                    >
+                        {drawer}
+                    </Drawer>
+                    <Drawer
+                        variant="permanent"
+                        open
+                        sx={{
+                            display: { xs: "none", sm: "block" },
+                        }}
+                    >
+                        {drawer}
+                    </Drawer>
                 </Box>
                 <Box
                     component="main"
                     sx={{
                         flexGrow: 1,
-                        //   padding: theme.spacing(3),
-                        [theme.breakpoints.down("sm")]: {
-                            width: "100%",
-                        },
-                        [theme.breakpoints.up("sm")]: {
-                            width: `calc(100% - ${drawerWidth}px)`,
+                        width: {
+                            xs: "100%",
+                            sm: `calc(100% - ${drawerWidth}px)`,
                         },
                     }}
                 >
