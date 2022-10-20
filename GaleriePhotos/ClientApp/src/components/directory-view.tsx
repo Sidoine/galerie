@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import { observer, useLocalObservable } from "mobx-react-lite";
-import { makeAutoObservable, trace } from "mobx";
 import { useStores } from "../stores";
 import {
     Switch,
@@ -163,7 +162,6 @@ export function DirectoryPage() {
 }
 
 export const RootDirectoryPage = observer(function RootDirectoryPage() {
-    trace();
     const { directoriesStore } = useStores();
     const root = directoriesStore.root;
     const timer = useLocalObservable(() => ({
