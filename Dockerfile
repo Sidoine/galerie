@@ -15,9 +15,6 @@ RUN dotnet restore GaleriePhotos.csproj
 WORKDIR /app/
 COPY . .
 
-WORKDIR /app/GaleriePhotos/ClientApp/
-RUN yarn build
-
 WORKDIR /app/
 RUN dotnet publish -c Release -o /output
 

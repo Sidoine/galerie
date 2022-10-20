@@ -8,3 +8,4 @@
 *.crt
 *.key
 *.pfx
+/GaleriePhotos/ClientApp/public/bundle.js.LICENSE.txt
