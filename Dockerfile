@@ -7,7 +7,6 @@ WORKDIR /app/GaleriePhotos/ClientApp
 COPY GaleriePhotos/ClientApp/yarn.lock .
 COPY GaleriePhotos/ClientApp/package.json .
 RUN yarn install
-RUN yarn build
 
 WORKDIR /app/GaleriePhotos
 COPY GaleriePhotos/GaleriePhotos.csproj .
@@ -15,7 +14,13 @@ RUN dotnet restore GaleriePhotos.csproj
 
 WORKDIR /app/
 COPY . .
+
+WORKDIR /app/GaleriePhotos/ClientApp/
+RUN yarn build
+
+WORKDIR /app/
 RUN dotnet publish -c Release -o /output
+
 WORKDIR /output
 COPY nginx.conf.sigil .
 ENTRYPOINT [ "dotnet", "GaleriePhotos.dll"]
