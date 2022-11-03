@@ -15,7 +15,7 @@ import {
     AuthorizeProvider,
 } from "folke-service-helpers";
 
-function Menu() {
+const Menu = observer(function Menu() {
     const { usersStore } = useStores();
     const location = useLocation();
     return (
@@ -85,7 +85,7 @@ function Menu() {
             </Routes>
         </ResponsiveDrawer>
     );
-}
+});
 
 function Application() {
     return (

@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useStores } from "../stores";
 import {
     Card,
@@ -20,7 +20,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Photo } from "../services/views";
-import { Visibility } from "../atoms/visibility";
+import { useVisibility } from "../atoms/visibility";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const ImageCard = observer(
@@ -125,6 +125,7 @@ export const ImagesView = observer(
         let imageIndex = sortedValues.findIndex((x) => x.id === image);
         if (imageIndex < 0) imageIndex = 0;
         const page = sortedValues.slice(0, imageIndex + pageSize);
+        const hasMorePages = page.length < sortedValues.length;
         const [dialogMode, setDialogMode] = useState(DialogMode.Closed);
         const handleConfirm = useCallback(async () => {
             if (dialogMode === DialogMode.SeeAll) {
@@ -158,8 +159,8 @@ export const ImagesView = observer(
             [navigate, directoryId, image, onlyHidden]
         );
         const handleNextPage = useCallback(
-            (visible: boolean) => {
-                setNextPageNeeded(visible);
+            () => {
+                setNextPageNeeded(true);
                 const newImageIndex = Math.min(
                     sortedValues.length - pageSize,
                     imageIndex + pageSize
@@ -170,10 +171,18 @@ export const ImagesView = observer(
                     createUrl(directoryId, order, newImageId, onlyHidden),
                     { replace: true }
                 );
-                setTimeout(() => setNextPageNeeded(false), 0);
+                setTimeout(() => setNextPageNeeded(false), 100);
             },
             [sortedValues, imageIndex, navigate, directoryId, order, onlyHidden]
         );
+        const [ref, visible] = useVisibility();
+
+        useEffect(() => {
+            if (visible && hasMorePages && !needNextPage) {
+                handleNextPage();
+            }
+        }, [handleNextPage, hasMorePages, needNextPage, visible]);
+
         return (
             <>
                 <Dialog
@@ -254,12 +263,7 @@ export const ImagesView = observer(
                         </Grid>
                     ))}
                 </Grid>
-                {imageIndex + pageSize < values.length && (
-                    <Visibility
-                        onChange={handleNextPage}
-                        visible={needNextPage}
-                    />
-                )}
+                { hasMorePages && <CircularProgress ref={ref}/>}
             </>
         );
     }
