@@ -36,7 +36,7 @@ const ImageCard = observer(
         );
 
         return (
-            <Card sx={{ width: 270 }}>
+            <Card sx={{ width: 165 }}>
                 <CardActionArea
                     sx={{ textAlign: "center" }}
                     component={Link}
@@ -158,24 +158,27 @@ export const ImagesView = observer(
                 navigate(createUrl(directoryId, "date-asc", image, onlyHidden)),
             [navigate, directoryId, image, onlyHidden]
         );
-        const handleNextPage = useCallback(
-            () => {
-                setNextPageNeeded(true);
-                const newImageIndex = Math.min(
-                    sortedValues.length - pageSize,
-                    imageIndex + pageSize
-                );
-                const newImageId = sortedValues[newImageIndex].id;
-                setImage(newImageId);
-                navigate(
-                    createUrl(directoryId, order, newImageId, onlyHidden),
-                    { replace: true }
-                );
-                setTimeout(() => setNextPageNeeded(false), 100);
-            },
-            [sortedValues, imageIndex, navigate, directoryId, order, onlyHidden]
-        );
-        const [ref, visible] = useVisibility();
+        const handleNextPage = useCallback(() => {
+            setNextPageNeeded(true);
+            const newImageIndex = Math.min(
+                sortedValues.length - pageSize,
+                imageIndex + pageSize
+            );
+            const newImageId = sortedValues[newImageIndex].id;
+            setImage(newImageId);
+            navigate(createUrl(directoryId, order, newImageId, onlyHidden), {
+                replace: true,
+            });
+            setTimeout(() => setNextPageNeeded(false), 100);
+        }, [
+            sortedValues,
+            imageIndex,
+            navigate,
+            directoryId,
+            order,
+            onlyHidden,
+        ]);
+        const [ref, visible] = useVisibility<HTMLDivElement>();
 
         useEffect(() => {
             if (visible && hasMorePages && !needNextPage) {
@@ -256,14 +259,19 @@ export const ImagesView = observer(
                         </Grid>
                     )}
                 </Grid>
-                <Grid container spacing={4} wrap="wrap">
+                <Grid container spacing={2} wrap="wrap">
                     {page.map((x) => (
                         <Grid item key={x.id} id={`image${x.id}`}>
                             <ImageCard directoryId={directoryId} value={x} />
                         </Grid>
                     ))}
                 </Grid>
-                { hasMorePages && <CircularProgress ref={ref}/>}
+                {hasMorePages && (
+                    <div ref={ref}>
+                        {visible && <CircularProgress />}
+                        {!visible && <VisibilityIcon />}
+                    </div>
+                )}
             </>
         );
     }
