@@ -1,25 +1,22 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import Application from "./application";
 //import registerServiceWorker from './registerServiceWorker';
-import { configure } from "mobx";
 
-configure({
-    enforceActions: "observed",
-    computedRequiresReaction: true,
-    observableRequiresReaction: true,
-    reactionRequiresObservable: true,
-});
+// configure({
+//     enforceActions: "observed",
+//     computedRequiresReaction: true,
+//     observableRequiresReaction: true,
+//     reactionRequiresObservable: true,
+// });
 
-const baseUrl = document.getElementsByTagName("base")[0].getAttribute("href");
-const rootElement = document.getElementById("root");
-
-ReactDOM.render(
-    <BrowserRouter basename={baseUrl || undefined}>
+const rootElement = document.getElementById("root")!;
+const root = createRoot(rootElement);
+root.render(
+    <BrowserRouter basename="/">
         <Application />
-    </BrowserRouter>,
-    rootElement
+    </BrowserRouter>
 );
 
 // Uncomment the line above that imports the registerServiceWorker function

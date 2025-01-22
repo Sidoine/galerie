@@ -11,19 +11,5 @@ interface RedirectOrRenderProps {
 export const RedirectOrRender = observer(function RedirectOrRender({
     children,
 }: RedirectOrRenderProps) {
-    const authorizeService = useAuthorize();
-    const redirectUrl = `${authorizeService.applicationPaths.login}?${
-        QueryParameterNames.ReturnUrl
-    }=${encodeURI(window.location.href)}`;
-    return (
-        <>
-            {!authorizeService.ready && <LinearProgress />}
-            {authorizeService.ready &&
-                authorizeService.authenticated &&
-                children}
-            {authorizeService.ready && !authorizeService.authenticated && (
-                <Navigate to={redirectUrl} />
-            )}
-        </>
-    );
+    return <>{children}</>;
 });

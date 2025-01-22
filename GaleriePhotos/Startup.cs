@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.EntityFrameworkCore;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
@@ -11,12 +9,8 @@ using Microsoft.Extensions.Hosting;
 using GaleriePhotos.Services;
 using System;
 using System.Text.RegularExpressions;
-using System.Net;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using System.Security.Cryptography.X509Certificates;
-using System.IO;
-using Duende.IdentityServer.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GaleriePhotos
 {
@@ -64,19 +58,8 @@ namespace GaleriePhotos
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            services.AddIdentityServer(options =>
-                {
-                    options.IssuerUri = Configuration["IdentityServer:IssuerUri"];
-                })
-                .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
-                {
-                    var apiResource = options.ApiResources[0];
-                    apiResource.UserClaims.Add(Claims.Administrator);
-                    apiResource.UserClaims.Add(Claims.Visibility);
-                });
-
-            services.AddAuthentication()
-                .AddIdentityServerJwt();
+            
+            services.AddAuthentication();
 
             services.AddControllersWithViews();
             services.AddRazorPages();
@@ -96,6 +79,9 @@ namespace GaleriePhotos
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
                 options.AddPolicy(Policies.Images, policy => policy.RequireAuthenticatedUser().AddAuthenticationSchemes("Identity.Application"));
+                options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
             });
             services.AddScoped<IEmailSender, EmailSender>();
         }
@@ -103,15 +89,6 @@ namespace GaleriePhotos
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (Configuration["IdentityServer:IssuerUri"] != null)
-            {
-                app.Use(async (ctx, next) =>
-                {
-                    ctx.SetIdentityServerOrigin(Configuration["IdentityServer:IssuerUri"]);
-                    await next();
-                });
-            }
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -125,14 +102,15 @@ namespace GaleriePhotos
             }
 
             app.UseHttpsRedirection();
+            
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+            
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
-            app.UseRouting();
-
-            app.UseIdentityServer();
-            app.UseAuthentication();
-            app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
@@ -141,15 +119,15 @@ namespace GaleriePhotos
                 endpoints.MapRazorPages();
             });
 
-            app.UseSpa(spa =>
+            app.UseSpa(spa => 
             {
                 spa.Options.SourcePath = "ClientApp";
                 spa.Options.PackageManagerCommand = "yarn";
 
-                // if (env.IsDevelopment())
-                // {
-                //     spa.UseReactDevelopmentServer(npmScript: "start");
-                // }
+                if (env.IsDevelopment())
+                {
+                    spa.UseProxyToSpaDevelopmentServer("http://localhost:5173/");
+                }
             });
         }
     }

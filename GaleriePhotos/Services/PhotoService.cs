@@ -70,7 +70,7 @@ namespace GaleriePhotos.Services
             var root = applicationDbContext.PhotoDirectories.FirstOrDefault(x => x.Path == "");
             if (root == null)
             {
-                root = new PhotoDirectory("", DirectoryVisibility.None);
+                root = new PhotoDirectory("", DirectoryVisibility.None, null);
                 applicationDbContext.PhotoDirectories.Add(root);
                 await applicationDbContext.SaveChangesAsync();
             }
@@ -145,7 +145,7 @@ namespace GaleriePhotos.Services
                                 var dateTimeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.DateTime);
                                 if (dateTimeValue != null)
                                 {
-                                    if (DateTime.TryParseExact((string)dateTimeValue.GetValue(), "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                                    if (DateTime.TryParseExact((string)dateTimeValue.GetValue()!, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                                     {
                                         photo.DateTime = DateTime.SpecifyKind(date, DateTimeKind.Utc);
                                     }
@@ -153,12 +153,12 @@ namespace GaleriePhotos.Services
 
                                 var latitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitude);
                                 var latitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLatitudeRef);
-                                if (latitudeValue != null && latitudeRef != null) photo.Latitude = Convert((string)latitudeRef.GetValue(), (Rational[])latitudeValue.GetValue());
+                                if (latitudeValue != null && latitudeRef != null) photo.Latitude = Convert((string)latitudeRef.GetValue()!, (Rational[])latitudeValue.GetValue()!);
                                 var longitudeValue = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitude);
                                 var longitudeRef = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.GPSLongitudeRef);
-                                if (longitudeValue != null && longitudeRef != null) photo.Longitude = Convert((string)longitudeRef.GetValue(), (Rational[])longitudeValue.GetValue());
+                                if (longitudeValue != null && longitudeRef != null) photo.Longitude = Convert((string)longitudeRef.GetValue()!, (Rational[])longitudeValue.GetValue()!);
                                 var camera = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.Model);
-                                if (camera != null) photo.Camera = (string)camera.GetValue();
+                                if (camera != null) photo.Camera = (string)camera.GetValue()!;
                             }
                         }
                         catch { }                        
@@ -173,7 +173,16 @@ namespace GaleriePhotos.Services
                     photos.Add(photo);
                 }
             }
+
             await applicationDbContext.SaveChangesAsync();
+
+            if (photoDirectory.CoverPhotoId == null)
+            {
+                photoDirectory.CoverPhotoId = photos.FirstOrDefault()?.Id;
+                applicationDbContext.Update(photoDirectory);
+                await applicationDbContext.SaveChangesAsync();
+            }
+
             return photos.OrderBy(x => x.DateTime).ToArray();
         }
 
@@ -188,7 +197,7 @@ namespace GaleriePhotos.Services
             {
                 if (!directories.Any(x => x.Path == path))
                 {
-                    var subPhotoDirectory = new PhotoDirectory(path, DirectoryVisibility.None);
+                    var subPhotoDirectory = new PhotoDirectory(path, DirectoryVisibility.None, null);
                     applicationDbContext.PhotoDirectories.Add(subPhotoDirectory);
                     directories.Add(subPhotoDirectory);
                 }

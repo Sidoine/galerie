@@ -45,7 +45,7 @@ namespace Galerie.Server.Controllers
             if (directory == null || photo == null) return NotFound();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
-            if (!User.IsAdministrator() && !photo.Visible) return Forbid();
+            if (!User.IsDirectoryVisible(directory)) return Forbid();
             return PhysicalFile(imagePath, photoService.GetMimeType(photo), Path.GetFileName(imagePath));
         }
 
@@ -56,7 +56,7 @@ namespace Galerie.Server.Controllers
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
             
-            if (!User.IsAdministrator() && !photo.Visible) return Forbid();
+            if (!User.IsDirectoryVisible(directory)) return Forbid();
             var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
             if (thumbnailPath == null) return NotFound();
             return File(System.IO.File.ReadAllBytes(thumbnailPath), "image/jpeg", photo.FileName);
@@ -80,16 +80,13 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            if (!User.IsAdministrator() && !photo.Visible) return Forbid();
+            if (!User.IsDirectoryVisible(directory)) return Forbid();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
             var images = await photoService.GetDirectoryImages(directory);
             if (images == null) return NotFound();
-            var visibleImages = images.Where(x => x.Visible).ToArray();
-            if (!User.IsAdministrator()) images = visibleImages;
             var (previous, next) = GetNextAndPrevious(photo, images);
-            var (previousVisible, nextVisible) = GetNextAndPrevious(photo, visibleImages);
-            var viewModel = new PhotoFullViewModel(photo, previous, next, previousVisible, nextVisible);
+            var viewModel = new PhotoFullViewModel(photo, previous, next);
             return Ok(viewModel);
         }        
 
@@ -99,29 +96,6 @@ namespace Galerie.Server.Controllers
         {
             var photo = await applicationDbContext.Photos.FindAsync(id);
             if (photo == null) return NotFound();
-            if (viewModel.Visible.IsSet)
-            {
-                photo.Visible = viewModel.Visible.Value;
-            }
-            await applicationDbContext.SaveChangesAsync();
-            return Ok();
-        }
-
-        [Authorize(Policy = Policies.Administrator)]
-        [HttpPatch("{directoryId}/photos/all")]
-        public async Task<ActionResult> PatchAll(int directoryId, [FromBody]PhotoPatchViewModel viewModel)
-        {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(directoryId);
-            if (directory == null) return NotFound();
-            var photos = await photoService.GetDirectoryImages(directory);
-            if (photos == null) return NotFound();
-            foreach (var photo in photos)
-            {
-                if (viewModel.Visible.IsSet)
-                {
-                    photo.Visible = viewModel.Visible.Value;
-                }
-            }
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }

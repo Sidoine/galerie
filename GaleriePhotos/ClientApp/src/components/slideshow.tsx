@@ -1,37 +1,49 @@
 import { useStores } from "../stores";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { IconButton, Box, useTheme } from "@mui/material";
+import { IconButton, Box, useTheme, Stack, Icon, styled } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import { ImageDetails } from "./image-details";
 
-export const SlideShow = observer(() => {
-    const { directoryId, id } = useParams();
+const WhiteButton = styled(IconButton)(({ theme }) => ({
+    color: theme.palette.common.white,
+}));
+
+export const SlideShow = observer(function SlideShow({
+    directoryId,
+}: {
+    directoryId: number;
+}) {
+    const { id } = useParams();
     const { directoriesStore } = useStores();
-    const image = directoriesStore.imageLoader.getValue(
-        Number(directoryId),
-        Number(id)
-    );
+    const image =
+        directoryId && id
+            ? directoriesStore.imageLoader.getValue(
+                  Number(directoryId),
+                  Number(id)
+              )
+            : null;
     const theme = useTheme();
     const navigate = useNavigate();
     const handleNext = useCallback(() => {
-        if (image && image.nextVisibleId)
+        if (image && image.nextId)
             navigate(
-                `/directory/${directoryId}/images/${image.nextVisibleId}/slideshow`
+                `/directory/${directoryId}/images/${image.nextId}/slideshow`
             );
         else navigate(`/directory/${directoryId}/images/${id}`);
     }, [navigate, directoryId, image, id]);
     const handlePrevious = useCallback(() => {
-        if (image && image.previousVisibleId)
+        if (image && image.previousId)
             navigate(
-                `/directory/${directoryId}/images/${image.previousVisibleId}/slideshow`
+                `/directory/${directoryId}/images/${image.previousId}/slideshow`
             );
         else navigate(`/directory/${directoryId}/images/${id}`);
     }, [navigate, directoryId, image, id]);
     const handleClose = useCallback(() => {
-        navigate(`/directory/${directoryId}/images/${id}`);
+        navigate(`/directory/${directoryId}`);
     }, [navigate, directoryId, id]);
     const handleKeyPress = useCallback(
         (e: KeyboardEvent) => {
@@ -48,113 +60,132 @@ export const SlideShow = observer(() => {
         return () => window.removeEventListener("keydown", handleKeyPress);
     }, [handleKeyPress]);
 
-    if (image) {
-        return (
-            <Box
-                sx={{
-                    top: 0,
-                    left: 0,
-                    position: "absolute",
-                    height: "100%",
-                    width: "100%",
-                    backgroundColor: "black",
-                    textAlign: "center",
-                    overflow: "hidden",
-                }}
-            >
-                {image.video && (
+    const [details, setDetails] = useState(false);
+    const handleDetailsClose = useCallback(() => {
+        setDetails(false);
+    }, []);
+
+    const handleDetailsToggle = useCallback(() => {
+        setDetails((x) => !x);
+    }, []);
+
+    return (
+        <Stack
+            sx={{
+                top: 0,
+                left: 0,
+                position: "fixed",
+                height: "100%",
+                width: "100%",
+                backgroundColor: "black",
+                textAlign: "center",
+                overflow: "hidden",
+                zIndex: 2000,
+            }}
+        >
+            <Stack direction="row" justifyContent="space-between">
+                <WhiteButton onClickCapture={handleClose}>
+                    <ArrowBackIcon />
+                </WhiteButton>
+                <WhiteButton onClickCapture={handleDetailsToggle}>
+                    <InfoOutlined />
+                </WhiteButton>
+            </Stack>
+            {image && (
+                <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    sx={{
+                        flex: "1 0",
+                        maxHeight: "100%",
+                        position: "relative",
+                    }}
+                >
                     <Box
-                        component="video"
-                        autoPlay
-                        controls
-                        src={directoriesStore.getImage(
-                            Number(directoryId),
-                            Number(id)
-                        )}
                         sx={{
-                            maxWidth: "100%",
-                            maxHeight: "100%",
-                            imageOrientation: "from-image",
+                            position: "absolute",
+                            left: 0,
+                            p: 2,
+                            top: 0,
+                            opacity: 0,
+                            "&:hover": {
+                                opacity: 1,
+                            },
+                            height: "100%",
+                            width: theme.spacing(15),
+                            color: theme.palette.common.white,
+                            display: "flex",
+                            alignItems: "center",
+                            background:
+                                "linear-gradient(to right, rgba(255,255,255,0.3), rgba(0,0,0,0))",
                         }}
-                    />
-                )}
-                {!image.video && (
+                        onClick={handlePrevious}
+                    >
+                        <ArrowBackIcon />
+                    </Box>
                     <Box
-                        component="img"
-                        alt=""
-                        src={directoriesStore.getImage(
-                            Number(directoryId),
-                            Number(id)
-                        )}
                         sx={{
-                            maxWidth: "100%",
-                            maxHeight: "100%",
-                            imageOrientation: "from-image",
+                            position: "absolute",
+                            right: 0,
+                            padding: theme.spacing(2),
+                            top: 0,
+                            opacity: 0,
+                            "&:hover": {
+                                opacity: 1,
+                            },
+                            height: "100%",
+                            width: theme.spacing(15),
+                            color: theme.palette.common.white,
+                            display: "flex",
+                            alignItems: "center",
+                            background:
+                                "linear-gradient(to left, rgba(255,255,255,0.3), rgba(0,0,0,0))",
                         }}
                         onClick={handleNext}
-                    />
-                )}
-                <Box
-                    sx={{
-                        position: "absolute",
-                        left: 0,
-                        p: 2,
-                        top: 0,
-                        opacity: 0,
-                        "&:hover": {
-                            opacity: 1,
-                        },
-                        height: "100%",
-                        width: theme.spacing(15),
-                        color: theme.palette.common.white,
-                        display: "flex",
-                        alignItems: "center",
-                        background:
-                            "linear-gradient(to right, rgba(255,255,255,0.3), rgba(0,0,0,0))",
-                    }}
-                    onClick={handlePrevious}
-                >
-                    <ArrowBackIcon />
-                </Box>
-                <Box
-                    sx={{
-                        position: "absolute",
-                        right: 0,
-                        padding: theme.spacing(2),
-                        top: 0,
-                        opacity: 0,
-                        "&:hover": {
-                            opacity: 1,
-                        },
-                        height: "100%",
-                        width: theme.spacing(15),
-                        color: theme.palette.common.white,
-                        display: "flex",
-                        alignItems: "center",
-                        background:
-                            "linear-gradient(to left, rgba(255,255,255,0.3), rgba(0,0,0,0))",
-                    }}
-                    onClick={handleNext}
-                >
-                    <ArrowForwardIcon />
-                </Box>
-                <IconButton
-                    color="primary"
-                    onClickCapture={handleClose}
-                    sx={{
-                        position: "absolute",
-                        right: theme.spacing(2),
-                        top: theme.spacing(2),
-                        opacity: 0,
-                        "&:hover": {
-                            opacity: 1,
-                        },
-                    }}
-                >
-                    <CloseIcon />
-                </IconButton>
-            </Box>
-        );
-    }
-    return <div>...</div>;
+                    >
+                        <ArrowForwardIcon />
+                    </Box>
+                    {image.video && (
+                        <Box
+                            component="video"
+                            autoPlay
+                            controls
+                            src={directoriesStore.getImage(
+                                Number(directoryId),
+                                Number(id)
+                            )}
+                            sx={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                imageOrientation: "from-image",
+                            }}
+                        />
+                    )}
+                    {!image.video && (
+                        <Box
+                            component="img"
+                            alt=""
+                            src={directoriesStore.getImage(
+                                Number(directoryId),
+                                Number(id)
+                            )}
+                            sx={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                imageOrientation: "from-image",
+                            }}
+                            onClick={handleNext}
+                        />
+                    )}
+                </Stack>
+            )}
+            {image && (
+                <ImageDetails
+                    image={image}
+                    onClose={handleDetailsClose}
+                    open={details}
+                />
+            )}
+        </Stack>
+    );
 });

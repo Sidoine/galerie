@@ -66,10 +66,10 @@ namespace GaleriePhotos
             builder.UseStartup<Startup>();
             builder.ConfigureAppConfiguration((hostContext, builder) =>
             {
-                if (hostContext.HostingEnvironment.IsDevelopment())
-                {
-                    builder.AddUserSecrets<Program>();
-                }
+                //if (hostContext.HostingEnvironment.IsDevelopment())
+                //{
+                //    builder.AddUserSecrets<Program>();
+                //}
             });
             return builder;
         }

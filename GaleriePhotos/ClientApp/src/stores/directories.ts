@@ -48,20 +48,6 @@ export class DirectoriesStore {
 
     @action
     async patchPhoto(directoryId: number, photo: Photo, patch: PhotoPatch) {
-        if (patch.visible !== undefined) {
-            photo.visible = patch.visible;
-        }
         await this.photoService.patch(directoryId, photo.id, patch);
-    }
-
-    @action
-    async patchAll(directoryId: number, patch: PhotoPatch) {
-        const photos = this.contentLoader.getValue(directoryId);
-        if (photos) {
-            if (patch.visible !== undefined) {
-                for (const photo of photos) photo.visible = patch.visible;
-            }
-        }
-        await this.photoService.patchAll(directoryId, patch);
     }
 }

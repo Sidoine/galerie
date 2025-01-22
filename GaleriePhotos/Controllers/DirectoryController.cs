@@ -38,11 +38,9 @@ namespace Galerie.Server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<DirectoryFullViewModel>> Get(int id)
         {
-            var isAdministrator = User.IsAdministrator();
-            var visibility = User.GetDirectoryVisibility();
             var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
             if (directory == null) return NotFound();
-            if (!isAdministrator && (directory.Visibility & visibility) == 0) return Forbid();
+            if (!User.IsDirectoryVisible(directory)) return Forbid();
                 var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
             var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.FirstOrDefaultAsync(x => x.Path == parent) : null;
             return Ok(new DirectoryFullViewModel(directory, parentDirectory));
@@ -66,10 +64,10 @@ namespace Galerie.Server.Controllers
         {
             var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
             if (directory == null) return NotFound();
+            if (!User.IsDirectoryVisible(directory)) return Forbid();
             var photos = await photoService.GetDirectoryImages(directory);
             if (photos == null) return NotFound();
-            var isAdministrator = User.IsAdministrator();
-            return Ok(photos.Where(x => x.Visible || isAdministrator).Select(x => new PhotoViewModel(x)));
+            return Ok(photos.Select(x => new PhotoViewModel(x)));
         }
 
         [Authorize(Policy = Policies.Administrator)]

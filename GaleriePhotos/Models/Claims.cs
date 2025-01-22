@@ -19,5 +19,10 @@ namespace GaleriePhotos.Models
             var claim = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == Claims.Visibility)?.Value;
             return claim != null ? Enum.Parse<DirectoryVisibility>(claim) : DirectoryVisibility.None;
         }
+
+        public static bool IsDirectoryVisible(this ClaimsPrincipal claimsPrincipal, PhotoDirectory directory)
+        {
+            return claimsPrincipal.IsAdministrator() || (directory.Visibility & claimsPrincipal.GetDirectoryVisibility()) != 0;
+        }
     }
 }

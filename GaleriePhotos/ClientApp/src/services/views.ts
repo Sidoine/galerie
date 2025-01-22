@@ -22,6 +22,8 @@ export interface Directory {
     visibility: enums.DirectoryVisibility;
 
     name: string;
+
+    coverPhotoId: number | null;
 }
 
 export interface DirectoryFull {
@@ -32,14 +34,14 @@ export interface DirectoryFull {
     visibility: enums.DirectoryVisibility;
 
     name: string;
+
+    coverPhotoId: number | null;
 }
 
 export interface Photo {
     id: number;
 
     name: string;
-
-    visible: boolean;
 
     video: boolean;
 }
@@ -65,13 +67,7 @@ export interface PhotoFull {
 
     camera: string | null;
 
-    visible: boolean;
-
     video: boolean;
-
-    nextVisibleId: number | null;
-
-    previousVisibleId: number | null;
 }
 
 export interface PhotoPatch {

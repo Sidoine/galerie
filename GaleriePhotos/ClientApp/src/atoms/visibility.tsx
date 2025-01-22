@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import React from "react";
 
 export function useVisibility<T extends HTMLElement>(): [
-    React.RefObject<T>,
+    React.RefObject<T | null>,
     boolean
 ] {
     const refElement = useRef<T>(null);
@@ -21,7 +21,6 @@ export function useVisibility<T extends HTMLElement>(): [
 
     useEffect(() => {
         const element = refElement.current;
-        console.log(element);
         if (element) {
             const observer = new IntersectionObserver(checkIsInViewPort, {
                 threshold: [0, 1],

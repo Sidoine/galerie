@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import AppBar from "@mui/material/AppBar";
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
@@ -20,7 +20,7 @@ export const ResponsiveDrawer = observer(
         title,
     }: {
         children: React.ReactNode;
-        menu: JSX.Element;
+        menu: ReactNode;
         title: string;
     }) => {
         const theme = useTheme();
@@ -64,7 +64,7 @@ export const ResponsiveDrawer = observer(
                         <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
                             {title}
                         </Typography>
-                        <LoginMenu />
+                        {/* <LoginMenu /> */}
                     </Toolbar>
                 </AppBar>
                 <Box

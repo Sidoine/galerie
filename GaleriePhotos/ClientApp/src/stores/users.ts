@@ -7,18 +7,14 @@ export class UsersStore {
     constructor(
         private administrator: SingletonLoader<boolean>,
         public usersLoader: SingletonLoader<User[]>,
-        private userService: UserController,
-        private authorize: AuthorizeService
+        private userService: UserController
     ) {
         makeObservable(this);
     }
 
     @computed
     get isAdministrator() {
-        return (
-            (this.authorize.authenticated && this.administrator.getValue()) ||
-            false
-        );
+        return this.administrator.getValue() || false;
     }
 
     @action

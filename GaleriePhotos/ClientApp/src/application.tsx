@@ -1,19 +1,12 @@
 import React from "react";
 import { Route, Routes, useLocation } from "react-router";
-import { CssBaseline, List, ListItem } from "@mui/material";
+import { CssBaseline, List, ListItemButton } from "@mui/material";
 import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
-import { ImagePage } from "./components/image-view";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
 import { Link } from "react-router-dom";
 import { StoresProvider, useStores } from "./stores";
 import { observer } from "mobx-react-lite";
 import { Users } from "./components/users";
-import { SlideShow } from "./components/slideshow";
-import { RedirectOrRender } from "./components/redirect-or-render";
-import {
-    ApiAuthorizationRoutes,
-    AuthorizeProvider,
-} from "folke-service-helpers";
 
 const Menu = observer(function Menu() {
     const { usersStore } = useStores();
@@ -22,7 +15,7 @@ const Menu = observer(function Menu() {
         <ResponsiveDrawer
             menu={
                 <List>
-                    <ListItem
+                    <ListItemButton
                         selected={
                             location.pathname === "/" ||
                             location.pathname.startsWith("/directory")
@@ -31,57 +24,24 @@ const Menu = observer(function Menu() {
                         to="/"
                     >
                         Galerie
-                    </ListItem>
+                    </ListItemButton>
                     {usersStore.isAdministrator && (
-                        <ListItem
+                        <ListItemButton
                             selected={location.pathname === "/users"}
                             component={Link}
                             to="/users"
                         >
                             Utilisateurs
-                        </ListItem>
+                        </ListItemButton>
                     )}
                 </List>
             }
             title="Galerie photos"
         >
             <Routes>
-                <Route
-                    path="/"
-                    element={
-                        <RedirectOrRender>
-                            <RootDirectoryPage />
-                        </RedirectOrRender>
-                    }
-                />
-                <Route
-                    path="/directory/:id"
-                    element={
-                        <RedirectOrRender>
-                            <DirectoryPage />
-                        </RedirectOrRender>
-                    }
-                />
-                <Route
-                    path="/directory/:directoryId/images/:id"
-                    element={
-                        <RedirectOrRender>
-                            <ImagePage />
-                        </RedirectOrRender>
-                    }
-                />
-                <Route
-                    path="/users"
-                    element={
-                        <RedirectOrRender>
-                            <Users />
-                        </RedirectOrRender>
-                    }
-                />
-                <Route
-                    path="authentication/*"
-                    element={<ApiAuthorizationRoutes />}
-                />
+                <Route path="/" element={<RootDirectoryPage />} />
+                <Route path="/directory/:id/*" element={<DirectoryPage />} />
+                <Route path="/users" element={<Users />} />
             </Routes>
         </ResponsiveDrawer>
     );
@@ -89,23 +49,11 @@ const Menu = observer(function Menu() {
 
 function Application() {
     return (
-        <AuthorizeProvider applicationName="galerie">
-            <StoresProvider>
-                <CssBaseline />
-                <Routes>
-                    <Route
-                        path="/directory/:directoryId/images/:id/slideshow"
-                        element={
-                            <RedirectOrRender>
-                                <SlideShow />
-                            </RedirectOrRender>
-                        }
-                    />
+        <StoresProvider>
+            <CssBaseline />
 
-                    <Route path="/*" element={<Menu />} />
-                </Routes>
-            </StoresProvider>
-        </AuthorizeProvider>
+            <Menu />
+        </StoresProvider>
     );
 }
 

@@ -1,8 +1,12 @@
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const path = require("path");
+
 module.exports = {
     entry: "./src/index.tsx",
     output: {
-        filename: "bundle.js",
-        path: __dirname + "/public",
+        filename: "bundle.[contenthash].js",
+        path: path.resolve(__dirname, "/public"),
     },
 
     // Enable sourcemaps for debugging webpack's output.
@@ -19,7 +23,6 @@ module.exports = {
             {
                 test: /\.tsx?$/,
                 loader: require.resolve("ts-loader"),
-                options: { projectReferences: true },
             },
 
             // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
@@ -37,6 +40,25 @@ module.exports = {
         ],
     },
     devServer: {
+        static: {
+            directory: path.join(__dirname, "public"),
+        },
+        compress: true,
+        port: 9000,
         hot: true,
+        historyApiFallback: true,
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            title: "Galerie photo",
+            publicPath: "/",
+            filename: "index.html",
+            favicon: "public/favicon.ico",
+            base: "/",
+        }),
+        new ForkTsCheckerWebpackPlugin(),
+    ],
+    watchOptions: {
+        ignored: /node_modules/,
     },
 };

@@ -2,23 +2,25 @@ import React, { useCallback } from "react";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { useStores } from "../stores";
 import {
-    Switch,
     Container,
     SvgIcon,
-    Grid,
-    Card,
-    CardActions,
     Typography,
-    CardActionArea,
     Breadcrumbs,
     Link,
     CircularProgress,
     Button,
+    Stack,
+    ImageList,
+    ImageListItem,
+    ImageListItemBar,
+    styled,
 } from "@mui/material";
 import { ImagesView } from "./images-view";
-import { Link as RouterLink, useParams } from "react-router-dom";
+import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
+import placeholder from "../assets/placeholder.png";
+import { SlideShow } from "./slideshow";
 
 export interface DirectoryViewProps {
     id: number;
@@ -44,6 +46,13 @@ const Man = () => {
     );
 };
 
+const Image = styled("img")(({ theme }) => ({
+    objectFit: "cover",
+    width: "100%",
+    height: "100%",
+    borderRadius: theme.shape.borderRadius * 2,
+}));
+
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     const { directoriesStore, usersStore } = useStores();
     const handleMyleneSwitch = useCallback(
@@ -65,8 +74,36 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     );
 
     return (
-        <Card sx={{ width: 300 }}>
-            <CardActionArea
+        <ImageListItem
+            sx={{ color: "inherit", textDecoration: "none" }}
+            component={RouterLink}
+            to={`/directory/${directory.id}`}
+        >
+            {directory.coverPhotoId && (
+                <Image
+                    src={directoriesStore.getThumbnail(
+                        directory.id,
+                        directory.coverPhotoId
+                    )}
+                    alt={directory.name}
+                    loading="lazy"
+                    sx={{ height: 320 }}
+                />
+            )}
+            {!directory.coverPhotoId && (
+                <Image
+                    src={placeholder}
+                    alt={directory.name}
+                    loading="lazy"
+                    sx={{ height: 320 }}
+                />
+            )}
+            <ImageListItemBar
+                title={directory.name}
+                subtitle="toto"
+                position="below"
+            />
+            {/* <CardActionArea
                 component={RouterLink}
                 to={`/directory/${directory.id}`}
             >
@@ -97,8 +134,8 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                         <Man />
                     </>
                 )}
-            </CardActions>
-        </Card>
+            </CardActions> */}
+        </ImageListItem>
     );
 });
 
@@ -107,13 +144,11 @@ const Subdirectories = observer(({ id }: { id: number }) => {
     const directories = directoriesStore.subDirectoriesLoader.getValue(id);
     if (!directories) return <CircularProgress />;
     return (
-        <Grid container spacing={4}>
+        <ImageList>
             {directories.map((x) => (
-                <Grid item key={x.id}>
-                    <SubdirectoryCard directory={x} />
-                </Grid>
+                <SubdirectoryCard key={x.id} directory={x} />
             ))}
-        </Grid>
+        </ImageList>
     );
 });
 
@@ -121,9 +156,9 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
     const { directoriesStore } = useStores();
     const directory = directoriesStore.infoLoader.getValue(id);
     return (
-        <Container maxWidth="lg">
-            <Grid container direction="column" spacing={2}>
-                <Grid item>
+        <>
+            <Container maxWidth="lg">
+                <Stack direction="column" spacing={2}>
                     <Breadcrumbs>
                         <Link component={RouterLink} to="/">
                             Galerie
@@ -144,15 +179,17 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
                             </Typography>
                         )}
                     </Breadcrumbs>
-                </Grid>
-                <Grid item>
                     <Subdirectories id={Number(id)} />
-                </Grid>
-                <Grid item>
                     <ImagesView directoryId={Number(id)} />
-                </Grid>
-            </Grid>
-        </Container>
+                </Stack>
+            </Container>
+            <Routes>
+                <Route
+                    path="images/:id/slideshow"
+                    element={<SlideShow directoryId={id} />}
+                />
+            </Routes>
+        </>
     );
 });
 

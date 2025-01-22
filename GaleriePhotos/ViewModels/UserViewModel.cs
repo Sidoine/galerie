@@ -19,7 +19,7 @@ namespace GaleriePhotos.ViewModels
         public UserViewModel(ApplicationUser applicationUser, Microsoft.AspNetCore.Identity.IdentityUserClaim<string>[] identityUserClaim)
         {
             Id = applicationUser.Id;
-            Name = applicationUser.UserName;
+            Name = applicationUser.UserName ?? "Unknown";
             Administrator = (identityUserClaim.Any(x => x.ClaimType == Claims.Administrator));
             var claimValue = identityUserClaim.FirstOrDefault(x => x.ClaimType == Claims.Visibility)?.ClaimValue;
             DirectoryVisibility = claimValue != null ? Enum.Parse<DirectoryVisibility>(claimValue) : DirectoryVisibility.None;

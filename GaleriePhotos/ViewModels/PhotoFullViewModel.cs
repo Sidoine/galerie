@@ -14,12 +14,9 @@ namespace Galerie.Server.ViewModels
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public string? Camera { get; set; }
-        public bool Visible { get; set; }
         public bool Video { get; set; }
-        public int? NextVisibleId {get;set;}
-        public int? PreviousVisibleId {get;set;}
 
-        public PhotoFullViewModel(Photo photo, Photo? previous, Photo? next, Photo? previousVisible = null, Photo? nextVisible = null) =>
-            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Visible, PreviousVisibleId, NextVisibleId, Video) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, photo.Visible, previousVisible?.Id, nextVisible?.Id, PhotoService.IsVideo(photo));
+        public PhotoFullViewModel(Photo photo, Photo? previous, Photo? next) =>
+            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Video) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, PhotoService.IsVideo(photo));
     }
 }
