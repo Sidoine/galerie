@@ -15,6 +15,8 @@ import {
     ImageListItemBar,
     styled,
     Switch,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import { ImagesView } from "./images-view";
 import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
@@ -129,15 +131,6 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                 }
                 position="below"
             />
-            {/* <CardActionArea
-                component={RouterLink}
-                to={`/directory/${directory.id}`}
-            >
-                <Typography variant="h6">{directory.name}</Typography>{" "}
-            </CardActionArea>
-            <CardActions>
-                
-            </CardActions> */}
         </ImageListItem>
     );
 });
@@ -145,12 +138,14 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
 const Subdirectories = observer(({ id }: { id: number }) => {
     const { directoriesStore } = useStores();
     const directories = directoriesStore.subDirectoriesLoader.getValue(id);
+    const theme = useTheme();
+    const matchDownMd = useMediaQuery(theme.breakpoints.down("md"));
     if (!directories) return <CircularProgress />;
     if (directories.length === 0) return <></>;
     return (
         <>
             <Typography variant="h5">Albums</Typography>
-            <ImageList cols={4} gap={16}>
+            <ImageList cols={matchDownMd ? 2 : 4} gap={16}>
                 {directories.map((x) => (
                     <SubdirectoryCard key={x.id} directory={x} />
                 ))}
