@@ -160,41 +160,10 @@ const Subdirectories = observer(({ id }: { id: number }) => {
 });
 
 export const DirectoryView = observer(({ id }: { id: number }) => {
-    const { directoriesStore } = useStores();
-    const directory = directoriesStore.infoLoader.getValue(id);
     return (
         <>
             <Container maxWidth="lg">
                 <Stack direction="column" spacing={2}>
-                    <Breadcrumbs
-                        sx={{
-                            position: "sticky",
-                            top: 64,
-                            left: 0,
-                            backgroundColor: (theme) =>
-                                theme.palette.common.white,
-                            zIndex: 2000,
-                        }}
-                    >
-                        <Link component={RouterLink} to="/">
-                            Galerie
-                        </Link>
-                        {directory &&
-                            directory.parent &&
-                            directory.parent.name && (
-                                <Link
-                                    component={RouterLink}
-                                    to={`/directory/${directory.parent.id}`}
-                                >
-                                    {directory.parent.name}
-                                </Link>
-                            )}
-                        {directory && directory.name && (
-                            <Typography color="textPrimary">
-                                {directory.name}
-                            </Typography>
-                        )}
-                    </Breadcrumbs>
                     <Subdirectories id={Number(id)} />
                     <ImagesView directoryId={Number(id)} />
                 </Stack>
