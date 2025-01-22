@@ -1,4 +1,3 @@
-import React from "react";
 import { Route, Routes, useLocation } from "react-router";
 import { CssBaseline, List, ListItemButton } from "@mui/material";
 import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
@@ -7,6 +6,7 @@ import { Link } from "react-router-dom";
 import { StoresProvider, useStores } from "./stores";
 import { observer } from "mobx-react-lite";
 import { Users } from "./components/users";
+import BreadCrumbs from "./components/bread-crumbs";
 
 const Menu = observer(function Menu() {
     const { usersStore } = useStores();
@@ -36,7 +36,15 @@ const Menu = observer(function Menu() {
                     )}
                 </List>
             }
-            title="Galerie photos"
+            title={
+                <Routes>
+                    <Route
+                        path="/directory/:directoryId/*"
+                        element={<BreadCrumbs />}
+                    ></Route>
+                    <Route path="*" element={<>Galerie photo</>} />
+                </Routes>
+            }
         >
             <Routes>
                 <Route path="/" element={<RootDirectoryPage />} />

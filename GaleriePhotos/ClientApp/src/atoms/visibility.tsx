@@ -8,10 +8,10 @@ export function useVisibility<T extends HTMLElement>(): [
     const refElement = useRef<T>(null);
     const [visible, setVisible] = useState(false);
 
-    const checkIsInViewPort = useCallback(
+    const handleIntersectionObserverCallback = useCallback(
         (
             entries: IntersectionObserverEntry[],
-            observer: IntersectionObserver
+            _observer: IntersectionObserver
         ) => {
             const entry = entries[0];
             setVisible(entry.isIntersecting);
@@ -22,9 +22,12 @@ export function useVisibility<T extends HTMLElement>(): [
     useEffect(() => {
         const element = refElement.current;
         if (element) {
-            const observer = new IntersectionObserver(checkIsInViewPort, {
-                threshold: [0, 1],
-            });
+            const observer = new IntersectionObserver(
+                handleIntersectionObserverCallback,
+                {
+                    threshold: [0, 1],
+                }
+            );
 
             observer.observe(element);
 

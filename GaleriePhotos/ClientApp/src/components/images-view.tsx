@@ -7,6 +7,7 @@ import {
     ImageList,
     ImageListItem,
     Stack,
+    Typography,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -21,26 +22,15 @@ const ImageCard = observer(
         return (
             <ImageListItem
                 component={Link}
-                to={`/directory/${directoryId}/images/${value.id}/slideshow`}
+                to={`/directory/${directoryId}/images/${value.id}`}
+                sx={{ minHeight: 200 }}
             >
                 <img
                     src={directoriesStore.getThumbnail(directoryId, value.id)}
                     alt={value.name}
+                    loading="lazy"
                 />
                 {value.video && <PlayArrowIcon sx={{ fontSize: 140 }} />}
-                {/* 
-                <CardActions>
-                    {usersStore.isAdministrator && (
-                        <>
-                            <Switch
-                                color="primary"
-                                checked={value.visible}
-                                onChange={handleSwitchVisible}
-                            />
-                            <VisibilityIcon />
-                        </>
-                    )}
-                </CardActions> */}
             </ImageListItem>
         );
     }
@@ -104,12 +94,15 @@ export const ImagesView = observer(function ImagesView({
 
     useEffect(() => {
         if (visible && hasMorePages && !needNextPage) {
+            console.log("need next page");
             handleNextPage();
         }
     }, [handleNextPage, hasMorePages, needNextPage, visible]);
 
+    if (values.length === 0) return <></>;
     return (
         <>
+            <Typography variant="h4">Photos</Typography>
             <Stack spacing={1}>
                 {directoryContent === null && <CircularProgress />}
                 {values.length > 0 && usersStore.isAdministrator && <></>}

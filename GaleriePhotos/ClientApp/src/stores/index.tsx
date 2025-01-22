@@ -9,7 +9,7 @@ import {
     PhotoController,
     UserController,
 } from "../services/services";
-import React, { createContext, ReactNode, useContext, useMemo } from "react";
+import { createContext, ReactNode, useContext, useMemo } from "react";
 import { UsersStore } from "./users";
 import { observer } from "mobx-react-lite";
 

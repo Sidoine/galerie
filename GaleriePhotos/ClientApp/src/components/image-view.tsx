@@ -1,18 +1,19 @@
 import { useStores } from "../stores";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { IconButton, Box, useTheme, Stack, Icon, styled } from "@mui/material";
+import { IconButton, Box, useTheme, Stack, styled } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { ImageDetails } from "./image-details";
+import { useSwipeable } from "react-swipeable";
 
 const WhiteButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.common.white,
 }));
 
-export const SlideShow = observer(function SlideShow({
+export const ImageView = observer(function ImageView({
     directoryId,
 }: {
     directoryId: number;
@@ -30,16 +31,12 @@ export const SlideShow = observer(function SlideShow({
     const navigate = useNavigate();
     const handleNext = useCallback(() => {
         if (image && image.nextId)
-            navigate(
-                `/directory/${directoryId}/images/${image.nextId}/slideshow`
-            );
+            navigate(`/directory/${directoryId}/images/${image.nextId}`);
         else navigate(`/directory/${directoryId}/images/${id}`);
     }, [navigate, directoryId, image, id]);
     const handlePrevious = useCallback(() => {
         if (image && image.previousId)
-            navigate(
-                `/directory/${directoryId}/images/${image.previousId}/slideshow`
-            );
+            navigate(`/directory/${directoryId}/images/${image.previousId}`);
         else navigate(`/directory/${directoryId}/images/${id}`);
     }, [navigate, directoryId, image, id]);
     const handleClose = useCallback(() => {
@@ -68,6 +65,11 @@ export const SlideShow = observer(function SlideShow({
     const handleDetailsToggle = useCallback(() => {
         setDetails((x) => !x);
     }, []);
+
+    const handlers = useSwipeable({
+        onSwipedLeft: handleNext,
+        onSwipedRight: handlePrevious,
+    });
 
     return (
         <Stack
@@ -100,6 +102,7 @@ export const SlideShow = observer(function SlideShow({
                         maxHeight: "100%",
                         position: "relative",
                     }}
+                    {...handlers}
                 >
                     <Box
                         sx={{

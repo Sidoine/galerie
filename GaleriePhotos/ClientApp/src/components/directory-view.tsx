@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { ChangeEvent, useCallback } from "react";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { useStores } from "../stores";
 import {
@@ -14,13 +14,14 @@ import {
     ImageListItem,
     ImageListItemBar,
     styled,
+    Switch,
 } from "@mui/material";
 import { ImagesView } from "./images-view";
 import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 import placeholder from "../assets/placeholder.png";
-import { SlideShow } from "./slideshow";
+import { ImageView } from "./image-view";
 
 export interface DirectoryViewProps {
     id: number;
@@ -56,51 +57,76 @@ const Image = styled("img")(({ theme }) => ({
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     const { directoriesStore, usersStore } = useStores();
     const handleMyleneSwitch = useCallback(
-        (e: unknown, checked: boolean) => {
+        (e: ChangeEvent<HTMLInputElement>, checked: boolean) => {
             let visibility = directory.visibility & ~DirectoryVisibility.Mylene;
             if (checked) visibility |= DirectoryVisibility.Mylene;
             directoriesStore.patchDirectory(directory, { visibility });
+            e.preventDefault();
         },
         [directoriesStore, directory]
     );
     const handleSidoineSwitch = useCallback(
-        (e: unknown, checked: boolean) => {
+        (e: ChangeEvent<HTMLInputElement>, checked: boolean) => {
             let visibility =
                 directory.visibility & ~DirectoryVisibility.Sidoine;
             if (checked) visibility |= DirectoryVisibility.Sidoine;
             directoriesStore.patchDirectory(directory, { visibility });
+            e.preventDefault();
         },
         [directoriesStore, directory]
     );
 
     return (
-        <ImageListItem
-            sx={{ color: "inherit", textDecoration: "none" }}
-            component={RouterLink}
-            to={`/directory/${directory.id}`}
-        >
-            {directory.coverPhotoId && (
-                <Image
-                    src={directoriesStore.getThumbnail(
-                        directory.id,
-                        directory.coverPhotoId
-                    )}
-                    alt={directory.name}
-                    loading="lazy"
-                    sx={{ height: 320 }}
-                />
-            )}
-            {!directory.coverPhotoId && (
-                <Image
-                    src={placeholder}
-                    alt={directory.name}
-                    loading="lazy"
-                    sx={{ height: 320 }}
-                />
-            )}
+        <ImageListItem sx={{ color: "inherit", textDecoration: "none" }}>
+            <RouterLink to={`/directory/${directory.id}`}>
+                {directory.coverPhotoId && (
+                    <Image
+                        src={directoriesStore.getThumbnail(
+                            directory.id,
+                            directory.coverPhotoId
+                        )}
+                        alt={directory.name}
+                        loading="lazy"
+                        sx={{ height: 320 }}
+                    />
+                )}
+                {!directory.coverPhotoId && (
+                    <Image
+                        src={placeholder}
+                        alt={directory.name}
+                        loading="lazy"
+                        sx={{ height: 320 }}
+                    />
+                )}
+            </RouterLink>
             <ImageListItemBar
                 title={directory.name}
-                subtitle="toto"
+                subtitle={
+                    usersStore.isAdministrator && (
+                        <>
+                            <Switch
+                                color="primary"
+                                checked={
+                                    (directory.visibility &
+                                        DirectoryVisibility.Mylene) >
+                                    0
+                                }
+                                onChange={handleMyleneSwitch}
+                            />
+                            <Woman />
+                            <Switch
+                                color="secondary"
+                                checked={
+                                    (directory.visibility &
+                                        DirectoryVisibility.Sidoine) >
+                                    0
+                                }
+                                onChange={handleSidoineSwitch}
+                            />
+                            <Man />
+                        </>
+                    )
+                }
                 position="below"
             />
             {/* <CardActionArea
@@ -110,30 +136,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                 <Typography variant="h6">{directory.name}</Typography>{" "}
             </CardActionArea>
             <CardActions>
-                {usersStore.isAdministrator && (
-                    <>
-                        <Switch
-                            color="primary"
-                            checked={
-                                (directory.visibility &
-                                    DirectoryVisibility.Mylene) >
-                                0
-                            }
-                            onChange={handleMyleneSwitch}
-                        />
-                        <Woman />
-                        <Switch
-                            color="secondary"
-                            checked={
-                                (directory.visibility &
-                                    DirectoryVisibility.Sidoine) >
-                                0
-                            }
-                            onChange={handleSidoineSwitch}
-                        />
-                        <Man />
-                    </>
-                )}
+                
             </CardActions> */}
         </ImageListItem>
     );
@@ -143,12 +146,16 @@ const Subdirectories = observer(({ id }: { id: number }) => {
     const { directoriesStore } = useStores();
     const directories = directoriesStore.subDirectoriesLoader.getValue(id);
     if (!directories) return <CircularProgress />;
+    if (directories.length === 0) return <></>;
     return (
-        <ImageList>
-            {directories.map((x) => (
-                <SubdirectoryCard key={x.id} directory={x} />
-            ))}
-        </ImageList>
+        <>
+            <Typography variant="h5">Albums</Typography>
+            <ImageList cols={4} gap={16}>
+                {directories.map((x) => (
+                    <SubdirectoryCard key={x.id} directory={x} />
+                ))}
+            </ImageList>
+        </>
     );
 });
 
@@ -159,7 +166,16 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
         <>
             <Container maxWidth="lg">
                 <Stack direction="column" spacing={2}>
-                    <Breadcrumbs>
+                    <Breadcrumbs
+                        sx={{
+                            position: "sticky",
+                            top: 64,
+                            left: 0,
+                            backgroundColor: (theme) =>
+                                theme.palette.common.white,
+                            zIndex: 2000,
+                        }}
+                    >
                         <Link component={RouterLink} to="/">
                             Galerie
                         </Link>
@@ -185,8 +201,8 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
             </Container>
             <Routes>
                 <Route
-                    path="images/:id/slideshow"
-                    element={<SlideShow directoryId={id} />}
+                    path="images/:id"
+                    element={<ImageView directoryId={id} />}
                 />
             </Routes>
         </>

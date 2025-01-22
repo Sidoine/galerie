@@ -105,7 +105,7 @@ namespace GaleriePhotos.Services
                 else
                 {
                     using var image = await Image.LoadAsync(imagePath);
-                    image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new Size { Width = 270, Height = 140 } }));
+                    image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new Size { Width = 400, Height = 400 } }));
                     image.Save(thumbnailPath);
                 }
             }

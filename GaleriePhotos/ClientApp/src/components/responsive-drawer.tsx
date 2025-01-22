@@ -9,7 +9,6 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { Box, useTheme } from "@mui/material";
-import { LoginMenu } from "folke-service-helpers";
 
 const drawerWidth = 240;
 
@@ -21,7 +20,7 @@ export const ResponsiveDrawer = observer(
     }: {
         children: React.ReactNode;
         menu: ReactNode;
-        title: string;
+        title: ReactNode;
     }) => {
         const theme = useTheme();
         const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -64,7 +63,6 @@ export const ResponsiveDrawer = observer(
                         <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
                             {title}
                         </Typography>
-                        {/* <LoginMenu /> */}
                     </Toolbar>
                 </AppBar>
                 <Box
