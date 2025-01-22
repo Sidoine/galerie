@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0
 RUN apt-get update -y
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
+RUN bash nodesource_setup.sh
 RUN apt-get install -y nodejs ffmpeg
 RUN corepack enable 
 WORKDIR /app/GaleriePhotos/ClientApp
