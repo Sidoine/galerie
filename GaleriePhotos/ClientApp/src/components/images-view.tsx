@@ -63,7 +63,8 @@ export const ImagesView = observer(function ImagesView({
     const directoryContent =
         directoriesStore.contentLoader.getValue(directoryId);
     let values = directoryContent || [];
-    const sortedValues = order === "date-desc" ? values.reverse() : values;
+    const sortedValues =
+        order === "date-desc" ? values.slice().reverse() : values;
     const pageSize = 9;
     let imageIndex = sortedValues.findIndex((x) => x.id === image);
     if (imageIndex < 0) imageIndex = 0;
@@ -113,6 +114,7 @@ export const ImagesView = observer(function ImagesView({
                             color={
                                 order === "date-desc" ? "primary" : "inherit"
                             }
+                            variant="contained"
                         >
                             Plus récent en premier
                         </Button>
@@ -121,6 +123,7 @@ export const ImagesView = observer(function ImagesView({
                             color={
                                 order !== "date-desc" ? "primary" : "inherit"
                             }
+                            variant="contained"
                         >
                             Plus ancien en premier
                         </Button>
