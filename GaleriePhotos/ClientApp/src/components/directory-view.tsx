@@ -23,7 +23,7 @@ import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 import placeholder from "../assets/placeholder.png";
-import { ImageView } from "./image-view";
+import { ImageView } from "./image-view/image-view";
 
 export interface DirectoryViewProps {
     id: number;

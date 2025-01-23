@@ -1,17 +1,13 @@
-import { useStores } from "../stores";
+import { useStores } from "../../stores";
 import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { IconButton, Box, useTheme, Stack, styled } from "@mui/material";
+import { Box, useTheme, Stack } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { ImageDetails } from "./image-details";
 import { useSwipeable } from "react-swipeable";
-
-const WhiteButton = styled(IconButton)(({ theme }) => ({
-    color: theme.palette.common.white,
-}));
+import TopActions from "./top-actions";
 
 export const ImageView = observer(function ImageView({
     directoryId,
@@ -61,9 +57,8 @@ export const ImageView = observer(function ImageView({
     const handleDetailsClose = useCallback(() => {
         setDetails(false);
     }, []);
-
     const handleDetailsToggle = useCallback(() => {
-        setDetails((x) => !x);
+        setDetails((prev) => !prev);
     }, []);
 
     const handlers = useSwipeable({
@@ -85,14 +80,12 @@ export const ImageView = observer(function ImageView({
                 zIndex: 2000,
             }}
         >
-            <Stack direction="row" justifyContent="space-between">
-                <WhiteButton onClickCapture={handleClose}>
-                    <ArrowBackIcon />
-                </WhiteButton>
-                <WhiteButton onClickCapture={handleDetailsToggle}>
-                    <InfoOutlined />
-                </WhiteButton>
-            </Stack>
+            <TopActions
+                onClose={handleClose}
+                onDetailsToggle={handleDetailsToggle}
+                directoryId={directoryId}
+                photoId={Number(id)}
+            />
             {image && (
                 <Stack
                     alignItems="center"

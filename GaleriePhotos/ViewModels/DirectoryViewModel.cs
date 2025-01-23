@@ -9,8 +9,9 @@ namespace GaleriePhotos.ViewModels
         public DirectoryVisibility Visibility { get; set; }
         public string Name { get; set; }
         public int? CoverPhotoId { get; set; }
+        public int NumberOfPhotos { get; set; }
 
-        public DirectoryViewModel(PhotoDirectory photoDirectory) =>
-            (Id, Visibility, Name, CoverPhotoId) = (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path), photoDirectory.CoverPhotoId);
+        public DirectoryViewModel(PhotoDirectory photoDirectory, int numberOfPhotos) =>
+            (Id, Visibility, Name, CoverPhotoId, NumberOfPhotos) = (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path), photoDirectory.CoverPhotoId, numberOfPhotos);
     }
 }

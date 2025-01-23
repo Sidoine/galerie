@@ -39,6 +39,13 @@ export class DirectoriesStore {
     }
 
     @action
+    async patchDirectoryAndClearCache(id: number, patch: DirectoryPatch) {
+        this.infoLoader.invalidate();
+        this.subDirectoriesLoader.invalidate();
+        await this.directoryService.patch(id, patch);
+    }
+
+    @action
     async patchDirectory(directory: Directory, patch: DirectoryPatch) {
         if (patch.visibility !== undefined) {
             directory.visibility = patch.visibility;

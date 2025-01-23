@@ -24,6 +24,8 @@ export interface Directory {
     name: string;
 
     coverPhotoId: number | null;
+
+    numberOfPhotos: number;
 }
 
 export interface DirectoryFull {
@@ -36,6 +38,8 @@ export interface DirectoryFull {
     name: string;
 
     coverPhotoId: number | null;
+
+    numberOfPhotos: number;
 }
 
 export interface Photo {
@@ -48,6 +52,8 @@ export interface Photo {
 
 export interface DirectoryPatch {
     visibility?: enums.DirectoryVisibility | undefined;
+
+    coverPhotoId?: number | undefined;
 }
 
 export interface PhotoFull {

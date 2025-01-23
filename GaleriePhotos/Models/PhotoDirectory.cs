@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace GaleriePhotos.Models
+﻿namespace GaleriePhotos.Models
 {
     public class PhotoDirectory
     {

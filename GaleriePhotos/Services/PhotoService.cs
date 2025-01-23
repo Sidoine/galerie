@@ -112,12 +112,26 @@ namespace GaleriePhotos.Services
             return thumbnailPath;
         }
 
+        public int GetNumberOfPhotos(PhotoDirectory photoDirectory)
+        {
+            var path = GetAbsoluteDirectoryPath(photoDirectory);
+            if (path == null) return 0;
+            
+            return GetDirectoryPhotosFileNames(path, photoDirectory).Length;
+        }
+
+        private string[] GetDirectoryPhotosFileNames(string path, PhotoDirectory photoDirectory)
+        {
+            return Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant())).ToArray();
+        }
+
         public async Task<Photo[]?> GetDirectoryImages(PhotoDirectory photoDirectory)
         {
             var path = GetAbsoluteDirectoryPath(photoDirectory);
             if (path == null) return null;
             
-            var fileNames = Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant()));
+            var fileNames = GetDirectoryPhotosFileNames(path, photoDirectory);
+            
             var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
 
             var duplicates = photos.GroupBy(x => x.FileName).Where(x => x.Count() > 1).ToArray();
