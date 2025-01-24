@@ -23,14 +23,33 @@ const ImageCard = observer(
             <ImageListItem
                 component={Link}
                 to={`/directory/${directoryId}/images/${value.id}`}
-                sx={{ minHeight: 200 }}
+                sx={{ minHeight: 200, position: "relative" }}
             >
                 <img
                     src={directoriesStore.getThumbnail(directoryId, value.id)}
                     alt={value.name}
                     loading="lazy"
                 />
-                {value.video && <PlayArrowIcon sx={{ fontSize: 140 }} />}
+                {value.video && (
+                    <Stack
+                        sx={{
+                            position: "absolute",
+                            left: 0,
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        }}
+                    >
+                        <PlayArrowIcon
+                            sx={{
+                                fontSize: 140,
+                            }}
+                        />
+                    </Stack>
+                )}
             </ImageListItem>
         );
     }
@@ -95,7 +114,6 @@ export const ImagesView = observer(function ImagesView({
 
     useEffect(() => {
         if (visible && hasMorePages && !needNextPage) {
-            console.log("need next page");
             handleNextPage();
         }
     }, [handleNextPage, hasMorePages, needNextPage, visible]);
