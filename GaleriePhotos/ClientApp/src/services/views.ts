@@ -26,6 +26,8 @@ export interface Directory {
     coverPhotoId: number | null;
 
     numberOfPhotos: number;
+
+    numberOfSubDirectories: number;
 }
 
 export interface DirectoryFull {
@@ -40,6 +42,8 @@ export interface DirectoryFull {
     coverPhotoId: number | null;
 
     numberOfPhotos: number;
+
+    numberOfSubDirectories: number;
 }
 
 export interface Photo {

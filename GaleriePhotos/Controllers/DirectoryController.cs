@@ -32,7 +32,8 @@ namespace Galerie.Server.Controllers
         [HttpGet("root")]
         public async Task<ActionResult<DirectoryViewModel>> GetRoot()
         {
-            return Ok(new DirectoryViewModel(await photoService.GetRootDirectory(), 0));
+            var rootDirectory = await photoService.GetRootDirectory();
+            return Ok(new DirectoryViewModel(rootDirectory, photoService.GetNumberOfPhotos(rootDirectory), photoService.GetNumberOfSubDirectories(rootDirectory)));
         }
 
         [HttpGet("{id}")]
@@ -43,7 +44,7 @@ namespace Galerie.Server.Controllers
             if (!User.IsDirectoryVisible(directory)) return Forbid();
                 var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
             var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.FirstOrDefaultAsync(x => x.Path == parent) : null;
-            return Ok(new DirectoryFullViewModel(directory, parentDirectory, photoService.GetNumberOfPhotos(directory)));
+            return Ok(new DirectoryFullViewModel(directory, parentDirectory, photoService.GetNumberOfPhotos(directory), photoService.GetNumberOfSubDirectories(directory)));
         }
 
         // GET: api/values
@@ -56,7 +57,7 @@ namespace Galerie.Server.Controllers
             if (subDirectories == null) return NotFound();
             var isAdministrator = User.IsAdministrator();
             var visibility = User.GetDirectoryVisibility();
-            return Ok(subDirectories.Where(x => isAdministrator || (x.Visibility & visibility) > 0).Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x))));
+            return Ok(subDirectories.Where(x => isAdministrator || (x.Visibility & visibility) > 0).Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
         }
 
         [HttpGet("{id}/photos")]

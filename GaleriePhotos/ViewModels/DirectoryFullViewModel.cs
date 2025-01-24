@@ -10,9 +10,9 @@ namespace GaleriePhotos.ViewModels
     {
         public DirectoryViewModel? Parent { get; set; }
 
-        public DirectoryFullViewModel(PhotoDirectory photoDirectory, PhotoDirectory? parentDirectory, int numberOfPhotos) : base(photoDirectory, numberOfPhotos)
+        public DirectoryFullViewModel(PhotoDirectory photoDirectory, PhotoDirectory? parentDirectory, int numberOfPhotos, int numberOfSubDirectories) : base(photoDirectory, numberOfPhotos, numberOfSubDirectories)
         {
-            if (parentDirectory != null) Parent = new DirectoryViewModel(parentDirectory, 0);
+            if (parentDirectory != null) Parent = new DirectoryViewModel(parentDirectory, 0, 0);
         }
     }
 }

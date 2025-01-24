@@ -204,8 +204,7 @@ namespace GaleriePhotos.Services
         {
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return null;
-            var directoryAbsolutePaths = Directory.EnumerateDirectories(photoDirectoryPath);
-            var directoryPaths = directoryAbsolutePaths.Select(x => Path.GetFileName(x)).Where(x => !x.StartsWith(".") && !x.StartsWith("_")).Select(x => Path.Combine(photoDirectory.Path,x )).ToArray();
+            string[] directoryPaths = GetSubDirectoryPaths(photoDirectory, photoDirectoryPath);
             var directories = await applicationDbContext.PhotoDirectories.Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
             foreach (var path in directoryPaths)
             {
@@ -216,8 +215,27 @@ namespace GaleriePhotos.Services
                     directories.Add(subPhotoDirectory);
                 }
             }
+            if (photoDirectory.CoverPhotoId == null && GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
+            {
+                photoDirectory.CoverPhotoId = directories.First().CoverPhotoId;
+            }
+
             await applicationDbContext.SaveChangesAsync();
             return directories.OrderBy(x => x.Path).ToArray();
+        }
+
+        private static string[] GetSubDirectoryPaths(PhotoDirectory photoDirectory, string photoDirectoryPath)
+        {
+            var directoryAbsolutePaths = Directory.EnumerateDirectories(photoDirectoryPath);
+            var directoryPaths = directoryAbsolutePaths.Select(x => Path.GetFileName(x)).Where(x => !x.StartsWith(".") && !x.StartsWith("_")).Select(x => Path.Combine(photoDirectory.Path, x)).ToArray();
+            return directoryPaths;
+        }
+
+        internal int GetNumberOfSubDirectories(PhotoDirectory photoDirectory)
+        {
+            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
+            if (photoDirectoryPath == null) return 0;
+            return GetSubDirectoryPaths(photoDirectory, photoDirectoryPath).Length;
         }
 
         private static double Convert(string reference, Rational[] values)
