@@ -217,7 +217,7 @@ namespace GaleriePhotos.Services
             }
             if (photoDirectory.CoverPhotoId == null && GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
             {
-                photoDirectory.CoverPhotoId = directories.First().CoverPhotoId;
+                photoDirectory.CoverPhotoId = directories.First(x => x.CoverPhotoId.HasValue).CoverPhotoId;
             }
 
             await applicationDbContext.SaveChangesAsync();
