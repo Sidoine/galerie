@@ -87,7 +87,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                         )}
                         alt={directory.name}
                         loading="lazy"
-                        sx={{ height: 320, objectFit: "cover" }}
+                        sx={{ height: 260, objectFit: "cover" }}
                     />
                 )}
                 {!directory.coverPhotoId && (
@@ -95,14 +95,14 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                         src={placeholder}
                         alt={directory.name}
                         loading="lazy"
-                        sx={{ height: 320 }}
+                        sx={{ height: 260 }}
                     />
                 )}
             </RouterLink>
             <ImageListItemBar
                 title={directory.name}
                 subtitle={
-                    <Stack direction="row" alignItems="center">
+                    <Stack direction="row" alignItems="center" flexWrap="wrap">
                         {directory.numberOfPhotos > 0 && (
                             <>
                                 {directory.numberOfPhotos} élément
