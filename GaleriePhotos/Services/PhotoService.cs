@@ -1,6 +1,7 @@
 ﻿using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -20,6 +21,8 @@ namespace GaleriePhotos.Services
     {
         private readonly IOptions<GalerieOptions> options;
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly ILogger<PhotoService> logger;
+
         public static Dictionary<string, string> MimeTypes { get; } = new Dictionary<string, string>
         {
             { ".jpg", "image/jpeg" },
@@ -30,10 +33,11 @@ namespace GaleriePhotos.Services
             { ".webm", "video/webm" }
         };
 
-        public PhotoService(IOptions<GalerieOptions> options, ApplicationDbContext applicationDbContext)
+        public PhotoService(IOptions<GalerieOptions> options, ApplicationDbContext applicationDbContext, ILogger<PhotoService> logger)
         {
             this.options = options;
             this.applicationDbContext = applicationDbContext;
+            this.logger = logger;
         }
 
         public string? GetAbsoluteDirectoryPath(string? relativeDirectoryPath)
@@ -215,9 +219,14 @@ namespace GaleriePhotos.Services
                     directories.Add(subPhotoDirectory);
                 }
             }
+
+            var numberOfPhotosInDirectory = GetNumberOfPhotos(photoDirectory);
+            logger.LogInformation($"Récupération des sous-dossiers de {photoDirectory.Path} ({numberOfPhotosInDirectory} photos, {directories.Count} sous-dossiers). Couverture : {photoDirectory.CoverPhotoId}.");
             if (photoDirectory.CoverPhotoId == null && GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
             {
-                photoDirectory.CoverPhotoId = directories.FirstOrDefault(x => x.CoverPhotoId.HasValue)?.CoverPhotoId;
+                var newCoverPhotoId = directories.FirstOrDefault(x => x.CoverPhotoId.HasValue)?.CoverPhotoId;
+                logger.LogInformation($"Mise-à-jour de la photo de couverture de {photoDirectory.Path} en {newCoverPhotoId}");
+                photoDirectory.CoverPhotoId = newCoverPhotoId;
                 applicationDbContext.PhotoDirectories.Update(photoDirectory);
             }
 
