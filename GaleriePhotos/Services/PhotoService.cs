@@ -221,13 +221,13 @@ namespace GaleriePhotos.Services
             }
 
             var numberOfPhotosInDirectory = GetNumberOfPhotos(photoDirectory);
-            logger.LogInformation($"Récupération des sous-dossiers de {photoDirectory.Path} ({numberOfPhotosInDirectory} photos, {directories.Count} sous-dossiers). Couverture : {photoDirectory.CoverPhotoId}.");
+            logger.LogInformation($"Récupération des sous-dossiers de {photoDirectory.Path} ({photoDirectory.Id}) ({numberOfPhotosInDirectory} photos, {directories.Count} sous-dossiers). Couverture : {photoDirectory.CoverPhotoId}.");
             if (photoDirectory.CoverPhotoId == null && GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
             {
                 var newCoverPhotoId = directories.FirstOrDefault(x => x.CoverPhotoId.HasValue)?.CoverPhotoId;
                 logger.LogInformation($"Mise-à-jour de la photo de couverture de {photoDirectory.Path} en {newCoverPhotoId}");
                 photoDirectory.CoverPhotoId = newCoverPhotoId;
-                applicationDbContext.PhotoDirectories.Update(photoDirectory);
+                applicationDbContext.Update(photoDirectory);
             }
 
             await applicationDbContext.SaveChangesAsync();
