@@ -194,9 +194,9 @@ namespace GaleriePhotos.Services
 
             await applicationDbContext.SaveChangesAsync();
 
-            if (photoDirectory.CoverPhotoId == null)
+            if (photoDirectory.CoverPhotoId == null && photos.Count > 0)
             {
-                photoDirectory.CoverPhotoId = photos.FirstOrDefault()?.Id;
+                photoDirectory.CoverPhotoId = photos.First().Id;
                 applicationDbContext.Update(photoDirectory);
                 await applicationDbContext.SaveChangesAsync();
             }
