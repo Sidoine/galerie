@@ -16,7 +16,7 @@ export const ImageView = observer(function ImageView({
 }) {
     const { id } = useParams();
     const { directoriesStore } = useStores();
-    const image =
+    const photo =
         directoryId && id
             ? directoriesStore.imageLoader.getValue(
                   Number(directoryId),
@@ -26,15 +26,15 @@ export const ImageView = observer(function ImageView({
     const theme = useTheme();
     const navigate = useNavigate();
     const handleNext = useCallback(() => {
-        if (image && image.nextId)
-            navigate(`/directory/${directoryId}/images/${image.nextId}`);
+        if (photo && photo.nextId)
+            navigate(`/directory/${directoryId}/images/${photo.nextId}`);
         else navigate(`/directory/${directoryId}/images/${id}`);
-    }, [navigate, directoryId, image, id]);
+    }, [navigate, directoryId, photo, id]);
     const handlePrevious = useCallback(() => {
-        if (image && image.previousId)
-            navigate(`/directory/${directoryId}/images/${image.previousId}`);
+        if (photo && photo.previousId)
+            navigate(`/directory/${directoryId}/images/${photo.previousId}`);
         else navigate(`/directory/${directoryId}/images/${id}`);
-    }, [navigate, directoryId, image, id]);
+    }, [navigate, directoryId, photo, id]);
     const handleClose = useCallback(() => {
         navigate(`/directory/${directoryId}`);
     }, [navigate, directoryId, id]);
@@ -80,13 +80,15 @@ export const ImageView = observer(function ImageView({
                 zIndex: 2000,
             }}
         >
-            <TopActions
-                onClose={handleClose}
-                onDetailsToggle={handleDetailsToggle}
-                directoryId={directoryId}
-                photoId={Number(id)}
-            />
-            {image && (
+            {photo && (
+                <TopActions
+                    onClose={handleClose}
+                    onDetailsToggle={handleDetailsToggle}
+                    directoryId={directoryId}
+                    photo={photo}
+                />
+            )}
+            {photo && (
                 <Stack
                     alignItems="center"
                     justifyContent="center"
@@ -141,7 +143,7 @@ export const ImageView = observer(function ImageView({
                     >
                         <ArrowForwardIcon />
                     </Box>
-                    {image.video && (
+                    {photo.video && (
                         <Box
                             component="video"
                             autoPlay
@@ -157,7 +159,7 @@ export const ImageView = observer(function ImageView({
                             }}
                         />
                     )}
-                    {!image.video && (
+                    {!photo.video && (
                         <Box
                             component="img"
                             alt=""
@@ -175,9 +177,9 @@ export const ImageView = observer(function ImageView({
                     )}
                 </Stack>
             )}
-            {image && (
+            {photo && (
                 <ImageDetails
-                    image={image}
+                    image={photo}
                     onClose={handleDetailsClose}
                     open={details}
                 />

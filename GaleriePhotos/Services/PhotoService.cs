@@ -19,6 +19,8 @@ namespace GaleriePhotos.Services
 {
     public class PhotoService
     {
+        private const string PrivateDirectory = "Privé";
+
         private readonly IOptions<GalerieOptions> options;
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<PhotoService> logger;
@@ -232,6 +234,31 @@ namespace GaleriePhotos.Services
 
             await applicationDbContext.SaveChangesAsync();
             return directories.OrderBy(x => x.Path).ToArray();
+        }
+
+        public void MoveToPrivate(PhotoDirectory photoDirectory, Photo photo)
+        {
+            if (photoDirectory.Path.EndsWith(PrivateDirectory)) return;
+            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
+            if (photoDirectoryPath == null) return;
+            var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
+            var newPath = Path.Combine(photoDirectoryPath, PrivateDirectory, photo.FileName);
+            File.Move(currentPath, newPath);
+        }
+
+        public bool IsPrivate(PhotoDirectory photoDirectory)
+        {
+            return photoDirectory.Path.EndsWith(PrivateDirectory);
+        }
+
+        public void MoveToPublic(PhotoDirectory photoDirectory, Photo photo)
+        {
+            if (!photoDirectory.Path.EndsWith(PrivateDirectory)) return;
+            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
+            if (photoDirectoryPath == null) return;
+            var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
+            var newPath = Path.Combine(photoDirectoryPath, "..", photo.FileName);
+            File.Move(currentPath, newPath);
         }
 
         private static string[] GetSubDirectoryPaths(PhotoDirectory photoDirectory, string photoDirectoryPath)

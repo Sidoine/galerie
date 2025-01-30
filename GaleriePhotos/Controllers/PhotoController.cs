@@ -86,7 +86,8 @@ namespace Galerie.Server.Controllers
             var images = await photoService.GetDirectoryImages(directory);
             if (images == null) return NotFound();
             var (previous, next) = GetNextAndPrevious(photo, images);
-            var viewModel = new PhotoFullViewModel(photo, previous, next);
+            var isPrivate = photoService.IsPrivate(directory);
+            var viewModel = new PhotoFullViewModel(photo, previous, next, isPrivate);
             return Ok(viewModel);
         }        
 
@@ -99,5 +100,16 @@ namespace Galerie.Server.Controllers
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPatch("{directoryId}/photos/{id}/access")]
+        public async Task<ActionResult> SetAccess(int directoryId, int id, [FromBody] PhotoAccessViewModel viewModel)
+        {
+            var (directory, photo) = await GetPhoto(directoryId, id);
+            if (directory == null || photo == null) return NotFound();
+            if (viewModel.Private) photoService.MoveToPrivate(directory, photo);
+            else photoService.MoveToPublic(directory, photo);
+            return Ok();
+        }   
     }
 }

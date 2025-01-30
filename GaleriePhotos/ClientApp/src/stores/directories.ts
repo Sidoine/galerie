@@ -57,4 +57,12 @@ export class DirectoriesStore {
     async patchPhoto(directoryId: number, photo: Photo, patch: PhotoPatch) {
         await this.photoService.patch(directoryId, photo.id, patch);
     }
+
+    @action
+    async setAccess(directoryId: number, photo: Photo, isPrivate: boolean) {
+        await this.photoService.setAccess(directoryId, photo.id, {
+            private: isPrivate,
+        });
+        this.contentLoader.invalidate();
+    }
 }

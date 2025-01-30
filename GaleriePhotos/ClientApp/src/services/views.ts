@@ -78,8 +78,14 @@ export interface PhotoFull {
     camera: string | null;
 
     video: boolean;
+
+    private: boolean;
 }
 
 export interface PhotoPatch {
     visible?: boolean | undefined;
+}
+
+export interface PhotoAccess {
+    private: boolean;
 }
