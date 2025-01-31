@@ -9,7 +9,7 @@ import { ImageDetails } from "./image-details";
 import { useSwipeable } from "react-swipeable";
 import TopActions from "./top-actions";
 
-export const ImageView = observer(function ImageView({
+export default observer(function ImageView({
     directoryId,
 }: {
     directoryId: number;

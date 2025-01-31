@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useStores } from "../stores";
 import {
     Button,
@@ -9,10 +9,8 @@ import {
     Stack,
     Typography,
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Photo } from "../services/views";
-import { useVisibility } from "../atoms/visibility";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const ImageCard = observer(
@@ -55,14 +53,9 @@ const ImageCard = observer(
     }
 );
 
-function createUrl(
-    directoryId: number,
-    order: "date-desc" | "date-asc",
-    image: number
-) {
+function createUrl(directoryId: number, order: "date-desc" | "date-asc") {
     const urlSearchParams = new URLSearchParams();
     urlSearchParams.set("order", order);
-    urlSearchParams.set("image", image.toString());
     return `/directory/${directoryId}?${urlSearchParams}`;
 }
 
@@ -72,51 +65,24 @@ export const ImagesView = observer(function ImagesView({
     directoryId: number;
 }) {
     const { directoriesStore, usersStore } = useStores();
-    const [needNextPage, setNextPageNeeded] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     const order =
         params.get("order") === "date-desc" ? "date-desc" : "date-asc";
-    const [image, setImage] = useState(parseInt(params.get("image") || "0"));
     const directoryContent =
         directoriesStore.contentLoader.getValue(directoryId);
     let values = directoryContent || [];
     const sortedValues =
         order === "date-desc" ? values.slice().reverse() : values;
-    const pageSize = 9;
-    let imageIndex = sortedValues.findIndex((x) => x.id === image);
-    if (imageIndex < 0) imageIndex = 0;
-    const page = sortedValues.slice(0, imageIndex + pageSize);
-    const hasMorePages = page.length < sortedValues.length;
     const handleSortDateDesc = useCallback(
-        () => navigate(createUrl(directoryId, "date-desc", image)),
-        [navigate, directoryId, image]
+        () => navigate(createUrl(directoryId, "date-desc")),
+        [navigate, directoryId]
     );
     const handleSortDateAsc = useCallback(
-        () => navigate(createUrl(directoryId, "date-asc", image)),
-        [navigate, directoryId, image]
+        () => navigate(createUrl(directoryId, "date-asc")),
+        [navigate, directoryId]
     );
-    const handleNextPage = useCallback(() => {
-        setNextPageNeeded(true);
-        const newImageIndex = Math.min(
-            sortedValues.length - pageSize,
-            imageIndex + pageSize
-        );
-        const newImageId = sortedValues[newImageIndex].id;
-        setImage(newImageId);
-        navigate(createUrl(directoryId, order, newImageId), {
-            replace: true,
-        });
-        setTimeout(() => setNextPageNeeded(false), 100);
-    }, [sortedValues, imageIndex, navigate, directoryId, order]);
-    const [ref, visible] = useVisibility<HTMLDivElement>();
-
-    useEffect(() => {
-        if (visible && hasMorePages && !needNextPage) {
-            handleNextPage();
-        }
-    }, [handleNextPage, hasMorePages, needNextPage, visible]);
 
     if (values.length === 0) return <></>;
     return (
@@ -149,16 +115,10 @@ export const ImagesView = observer(function ImagesView({
                 )}
             </Stack>
             <ImageList>
-                {page.map((x) => (
+                {sortedValues.map((x) => (
                     <ImageCard directoryId={directoryId} value={x} key={x.id} />
                 ))}
             </ImageList>
-            {hasMorePages && (
-                <div ref={ref}>
-                    {visible && <CircularProgress />}
-                    {!visible && <VisibilityIcon />}
-                </div>
-            )}
         </>
     );
 });

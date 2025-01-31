@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback } from "react";
+import { ChangeEvent, lazy, Suspense, useCallback } from "react";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { useStores } from "../stores";
 import {
@@ -21,7 +21,7 @@ import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 import placeholder from "../assets/placeholder.png";
-import { ImageView } from "./image-view/image-view";
+const ImageView = lazy(() => import("./image-view/image-view"));
 
 export interface DirectoryViewProps {
     id: number;
@@ -184,7 +184,11 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
             <Routes>
                 <Route
                     path="images/:id"
-                    element={<ImageView directoryId={id} />}
+                    element={
+                        <Suspense>
+                            <ImageView directoryId={id} />
+                        </Suspense>
+                    }
                 />
             </Routes>
         </>
