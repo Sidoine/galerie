@@ -2,12 +2,13 @@ import { useStores } from "../../stores";
 import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Box, useTheme, Stack } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { ImageDetails } from "./image-details";
 import { useSwipeable } from "react-swipeable";
 import TopActions from "./top-actions";
+import { useUi } from "../../stores/ui";
 
 export default observer(function ImageView({
     directoryId,
@@ -23,21 +24,18 @@ export default observer(function ImageView({
                   Number(id)
               )
             : null;
+    const { navigateToPhoto, navigateToDirectory } = useUi();
     const theme = useTheme();
-    const navigate = useNavigate();
     const handleNext = useCallback(() => {
-        if (photo && photo.nextId)
-            navigate(`/directory/${directoryId}/images/${photo.nextId}`);
-        else navigate(`/directory/${directoryId}/images/${id}`);
-    }, [navigate, directoryId, photo, id]);
+        if (photo && photo.nextId) navigateToPhoto(directoryId, photo.nextId);
+    }, [navigateToPhoto, directoryId, photo]);
     const handlePrevious = useCallback(() => {
         if (photo && photo.previousId)
-            navigate(`/directory/${directoryId}/images/${photo.previousId}`);
-        else navigate(`/directory/${directoryId}/images/${id}`);
-    }, [navigate, directoryId, photo, id]);
+            navigateToPhoto(directoryId, photo.previousId);
+    }, [navigateToPhoto, directoryId, photo]);
     const handleClose = useCallback(() => {
-        navigate(`/directory/${directoryId}`);
-    }, [navigate, directoryId, id]);
+        navigateToDirectory(directoryId);
+    }, [navigateToDirectory, directoryId]);
     const handleKeyPress = useCallback(
         (e: KeyboardEvent) => {
             if (e.code === "ArrowLeft") {
