@@ -1,12 +1,11 @@
 import { ChangeEvent, lazy, Suspense, useCallback } from "react";
-import { observer, useLocalObservable } from "mobx-react-lite";
+import { observer } from "mobx-react-lite";
 import { useStores } from "../stores";
 import {
     Container,
     SvgIcon,
     Typography,
     CircularProgress,
-    Button,
     Stack,
     ImageList,
     ImageListItem,
@@ -15,6 +14,7 @@ import {
     Switch,
     useMediaQuery,
     useTheme,
+    Skeleton,
 } from "@mui/material";
 import { ImagesView } from "./images-view";
 import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
@@ -203,15 +203,6 @@ export function DirectoryPage() {
 export const RootDirectoryPage = observer(function RootDirectoryPage() {
     const { directoriesStore } = useStores();
     const root = directoriesStore.root;
-    const timer = useLocalObservable(() => ({
-        secondsPassed: 0,
-        increaseTimer: () => {
-            timer.secondsPassed++;
-        },
-    }));
-    if (!root)
-        return (
-            <Button onClick={timer.increaseTimer}>{timer.secondsPassed}</Button>
-        );
+    if (!root) return <Skeleton variant="rectangular" />;
     return <DirectoryView id={root.id} />;
 });
