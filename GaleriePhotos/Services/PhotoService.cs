@@ -243,6 +243,8 @@ namespace GaleriePhotos.Services
             if (photoDirectoryPath == null) return;
             var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
             var newPath = Path.Combine(photoDirectoryPath, PrivateDirectory, photo.FileName);
+            string privateDirectoryPath = Path.Combine(photoDirectoryPath, PrivateDirectory);
+            if (!Directory.Exists(privateDirectoryPath)) Directory.CreateDirectory(Path.Combine(photoDirectoryPath, PrivateDirectory));
             File.Move(currentPath, newPath);
         }
 
