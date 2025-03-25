@@ -25,6 +25,7 @@ jobs:
           fetch-depth: 0
 
       - name: Push to dokku
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: dokku/github-action@master
         with:
           git_remote_url: "ssh://dokku@sidoine.net:22/galerie"
