@@ -32,7 +32,8 @@ namespace GaleriePhotos.Services
             { ".png", "image/png" },
             { ".mp4", "video/mp4" },
             { ".mpg", "video/mpg" },
-            { ".webm", "video/webm" }
+            { ".webm", "video/webm" },
+            { ".webp", "image/webp" }
         };
 
         public PhotoService(IOptions<GalerieOptions> options, ApplicationDbContext applicationDbContext, ILogger<PhotoService> logger)
