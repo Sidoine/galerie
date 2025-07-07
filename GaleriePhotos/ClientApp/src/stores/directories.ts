@@ -65,4 +65,10 @@ export class DirectoriesStore {
         });
         this.contentLoader.invalidate();
     }
+
+    @action
+    async rotatePhoto(directoryId: number, photo: Photo, angle: number) {
+        await this.photoService.rotate(directoryId, photo.id, { angle });
+        this.imageLoader.invalidate();
+    }
 }

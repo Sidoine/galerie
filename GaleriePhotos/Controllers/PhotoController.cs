@@ -55,7 +55,7 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            
+
             if (!User.IsDirectoryVisible(directory)) return Forbid();
             var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
             if (thumbnailPath == null) return NotFound();
@@ -72,7 +72,7 @@ namespace Galerie.Server.Controllers
                 if (index > 0) previous = images[index - 1];
                 if (index < images.Length - 1) next = images[index + 1];
             }
-            return (previous, next); 
+            return (previous, next);
         }
 
         [HttpGet("{directoryId}/photos/{id}")]
@@ -89,11 +89,11 @@ namespace Galerie.Server.Controllers
             var isPrivate = photoService.IsPrivate(directory);
             var viewModel = new PhotoFullViewModel(photo, previous, next, isPrivate);
             return Ok(viewModel);
-        }        
+        }
 
-        [Authorize(Policy =  Policies.Administrator)]
+        [Authorize(Policy = Policies.Administrator)]
         [HttpPatch("{directoryId}/photos/{id}")]
-        public async Task<ActionResult> Patch(int directoryId, int id, [FromBody]PhotoPatchViewModel viewModel)
+        public async Task<ActionResult> Patch(int directoryId, int id, [FromBody] PhotoPatchViewModel viewModel)
         {
             var photo = await applicationDbContext.Photos.FindAsync(id);
             if (photo == null) return NotFound();
@@ -110,6 +110,17 @@ namespace Galerie.Server.Controllers
             if (viewModel.Private) photoService.MoveToPrivate(directory, photo);
             else photoService.MoveToPublic(directory, photo);
             return Ok();
-        }   
+        }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPatch("{directoryId}/photos/{id}/rotate")]
+        public async Task<ActionResult> Rotate(int directoryId, int id, [FromBody] PhotoRotateViewModel viewModel)
+        {
+            var (directory, photo) = await GetPhoto(directoryId, id);
+            if (directory == null || photo == null) return NotFound();
+            if (!photoService.RotatePhoto(directory, photo, viewModel.Angle))
+                return BadRequest("Impossible de faire pivoter la photo (angle invalide ou erreur interne).");
+            return Ok();
+        }
     }
 }

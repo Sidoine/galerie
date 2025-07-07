@@ -67,7 +67,7 @@ namespace GaleriePhotos.Services
             if (options.Value.Root == null) return null;
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return null;
-            var imagePath = Path.Combine(photoDirectoryPath,  photo.FileName);
+            var imagePath = Path.Combine(photoDirectoryPath, photo.FileName);
             if (!File.Exists(imagePath)) return null;
             return imagePath;
         }
@@ -123,7 +123,7 @@ namespace GaleriePhotos.Services
         {
             var path = GetAbsoluteDirectoryPath(photoDirectory);
             if (path == null) return 0;
-            
+
             return GetDirectoryPhotosFileNames(path, photoDirectory).Length;
         }
 
@@ -136,9 +136,9 @@ namespace GaleriePhotos.Services
         {
             var path = GetAbsoluteDirectoryPath(photoDirectory);
             if (path == null) return null;
-            
+
             var fileNames = GetDirectoryPhotosFileNames(path, photoDirectory);
-            
+
             var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
 
             var duplicates = photos.GroupBy(x => x.FileName).Where(x => x.Count() > 1).ToArray();
@@ -182,12 +182,12 @@ namespace GaleriePhotos.Services
                                 if (camera != null) photo.Camera = (string)camera.GetValue()!;
                             }
                         }
-                        catch { }                        
+                        catch { }
                     }
 
                     if (photo.DateTime == default)
                     {
-                        photo.DateTime =  File.GetCreationTimeUtc(imagePath);
+                        photo.DateTime = File.GetCreationTimeUtc(imagePath);
                     }
 
                     applicationDbContext.Photos.Add(photo);
@@ -292,6 +292,49 @@ namespace GaleriePhotos.Services
                 v = -v;
             }
             return v;
+        }
+
+        /// <summary>
+        /// Fait pivoter une photo de 90°, 180° ou 270° dans le sens horaire.
+        /// </summary>
+        /// <param name="photoDirectory">Le répertoire contenant la photo.</param>
+        /// <param name="photo">La photo à faire pivoter.</param>
+        /// <param name="angle">L'angle de rotation (90, 180 ou 270 degrés).</param>
+        /// <returns>True si la rotation a réussi, false sinon.</returns>
+        public bool RotatePhoto(PhotoDirectory photoDirectory, Photo photo, int angle)
+        {
+            if (angle != 90 && angle != 180 && angle != 270)
+                throw new ArgumentException("L'angle doit être 90, 180 ou 270.", nameof(angle));
+
+            var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
+            if (imagePath == null || !File.Exists(imagePath))
+                return false;
+
+            try
+            {
+                using (var image = Image.Load(imagePath))
+                {
+                    switch (angle)
+                    {
+                        case 90:
+                            image.Mutate(x => x.Rotate(RotateMode.Rotate90));
+                            break;
+                        case 180:
+                            image.Mutate(x => x.Rotate(RotateMode.Rotate180));
+                            break;
+                        case 270:
+                            image.Mutate(x => x.Rotate(RotateMode.Rotate270));
+                            break;
+                    }
+                    image.Save(imagePath);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Erreur lors de la rotation de la photo {photo.FileName}.");
+                return false;
+            }
         }
     }
 }

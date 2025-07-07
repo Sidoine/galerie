@@ -89,3 +89,7 @@ export interface PhotoPatch {
 export interface PhotoAccess {
     private: boolean;
 }
+
+export interface PhotoRotate {
+    angle: number;
+}

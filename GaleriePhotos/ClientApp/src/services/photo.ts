@@ -21,6 +21,10 @@ export class PhotoController {
         return this.client.fetch(`api/directory/${directoryId}/photos/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 
+    rotate = (directoryId: number, id: number, viewModel: views.PhotoRotate) => {
+        return this.client.fetch(`api/directory/${directoryId}/photos/${id}/rotate`, "PATCH", JSON.stringify(viewModel));
+    }
+
     setAccess = (directoryId: number, id: number, viewModel: views.PhotoAccess) => {
         return this.client.fetch(`api/directory/${directoryId}/photos/${id}/access`, "PATCH", JSON.stringify(viewModel));
     }

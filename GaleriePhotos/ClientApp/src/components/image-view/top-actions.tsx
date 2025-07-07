@@ -44,6 +44,20 @@ function TopActions({
         handleCloseMenu();
         directoriesStore.setAccess(directoryId, photo, true);
     }, [handleCloseMenu]);
+    const handleRotate = useCallback(
+        async (angle: number) => {
+            handleCloseMenu();
+            await directoriesStore.rotatePhoto(directoryId, photo, angle);
+        },
+        [handleCloseMenu, directoryId, photo]
+    );
+    const handleRotateLeft = useCallback(() => {
+        handleRotate(-90);
+    }, [handleRotate]);
+
+    const handleRotateRight = useCallback(() => {
+        handleRotate(90);
+    }, [handleRotate]);
 
     return (
         <Stack direction="row" justifyContent="space-between">
@@ -67,6 +81,12 @@ function TopActions({
                 >
                     <MenuItem onClick={handleCoverClick}>
                         Utiliser comme couverture de l'album
+                    </MenuItem>
+                    <MenuItem onClick={handleRotateRight}>
+                        Tourner à droite
+                    </MenuItem>
+                    <MenuItem onClick={handleRotateLeft}>
+                        Tourner à gauche
                     </MenuItem>
                     {photo.private && (
                         <MenuItem onClick={handleShareClick}>Partager</MenuItem>
