@@ -52,7 +52,7 @@ function TopActions({
         [handleCloseMenu, directoryId, photo]
     );
     const handleRotateLeft = useCallback(() => {
-        handleRotate(-90);
+        handleRotate(270);
     }, [handleRotate]);
 
     const handleRotateRight = useCallback(() => {

@@ -118,7 +118,7 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            if (!photoService.RotatePhoto(directory, photo, viewModel.Angle))
+            if (!await photoService.RotatePhoto(directory, photo, viewModel.Angle))
                 return BadRequest("Impossible de faire pivoter la photo (angle invalide ou erreur interne).");
             return Ok();
         }

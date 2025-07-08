@@ -301,33 +301,39 @@ namespace GaleriePhotos.Services
         /// <param name="photo">La photo à faire pivoter.</param>
         /// <param name="angle">L'angle de rotation (90, 180 ou 270 degrés).</param>
         /// <returns>True si la rotation a réussi, false sinon.</returns>
-        public bool RotatePhoto(PhotoDirectory photoDirectory, Photo photo, int angle)
+        public async Task<bool> RotatePhoto(PhotoDirectory photoDirectory, Photo photo, int angle)
         {
             if (angle != 90 && angle != 180 && angle != 270)
                 throw new ArgumentException("L'angle doit être 90, 180 ou 270.", nameof(angle));
 
             var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
-            if (imagePath == null || !File.Exists(imagePath))
+            var thumbnailPath = await GetThumbnailPath(photoDirectory, photo);
+            
+            if (imagePath == null || !File.Exists(imagePath) || thumbnailPath == null || !File.Exists(thumbnailPath))
                 return false;
 
+            
             try
             {
-                using (var image = Image.Load(imagePath))
+                using var image = await Image.LoadAsync(imagePath);
+                using var thumbnail = await Image.LoadAsync(thumbnailPath);
+                switch (angle)
                 {
-                    switch (angle)
-                    {
-                        case 90:
-                            image.Mutate(x => x.Rotate(RotateMode.Rotate90));
-                            break;
-                        case 180:
-                            image.Mutate(x => x.Rotate(RotateMode.Rotate180));
-                            break;
-                        case 270:
-                            image.Mutate(x => x.Rotate(RotateMode.Rotate270));
-                            break;
-                    }
-                    image.Save(imagePath);
+                    case 90:
+                        image.Mutate(x => x.Rotate(RotateMode.Rotate90));
+                        thumbnail.Mutate(x => x.Rotate(RotateMode.Rotate90));
+                        break;
+                    case 180:
+                        image.Mutate(x => x.Rotate(RotateMode.Rotate180));
+                        thumbnail.Mutate(x => x.Rotate(RotateMode.Rotate180));
+                        break;
+                    case 270:
+                        image.Mutate(x => x.Rotate(RotateMode.Rotate270));
+                        thumbnail.Mutate(x => x.Rotate(RotateMode.Rotate270));
+                        break;
                 }
+                await image.SaveAsync(imagePath);
+                await thumbnail.SaveAsync(thumbnailPath);
                 return true;
             }
             catch (Exception ex)

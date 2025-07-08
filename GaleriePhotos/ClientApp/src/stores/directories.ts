@@ -8,7 +8,7 @@ import {
     DirectoryFull,
 } from "../services/views";
 import { DirectoryController, PhotoController } from "../services/services";
-import { action, makeObservable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
 import { computed } from "mobx";
 
 export class DirectoriesStore {
@@ -24,6 +24,9 @@ export class DirectoriesStore {
         makeObservable(this);
     }
 
+    @observable
+    photoReloadSuffix = new Map<number, number>();
+
     @computed
     get root() {
         const value = this.rootLoader.getValue();
@@ -31,11 +34,19 @@ export class DirectoriesStore {
     }
 
     getImage(directoryId: number, id: number) {
-        return `/api/directory/${directoryId}/photos/${id}/image`;
+        const result = `/api/directory/${directoryId}/photos/${id}/image`;
+        if (this.photoReloadSuffix.has(id)) {
+            return `${result}?reload=${this.photoReloadSuffix.get(id)}`;
+        }
+        return result;
     }
 
     getThumbnail(directoryId: number, id: number) {
-        return `/api/directory/${directoryId}/photos/${id}/thumbnail`;
+        const result = `/api/directory/${directoryId}/photos/${id}/thumbnail`;
+        if (this.photoReloadSuffix.has(id)) {
+            return `${result}?reload=${this.photoReloadSuffix.get(id)}`;
+        }
+        return result;
     }
 
     @action
@@ -69,6 +80,7 @@ export class DirectoriesStore {
     @action
     async rotatePhoto(directoryId: number, photo: Photo, angle: number) {
         await this.photoService.rotate(directoryId, photo.id, { angle });
+        this.photoReloadSuffix.set(photo.id, Date.now());
         this.imageLoader.invalidate();
     }
 }
