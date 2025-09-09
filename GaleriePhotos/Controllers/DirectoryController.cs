@@ -70,7 +70,7 @@ namespace Galerie.Server.Controllers
         [HttpGet("{id}/directories")]
         public async Task<ActionResult<IEnumerable<DirectoryViewModel>>> GetSubdirectories(int id)
         {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
             var subDirectories = await photoService.GetSubDirectories(directory);
             if (subDirectories == null) return NotFound();
@@ -90,7 +90,7 @@ namespace Galerie.Server.Controllers
         [HttpGet("{id}/photos")]
         public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id)
         {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
             
             // Use new gallery-aware visibility check, fallback to claims-based for administrators
@@ -108,7 +108,7 @@ namespace Galerie.Server.Controllers
         [HttpPatch("{id}")]
         public async Task<ActionResult> Patch(int id, [FromBody]DirectoryPatchViewModel viewModel)
         {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
             if (viewModel.Visibility.IsSet)
             {

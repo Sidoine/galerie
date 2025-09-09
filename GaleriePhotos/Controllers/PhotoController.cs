@@ -32,7 +32,7 @@ namespace Galerie.Server.Controllers
 
         private async Task<(PhotoDirectory?, Photo?)> GetPhoto(int directoryId, int id)
         {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(directoryId);
+            var directory = await photoService.GetPhotoDirectoryAsync(directoryId);
             var image = await applicationDbContext.Photos.FindAsync(id);
             return (directory, image);
         }

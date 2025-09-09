@@ -22,7 +22,7 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "Administrator__Password": "tototo"
             },
-            "applicationUrl": "http://localhost:5000"
+            "applicationUrl": "http://localhost:6009"
         }
     }
 }

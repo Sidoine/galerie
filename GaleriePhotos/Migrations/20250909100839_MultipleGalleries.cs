@@ -68,7 +68,7 @@ namespace GaleriePhotos.Migrations
 
             // Data migration: Create default gallery
             migrationBuilder.Sql(@"
-                INSERT INTO ""Galleries"" (""Name"", ""RootDirectory"") VALUES ('Default Gallery', '');
+                INSERT INTO ""Galleries"" (""Name"", ""RootDirectory"") VALUES ('Default Gallery', '/images');
             ");
 
             // Data migration: Update existing Photos and PhotoDirectories to reference default gallery

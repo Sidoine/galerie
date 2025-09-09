@@ -57,7 +57,7 @@ namespace GaleriePhotos.Services
         public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory)
         {
             // Gallery property must be loaded for this method to work
-            if (photoDirectory.Gallery?.RootDirectory == null) return null;
+            if (photoDirectory.Gallery.RootDirectory == null) return null;
             var path = Path.Combine(photoDirectory.Gallery.RootDirectory, photoDirectory.Path);
             if (!Directory.Exists(path)) return null;
             return path;
@@ -229,12 +229,17 @@ namespace GaleriePhotos.Services
             return photos.OrderBy(x => x.DateTime).ToArray();
         }
 
+        public async Task<PhotoDirectory?> GetPhotoDirectoryAsync(int id)
+        {
+            return await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Id == id);
+        }
+
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)
         {
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return null;
             string[] directoryPaths = GetSubDirectoryPaths(photoDirectory, photoDirectoryPath);
-            var directories = await applicationDbContext.PhotoDirectories.Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
+            var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
             foreach (var path in directoryPaths)
             {
                 if (!directories.Any(x => x.Path == path))
