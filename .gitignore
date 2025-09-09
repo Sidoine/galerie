@@ -10,3 +10,4 @@
 *.pfx
 /GaleriePhotos/ClientApp/public/bundle.js.LICENSE.txt
 /.vscode
+/GaleriePhotos/ClientApp/.yarn/install-state.gz
