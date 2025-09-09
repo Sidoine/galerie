@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Xabe.FFmpeg;
 using Xabe.FFmpeg.Downloader;
 
@@ -55,10 +56,9 @@ namespace GaleriePhotos.Services
 
         public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory)
         {
-            // For backward compatibility, use options.Value.Root if Gallery is not loaded
-            var rootPath = photoDirectory.Gallery?.RootDirectory ?? options.Value.Root;
-            if (rootPath == null) return null;
-            var path = Path.Combine(rootPath, photoDirectory.Path);
+            // Gallery property must be loaded for this method to work
+            if (photoDirectory.Gallery?.RootDirectory == null) return null;
+            var path = Path.Combine(photoDirectory.Gallery.RootDirectory, photoDirectory.Path);
             if (!Directory.Exists(path)) return null;
             return path;
         }
@@ -75,7 +75,9 @@ namespace GaleriePhotos.Services
 
         public async Task<PhotoDirectory> GetRootDirectory(int galleryId)
         {
-            var root = applicationDbContext.PhotoDirectories.FirstOrDefault(x => x.Path == "" && x.GalleryId == galleryId);
+            var root = applicationDbContext.PhotoDirectories
+                .Include(pd => pd.Gallery)
+                .FirstOrDefault(x => x.Path == "" && x.GalleryId == galleryId);
             if (root == null)
             {
                 root = new PhotoDirectory("", DirectoryVisibility.None, null, galleryId);
@@ -84,6 +86,25 @@ namespace GaleriePhotos.Services
             }
 
             return root;
+        }
+
+        // Get directory visibility from GalleryMember for a specific gallery
+        public DirectoryVisibility GetDirectoryVisibility(ClaimsPrincipal claimsPrincipal, int galleryId)
+        {
+            var userId = claimsPrincipal.GetUserId();
+            if (userId == null) return DirectoryVisibility.None;
+
+            var galleryMember = applicationDbContext.GalleryMembers
+                .FirstOrDefault(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+            
+            return galleryMember?.DirectoryVisibility ?? DirectoryVisibility.None;
+        }
+
+        // Check directory visibility using GalleryMember
+        public bool IsDirectoryVisible(ClaimsPrincipal claimsPrincipal, PhotoDirectory directory)
+        {
+            return claimsPrincipal.IsAdministrator() || 
+                   (directory.Visibility & GetDirectoryVisibility(claimsPrincipal, directory.GalleryId)) != 0;
         }
 
         public static bool IsVideo(Photo photo)

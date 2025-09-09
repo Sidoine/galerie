@@ -56,7 +56,7 @@ namespace Galerie.Server.Controllers
             if (directory == null) return NotFound();
             
             // Use new gallery-aware visibility check, fallback to claims-based for administrators
-            if (!User.IsAdministrator() && !User.IsDirectoryVisible(directory, applicationDbContext))
+            if (!User.IsAdministrator() && !photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
             }
@@ -79,12 +79,11 @@ namespace Galerie.Server.Controllers
             // For administrators, use the old visibility approach; for regular users, use gallery membership
             if (isAdministrator)
             {
-                var visibility = User.GetDirectoryVisibility();
-                return Ok(subDirectories.Where(x => isAdministrator || (x.Visibility & visibility) > 0).Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
+                return Ok(subDirectories.Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
             }
             else
             {
-                return Ok(subDirectories.Where(x => User.IsDirectoryVisible(x, applicationDbContext)).Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
+                return Ok(subDirectories.Where(x => photoService.IsDirectoryVisible(User, x)).Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
             }
         }
 
@@ -95,7 +94,7 @@ namespace Galerie.Server.Controllers
             if (directory == null) return NotFound();
             
             // Use new gallery-aware visibility check, fallback to claims-based for administrators
-            if (!User.IsAdministrator() && !User.IsDirectoryVisible(directory, applicationDbContext))
+            if (!User.IsAdministrator() && !photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
             }
