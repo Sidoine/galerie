@@ -1,0 +1,28 @@
+name: Setup environment for GitHub Copilot Agent
+description: Install .NET 9 SDK and configure Node.js with Yarn for the Galerie Photos project
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup .NET 9 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Enable Corepack for Yarn
+      shell: bash
+      run: |
+        corepack enable
+        corepack prepare yarn@4.5.3 --activate
+        
+    - name: Verify installation
+      shell: bash
+      run: |
+        dotnet --version
+        node --version
+        yarn --version
