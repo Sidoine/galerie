@@ -1,4 +1,4 @@
-﻿using GaleriePhotos.Data;
+using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using GaleriePhotos.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -53,17 +53,8 @@ namespace GaleriePhotos.Controllers
                 }
             }
 
-            if (viewModel.DirectoryVisibility.IsSet)
-            {
-                var claims = await userManager.GetClaimsAsync(user);
-                var claim = claims.FirstOrDefault(x => x.Type == Claims.Visibility);
-                if (claim != null)
-                {
-                    await userManager.RemoveClaimAsync(user, claim);
-                }
-                claim = new Claim(Claims.Visibility, viewModel.DirectoryVisibility.Value.ToString());
-                await userManager.AddClaimAsync(user, claim);
-            }
+            // NOTE: DirectoryVisibility is now managed through GalleryMember, not claims
+            // Use the new GalleryMember endpoints instead
 
             return Ok();
         }
@@ -72,6 +63,87 @@ namespace GaleriePhotos.Controllers
         public ActionResult<bool> IsAdministrator()
         {
             return Ok(this.User.Claims.Any(x => x.Type == Claims.Administrator && x.Value == true.ToString()));
+        }
+
+        [HttpGet("{userId}/galleries")]
+        public async Task<ActionResult<GalleryMemberViewModel[]>> GetUserGalleries(string userId)
+        {
+            var galleryMembers = await applicationDbContext.GalleryMembers
+                .Include(gm => gm.Gallery)
+                .Include(gm => gm.User)
+                .Where(gm => gm.UserId == userId)
+                .ToArrayAsync();
+            
+            return Ok(galleryMembers.Select(gm => new GalleryMemberViewModel(gm)).ToArray());
+        }
+
+        [HttpPost("{userId}/galleries/{galleryId}")]
+        public async Task<ActionResult<GalleryMemberViewModel>> AddUserToGallery(string userId, int galleryId, [FromBody]GalleryMemberPatchViewModel viewModel)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound("User not found");
+            
+            var gallery = await applicationDbContext.Galleries.FindAsync(galleryId);
+            if (gallery == null) return NotFound("Gallery not found");
+
+            var existingMember = await applicationDbContext.GalleryMembers
+                .FirstOrDefaultAsync(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+            
+            if (existingMember != null) 
+                return BadRequest("User is already a member of this gallery");
+
+            var galleryMember = new GalleryMember(
+                galleryId, 
+                userId, 
+                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : DirectoryVisibility.None
+            );
+
+            applicationDbContext.GalleryMembers.Add(galleryMember);
+            await applicationDbContext.SaveChangesAsync();
+
+            // Reload with navigation properties
+            galleryMember = await applicationDbContext.GalleryMembers
+                .Include(gm => gm.Gallery)
+                .Include(gm => gm.User)
+                .FirstAsync(gm => gm.Id == galleryMember.Id);
+
+            return Ok(new GalleryMemberViewModel(galleryMember));
+        }
+
+        [HttpPatch("{userId}/galleries/{galleryId}")]
+        public async Task<ActionResult<GalleryMemberViewModel>> UpdateUserGalleryMembership(string userId, int galleryId, [FromBody]GalleryMemberPatchViewModel viewModel)
+        {
+            var galleryMember = await applicationDbContext.GalleryMembers
+                .Include(gm => gm.Gallery)
+                .Include(gm => gm.User)
+                .FirstOrDefaultAsync(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+                
+            if (galleryMember == null) 
+                return NotFound("Gallery membership not found");
+
+            if (viewModel.DirectoryVisibility.IsSet)
+            {
+                galleryMember.DirectoryVisibility = viewModel.DirectoryVisibility.Value;
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+            
+            return Ok(new GalleryMemberViewModel(galleryMember));
+        }
+
+        [HttpDelete("{userId}/galleries/{galleryId}")]
+        public async Task<ActionResult> RemoveUserFromGallery(string userId, int galleryId)
+        {
+            var galleryMember = await applicationDbContext.GalleryMembers
+                .FirstOrDefaultAsync(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+                
+            if (galleryMember == null) 
+                return NotFound("Gallery membership not found");
+
+            applicationDbContext.GalleryMembers.Remove(galleryMember);
+            await applicationDbContext.SaveChangesAsync();
+            
+            return Ok();
         }
     }
 }

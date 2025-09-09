@@ -119,8 +119,10 @@ namespace GaleriePhotos.Services
 
         public async Task<string?> GetThumbnailPath(PhotoDirectory photoDirectory, Photo photo)
         {
-            if (options.Value.ThumbnailsDirectory == null) return null;
-            var thumbnailPath = Path.Combine(options.Value.ThumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
+            // Use gallery-specific thumbnails directory, fallback to global setting for backwards compatibility
+            var thumbnailsDirectory = photoDirectory.Gallery?.ThumbnailsDirectory ?? options.Value.ThumbnailsDirectory;
+            if (thumbnailsDirectory == null) return null;
+            var thumbnailPath = Path.Combine(thumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
             if (!System.IO.File.Exists(thumbnailPath))
             {
                 var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
