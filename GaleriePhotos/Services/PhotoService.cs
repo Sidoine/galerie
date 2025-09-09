@@ -63,15 +63,6 @@ namespace GaleriePhotos.Services
             return path;
         }
 
-        public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory, Gallery gallery)
-        {
-            var rootPath = gallery.RootDirectory;
-            if (rootPath == null) return null;
-            var path = Path.Combine(rootPath, photoDirectory.Path);
-            if (!Directory.Exists(path)) return null;
-            return path;
-        }
-
         public string? GetAbsoluteImagePath(PhotoDirectory photoDirectory, Photo photo)
         {
             if (options.Value.Root == null) return null;
@@ -80,19 +71,6 @@ namespace GaleriePhotos.Services
             var imagePath = Path.Combine(photoDirectoryPath, photo.FileName);
             if (!File.Exists(imagePath)) return null;
             return imagePath;
-        }
-
-        public async Task<PhotoDirectory> GetRootDirectory()
-        {
-            var root = applicationDbContext.PhotoDirectories.FirstOrDefault(x => x.Path == "");
-            if (root == null)
-            {
-                root = new PhotoDirectory("", DirectoryVisibility.None, null);
-                applicationDbContext.PhotoDirectories.Add(root);
-                await applicationDbContext.SaveChangesAsync();
-            }
-
-            return root;
         }
 
         public async Task<PhotoDirectory> GetRootDirectory(int galleryId)

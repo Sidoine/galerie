@@ -11,6 +11,11 @@ namespace GaleriePhotos.Models
         public const string Administrator = "Administrator";
         public const string Visibility = "Visibility";
 
+        public static string? GetUserId(this ClaimsPrincipal claimsPrincipal)
+        {
+            return claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+        }
+
         public static bool IsAdministrator(this ClaimsPrincipal claimsPrincipal)
         {
             return claimsPrincipal.HasClaim(Claims.Administrator, true.ToString());

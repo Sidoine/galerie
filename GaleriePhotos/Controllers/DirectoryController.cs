@@ -33,7 +33,7 @@ namespace Galerie.Server.Controllers
         public async Task<ActionResult<DirectoryViewModel>> GetRoot()
         {
             // Get the user's first gallery
-            var userId = User.Claims.FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
 
             var firstGalleryMember = await applicationDbContext.GalleryMembers
@@ -42,9 +42,7 @@ namespace Galerie.Server.Controllers
 
             if (firstGalleryMember == null)
             {
-                // Fall back to the old method for users without gallery memberships
-                var rootDirectory = await photoService.GetRootDirectory();
-                return Ok(new DirectoryViewModel(rootDirectory, photoService.GetNumberOfPhotos(rootDirectory), photoService.GetNumberOfSubDirectories(rootDirectory)));
+                return Forbid();
             }
 
             var galleryRootDirectory = await photoService.GetRootDirectory(firstGalleryMember.GalleryId);
