@@ -55,7 +55,17 @@ namespace GaleriePhotos.Services
 
         public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory)
         {
-            var rootPath = options.Value.Root;
+            // For backward compatibility, use options.Value.Root if Gallery is not loaded
+            var rootPath = photoDirectory.Gallery?.RootDirectory ?? options.Value.Root;
+            if (rootPath == null) return null;
+            var path = Path.Combine(rootPath, photoDirectory.Path);
+            if (!Directory.Exists(path)) return null;
+            return path;
+        }
+
+        public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory, Gallery gallery)
+        {
+            var rootPath = gallery.RootDirectory;
             if (rootPath == null) return null;
             var path = Path.Combine(rootPath, photoDirectory.Path);
             if (!Directory.Exists(path)) return null;
@@ -78,6 +88,19 @@ namespace GaleriePhotos.Services
             if (root == null)
             {
                 root = new PhotoDirectory("", DirectoryVisibility.None, null);
+                applicationDbContext.PhotoDirectories.Add(root);
+                await applicationDbContext.SaveChangesAsync();
+            }
+
+            return root;
+        }
+
+        public async Task<PhotoDirectory> GetRootDirectory(int galleryId)
+        {
+            var root = applicationDbContext.PhotoDirectories.FirstOrDefault(x => x.Path == "" && x.GalleryId == galleryId);
+            if (root == null)
+            {
+                root = new PhotoDirectory("", DirectoryVisibility.None, null, galleryId);
                 applicationDbContext.PhotoDirectories.Add(root);
                 await applicationDbContext.SaveChangesAsync();
             }

@@ -10,10 +10,20 @@ namespace GaleriePhotos.Models
         public double? Longitude { get; set; }
         public string? Camera { get; set; }
         public DateTime DateTime { get; set; }
+        public int GalleryId { get; set; }
 
         public Photo(string fileName)
         {
             FileName = fileName;
         }
+
+        public Photo(string fileName, int galleryId)
+        {
+            FileName = fileName;
+            GalleryId = galleryId;
+        }
+
+        // Navigation properties
+        public Gallery Gallery { get; set; } = null!;
     }
 }

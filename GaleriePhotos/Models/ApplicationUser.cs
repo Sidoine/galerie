@@ -8,5 +8,7 @@ namespace GaleriePhotos.Models
 {
     public class ApplicationUser : IdentityUser
     {
+        // Navigation properties
+        public ICollection<GalleryMember> GalleryMemberships { get; set; } = new List<GalleryMember>();
     }
 }
