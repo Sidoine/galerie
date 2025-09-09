@@ -21,6 +21,13 @@ namespace GaleriePhotos
     {
         public static async Task Main(string[] args)
         {
+            // Check if --generate-services argument is provided
+            if (args.Contains("--generate-services"))
+            {
+                GenerateTypescriptServicesOnly(args);
+                return;
+            }
+
             IWebHost webHost = CreateWebHostBuilder(args).Build();
 
             using (var scope = webHost.Services.CreateScope())
@@ -53,6 +60,31 @@ namespace GaleriePhotos
                 }
             }
             webHost.Run();
+        }
+
+        private static void GenerateTypescriptServicesOnly(string[] args)
+        {
+            Console.WriteLine("Generating TypeScript services...");
+            
+            IWebHost webHost = CreateWebHostBuilder(args).Build();
+
+            using (var scope = webHost.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+
+                try
+                {
+                    services.GetRequiredService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
+                    Console.WriteLine("TypeScript services generated successfully.");
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while generating the services.");
+                    Console.WriteLine($"Error generating TypeScript services: {ex.Message}");
+                    Environment.Exit(1);
+                }
+            }
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args)
