@@ -11,7 +11,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Hosting;
 using GaleriePhotos.Data;
 
-namespace GaleriesPhotosTest.Controllers;
+namespace GaleriePhotosTest.Controllers;
 
 public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Startup>>
 {
@@ -23,7 +23,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
     {
         _factory = factory;
         _client = _factory.CreateClient();
-        
+
         _authenticatedClient = _factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
@@ -61,7 +61,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
     public async Task GetRoot_WithAuthentication_ReturnsOk()
     {
         // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization = 
+        _authenticatedClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
 
         // Act
@@ -75,7 +75,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
     public async Task Get_WithInvalidId_ReturnsOk()
     {
         // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization = 
+        _authenticatedClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
 
         // Act
@@ -89,7 +89,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
     public async Task GetSubdirectories_WithInvalidId_ReturnsOk()
     {
         // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization = 
+        _authenticatedClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
 
         // Act
@@ -103,7 +103,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
     public async Task GetPhotos_WithInvalidId_ReturnsOk()
     {
         // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization = 
+        _authenticatedClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
 
         // Act
@@ -117,7 +117,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
     public async Task Controller_WithAuthentication_ReturnsValidResponse()
     {
         // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization = 
+        _authenticatedClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
 
         // Act
@@ -125,7 +125,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
+
         // The controller may return different content types based on configuration
         // This test verifies the controller responds correctly to authenticated requests
         var content = await response.Content.ReadAsStringAsync();

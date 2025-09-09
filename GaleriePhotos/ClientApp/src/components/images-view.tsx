@@ -68,7 +68,7 @@ export const ImagesView = observer(function ImagesView({
     const { order, navigateToDirectory } = useUi();
     const directoryContent =
         directoriesStore.contentLoader.getValue(directoryId);
-    let values = directoryContent || [];
+    const values = directoryContent || [];
     const sortedValues =
         order === "date-desc" ? values.slice().reverse() : values;
     const handleSortDateDesc = useCallback(

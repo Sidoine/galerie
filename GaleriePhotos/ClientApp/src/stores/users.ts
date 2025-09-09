@@ -1,4 +1,4 @@
-import { AuthorizeService, SingletonLoader } from "folke-service-helpers";
+import { SingletonLoader } from "folke-service-helpers";
 import { computed, action, makeObservable } from "mobx";
 import { User, UserPatch } from "../services/views";
 import { UserController } from "../services/user";

@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29324.140
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GaleriePhotos", "GaleriePhotos\GaleriePhotos.csproj", "{A2D17987-E6EA-474E-BCD0-BE06D46CDA16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GaleriesPhotosTest", "GaleriesPhotosTest\GaleriesPhotosTest.csproj", "{7C97DA00-5933-4E62-A26A-3B95BF5B6596}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GaleriePhotosTest", "GaleriePhotosTest\GaleriePhotosTest.csproj", "{7C97DA00-5933-4E62-A26A-3B95BF5B6596}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
