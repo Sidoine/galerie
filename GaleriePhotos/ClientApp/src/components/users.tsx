@@ -10,11 +10,7 @@ import {
     TableCell,
     TableBody,
     Switch,
-    Select,
-    MenuItem,
-    SelectChangeEvent,
 } from "@mui/material";
-import { DirectoryVisibility } from "../services/enums";
 import { User } from "../services/views";
 
 const UserRow = observer(({ user }: { user: User }) => {
@@ -22,14 +18,6 @@ const UserRow = observer(({ user }: { user: User }) => {
     const handleToggleCheck = useCallback(
         (e: unknown, checked: boolean) => {
             usersStore.patch(user, { administrator: checked });
-        },
-        [usersStore, user]
-    );
-    const handleChangeVisibility = useCallback(
-        (e: SelectChangeEvent<DirectoryVisibility>) => {
-            usersStore.patch(user, {
-                directoryVisibility: e.target.value as DirectoryVisibility,
-            });
         },
         [usersStore, user]
     );
@@ -41,20 +29,6 @@ const UserRow = observer(({ user }: { user: User }) => {
                     checked={user.administrator}
                     onChange={handleToggleCheck}
                 />
-            </TableCell>
-            <TableCell>
-                <Select<DirectoryVisibility>
-                    value={user.directoryVisibility}
-                    onChange={handleChangeVisibility}
-                >
-                    <MenuItem value={DirectoryVisibility.None}>Aucune</MenuItem>
-                    <MenuItem value={DirectoryVisibility.Mylene}>
-                        Mylène
-                    </MenuItem>
-                    <MenuItem value={DirectoryVisibility.Sidoine}>
-                        Sidoine
-                    </MenuItem>
-                </Select>
             </TableCell>
         </TableRow>
     );
@@ -70,7 +44,6 @@ export const Users = observer(() => {
                     <TableRow>
                         <TableCell>Nom</TableCell>
                         <TableCell>Administrator</TableCell>
-                        <TableCell>Visibilité</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>

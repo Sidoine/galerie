@@ -22,9 +22,6 @@ export class UsersStore {
         if (patch.administrator !== undefined) {
             user.administrator = patch.administrator;
         }
-        if (patch.directoryVisibility !== undefined) {
-            user.directoryVisibility = patch.directoryVisibility;
-        }
 
         this.userService.patch(user.id, patch);
     }
