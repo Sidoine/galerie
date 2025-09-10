@@ -133,8 +133,30 @@ docker run --rm -p 5000:5000 --env DATABASE_URL=postgres://user:pass@host:port/d
 
 1. Add method to appropriate controller (e.g., `PhotoController.cs`)
 2. Create/update view models in `ViewModels/` if needed
-3. Frontend services will auto-generate TypeScript types via Folke.CsTsService
+3. Generate updated TypeScript services (see "Generating TypeScript Services" below)
 4. Update frontend components to use new endpoints
+
+### Generating TypeScript Services
+
+When controllers are modified, the TypeScript services need to be regenerated to reflect API changes:
+
+```bash
+# Generate TypeScript services without starting the web server
+dotnet run --project GaleriePhotos -- --generate-services
+```
+
+This command:
+- Builds the application and creates a temporary host
+- Uses Folke.CsTsService to scan controllers and generate TypeScript client code
+- Updates files in `GaleriePhotos/ClientApp/src/services/`
+- Exits without starting the web server
+
+The TypeScript services are auto-generated from C# controllers and should not be modified manually. The generated files include:
+- `directory.ts` - Directory/album management API calls
+- `photo.ts` - Photo management and metadata API calls  
+- `user.ts` - User management and authentication API calls
+- `views.ts` - TypeScript interfaces matching C# ViewModels
+- `enums.ts` - TypeScript enums from C# enums
 
 ### Database Schema Changes
 
