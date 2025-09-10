@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Xabe.FFmpeg;
 using Xabe.FFmpeg.Downloader;
 
@@ -55,9 +56,9 @@ namespace GaleriePhotos.Services
 
         public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory)
         {
-            var rootPath = options.Value.Root;
-            if (rootPath == null) return null;
-            var path = Path.Combine(rootPath, photoDirectory.Path);
+            // Gallery property must be loaded for this method to work
+            if (photoDirectory.Gallery.RootDirectory == null) return null;
+            var path = Path.Combine(photoDirectory.Gallery.RootDirectory, photoDirectory.Path);
             if (!Directory.Exists(path)) return null;
             return path;
         }
@@ -72,17 +73,38 @@ namespace GaleriePhotos.Services
             return imagePath;
         }
 
-        public async Task<PhotoDirectory> GetRootDirectory()
+        public async Task<PhotoDirectory> GetRootDirectory(int galleryId)
         {
-            var root = applicationDbContext.PhotoDirectories.FirstOrDefault(x => x.Path == "");
+            var root = applicationDbContext.PhotoDirectories
+                .Include(pd => pd.Gallery)
+                .FirstOrDefault(x => x.Path == "" && x.GalleryId == galleryId);
             if (root == null)
             {
-                root = new PhotoDirectory("", DirectoryVisibility.None, null);
+                root = new PhotoDirectory("", DirectoryVisibility.None, null, galleryId);
                 applicationDbContext.PhotoDirectories.Add(root);
                 await applicationDbContext.SaveChangesAsync();
             }
 
             return root;
+        }
+
+        // Get directory visibility from GalleryMember for a specific gallery
+        public DirectoryVisibility GetDirectoryVisibility(ClaimsPrincipal claimsPrincipal, int galleryId)
+        {
+            var userId = claimsPrincipal.GetUserId();
+            if (userId == null) return DirectoryVisibility.None;
+
+            var galleryMember = applicationDbContext.GalleryMembers
+                .FirstOrDefault(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+            
+            return galleryMember?.DirectoryVisibility ?? DirectoryVisibility.None;
+        }
+
+        // Check directory visibility using GalleryMember
+        public bool IsDirectoryVisible(ClaimsPrincipal claimsPrincipal, PhotoDirectory directory)
+        {
+            return claimsPrincipal.IsAdministrator() || 
+                   (directory.Visibility & GetDirectoryVisibility(claimsPrincipal, directory.GalleryId)) != 0;
         }
 
         public static bool IsVideo(Photo photo)
@@ -97,8 +119,10 @@ namespace GaleriePhotos.Services
 
         public async Task<string?> GetThumbnailPath(PhotoDirectory photoDirectory, Photo photo)
         {
-            if (options.Value.ThumbnailsDirectory == null) return null;
-            var thumbnailPath = Path.Combine(options.Value.ThumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
+            // Use gallery-specific thumbnails directory, fallback to global setting for backwards compatibility
+            var thumbnailsDirectory = photoDirectory.Gallery?.ThumbnailsDirectory ?? options.Value.ThumbnailsDirectory;
+            if (thumbnailsDirectory == null) return null;
+            var thumbnailPath = Path.Combine(thumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
             if (!System.IO.File.Exists(thumbnailPath))
             {
                 var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
@@ -207,12 +231,17 @@ namespace GaleriePhotos.Services
             return photos.OrderBy(x => x.DateTime).ToArray();
         }
 
+        public async Task<PhotoDirectory?> GetPhotoDirectoryAsync(int id)
+        {
+            return await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Id == id);
+        }
+
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)
         {
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return null;
             string[] directoryPaths = GetSubDirectoryPaths(photoDirectory, photoDirectoryPath);
-            var directories = await applicationDbContext.PhotoDirectories.Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
+            var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
             foreach (var path in directoryPaths)
             {
                 if (!directories.Any(x => x.Path == path))

@@ -1,0 +1,10 @@
+using Folke.CsTsService.Optional;
+using GaleriePhotos.Models;
+
+namespace GaleriePhotos.ViewModels
+{
+    public class GalleryMemberPatchViewModel
+    {
+        public Optional<DirectoryVisibility> DirectoryVisibility { get; set; }
+    }
+}

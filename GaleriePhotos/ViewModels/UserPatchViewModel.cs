@@ -11,6 +11,7 @@ namespace GaleriePhotos.ViewModels
     {
         public Optional<bool> Administrator { get; set; }
 
-        public Optional<DirectoryVisibility> DirectoryVisibility { get; set; }
+        // Note: DirectoryVisibility is now managed per-gallery through GalleryMember
+        // Use the GalleryMember endpoints to manage gallery-specific permissions
     }
 }

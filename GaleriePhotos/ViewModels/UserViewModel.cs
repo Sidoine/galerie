@@ -14,15 +14,14 @@ namespace GaleriePhotos.ViewModels
 
         public bool Administrator { get; set; }
 
-        public DirectoryVisibility DirectoryVisibility { get; set; }
+        // Note: DirectoryVisibility is now managed per-gallery through GalleryMember
+        // Use the GalleryMember endpoints to manage gallery-specific permissions
 
         public UserViewModel(ApplicationUser applicationUser, Microsoft.AspNetCore.Identity.IdentityUserClaim<string>[] identityUserClaim)
         {
             Id = applicationUser.Id;
             Name = applicationUser.UserName ?? "Unknown";
             Administrator = (identityUserClaim.Any(x => x.ClaimType == Claims.Administrator));
-            var claimValue = identityUserClaim.FirstOrDefault(x => x.ClaimType == Claims.Visibility)?.ClaimValue;
-            DirectoryVisibility = claimValue != null ? Enum.Parse<DirectoryVisibility>(claimValue) : DirectoryVisibility.None;
         }        
     }
 }

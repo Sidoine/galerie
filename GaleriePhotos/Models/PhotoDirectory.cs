@@ -6,6 +6,7 @@
         public string Path { get; set; }
         public DirectoryVisibility Visibility { get; set; }
         public int? CoverPhotoId { get; set; }
+        public int GalleryId { get; set; }
 
         public PhotoDirectory(string path, DirectoryVisibility visibility, int? coverPhotoId)
         {
@@ -13,5 +14,16 @@
             Visibility = visibility;
             CoverPhotoId = coverPhotoId;
         }
+
+        public PhotoDirectory(string path, DirectoryVisibility visibility, int? coverPhotoId, int galleryId)
+        {
+            Path = path;
+            Visibility = visibility;
+            CoverPhotoId = coverPhotoId;
+            GalleryId = galleryId;
+        }
+
+        // Navigation properties
+        public Gallery Gallery { get; set; } = null!;
     }
 }

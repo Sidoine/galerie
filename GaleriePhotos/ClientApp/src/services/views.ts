@@ -6,13 +6,27 @@ export interface User {
     name: string;
 
     administrator: boolean;
-
-    directoryVisibility: enums.DirectoryVisibility;
 }
 
 export interface UserPatch {
     administrator?: boolean | undefined;
+}
 
+export interface GalleryMember {
+    id: number;
+
+    galleryId: number;
+
+    galleryName: string;
+
+    userId: string;
+
+    userName: string;
+
+    directoryVisibility: enums.DirectoryVisibility;
+}
+
+export interface GalleryMemberPatch {
     directoryVisibility?: enums.DirectoryVisibility | undefined;
 }
 

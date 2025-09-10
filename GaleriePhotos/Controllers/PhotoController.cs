@@ -32,7 +32,7 @@ namespace Galerie.Server.Controllers
 
         private async Task<(PhotoDirectory?, Photo?)> GetPhoto(int directoryId, int id)
         {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(directoryId);
+            var directory = await photoService.GetPhotoDirectoryAsync(directoryId);
             var image = await applicationDbContext.Photos.FindAsync(id);
             return (directory, image);
         }
@@ -45,7 +45,7 @@ namespace Galerie.Server.Controllers
             if (directory == null || photo == null) return NotFound();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
-            if (!User.IsDirectoryVisible(directory)) return Forbid();
+            if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
             return PhysicalFile(imagePath, photoService.GetMimeType(photo), Path.GetFileName(imagePath));
         }
 
@@ -56,7 +56,7 @@ namespace Galerie.Server.Controllers
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
 
-            if (!User.IsDirectoryVisible(directory)) return Forbid();
+            if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
             var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
             if (thumbnailPath == null) return NotFound();
             return File(System.IO.File.ReadAllBytes(thumbnailPath), "image/jpeg", photo.FileName);
@@ -80,7 +80,7 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            if (!User.IsDirectoryVisible(directory)) return Forbid();
+            if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
             var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
             if (imagePath == null) return NotFound();
             var images = await photoService.GetDirectoryImages(directory);
