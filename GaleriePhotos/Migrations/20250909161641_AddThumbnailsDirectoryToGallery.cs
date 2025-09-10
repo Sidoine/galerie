@@ -15,6 +15,10 @@ namespace GaleriePhotos.Migrations
                 table: "Galleries",
                 type: "text",
                 nullable: true);
+
+            migrationBuilder.Sql(@"
+                UPDATE ""Galleries"" SET ""ThumbnailsDirectory"" = '/thumbs';
+            ");
         }
 
         /// <inheritdoc />
