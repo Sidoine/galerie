@@ -1,11 +1,11 @@
 import { Link as RouterLink, useParams } from "react-router";
-import { useStores } from "../stores";
 import { Breadcrumbs, Link, Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
+import { useDirectoriesStore } from "../stores/directories";
 
 function BreadCrumbs() {
-    const { directoryId } = useParams();
-    const { directoriesStore } = useStores();
+    const { directoryId, galleryId } = useParams();
+    const directoriesStore = useDirectoriesStore();
     const directory =
         directoryId &&
         directoriesStore.infoLoader.getValue(Number(directoryId));
@@ -16,12 +16,21 @@ function BreadCrumbs() {
                 sx={{ color: (theme) => theme.palette.common.white }}
                 to="/"
             >
-                Galerie
+                Galeries
             </Link>
+            {galleryId && (
+                <Link
+                    component={RouterLink}
+                    sx={{ color: (theme) => theme.palette.common.white }}
+                    to={`/g/${galleryId}`}
+                >
+                    Galerie
+                </Link>
+            )}
             {directory && directory.parent && directory.parent.name && (
                 <Link
                     component={RouterLink}
-                    to={`/directory/${directory.parent.id}`}
+                    to={`/g/${galleryId}/directory/${directory.parent.id}`}
                     sx={{ color: (theme) => theme.palette.common.white }}
                 >
                     {directory.parent.name}

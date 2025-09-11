@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { useStores } from "../stores";
 import {
     Table,
     TableHead,
@@ -26,9 +25,10 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { DirectoryVisibility } from "../services/enums";
 import { useState } from "react";
+import { useUsersStore } from "../stores/users";
 
 const AddMembershipForm = observer(() => {
-    const { usersStore } = useStores();
+    const usersStore = useUsersStore();
     const [galleryId, setGalleryId] = useState(0);
     const [visibility, setVisibility] = useState(DirectoryVisibility.None);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -105,7 +105,7 @@ const AddMembershipForm = observer(() => {
 });
 
 const UserRow = observer(({ user }: { user: User }) => {
-    const { usersStore } = useStores();
+    const usersStore = useUsersStore();
     const handleToggleCheck = useCallback(
         (_: unknown, checked: boolean) => {
             usersStore.patch(user, { administrator: checked });
@@ -128,7 +128,7 @@ const UserRow = observer(({ user }: { user: User }) => {
 });
 
 export const Users = observer(() => {
-    const { usersStore } = useStores();
+    const usersStore = useUsersStore();
     const users = usersStore.usersLoader.getValue() || [];
     const memberships = usersStore.memberships;
     const loading = usersStore.loadingMemberships;

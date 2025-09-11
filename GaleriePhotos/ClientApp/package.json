@@ -43,7 +43,8 @@
         "build": "vite build",
         "start": "vite",
         "test": "cross-env CI=true react-scripts test --env=jsdom",
-        "lint": "eslint ./src/**/*.ts ./src/**/*.tsx"
+        "lint": "eslint ./src/**/*.ts ./src/**/*.tsx",
+        "typecheck": "tsc --noEmit -w -p ."
     },
     "packageManager": "yarn@4.5.3"
 }

@@ -1,15 +1,42 @@
-import { Route, Routes, useLocation } from "react-router";
+import {
+    Route,
+    Routes,
+    useLocation,
+    useNavigate,
+    useParams,
+} from "react-router";
 import { CssBaseline, List, ListItemButton } from "@mui/material";
 import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
 import { Link } from "react-router-dom";
-import { StoresProvider, useStores } from "./stores";
 import { observer } from "mobx-react-lite";
 import { Users } from "./components/users";
 import BreadCrumbs from "./components/bread-crumbs";
+import { UsersStoreProvider } from "./stores/users";
+import { GalleriesStoreProvider, useGalleriesStore } from "./stores/galleries";
+import { DirectoriesStoreProvider } from "./stores/directories";
+import { ApiClientProvider } from "folke-service-helpers";
 
-const Menu = observer(function Menu() {
-    const { usersStore } = useStores();
+function GalleryRoot() {
+    const { galleryId } = useParams();
+    return (
+        <DirectoriesStoreProvider galleryId={Number(galleryId)}>
+            <UsersStoreProvider>
+                <Routes>
+                    <Route path="/" element={<RootDirectoryPage />} />
+                    <Route
+                        path="/directory/:id/*"
+                        element={<DirectoryPage />}
+                    />
+                    <Route path="/users" element={<Users />} />
+                </Routes>
+            </UsersStoreProvider>
+        </DirectoriesStoreProvider>
+    );
+}
+
+const MainScreen = observer(function MainScreen() {
+    // const usersStore = useUsersStore();
     const location = useLocation();
     return (
         <ResponsiveDrawer
@@ -25,7 +52,7 @@ const Menu = observer(function Menu() {
                     >
                         Galerie
                     </ListItemButton>
-                    {usersStore.isAdministrator && (
+                    {/* {usersStore.isAdministrator && (
                         <ListItemButton
                             selected={location.pathname === "/users"}
                             component={Link}
@@ -33,13 +60,13 @@ const Menu = observer(function Menu() {
                         >
                             Utilisateurs
                         </ListItemButton>
-                    )}
+                    )} */}
                 </List>
             }
             title={
                 <Routes>
                     <Route
-                        path="/directory/:directoryId/*"
+                        path="/g/:galleryId/directory/:directoryId/*"
                         element={<BreadCrumbs />}
                     ></Route>
                     <Route path="*" element={<>Galerie photo</>} />
@@ -47,21 +74,50 @@ const Menu = observer(function Menu() {
             }
         >
             <Routes>
-                <Route path="/" element={<RootDirectoryPage />} />
-                <Route path="/directory/:id/*" element={<DirectoryPage />} />
-                <Route path="/users" element={<Users />} />
+                <Route path="/" element={<GalleryChooser />} />
+                <Route path="/g/:galleryId/*" element={<GalleryRoot />} />
             </Routes>
         </ResponsiveDrawer>
     );
 });
 
+const GalleryChooser = observer(function GalleryChooser() {
+    const galleriesStore = useGalleriesStore();
+    const navigate = useNavigate();
+    if (!galleriesStore.memberships && !galleriesStore.loading) {
+        galleriesStore.load();
+    }
+    const memberships = galleriesStore.memberships;
+    if (!memberships) return <>Chargement...</>;
+    if (memberships.length === 1) {
+        const galleryId = memberships[0].galleryId;
+        navigate(`/g/${galleryId}`, { replace: true });
+    }
+    return (
+        <List>
+            {memberships.map((m) => (
+                <ListItemButton
+                    key={m.galleryId}
+                    onClick={() => {
+                        navigate(`/g/${m.galleryId}`);
+                    }}
+                >
+                    {m.galleryName}
+                </ListItemButton>
+            ))}
+        </List>
+    );
+});
+
 function Application() {
     return (
-        <StoresProvider>
-            <CssBaseline />
+        <ApiClientProvider>
+            <GalleriesStoreProvider>
+                <CssBaseline />
 
-            <Menu />
-        </StoresProvider>
+                <MainScreen />
+            </GalleriesStoreProvider>
+        </ApiClientProvider>
     );
 }
 

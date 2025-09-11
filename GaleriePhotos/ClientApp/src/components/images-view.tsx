@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
 import { useCallback } from "react";
-import { useStores } from "../stores";
 import {
     Button,
     CircularProgress,
@@ -13,6 +12,8 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Photo } from "../services/views";
 import { Link } from "react-router-dom";
 import { createPhotoUrl, useUi } from "../stores/ui";
+import { useDirectoriesStore } from "../stores/directories";
+import { useUsersStore } from "../stores/users";
 
 const ImageCard = observer(function ImageCard({
     value,
@@ -21,7 +22,7 @@ const ImageCard = observer(function ImageCard({
     value: Photo;
     directoryId: number;
 }) {
-    const { directoriesStore } = useStores();
+    const directoriesStore = useDirectoriesStore();
     const { order } = useUi();
 
     return (
@@ -64,7 +65,8 @@ export const ImagesView = observer(function ImagesView({
 }: {
     directoryId: number;
 }) {
-    const { directoriesStore, usersStore } = useStores();
+    const directoriesStore = useDirectoriesStore();
+    const usersStore = useUsersStore();
     const { order, navigateToDirectory } = useUi();
     const directoryContent =
         directoriesStore.contentLoader.getValue(directoryId);

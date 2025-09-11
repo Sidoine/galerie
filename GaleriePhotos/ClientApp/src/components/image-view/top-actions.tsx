@@ -3,8 +3,9 @@ import { IconButton, Menu, MenuItem, Stack, styled } from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useCallback, useState } from "react";
-import { useStores } from "../../stores";
 import { PhotoFull } from "../../services/views";
+import { useUsersStore } from "../../stores/users";
+import { useDirectoriesStore } from "../../stores/directories";
 
 const WhiteButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.common.white,
@@ -21,7 +22,8 @@ function TopActions({
     directoryId: number;
     photo: PhotoFull;
 }) {
-    const { usersStore, directoriesStore } = useStores();
+    const directoriesStore = useDirectoriesStore();
+    const usersStore = useUsersStore();
     const handleMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     }, []);

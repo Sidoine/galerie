@@ -1,6 +1,5 @@
 import { ChangeEvent, lazy, Suspense, useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { useStores } from "../stores";
 import {
     Container,
     SvgIcon,
@@ -14,13 +13,14 @@ import {
     Switch,
     useMediaQuery,
     useTheme,
-    Skeleton,
 } from "@mui/material";
 import { ImagesView } from "./images-view";
 import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
 import { DirectoryVisibility } from "../services/enums";
 import placeholder from "../assets/placeholder.png";
+import { useUsersStore } from "../stores/users";
+import { useDirectoriesStore } from "../stores/directories";
 const ImageView = lazy(() => import("./image-view/image-view"));
 
 export interface DirectoryViewProps {
@@ -55,7 +55,8 @@ const Image = styled("img")(({ theme }) => ({
 }));
 
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
-    const { directoriesStore, usersStore } = useStores();
+    const directoriesStore = useDirectoriesStore();
+    const usersStore = useUsersStore();
     const handleMyleneSwitch = useCallback(
         (e: ChangeEvent<HTMLInputElement>, checked: boolean) => {
             let visibility = directory.visibility & ~DirectoryVisibility.Mylene;
@@ -78,7 +79,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
 
     return (
         <ImageListItem sx={{ color: "inherit", textDecoration: "none" }}>
-            <RouterLink to={`/directory/${directory.id}`}>
+            <RouterLink to={`directory/${directory.id}`}>
                 {directory.coverPhotoId && (
                     <Image
                         src={directoriesStore.getThumbnail(
@@ -154,7 +155,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
 });
 
 const Subdirectories = observer(({ id }: { id: number }) => {
-    const { directoriesStore } = useStores();
+    const directoriesStore = useDirectoriesStore();
     const directories = directoriesStore.subDirectoriesLoader.getValue(id);
     const theme = useTheme();
     const matchDownMd = useMediaQuery(theme.breakpoints.down("md"));
@@ -201,8 +202,6 @@ export function DirectoryPage() {
 }
 
 export const RootDirectoryPage = observer(function RootDirectoryPage() {
-    const { directoriesStore } = useStores();
-    const root = directoriesStore.root;
-    if (!root) return <Skeleton variant="rectangular" />;
-    return <DirectoryView id={root.id} />;
+    const { galleryId } = useParams();
+    return <DirectoryView id={Number(galleryId)} />;
 });

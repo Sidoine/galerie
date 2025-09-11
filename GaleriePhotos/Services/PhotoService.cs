@@ -73,14 +73,14 @@ namespace GaleriePhotos.Services
             return imagePath;
         }
 
-        public async Task<PhotoDirectory> GetRootDirectory(int galleryId)
+        public async Task<PhotoDirectory> GetRootDirectory(Gallery gallery)
         {
             var root = applicationDbContext.PhotoDirectories
                 .Include(pd => pd.Gallery)
-                .FirstOrDefault(x => x.Path == "" && x.GalleryId == galleryId);
+                .FirstOrDefault(x => x.Path == "" && x.GalleryId == gallery.Id);
             if (root == null)
             {
-                root = new PhotoDirectory("", DirectoryVisibility.None, null, galleryId);
+                root = new PhotoDirectory("", DirectoryVisibility.None, null, gallery.Id) { Gallery = gallery };
                 applicationDbContext.PhotoDirectories.Add(root);
                 await applicationDbContext.SaveChangesAsync();
             }
@@ -176,7 +176,8 @@ namespace GaleriePhotos.Services
             {
                 if (!photos.Any(x => x.FileName == fileName))
                 {
-                    var photo = new Photo(fileName);
+                    var photo = new Photo(fileName) { Gallery = photoDirectory.Gallery };
+                    photo.GalleryId = photoDirectory.GalleryId;
                     var imagePath = Path.Combine(path, fileName);
 
                     if (!IsVideo(photo))
@@ -246,7 +247,11 @@ namespace GaleriePhotos.Services
             {
                 if (!directories.Any(x => x.Path == path))
                 {
-                    var subPhotoDirectory = new PhotoDirectory(path, DirectoryVisibility.None, null);
+                    var subPhotoDirectory = new PhotoDirectory(path, DirectoryVisibility.None, null)
+                    { 
+                        Gallery = photoDirectory.Gallery,
+                        GalleryId = photoDirectory.GalleryId
+                    };
                     applicationDbContext.PhotoDirectories.Add(subPhotoDirectory);
                     directories.Add(subPhotoDirectory);
                 }
