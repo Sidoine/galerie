@@ -24,10 +24,14 @@ export interface GalleryMember {
     userName: string;
 
     directoryVisibility: enums.DirectoryVisibility;
+
+    isAdministrator: boolean;
 }
 
 export interface GalleryMemberPatch {
     directoryVisibility?: enums.DirectoryVisibility | undefined;
+
+    isAdministrator?: boolean | undefined;
 }
 
 export interface Directory {

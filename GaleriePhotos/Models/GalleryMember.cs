@@ -6,12 +6,14 @@ namespace GaleriePhotos.Models
         public int GalleryId { get; set; }
         public string UserId { get; set; }
         public DirectoryVisibility DirectoryVisibility { get; set; }
+        public bool IsAdministrator { get; set; }
 
-        public GalleryMember(int galleryId, string userId, DirectoryVisibility directoryVisibility)
+        public GalleryMember(int galleryId, string userId, DirectoryVisibility directoryVisibility, bool isAdministrator = false)
         {
             GalleryId = galleryId;
             UserId = userId;
             DirectoryVisibility = directoryVisibility;
+            IsAdministrator = isAdministrator;
         }
 
         // Navigation properties

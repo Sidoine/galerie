@@ -10,6 +10,7 @@ namespace GaleriePhotos.ViewModels
         public string UserId { get; set; }
         public string UserName { get; set; }
         public DirectoryVisibility DirectoryVisibility { get; set; }
+    public bool IsAdministrator { get; set; }
 
         public GalleryMemberViewModel(GalleryMember galleryMember)
         {
@@ -19,6 +20,7 @@ namespace GaleriePhotos.ViewModels
             UserId = galleryMember.UserId;
             UserName = galleryMember.User?.UserName ?? "Unknown";
             DirectoryVisibility = galleryMember.DirectoryVisibility;
+            IsAdministrator = galleryMember.IsAdministrator;
         }
     }
 }

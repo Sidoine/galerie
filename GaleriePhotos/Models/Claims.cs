@@ -20,5 +20,13 @@ namespace GaleriePhotos.Models
         {
             return claimsPrincipal.HasClaim(Claims.Administrator, true.ToString());
         }
+
+        public static bool IsGalleryAdministrator(this ClaimsPrincipal claimsPrincipal, ApplicationDbContext dbContext, int galleryId)
+        {
+            if (claimsPrincipal.IsAdministrator()) return true; // global admin
+            var userId = claimsPrincipal.GetUserId();
+            if (userId == null) return false;
+            return dbContext.GalleryMembers.Any(gm => gm.UserId == userId && gm.GalleryId == galleryId && gm.IsAdministrator);
+        }
     }
 }

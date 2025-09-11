@@ -93,9 +93,10 @@ namespace GaleriePhotos.Controllers
                 return BadRequest("User is already a member of this gallery");
 
             var galleryMember = new GalleryMember(
-                galleryId, 
-                userId, 
-                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : DirectoryVisibility.None
+                galleryId,
+                userId,
+                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : DirectoryVisibility.None,
+                viewModel.IsAdministrator.IsSet && viewModel.IsAdministrator.Value
             );
 
             applicationDbContext.GalleryMembers.Add(galleryMember);
@@ -124,6 +125,10 @@ namespace GaleriePhotos.Controllers
             if (viewModel.DirectoryVisibility.IsSet)
             {
                 galleryMember.DirectoryVisibility = viewModel.DirectoryVisibility.Value;
+            }
+            if (viewModel.IsAdministrator.IsSet)
+            {
+                galleryMember.IsAdministrator = viewModel.IsAdministrator.Value;
             }
 
             await applicationDbContext.SaveChangesAsync();
