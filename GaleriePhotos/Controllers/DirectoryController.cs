@@ -50,7 +50,7 @@ namespace Galerie.Server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<DirectoryFullViewModel>> Get(int id)
         {
-            var directory = await applicationDbContext.PhotoDirectories.FindAsync(id);
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
             
             // Use new gallery-aware visibility check, fallback to claims-based for administrators

@@ -181,6 +181,8 @@ export function DirectoryPage() {
 }
 
 export const RootDirectoryPage = observer(function RootDirectoryPage() {
-    const { galleryId } = useParams();
-    return <DirectoryView id={Number(galleryId)} />;
+    const directoriesStore = useDirectoriesStore();
+    const root = directoriesStore.root;
+    if (!root) return <CircularProgress />;
+    return <DirectoryView id={root.id} />;
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import {
     Container,
@@ -19,8 +19,11 @@ import { Gallery, GalleryPatch } from "../../services/views";
 const GallerySettings = observer(() => {
     const directoriesStore = useDirectoriesStore();
     const apiClient = useApiClient();
-    const galleryController = new GalleryController(apiClient);
-    
+    const galleryController = useMemo(
+        () => new GalleryController(apiClient),
+        [apiClient]
+    );
+
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,27 +35,40 @@ const GallerySettings = observer(() => {
     const [rootDirectory, setRootDirectory] = useState("");
     const [thumbnailsDirectory, setThumbnailsDirectory] = useState("");
 
+    const loadGallery = useMemo(
+        () => async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const result = await galleryController.getById(
+                    directoriesStore.galleryId
+                );
+                if (result.ok) {
+                    setGallery(result.value);
+                    setName(result.value.name);
+                    setRootDirectory(result.value.rootDirectory);
+                    setThumbnailsDirectory(
+                        result.value.thumbnailsDirectory || ""
+                    );
+                }
+            } catch (err) {
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "Failed to load gallery"
+                );
+            } finally {
+                setLoading(false);
+            }
+        },
+        [directoriesStore.galleryId, galleryController]
+    );
+
     useEffect(() => {
         if (directoriesStore.galleryId) {
             loadGallery();
         }
-    }, [directoriesStore.galleryId]);
-
-    const loadGallery = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const result = await galleryController.getById(directoriesStore.galleryId);
-            setGallery(result);
-            setName(result.name);
-            setRootDirectory(result.rootDirectory);
-            setThumbnailsDirectory(result.thumbnailsDirectory || "");
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load gallery");
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [directoriesStore.galleryId, loadGallery]);
 
     const handleSave = async () => {
         if (!gallery) return;
@@ -64,33 +80,55 @@ const GallerySettings = observer(() => {
         try {
             const patchData: GalleryPatch = {
                 name: name !== gallery.name ? name : null,
-                rootDirectory: rootDirectory !== gallery.rootDirectory ? rootDirectory : null,
-                thumbnailsDirectory: thumbnailsDirectory !== (gallery.thumbnailsDirectory || "") ? thumbnailsDirectory || null : null,
+                rootDirectory:
+                    rootDirectory !== gallery.rootDirectory
+                        ? rootDirectory
+                        : null,
+                thumbnailsDirectory:
+                    thumbnailsDirectory !== (gallery.thumbnailsDirectory || "")
+                        ? thumbnailsDirectory || null
+                        : null,
             };
 
             // Only send patch if there are actual changes
-            if (patchData.name !== null || patchData.rootDirectory !== null || patchData.thumbnailsDirectory !== null) {
-                const result = await galleryController.update(gallery.id, patchData);
-                setGallery(result);
-                setSuccess(true);
+            if (
+                patchData.name !== null ||
+                patchData.rootDirectory !== null ||
+                patchData.thumbnailsDirectory !== null
+            ) {
+                const result = await galleryController.update(
+                    gallery.id,
+                    patchData
+                );
+                if (result.ok) {
+                    setGallery(result.value);
+                    setSuccess(true);
+                }
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to save gallery");
+            setError(
+                err instanceof Error ? err.message : "Failed to save gallery"
+            );
         } finally {
             setSaving(false);
         }
     };
 
-    const hasChanges = gallery && (
-        name !== gallery.name ||
-        rootDirectory !== gallery.rootDirectory ||
-        thumbnailsDirectory !== (gallery.thumbnailsDirectory || "")
-    );
+    const hasChanges =
+        gallery &&
+        (name !== gallery.name ||
+            rootDirectory !== gallery.rootDirectory ||
+            thumbnailsDirectory !== (gallery.thumbnailsDirectory || ""));
 
     if (loading) {
         return (
             <Container maxWidth="md">
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <Box
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="200px"
+                >
                     <CircularProgress />
                 </Box>
             </Container>
@@ -124,7 +162,10 @@ const GallerySettings = observer(() => {
             )}
 
             <Paper elevation={2} sx={{ p: 3 }}>
-                <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <Box
+                    component="form"
+                    sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+                >
                     <TextField
                         label="Nom de la galerie"
                         value={name}
@@ -153,13 +194,25 @@ const GallerySettings = observer(() => {
                         helperText="Chemin vers le répertoire des miniatures (optionnel)"
                     />
 
-                    <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 2,
+                        }}
+                    >
                         <Button
                             variant="contained"
                             color="primary"
                             onClick={handleSave}
                             disabled={!hasChanges || saving}
-                            startIcon={saving ? <CircularProgress size={20} /> : <Save />}
+                            startIcon={
+                                saving ? (
+                                    <CircularProgress size={20} />
+                                ) : (
+                                    <Save />
+                                )
+                            }
                         >
                             {saving ? "Enregistrement..." : "Enregistrer"}
                         </Button>
