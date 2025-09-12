@@ -2,21 +2,26 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using GaleriePhotos.Models;
 using GaleriePhotos.Services;
 using Xunit;
 
 namespace GaleriePhotosTest.Services
 {
-    public class DataServiceTests
+    public class DataServiceTests : IDisposable
     {
+        private readonly DataService _dataService;
+
+        public DataServiceTests()
+        {
+            _dataService = new DataService();
+        }
+
         [Fact]
         public void GetDefaultDataProvider_ReturnsFileSystemProvider()
         {
-            // Arrange
-            var dataService = new DataService();
-
             // Act
-            var provider = dataService.GetDefaultDataProvider();
+            var provider = _dataService.GetDefaultDataProvider();
 
             // Assert
             Assert.NotNull(provider);
@@ -24,18 +29,113 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void GetDataProvider_WithGallery_ReturnsFileSystemProvider()
+        public void GetDataProvider_WithFileSystemGallery_ReturnsFileSystemProvider()
         {
             // Arrange
-            var dataService = new DataService();
-            var gallery = new GaleriePhotos.Models.Gallery("Test Gallery", "/test/path");
+            var gallery = new Gallery("Test Gallery", "/test/path");
 
             // Act
-            var provider = dataService.GetDataProvider(gallery);
+            var provider = _dataService.GetDataProvider(gallery);
 
             // Assert
             Assert.NotNull(provider);
             Assert.IsType<FileSystemProvider>(provider);
+        }
+
+        [Fact]
+        public void GetDataProvider_WithSeafileGallery_ReturnsSeafileProvider()
+        {
+            // Arrange
+            var gallery = new Gallery(
+                "Test Gallery", 
+                "lib123", 
+                null, 
+                DataProviderType.Seafile, 
+                "https://cloud.example.com", 
+                "test-api-key");
+
+            // Act
+            var provider = _dataService.GetDataProvider(gallery);
+
+            // Assert
+            Assert.NotNull(provider);
+            Assert.IsType<SeafileDataProvider>(provider);
+        }
+
+        [Fact]
+        public void GetDataProvider_WithSeafileGalleryMissingUrl_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var gallery = new Gallery(
+                "Test Gallery", 
+                "lib123", 
+                null, 
+                DataProviderType.Seafile, 
+                null, // Missing URL
+                "test-api-key");
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => _dataService.GetDataProvider(gallery));
+        }
+
+        [Fact]
+        public void GetDataProvider_WithSeafileGalleryMissingApiKey_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var gallery = new Gallery(
+                "Test Gallery", 
+                "lib123", 
+                null, 
+                DataProviderType.Seafile, 
+                "https://cloud.example.com", 
+                null); // Missing API key
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => _dataService.GetDataProvider(gallery));
+        }
+
+        [Fact]
+        public void GetDataProvider_WithUnsupportedProviderType_ThrowsNotSupportedException()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test/path");
+            // Force an invalid enum value
+            gallery.GetType().GetProperty("DataProvider")!.SetValue(gallery, (DataProviderType)999);
+
+            // Act & Assert
+            Assert.Throws<NotSupportedException>(() => _dataService.GetDataProvider(gallery));
+        }
+
+        [Fact]
+        public void GetDataProvider_WithSameSeafileCredentials_ReturnsCachedProvider()
+        {
+            // Arrange
+            var gallery1 = new Gallery(
+                "Gallery 1", 
+                "lib123", 
+                null, 
+                DataProviderType.Seafile, 
+                "https://cloud.example.com", 
+                "test-api-key");
+            var gallery2 = new Gallery(
+                "Gallery 2", 
+                "lib456", 
+                null, 
+                DataProviderType.Seafile, 
+                "https://cloud.example.com", 
+                "test-api-key");
+
+            // Act
+            var provider1 = _dataService.GetDataProvider(gallery1);
+            var provider2 = _dataService.GetDataProvider(gallery2);
+
+            // Assert
+            Assert.Same(provider1, provider2);
+        }
+
+        public void Dispose()
+        {
+            _dataService.Dispose();
         }
     }
 

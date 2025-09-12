@@ -1,3 +1,4 @@
+import * as enums from "./enums";
 
 export interface GalleryDirectoryVisibility {
     id: number;
@@ -36,6 +37,12 @@ export interface Gallery {
 
     thumbnailsDirectory: string | null;
 
+    dataProvider: enums.DataProviderType;
+
+    seafileServerUrl: string | null;
+
+    seafileApiKey: string | null;
+
     administratorNames: string[];
 }
 
@@ -46,6 +53,12 @@ export interface GalleryCreate {
 
     thumbnailsDirectory: string | null;
 
+    dataProvider: enums.DataProviderType;
+
+    seafileServerUrl: string | null;
+
+    seafileApiKey: string | null;
+
     userId: string;
 }
 
@@ -55,6 +68,12 @@ export interface GalleryPatch {
     rootDirectory: string | null;
 
     thumbnailsDirectory: string | null;
+
+    dataProvider: enums.DataProviderType | null;
+
+    seafileServerUrl: string | null;
+
+    seafileApiKey: string | null;
 }
 
 export interface GalleryMember {

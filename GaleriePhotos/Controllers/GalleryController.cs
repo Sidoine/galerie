@@ -73,7 +73,13 @@ namespace GaleriePhotos.Controllers
             }
 
             // Create the gallery
-            var gallery = new Gallery(model.Name, model.RootDirectory, model.ThumbnailsDirectory);
+            var gallery = new Gallery(
+                model.Name, 
+                model.RootDirectory, 
+                model.ThumbnailsDirectory,
+                model.DataProvider,
+                model.SeafileServerUrl,
+                model.SeafileApiKey);
             applicationDbContext.Galleries.Add(gallery);
             await applicationDbContext.SaveChangesAsync();
 
@@ -120,6 +126,21 @@ namespace GaleriePhotos.Controllers
             if (model.ThumbnailsDirectory != null)
             {
                 gallery.ThumbnailsDirectory = model.ThumbnailsDirectory;
+            }
+
+            if (model.DataProvider.HasValue)
+            {
+                gallery.DataProvider = model.DataProvider.Value;
+            }
+
+            if (model.SeafileServerUrl != null)
+            {
+                gallery.SeafileServerUrl = model.SeafileServerUrl;
+            }
+
+            if (model.SeafileApiKey != null)
+            {
+                gallery.SeafileApiKey = model.SeafileApiKey;
             }
 
             await applicationDbContext.SaveChangesAsync();

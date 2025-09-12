@@ -9,12 +9,17 @@ import {
     Box,
     Alert,
     CircularProgress,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { useDirectoriesStore } from "../../stores/directories";
 import { GalleryController } from "../../services/gallery";
 import { useApiClient } from "folke-service-helpers";
 import { Gallery, GalleryPatch } from "../../services/views";
+import { DataProviderType } from "../../services/enums";
 
 const GallerySettings = observer(() => {
     const directoriesStore = useDirectoriesStore();
@@ -34,6 +39,9 @@ const GallerySettings = observer(() => {
     const [name, setName] = useState("");
     const [rootDirectory, setRootDirectory] = useState("");
     const [thumbnailsDirectory, setThumbnailsDirectory] = useState("");
+    const [dataProvider, setDataProvider] = useState<DataProviderType>(DataProviderType.FileSystem);
+    const [seafileServerUrl, setSeafileServerUrl] = useState("");
+    const [seafileApiKey, setSeafileApiKey] = useState("");
 
     const loadGallery = useMemo(
         () => async () => {
@@ -50,6 +58,9 @@ const GallerySettings = observer(() => {
                     setThumbnailsDirectory(
                         result.value.thumbnailsDirectory || ""
                     );
+                    setDataProvider(result.value.dataProvider);
+                    setSeafileServerUrl(result.value.seafileServerUrl || "");
+                    setSeafileApiKey(result.value.seafileApiKey || "");
                 }
             } catch (err) {
                 setError(
@@ -88,13 +99,28 @@ const GallerySettings = observer(() => {
                     thumbnailsDirectory !== (gallery.thumbnailsDirectory || "")
                         ? thumbnailsDirectory || null
                         : null,
+                dataProvider:
+                    dataProvider !== gallery.dataProvider
+                        ? dataProvider
+                        : null,
+                seafileServerUrl:
+                    seafileServerUrl !== (gallery.seafileServerUrl || "")
+                        ? seafileServerUrl || null
+                        : null,
+                seafileApiKey:
+                    seafileApiKey !== (gallery.seafileApiKey || "")
+                        ? seafileApiKey || null
+                        : null,
             };
 
             // Only send patch if there are actual changes
             if (
                 patchData.name !== null ||
                 patchData.rootDirectory !== null ||
-                patchData.thumbnailsDirectory !== null
+                patchData.thumbnailsDirectory !== null ||
+                patchData.dataProvider !== null ||
+                patchData.seafileServerUrl !== null ||
+                patchData.seafileApiKey !== null
             ) {
                 const result = await galleryController.update(
                     gallery.id,
@@ -118,7 +144,10 @@ const GallerySettings = observer(() => {
         gallery &&
         (name !== gallery.name ||
             rootDirectory !== gallery.rootDirectory ||
-            thumbnailsDirectory !== (gallery.thumbnailsDirectory || ""));
+            thumbnailsDirectory !== (gallery.thumbnailsDirectory || "") ||
+            dataProvider !== gallery.dataProvider ||
+            seafileServerUrl !== (gallery.seafileServerUrl || "") ||
+            seafileApiKey !== (gallery.seafileApiKey || ""));
 
     if (loading) {
         return (
@@ -175,24 +204,89 @@ const GallerySettings = observer(() => {
                         variant="outlined"
                     />
 
-                    <TextField
-                        label="Répertoire racine"
-                        value={rootDirectory}
-                        onChange={(e) => setRootDirectory(e.target.value)}
-                        fullWidth
-                        required
-                        variant="outlined"
-                        helperText="Chemin vers le répertoire contenant les photos"
-                    />
+                    <FormControl fullWidth variant="outlined">
+                        <InputLabel>Type de stockage</InputLabel>
+                        <Select
+                            value={dataProvider}
+                            onChange={(e) => setDataProvider(e.target.value as DataProviderType)}
+                            label="Type de stockage"
+                        >
+                            <MenuItem value={DataProviderType.FileSystem}>
+                                Système de fichiers local
+                            </MenuItem>
+                            <MenuItem value={DataProviderType.Seafile}>
+                                Seafile
+                            </MenuItem>
+                        </Select>
+                    </FormControl>
 
-                    <TextField
-                        label="Répertoire des miniatures"
-                        value={thumbnailsDirectory}
-                        onChange={(e) => setThumbnailsDirectory(e.target.value)}
-                        fullWidth
-                        variant="outlined"
-                        helperText="Chemin vers le répertoire des miniatures (optionnel)"
-                    />
+                    {dataProvider === DataProviderType.FileSystem && (
+                        <>
+                            <TextField
+                                label="Répertoire racine"
+                                value={rootDirectory}
+                                onChange={(e) => setRootDirectory(e.target.value)}
+                                fullWidth
+                                required
+                                variant="outlined"
+                                helperText="Chemin vers le répertoire contenant les photos"
+                            />
+
+                            <TextField
+                                label="Répertoire des miniatures"
+                                value={thumbnailsDirectory}
+                                onChange={(e) => setThumbnailsDirectory(e.target.value)}
+                                fullWidth
+                                variant="outlined"
+                                helperText="Chemin vers le répertoire des miniatures (optionnel)"
+                            />
+                        </>
+                    )}
+
+                    {dataProvider === DataProviderType.Seafile && (
+                        <>
+                            <TextField
+                                label="URL du serveur Seafile"
+                                value={seafileServerUrl}
+                                onChange={(e) => setSeafileServerUrl(e.target.value)}
+                                fullWidth
+                                required
+                                variant="outlined"
+                                helperText="URL complète du serveur Seafile (ex: https://cloud.example.com)"
+                                placeholder="https://cloud.example.com"
+                            />
+
+                            <TextField
+                                label="Clé API Seafile"
+                                value={seafileApiKey}
+                                onChange={(e) => setSeafileApiKey(e.target.value)}
+                                fullWidth
+                                required
+                                variant="outlined"
+                                type="password"
+                                helperText="Clé API générée dans votre profil Seafile"
+                            />
+
+                            <TextField
+                                label="ID de la bibliothèque Seafile"
+                                value={rootDirectory}
+                                onChange={(e) => setRootDirectory(e.target.value)}
+                                fullWidth
+                                required
+                                variant="outlined"
+                                helperText="ID de la bibliothèque Seafile où sont stockées les photos"
+                            />
+
+                            <TextField
+                                label="Chemin des miniatures"
+                                value={thumbnailsDirectory}
+                                onChange={(e) => setThumbnailsDirectory(e.target.value)}
+                                fullWidth
+                                variant="outlined"
+                                helperText="Chemin vers le dossier des miniatures dans la bibliothèque (optionnel)"
+                            />
+                        </>
+                    )}
 
                     <Box
                         sx={{

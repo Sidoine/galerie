@@ -10,6 +10,9 @@ namespace GaleriePhotos.ViewModels
         public string Name { get; set; } = string.Empty;
         public string RootDirectory { get; set; } = string.Empty;
         public string? ThumbnailsDirectory { get; set; }
+        public DataProviderType DataProvider { get; set; }
+        public string? SeafileServerUrl { get; set; }
+        public string? SeafileApiKey { get; set; }
         public string[] AdministratorNames { get; set; } = [];
 
         public GalleryViewModel() { }
@@ -20,6 +23,9 @@ namespace GaleriePhotos.ViewModels
             Name = gallery.Name;
             RootDirectory = gallery.RootDirectory;
             ThumbnailsDirectory = gallery.ThumbnailsDirectory;
+            DataProvider = gallery.DataProvider;
+            SeafileServerUrl = gallery.SeafileServerUrl;
+            SeafileApiKey = gallery.SeafileApiKey;
             AdministratorNames = administratorNames.ToArray();
         }
     }
@@ -29,6 +35,9 @@ namespace GaleriePhotos.ViewModels
         public string Name { get; set; } = string.Empty;
         public string RootDirectory { get; set; } = string.Empty;
         public string? ThumbnailsDirectory { get; set; }
+        public DataProviderType DataProvider { get; set; } = DataProviderType.FileSystem;
+        public string? SeafileServerUrl { get; set; }
+        public string? SeafileApiKey { get; set; }
         public string UserId { get; set; } = string.Empty;
     }
 
@@ -37,5 +46,8 @@ namespace GaleriePhotos.ViewModels
         public string? Name { get; set; }
         public string? RootDirectory { get; set; }
         public string? ThumbnailsDirectory { get; set; }
+        public DataProviderType? DataProvider { get; set; }
+        public string? SeafileServerUrl { get; set; }
+        public string? SeafileApiKey { get; set; }
     }
 }

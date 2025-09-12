@@ -1,19 +1,22 @@
 using GaleriePhotos.Models;
+using System;
+using System.Collections.Concurrent;
 
 namespace GaleriePhotos.Services
 {
     /// <summary>
     /// Service responsible for providing appropriate IDataProvider instances based on Gallery configuration.
-    /// Currently returns FileSystemProvider for all galleries, but can be extended to support
-    /// different storage backends per gallery (cloud storage, etc.).
+    /// Returns FileSystemProvider or SeafileDataProvider based on gallery's DataProvider setting.
     /// </summary>
-    public class DataService
+    public class DataService : IDisposable
     {
         private readonly FileSystemProvider _fileSystemProvider;
+        private readonly ConcurrentDictionary<string, SeafileDataProvider> _seafileProviders;
 
         public DataService()
         {
             _fileSystemProvider = new FileSystemProvider();
+            _seafileProviders = new ConcurrentDictionary<string, SeafileDataProvider>();
         }
 
         /// <summary>
@@ -23,10 +26,12 @@ namespace GaleriePhotos.Services
         /// <returns>An IDataProvider instance for accessing the gallery's data.</returns>
         public IDataProvider GetDataProvider(Gallery gallery)
         {
-            // For now, all galleries use the file system provider
-            // In the future, this could be extended to support different providers
-            // based on gallery configuration (e.g., gallery.StorageType)
-            return _fileSystemProvider;
+            return gallery.DataProvider switch
+            {
+                DataProviderType.FileSystem => _fileSystemProvider,
+                DataProviderType.Seafile => GetSeafileProvider(gallery),
+                _ => throw new NotSupportedException($"Data provider type {gallery.DataProvider} is not supported")
+            };
         }
 
         /// <summary>
@@ -37,6 +42,30 @@ namespace GaleriePhotos.Services
         public IDataProvider GetDefaultDataProvider()
         {
             return _fileSystemProvider;
+        }
+
+        /// <summary>
+        /// Gets or creates a Seafile data provider for the specified gallery.
+        /// Providers are cached by server URL and API key combination.
+        /// </summary>
+        private SeafileDataProvider GetSeafileProvider(Gallery gallery)
+        {
+            if (string.IsNullOrEmpty(gallery.SeafileServerUrl) || string.IsNullOrEmpty(gallery.SeafileApiKey))
+            {
+                throw new InvalidOperationException("Seafile server URL and API key must be configured for Seafile galleries");
+            }
+
+            var key = $"{gallery.SeafileServerUrl}|{gallery.SeafileApiKey}";
+            return _seafileProviders.GetOrAdd(key, _ => new SeafileDataProvider(gallery.SeafileServerUrl, gallery.SeafileApiKey));
+        }
+
+        public void Dispose()
+        {
+            foreach (var provider in _seafileProviders.Values)
+            {
+                provider.Dispose();
+            }
+            _seafileProviders.Clear();
         }
     }
 }
