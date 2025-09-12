@@ -25,6 +25,7 @@ namespace GaleriePhotos.Services
         private readonly IOptions<GalerieOptions> options;
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<PhotoService> logger;
+        private readonly DataService dataService;
 
         public static Dictionary<string, string> MimeTypes { get; } = new Dictionary<string, string>
         {
@@ -37,11 +38,12 @@ namespace GaleriePhotos.Services
             { ".webp", "image/webp" }
         };
 
-        public PhotoService(IOptions<GalerieOptions> options, ApplicationDbContext applicationDbContext, ILogger<PhotoService> logger)
+        public PhotoService(IOptions<GalerieOptions> options, ApplicationDbContext applicationDbContext, ILogger<PhotoService> logger, DataService dataService)
         {
             this.options = options;
             this.applicationDbContext = applicationDbContext;
             this.logger = logger;
+            this.dataService = dataService;
         }
 
         public string? GetAbsoluteDirectoryPath(string? relativeDirectoryPath)
@@ -50,7 +52,8 @@ namespace GaleriePhotos.Services
             if (relativeDirectoryPath != null && (relativeDirectoryPath.Contains("..") || relativeDirectoryPath.StartsWith("/"))) return null;
             if (rootPath == null) return null;
             var path = relativeDirectoryPath != null ? Path.Combine(rootPath, relativeDirectoryPath) : rootPath;
-            if (!Directory.Exists(path)) return null;
+            var dataProvider = dataService.GetDefaultDataProvider();
+            if (!dataProvider.DirectoryExists(path)) return null;
             return path;
         }
 
@@ -59,7 +62,8 @@ namespace GaleriePhotos.Services
             // Gallery property must be loaded for this method to work
             if (photoDirectory.Gallery.RootDirectory == null) return null;
             var path = Path.Combine(photoDirectory.Gallery.RootDirectory, photoDirectory.Path);
-            if (!Directory.Exists(path)) return null;
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            if (!dataProvider.DirectoryExists(path)) return null;
             return path;
         }
 
@@ -69,7 +73,8 @@ namespace GaleriePhotos.Services
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return null;
             var imagePath = Path.Combine(photoDirectoryPath, photo.FileName);
-            if (!File.Exists(imagePath)) return null;
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            if (!dataProvider.FileExists(imagePath)) return null;
             return imagePath;
         }
 
@@ -121,9 +126,10 @@ namespace GaleriePhotos.Services
         {
             // Use gallery-specific thumbnails directory, fallback to global setting for backwards compatibility
             var thumbnailsDirectory = photoDirectory.Gallery?.ThumbnailsDirectory ?? options.Value.ThumbnailsDirectory;
-            if (thumbnailsDirectory == null) return null;
+            if (thumbnailsDirectory == null || photoDirectory.Gallery == null) return null;
             var thumbnailPath = Path.Combine(thumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
-            if (!System.IO.File.Exists(thumbnailPath))
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            if (!dataProvider.FileExists(thumbnailPath))
             {
                 var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
                 if (imagePath == null) return null;
@@ -153,7 +159,8 @@ namespace GaleriePhotos.Services
 
         private string[] GetDirectoryPhotosFileNames(string path, PhotoDirectory photoDirectory)
         {
-            return Directory.EnumerateFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant())).ToArray();
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            return dataProvider.GetFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant())).ToArray();
         }
 
         public async Task<Photo[]?> GetDirectoryImages(PhotoDirectory photoDirectory)
@@ -212,7 +219,8 @@ namespace GaleriePhotos.Services
 
                     if (photo.DateTime == default)
                     {
-                        photo.DateTime = File.GetCreationTimeUtc(imagePath);
+                        var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+                        photo.DateTime = dataProvider.GetFileCreationTimeUtc(imagePath);
                     }
 
                     applicationDbContext.Photos.Add(photo);
@@ -241,7 +249,8 @@ namespace GaleriePhotos.Services
         {
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return null;
-            string[] directoryPaths = GetSubDirectoryPaths(photoDirectory, photoDirectoryPath);
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            string[] directoryPaths = GetSubDirectoryPaths(photoDirectory, photoDirectoryPath, dataProvider);
             var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
             foreach (var path in directoryPaths)
             {
@@ -279,8 +288,9 @@ namespace GaleriePhotos.Services
             var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
             var newPath = Path.Combine(photoDirectoryPath, PrivateDirectory, photo.FileName);
             string privateDirectoryPath = Path.Combine(photoDirectoryPath, PrivateDirectory);
-            if (!Directory.Exists(privateDirectoryPath)) Directory.CreateDirectory(Path.Combine(photoDirectoryPath, PrivateDirectory));
-            File.Move(currentPath, newPath);
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            if (!dataProvider.DirectoryExists(privateDirectoryPath)) dataProvider.CreateDirectory(Path.Combine(photoDirectoryPath, PrivateDirectory));
+            dataProvider.MoveFile(currentPath, newPath);
         }
 
         public bool IsPrivate(PhotoDirectory photoDirectory)
@@ -295,12 +305,13 @@ namespace GaleriePhotos.Services
             if (photoDirectoryPath == null) return;
             var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
             var newPath = Path.Combine(photoDirectoryPath, "..", photo.FileName);
-            File.Move(currentPath, newPath);
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            dataProvider.MoveFile(currentPath, newPath);
         }
 
-        private static string[] GetSubDirectoryPaths(PhotoDirectory photoDirectory, string photoDirectoryPath)
+        private static string[] GetSubDirectoryPaths(PhotoDirectory photoDirectory, string photoDirectoryPath, IDataProvider dataProvider)
         {
-            var directoryAbsolutePaths = Directory.EnumerateDirectories(photoDirectoryPath);
+            var directoryAbsolutePaths = dataProvider.GetDirectories(photoDirectoryPath);
             var directoryPaths = directoryAbsolutePaths.Select(x => Path.GetFileName(x)).Where(x => !x.StartsWith(".") && !x.StartsWith("_")).Select(x => Path.Combine(photoDirectory.Path, x)).ToArray();
             return directoryPaths;
         }
@@ -309,7 +320,8 @@ namespace GaleriePhotos.Services
         {
             var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
             if (photoDirectoryPath == null) return 0;
-            return GetSubDirectoryPaths(photoDirectory, photoDirectoryPath).Length;
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            return GetSubDirectoryPaths(photoDirectory, photoDirectoryPath, dataProvider).Length;
         }
 
         private static double Convert(string reference, Rational[] values)
@@ -342,8 +354,9 @@ namespace GaleriePhotos.Services
 
             var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
             var thumbnailPath = await GetThumbnailPath(photoDirectory, photo);
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
             
-            if (imagePath == null || !File.Exists(imagePath) || thumbnailPath == null || !File.Exists(thumbnailPath))
+            if (imagePath == null || !dataProvider.FileExists(imagePath) || thumbnailPath == null || !dataProvider.FileExists(thumbnailPath))
                 return false;
 
             

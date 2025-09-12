@@ -22,12 +22,14 @@ namespace Galerie.Server.Controllers
         private readonly IOptions<GalerieOptions> options;
         private readonly PhotoService photoService;
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly DataService dataService;
 
-        public PhotoController(IOptions<GalerieOptions> options, PhotoService photoService, ApplicationDbContext applicationDbContext)
+        public PhotoController(IOptions<GalerieOptions> options, PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService)
         {
             this.options = options;
             this.photoService = photoService;
             this.applicationDbContext = applicationDbContext;
+            this.dataService = dataService;
         }
 
         private async Task<(PhotoDirectory?, Photo?)> GetPhoto(int directoryId, int id)
@@ -59,7 +61,8 @@ namespace Galerie.Server.Controllers
             if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
             var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
             if (thumbnailPath == null) return NotFound();
-            return File(System.IO.File.ReadAllBytes(thumbnailPath), "image/jpeg", photo.FileName);
+            var dataProvider = dataService.GetDataProvider(directory.Gallery);
+            return File(dataProvider.ReadFileBytes(thumbnailPath), "image/jpeg", photo.FileName);
         }
 
         private (Photo? previous, Photo? next) GetNextAndPrevious(Photo photo, Photo[] images)

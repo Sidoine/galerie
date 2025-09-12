@@ -73,6 +73,7 @@ namespace GaleriePhotos
             services.Configure<SendGridOptions>(Configuration.GetSection("SendGrid"));
             services.Configure<GalerieOptions>(Configuration.GetSection("Galerie"));
             services.Configure<AdministratorOptions>(Configuration.GetSection("Administrator"));
+            services.AddScoped<DataService>();
             services.AddScoped<PhotoService>();
             services.AddScoped<SeedingService>();
             services.AddAuthorization(options =>
