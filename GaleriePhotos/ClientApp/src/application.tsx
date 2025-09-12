@@ -1,11 +1,11 @@
-import { Route, Routes, useNavigate, useParams } from "react-router";
-import { CssBaseline, List, ListItemButton } from "@mui/material";
+import { Route, Routes, useParams } from "react-router";
+import { CssBaseline } from "@mui/material";
 import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
 import { observer } from "mobx-react-lite";
 import BreadCrumbs from "./components/bread-crumbs";
 import { UsersStoreProvider } from "./stores/users";
-import { GalleriesStoreProvider, useGalleriesStore } from "./stores/galleries";
+import { GalleriesStoreProvider } from "./stores/galleries";
 import { DirectoriesStoreProvider } from "./stores/directories";
 import { DirectoryVisibilitiesStoreProvider } from "./stores/directory-visibilities";
 import { ApiClientProvider } from "folke-service-helpers";

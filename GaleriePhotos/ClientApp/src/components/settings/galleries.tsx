@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Box,
     Button,
-    Card,
-    CardContent,
     Dialog,
     DialogActions,
     DialogContent,
@@ -32,8 +30,14 @@ import * as views from "../../services/views";
 
 const Galleries = observer(function Galleries() {
     const apiClient = useApiClient();
-    const galleryController = new GalleryController(apiClient);
-    const userController = new UserController(apiClient);
+    const galleryController = useMemo(
+        () => new GalleryController(apiClient),
+        [apiClient]
+    );
+    const userController = useMemo(
+        () => new UserController(apiClient),
+        [apiClient]
+    );
 
     const [galleries, setGalleries] = useState<views.Gallery[]>([]);
     const [users, setUsers] = useState<views.User[]>([]);
@@ -46,30 +50,33 @@ const Galleries = observer(function Galleries() {
         userId: "",
     });
 
+    const loadData = useMemo(
+        () => async () => {
+            setLoading(true);
+            try {
+                const [galleriesResult, usersResult] = await Promise.all([
+                    galleryController.getAll(),
+                    userController.getAll(),
+                ]);
+
+                if (galleriesResult.ok) {
+                    setGalleries(galleriesResult.value);
+                }
+                if (usersResult.ok) {
+                    setUsers(usersResult.value);
+                }
+            } catch (error) {
+                console.error("Error loading data:", error);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [galleryController, userController]
+    );
+
     useEffect(() => {
         loadData();
-    }, []);
-
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [galleriesResult, usersResult] = await Promise.all([
-                galleryController.getAll(),
-                userController.getAll(),
-            ]);
-
-            if (galleriesResult.ok) {
-                setGalleries(galleriesResult.value);
-            }
-            if (usersResult.ok) {
-                setUsers(usersResult.value);
-            }
-        } catch (error) {
-            console.error("Error loading data:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [loadData]);
 
     const handleCreateGallery = async () => {
         try {
@@ -167,7 +174,10 @@ const Galleries = observer(function Galleries() {
                         margin="normal"
                         value={createForm.name}
                         onChange={(e) =>
-                            setCreateForm({ ...createForm, name: e.target.value })
+                            setCreateForm({
+                                ...createForm,
+                                name: e.target.value,
+                            })
                         }
                     />
                     <TextField
@@ -208,7 +218,7 @@ const Galleries = observer(function Galleries() {
                         >
                             {users.map((user) => (
                                 <MenuItem key={user.id} value={user.id}>
-                                    {user.userName}
+                                    {user.name}
                                 </MenuItem>
                             ))}
                         </Select>
