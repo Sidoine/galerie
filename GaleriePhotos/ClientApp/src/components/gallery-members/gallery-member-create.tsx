@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useMembersStore } from "../../stores/members";
+import { useDirectoryVisibilitiesStore } from "../../stores/directory-visibilities";
 import { useCallback, useMemo, useState } from "react";
 import { DirectoryVisibility } from "../../services/enums";
 import {
@@ -9,6 +10,7 @@ import {
     MenuItem,
     Select,
     Typography,
+    Box,
 } from "@mui/material";
 import { useUsersStore } from "../../stores/users";
 import { User } from "../../services/views";
@@ -16,11 +18,45 @@ import { User } from "../../services/views";
 function GalleryMemberCreate() {
     const membersStore = useMembersStore();
     const usersStore = useUsersStore();
+    const visibilitiesStore = useDirectoryVisibilitiesStore();
     const [visibility, setVisibility] = useState(DirectoryVisibility.None);
     const [isAdmin, setIsAdmin] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const canSubmit = selectedUser && !submitting;
+    
+    const visibilities = visibilitiesStore.visibilities;
+    
+    // Generate all possible visibility combinations
+    const getVisibilityOptions = () => {
+        const options = [{ value: DirectoryVisibility.None, name: "None", icons: [] }];
+        
+        // Generate all combinations of visibilities (power set)
+        for (let i = 1; i < (1 << visibilities.length); i++) {
+            let value = 0;
+            let names: string[] = [];
+            let icons: string[] = [];
+            
+            for (let j = 0; j < visibilities.length; j++) {
+                if (i & (1 << j)) {
+                    value |= visibilities[j].value;
+                    names.push(visibilities[j].name);
+                    icons.push(visibilities[j].icon);
+                }
+            }
+            
+            options.push({
+                value,
+                name: names.join(" & "),
+                icons
+            });
+        }
+        
+        return options.sort((a, b) => a.value - b.value);
+    };
+
+    const visibilityOptions = getVisibilityOptions();
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedUser) return;
@@ -67,16 +103,21 @@ function GalleryMemberCreate() {
                         setVisibility(e.target.value as DirectoryVisibility)
                     }
                 >
-                    <MenuItem value={DirectoryVisibility.None}>None</MenuItem>
-                    <MenuItem value={DirectoryVisibility.Mylene}>
-                        Mylene
-                    </MenuItem>
-                    <MenuItem value={DirectoryVisibility.Sidoine}>
-                        Sidoine
-                    </MenuItem>
-                    <MenuItem value={DirectoryVisibility.SidoineEtMylene}>
-                        SidoineEtMylene
-                    </MenuItem>
+                    {visibilityOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            <Box display="flex" alignItems="center" gap={0.5}>
+                                {option.icons.map((icon, idx) => (
+                                    <Box 
+                                        key={idx}
+                                        component="span" 
+                                        dangerouslySetInnerHTML={{ __html: icon }}
+                                        sx={{ fontSize: '16px' }}
+                                    />
+                                ))}
+                                {option.name}
+                            </Box>
+                        </MenuItem>
+                    ))}
                 </Select>
                 <FormControlLabel
                     control={
