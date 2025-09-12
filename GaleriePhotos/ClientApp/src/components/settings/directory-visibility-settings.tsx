@@ -24,12 +24,22 @@ import {
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { useDirectoryVisibilitiesStore } from "../../stores/directory-visibilities";
-import { GalleryDirectoryVisibilityCreate, GalleryDirectoryVisibilityPatch } from "../../services/views";
+import {
+    GalleryDirectoryVisibility,
+    GalleryDirectoryVisibilityCreate,
+    GalleryDirectoryVisibilityPatch,
+} from "../../services/views";
 
 const DirectoryVisibilitySettings = observer(() => {
     const store = useDirectoryVisibilitiesStore();
-    const [editDialog, setEditDialog] = useState<{ visibility?: any; open: boolean }>({ open: false });
-    const [deleteDialog, setDeleteDialog] = useState<{ visibility?: any; open: boolean }>({ open: false });
+    const [editDialog, setEditDialog] = useState<{
+        visibility?: GalleryDirectoryVisibility;
+        open: boolean;
+    }>({ open: false });
+    const [deleteDialog, setDeleteDialog] = useState<{
+        visibility?: GalleryDirectoryVisibility;
+        open: boolean;
+    }>({ open: false });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -39,30 +49,47 @@ const DirectoryVisibilitySettings = observer(() => {
         setEditDialog({ open: true });
     }, []);
 
-    const handleEdit = useCallback((visibility: any) => {
+    const handleEdit = useCallback((visibility: GalleryDirectoryVisibility) => {
         setEditDialog({ visibility, open: true });
     }, []);
 
-    const handleDelete = useCallback((visibility: any) => {
-        setDeleteDialog({ visibility, open: true });
-    }, []);
+    const handleDelete = useCallback(
+        (visibility: GalleryDirectoryVisibility) => {
+            setDeleteDialog({ visibility, open: true });
+        },
+        []
+    );
 
-    const handleSubmit = useCallback(async (data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch) => {
-        setLoading(true);
-        setError(null);
-        try {
-            if (editDialog.visibility) {
-                await store.updateVisibility(editDialog.visibility.id, data as GalleryDirectoryVisibilityPatch);
-            } else {
-                await store.createVisibility(data as GalleryDirectoryVisibilityCreate);
+    const handleSubmit = useCallback(
+        async (
+            data:
+                | GalleryDirectoryVisibilityCreate
+                | GalleryDirectoryVisibilityPatch
+        ) => {
+            setLoading(true);
+            setError(null);
+            try {
+                if (editDialog.visibility) {
+                    await store.updateVisibility(
+                        editDialog.visibility.id,
+                        data as GalleryDirectoryVisibilityPatch
+                    );
+                } else {
+                    await store.createVisibility(
+                        data as GalleryDirectoryVisibilityCreate
+                    );
+                }
+                setEditDialog({ open: false });
+            } catch (err) {
+                setError(
+                    err instanceof Error ? err.message : "An error occurred"
+                );
+            } finally {
+                setLoading(false);
             }
-            setEditDialog({ open: false });
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
-        } finally {
-            setLoading(false);
-        }
-    }, [store, editDialog.visibility]);
+        },
+        [store, editDialog.visibility]
+    );
 
     const handleConfirmDelete = useCallback(async () => {
         if (!deleteDialog.visibility) return;
@@ -79,14 +106,20 @@ const DirectoryVisibilitySettings = observer(() => {
     }, [store, deleteDialog.visibility]);
 
     if (!visibilities.length && !loading) {
-        store.visibilitiesLoader.load(store.galleryId);
+        store.visibilitiesLoader.getValue(store.galleryId);
     }
 
     return (
         <Container maxWidth="lg">
             <Stack spacing={3}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h4">Directory Visibility Settings</Typography>
+                <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                >
+                    <Typography variant="h4">
+                        Directory Visibility Settings
+                    </Typography>
                     <Button
                         variant="contained"
                         startIcon={<Add />}
@@ -118,20 +151,31 @@ const DirectoryVisibilitySettings = observer(() => {
                                 <TableRow key={visibility.id}>
                                     <TableCell>{visibility.name}</TableCell>
                                     <TableCell>
-                                        <Box component="span" dangerouslySetInnerHTML={{ __html: visibility.icon }} />
+                                        <Box
+                                            component="span"
+                                            dangerouslySetInnerHTML={{
+                                                __html: visibility.icon,
+                                            }}
+                                        />
                                     </TableCell>
-                                    <TableCell align="center">{visibility.value}</TableCell>
+                                    <TableCell align="center">
+                                        {visibility.value}
+                                    </TableCell>
                                     <TableCell align="center">
                                         <IconButton
                                             size="small"
-                                            onClick={() => handleEdit(visibility)}
+                                            onClick={() =>
+                                                handleEdit(visibility)
+                                            }
                                             disabled={loading}
                                         >
                                             <Edit />
                                         </IconButton>
                                         <IconButton
                                             size="small"
-                                            onClick={() => handleDelete(visibility)}
+                                            onClick={() =>
+                                                handleDelete(visibility)
+                                            }
                                             disabled={loading}
                                         >
                                             <Delete />
@@ -142,7 +186,11 @@ const DirectoryVisibilitySettings = observer(() => {
                             {visibilities.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={4} align="center">
-                                        {loading ? <CircularProgress /> : "No visibility settings found"}
+                                        {loading ? (
+                                            <CircularProgress />
+                                        ) : (
+                                            "No visibility settings found"
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -172,13 +220,21 @@ const DirectoryVisibilitySettings = observer(() => {
 
 interface EditVisibilityDialogProps {
     open: boolean;
-    visibility?: any;
+    visibility?: GalleryDirectoryVisibility;
     onClose: () => void;
-    onSubmit: (data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch) => void;
+    onSubmit: (
+        data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch
+    ) => void;
     loading: boolean;
 }
 
-const EditVisibilityDialog = ({ open, visibility, onClose, onSubmit, loading }: EditVisibilityDialogProps) => {
+const EditVisibilityDialog = ({
+    open,
+    visibility,
+    onClose,
+    onSubmit,
+    loading,
+}: EditVisibilityDialogProps) => {
     const [name, setName] = useState("");
     const [icon, setIcon] = useState("");
     const [value, setValue] = useState(1);
@@ -229,13 +285,15 @@ const EditVisibilityDialog = ({ open, visibility, onClose, onSubmit, loading }: 
                             multiline
                             rows={3}
                             disabled={loading}
-                            helperText="Enter HTML or SVG code for the icon"
+                            helperText="Enter the icon"
                         />
                         <TextField
                             label="Value (Power of 2)"
                             type="number"
                             value={value}
-                            onChange={(e) => setValue(parseInt(e.target.value) || 1)}
+                            onChange={(e) =>
+                                setValue(parseInt(e.target.value) || 1)
+                            }
                             required
                             fullWidth
                             disabled={loading}
@@ -243,8 +301,13 @@ const EditVisibilityDialog = ({ open, visibility, onClose, onSubmit, loading }: 
                         />
                         {icon && (
                             <Box>
-                                <Typography variant="caption">Preview:</Typography>
-                                <Box component="span" dangerouslySetInnerHTML={{ __html: icon }} />
+                                <Typography variant="caption">
+                                    Preview:
+                                </Typography>
+                                <Box
+                                    component="span"
+                                    dangerouslySetInnerHTML={{ __html: icon }}
+                                />
                             </Box>
                         )}
                     </Stack>
@@ -258,7 +321,13 @@ const EditVisibilityDialog = ({ open, visibility, onClose, onSubmit, loading }: 
                         variant="contained"
                         disabled={loading || !name || !icon || value < 1}
                     >
-                        {loading ? <CircularProgress size={20} /> : (visibility ? "Update" : "Create")}
+                        {loading ? (
+                            <CircularProgress size={20} />
+                        ) : visibility ? (
+                            "Update"
+                        ) : (
+                            "Create"
+                        )}
                     </Button>
                 </DialogActions>
             </form>
@@ -268,20 +337,26 @@ const EditVisibilityDialog = ({ open, visibility, onClose, onSubmit, loading }: 
 
 interface DeleteConfirmDialogProps {
     open: boolean;
-    visibility?: any;
+    visibility?: GalleryDirectoryVisibility;
     onClose: () => void;
     onConfirm: () => void;
     loading: boolean;
 }
 
-const DeleteConfirmDialog = ({ open, visibility, onClose, onConfirm, loading }: DeleteConfirmDialogProps) => {
+const DeleteConfirmDialog = ({
+    open,
+    visibility,
+    onClose,
+    onConfirm,
+    loading,
+}: DeleteConfirmDialogProps) => {
     return (
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>Confirm Delete</DialogTitle>
             <DialogContent>
                 <Typography>
-                    Are you sure you want to delete the visibility "{visibility?.name}"?
-                    This action cannot be undone.
+                    Are you sure you want to delete the visibility "
+                    {visibility?.name}"? This action cannot be undone.
                 </Typography>
             </DialogContent>
             <DialogActions>

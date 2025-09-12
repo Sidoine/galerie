@@ -2,7 +2,6 @@ import { ChangeEvent, lazy, Suspense, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import {
     Container,
-    SvgIcon,
     Typography,
     CircularProgress,
     Stack,
@@ -18,11 +17,10 @@ import {
 import { ImagesView } from "./images-view";
 import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
 import { Directory } from "../services/views";
-import { DirectoryVisibility } from "../services/enums";
 import placeholder from "../assets/placeholder.png";
-import { useUsersStore } from "../stores/users";
 import { useDirectoriesStore } from "../stores/directories";
 import { useDirectoryVisibilitiesStore } from "../stores/directory-visibilities";
+import { useMembersStore } from "../stores/members";
 const ImageView = lazy(() => import("./image-view/image-view"));
 
 export interface DirectoryViewProps {
@@ -38,18 +36,21 @@ const Image = styled("img")(({ theme }) => ({
 
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     const directoriesStore = useDirectoriesStore();
-    const usersStore = useUsersStore();
     const visibilitiesStore = useDirectoryVisibilitiesStore();
+    const membersStore = useMembersStore();
 
     const visibilities = visibilitiesStore.visibilities;
 
     const handleVisibilityToggle = useCallback(
-        (visibilityValue: number) => (e: ChangeEvent<HTMLInputElement>, checked: boolean) => {
-            let newVisibility = directory.visibility & ~visibilityValue;
-            if (checked) newVisibility |= visibilityValue;
-            directoriesStore.patchDirectory(directory, { visibility: newVisibility });
-            e.preventDefault();
-        },
+        (visibilityValue: number) =>
+            (e: ChangeEvent<HTMLInputElement>, checked: boolean) => {
+                let newVisibility = directory.visibility & ~visibilityValue;
+                if (checked) newVisibility |= visibilityValue;
+                directoriesStore.patchDirectory(directory, {
+                    visibility: newVisibility,
+                });
+                e.preventDefault();
+            },
         [directoriesStore, directory]
     );
 
@@ -96,21 +97,34 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                                 {" · "}
                             </>
                         )}
-                        {usersStore.isAdministrator && visibilities.map((visibility) => (
-                            <Box key={visibility.id} display="flex" alignItems="center">
-                                <Switch
-                                    color="primary"
-                                    size="small"
-                                    checked={(directory.visibility & visibility.value) > 0}
-                                    onChange={handleVisibilityToggle(visibility.value)}
-                                />
-                                <Box 
-                                    component="span" 
-                                    dangerouslySetInnerHTML={{ __html: visibility.icon }}
-                                    sx={{ ml: -1, mr: 0.5 }}
-                                />
-                            </Box>
-                        ))}
+                        {membersStore.administrator &&
+                            visibilities.map((visibility) => (
+                                <Box
+                                    key={visibility.id}
+                                    display="flex"
+                                    alignItems="center"
+                                >
+                                    <Switch
+                                        color="primary"
+                                        size="small"
+                                        checked={
+                                            (directory.visibility &
+                                                visibility.value) >
+                                            0
+                                        }
+                                        onChange={handleVisibilityToggle(
+                                            visibility.value
+                                        )}
+                                    />
+                                    <Box
+                                        component="span"
+                                        dangerouslySetInnerHTML={{
+                                            __html: visibility.icon,
+                                        }}
+                                        sx={{ ml: -1, mr: 0.5 }}
+                                    />
+                                </Box>
+                            ))}
                     </Stack>
                 }
                 position="below"

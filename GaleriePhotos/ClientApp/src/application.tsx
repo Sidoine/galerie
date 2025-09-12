@@ -1,4 +1,4 @@
-import { Route, Routes, useNavigate, useParams, useLocation } from "react-router";
+import { Route, Routes, useNavigate, useParams } from "react-router";
 import { CssBaseline, List, ListItemButton } from "@mui/material";
 import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
@@ -14,15 +14,16 @@ import { Users } from "./components/users";
 import Menu from "./components/menu";
 import { MembersStoreProvider } from "./stores/members";
 import DirectoryVisibilitySettings from "./components/settings/directory-visibility-settings";
+import AdminMenu from "./components/admin-menu";
+import GalleryChooser from "./components/gallery-chooser";
 
 function GalleryRoot() {
     const { galleryId } = useParams();
-    const location = useLocation();
     return (
         <DirectoriesStoreProvider galleryId={Number(galleryId)}>
             <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
-                <MembersStoreProvider>
-                    <UsersStoreProvider>
+                <UsersStoreProvider>
+                    <MembersStoreProvider>
                         <ResponsiveDrawer
                             menu={<Menu />}
                             title={
@@ -31,7 +32,10 @@ function GalleryRoot() {
                                         path="/directory/:directoryId/*"
                                         element={<BreadCrumbs />}
                                     ></Route>
-                                    <Route path="*" element={<>Galerie photo</>} />
+                                    <Route
+                                        path="*"
+                                        element={<>Galerie photo</>}
+                                    />
                                 </Routes>
                             }
                         >
@@ -41,20 +45,35 @@ function GalleryRoot() {
                                     element={<DirectoryPage />}
                                 />
                                 <Route
-                                    path="/members"
+                                    path="/settings/members"
                                     element={<GalleryMembers />}
                                 />
                                 <Route
                                     path="/settings/visibility"
                                     element={<DirectoryVisibilitySettings />}
                                 />
-                                <Route path="*" element={<RootDirectoryPage />} />
+                                <Route
+                                    path="*"
+                                    element={<RootDirectoryPage />}
+                                />
                             </Routes>
                         </ResponsiveDrawer>
-                    </UsersStoreProvider>
-                </MembersStoreProvider>
+                    </MembersStoreProvider>
+                </UsersStoreProvider>
             </DirectoryVisibilitiesStoreProvider>
         </DirectoriesStoreProvider>
+    );
+}
+
+function SettingsRoot() {
+    return (
+        <UsersStoreProvider>
+            <ResponsiveDrawer menu={<AdminMenu />} title={"Paramètres globaux"}>
+                <Routes>
+                    <Route path="/users" element={<Users />} />
+                </Routes>
+            </ResponsiveDrawer>
+        </UsersStoreProvider>
     );
 }
 
@@ -62,44 +81,9 @@ const MainScreen = observer(function MainScreen() {
     return (
         <Routes>
             <Route path="/" element={<GalleryChooser />} />
-            <Route
-                path="/users"
-                element={
-                    <UsersStoreProvider>
-                        <Users />
-                    </UsersStoreProvider>
-                }
-            />
+            <Route path="/settings/*" element={<SettingsRoot />} />
             <Route path="/g/:galleryId/*" element={<GalleryRoot />} />
         </Routes>
-    );
-});
-
-const GalleryChooser = observer(function GalleryChooser() {
-    const galleriesStore = useGalleriesStore();
-    const navigate = useNavigate();
-    if (!galleriesStore.memberships && !galleriesStore.loading) {
-        galleriesStore.load();
-    }
-    const memberships = galleriesStore.memberships;
-    if (!memberships) return <>Chargement...</>;
-    if (memberships.length === 1) {
-        const galleryId = memberships[0].galleryId;
-        navigate(`/g/${galleryId}`, { replace: true });
-    }
-    return (
-        <List>
-            {memberships.map((m) => (
-                <ListItemButton
-                    key={m.galleryId}
-                    onClick={() => {
-                        navigate(`/g/${m.galleryId}`);
-                    }}
-                >
-                    {m.galleryName}
-                </ListItemButton>
-            ))}
-        </List>
     );
 });
 

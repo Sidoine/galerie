@@ -17,12 +17,12 @@ export class UserController {
         return this.client.fetchJson<views.GalleryMember[]>(`api/users/galleries/${galleryId}/members`, "GET", undefined);
     }
 
-    getUserGalleries = (userId: string) => {
-        return this.client.fetchJson<views.GalleryMember[]>(`api/users/${userId}/galleries`, "GET", undefined);
+    getMe = () => {
+        return this.client.fetchJson<views.User>("api/users/me", "GET", undefined);
     }
 
-    isAdministrator = () => {
-        return this.client.fetchJson<boolean>("api/users/administrator", "GET", undefined);
+    getUserGalleries = (userId: string) => {
+        return this.client.fetchJson<views.GalleryMember[]>(`api/users/${userId}/galleries`, "GET", undefined);
     }
 
     patch = (id: string, viewModel: views.UserPatch) => {

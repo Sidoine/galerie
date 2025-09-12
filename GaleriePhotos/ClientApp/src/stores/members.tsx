@@ -11,6 +11,7 @@ import { UserController } from "../services/user";
 import { DirectoryVisibility } from "../services/enums";
 import { createContext, useContext, useMemo } from "react";
 import { useDirectoriesStore } from "./directories";
+import { UsersStore, useUsersStore } from "./users";
 
 class MembersStore {
     memberships: GalleryMember[] | null = null;
@@ -19,7 +20,8 @@ class MembersStore {
     constructor(
         private userService: UserController,
         public galleryId: number,
-        public membersLoader: ValueLoader<GalleryMember[], [number]>
+        public membersLoader: ValueLoader<GalleryMember[], [number]>,
+        private userStore: UsersStore
     ) {
         makeObservable(this, {
             memberships: observable.ref,
@@ -27,11 +29,21 @@ class MembersStore {
             setMembershipAdmin: action,
             setMembershipVisibility: action,
             members: computed,
+            administrator: computed,
+            member: computed,
         });
     }
 
     get members() {
         return this.membersLoader.getValue(this.galleryId) || [];
+    }
+
+    get member() {
+        return this.members.find((x) => x.userId === this.userStore.me?.id);
+    }
+
+    get administrator() {
+        return this.member?.isAdministrator || false;
     }
 
     async loadMemberships(userId: string) {
@@ -99,13 +111,19 @@ export function MembersStoreProvider({
 }) {
     const { galleryId } = useDirectoriesStore();
     const apiClient = useApiClient();
+    const usersStore = useUsersStore();
     const store = useMemo(() => {
         const userService = new UserController(apiClient);
         const galleryMembersLoader = new ValueLoader(
             userService.getGalleryMembers
         );
-        return new MembersStore(userService, galleryId, galleryMembersLoader);
-    }, [apiClient, galleryId]);
+        return new MembersStore(
+            userService,
+            galleryId,
+            galleryMembersLoader,
+            usersStore
+        );
+    }, [apiClient, galleryId, usersStore]);
     return (
         <MembersStoreContext.Provider value={store}>
             {children}

@@ -4,21 +4,22 @@ import { User, UserPatch, GalleryMember } from "../services/views";
 import { UserController } from "../services/user";
 import { createContext, useContext, useMemo } from "react";
 
-class UsersStore {
+export class UsersStore {
     memberships: GalleryMember[] | null = null;
     loadingMemberships = false;
 
     constructor(
-        private administrator: SingletonLoader<boolean>,
+        private meLoader: SingletonLoader<User>,
         public usersLoader: SingletonLoader<User[]>,
         private userService: UserController
     ) {
         makeObservable(this, {
             memberships: observable.ref,
             loadingMemberships: observable,
-            isAdministrator: computed,
+            me: computed,
             patch: action,
             users: computed,
+            administrator: computed,
         });
     }
 
@@ -26,8 +27,12 @@ class UsersStore {
         return this.usersLoader.getValue() || [];
     }
 
-    get isAdministrator() {
-        return this.administrator.getValue() || false;
+    get me() {
+        return this.meLoader.getValue();
+    }
+
+    get administrator() {
+        return this.me?.administrator || false;
     }
 
     patch(user: User, patch: UserPatch) {
@@ -50,7 +55,7 @@ export function UsersStoreProvider({
     const store = useMemo(() => {
         const userService = new UserController(apiClient);
         return new UsersStore(
-            new SingletonLoader(() => userService.isAdministrator()),
+            new SingletonLoader(() => userService.getMe()),
             new SingletonLoader(() => userService.getAll()),
             userService
         );

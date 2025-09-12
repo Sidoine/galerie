@@ -5,7 +5,7 @@ namespace GaleriePhotos.ViewModels
 {
     public class GalleryMemberPatchViewModel
     {
-        public Optional<DirectoryVisibility> DirectoryVisibility { get; set; }
-    public Optional<bool> IsAdministrator { get; set; }
+        public Optional<int> DirectoryVisibility { get; set; }
+        public Optional<bool> IsAdministrator { get; set; }
     }
 }

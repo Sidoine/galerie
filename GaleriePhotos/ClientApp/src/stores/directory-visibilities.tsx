@@ -2,15 +2,18 @@ import { useApiClient, ValueLoader } from "folke-service-helpers";
 import {
     GalleryDirectoryVisibility,
     GalleryDirectoryVisibilityPatch,
-    GalleryDirectoryVisibilityCreate
+    GalleryDirectoryVisibilityCreate,
 } from "../services/views";
 import { DirectoryVisibilityController } from "../services/services";
-import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import { action, computed, makeObservable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class DirectoryVisibilitiesStore {
     constructor(
-        public visibilitiesLoader: ValueLoader<GalleryDirectoryVisibility[], [number]>,
+        public visibilitiesLoader: ValueLoader<
+            GalleryDirectoryVisibility[],
+            [number]
+        >,
         private directoryVisibilityService: DirectoryVisibilityController,
         public galleryId: number
     ) {
@@ -27,55 +30,76 @@ class DirectoryVisibilitiesStore {
     }
 
     async createVisibility(visibility: GalleryDirectoryVisibilityCreate) {
-        const result = await this.directoryVisibilityService.post(this.galleryId, visibility);
+        const result = await this.directoryVisibilityService.post(
+            this.galleryId,
+            visibility
+        );
         if (result.ok) {
-            this.visibilitiesLoader.clear(this.galleryId);
+            this.visibilitiesLoader.invalidate();
             return result.value;
         }
-        throw new Error(result.error);
+        throw new Error(result.message);
     }
 
     async updateVisibility(id: number, patch: GalleryDirectoryVisibilityPatch) {
-        const result = await this.directoryVisibilityService.update(this.galleryId, id, patch);
+        const result = await this.directoryVisibilityService.update(
+            this.galleryId,
+            id,
+            patch
+        );
         if (result.ok) {
-            this.visibilitiesLoader.clear(this.galleryId);
+            this.visibilitiesLoader.invalidate();
             return result.value;
         }
-        throw new Error(result.error);
+        throw new Error(result.message);
     }
 
     async deleteVisibility(id: number) {
-        const result = await this.directoryVisibilityService.delete(this.galleryId, id);
+        const result = await this.directoryVisibilityService.delete(
+            this.galleryId,
+            id
+        );
         if (result.ok) {
-            this.visibilitiesLoader.clear(this.galleryId);
-        } else {
-            throw new Error(result.error);
+            this.visibilitiesLoader.invalidate();
         }
     }
 
     getVisibilityByValue(value: number) {
-        return this.visibilities.find(v => v.value === value);
+        return this.visibilities.find((v) => v.value === value);
     }
 
     getVisibilitiesForFlags(flags: number) {
-        return this.visibilities.filter(v => (flags & v.value) !== 0);
+        return this.visibilities.filter((v) => (flags & v.value) !== 0);
     }
 }
 
-const DirectoryVisibilitiesStoreContext = createContext<DirectoryVisibilitiesStore | null>(null);
+const DirectoryVisibilitiesStoreContext =
+    createContext<DirectoryVisibilitiesStore | null>(null);
 
-export function DirectoryVisibilitiesStoreProvider({ children, galleryId }: { children: React.ReactNode, galleryId: number }) {
+export function DirectoryVisibilitiesStoreProvider({
+    children,
+    galleryId,
+}: {
+    children: React.ReactNode;
+    galleryId: number;
+}) {
     const apiClient = useApiClient();
-    
+
     const store = useMemo(() => {
-        const directoryVisibilityService = new DirectoryVisibilityController(apiClient);
-        const visibilitiesLoader = new ValueLoader((galleryId: number) => 
+        const directoryVisibilityService = new DirectoryVisibilityController(
+            apiClient
+        );
+        const visibilitiesLoader = new ValueLoader((galleryId: number) =>
             directoryVisibilityService.getAll(galleryId)
         );
-        
-        return new DirectoryVisibilitiesStore(visibilitiesLoader, directoryVisibilityService, galleryId);
+
+        return new DirectoryVisibilitiesStore(
+            visibilitiesLoader,
+            directoryVisibilityService,
+            galleryId
+        );
     }, [apiClient, galleryId]);
-    
+
     return (
         <DirectoryVisibilitiesStoreContext.Provider value={store}>
             {children}
@@ -86,7 +110,9 @@ export function DirectoryVisibilitiesStoreProvider({ children, galleryId }: { ch
 export function useDirectoryVisibilitiesStore() {
     const store = useContext(DirectoryVisibilitiesStoreContext);
     if (!store) {
-        throw new Error("useDirectoryVisibilitiesStore must be used within DirectoryVisibilitiesStoreProvider");
+        throw new Error(
+            "useDirectoryVisibilitiesStore must be used within DirectoryVisibilitiesStoreProvider"
+        );
     }
     return store;
 }

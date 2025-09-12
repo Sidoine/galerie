@@ -13,7 +13,7 @@ import { Photo } from "../services/views";
 import { Link } from "react-router-dom";
 import { createPhotoUrl, useUi } from "../stores/ui";
 import { useDirectoriesStore } from "../stores/directories";
-import { useUsersStore } from "../stores/users";
+import { useMembersStore } from "../stores/members";
 
 const ImageCard = observer(function ImageCard({
     value,
@@ -71,7 +71,7 @@ export const ImagesView = observer(function ImagesView({
     directoryId: number;
 }) {
     const directoriesStore = useDirectoriesStore();
-    const usersStore = useUsersStore();
+    const membersStore = useMembersStore();
     const { order, navigateToDirectory } = useUi();
     const directoryContent =
         directoriesStore.contentLoader.getValue(directoryId);
@@ -93,7 +93,7 @@ export const ImagesView = observer(function ImagesView({
             <Typography variant="h4">Photos</Typography>
             <Stack spacing={1}>
                 {directoryContent === null && <CircularProgress />}
-                {values.length > 0 && usersStore.isAdministrator && <></>}
+                {values.length > 0 && membersStore.administrator && <></>}
                 {values.length > 0 && (
                     <Stack direction="row" spacing={1}>
                         <Button

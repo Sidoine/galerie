@@ -5,13 +5,15 @@ import { ExpandLess, ExpandMore, Settings } from "@mui/icons-material";
 import { useDirectoriesStore } from "../stores/directories";
 import { useUsersStore } from "../stores/users";
 import { useState } from "react";
+import { useMembersStore } from "../stores/members";
 
 function Menu() {
     const directoriesStore = useDirectoriesStore();
     const usersStore = useUsersStore();
+    const membersStore = useMembersStore();
     const location = useLocation();
     const [settingsOpen, setSettingsOpen] = useState(false);
-    
+
     return (
         <List>
             <ListItemButton
@@ -24,17 +26,14 @@ function Menu() {
             >
                 Galerie
             </ListItemButton>
-            <ListItemButton
-                component={Link}
-                to={`/g/${directoriesStore.galleryId}/members`}
-            >
-                Membres
-            </ListItemButton>
-            {usersStore.isAdministrator && (
+
+            {membersStore.administrator && (
                 <>
-                    <ListItemButton onClick={() => setSettingsOpen(!settingsOpen)}>
+                    <ListItemButton
+                        onClick={() => setSettingsOpen(!settingsOpen)}
+                    >
                         <Settings sx={{ mr: 1 }} />
-                        <ListItemText primary="Settings" />
+                        <ListItemText primary="Paramètres" />
                         {settingsOpen ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
                     <Collapse in={settingsOpen} timeout="auto" unmountOnExit>
@@ -43,18 +42,35 @@ function Menu() {
                                 sx={{ pl: 4 }}
                                 component={Link}
                                 to={`/g/${directoriesStore.galleryId}/settings/visibility`}
-                                selected={location.pathname.includes("/settings/visibility")}
+                                selected={location.pathname.includes(
+                                    "/settings/visibility"
+                                )}
                             >
-                                Directory Visibility
+                                Visibilité du répertoire
+                            </ListItemButton>
+                            <ListItemButton
+                                sx={{ pl: 4 }}
+                                component={Link}
+                                to={`/g/${directoriesStore.galleryId}/settings/members`}
+                                selected={location.pathname.includes(
+                                    "/settings/members"
+                                )}
+                            >
+                                Membres
                             </ListItemButton>
                         </List>
                     </Collapse>
+                </>
+            )}
+
+            {usersStore.administrator && (
+                <>
                     <ListItemButton
-                        selected={location.pathname === "/users"}
+                        selected={location.pathname === "/settings/users"}
                         component={Link}
-                        to={`/users`}
+                        to={`/settings/users`}
                     >
-                        Utilisateurs
+                        Paramètres globaux
                     </ListItemButton>
                 </>
             )}
