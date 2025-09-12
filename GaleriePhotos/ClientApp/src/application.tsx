@@ -16,6 +16,7 @@ import { MembersStoreProvider } from "./stores/members";
 import DirectoryVisibilitySettings from "./components/settings/directory-visibility-settings";
 import AdminMenu from "./components/admin-menu";
 import GalleryChooser from "./components/gallery-chooser";
+import Galleries from "./components/settings/galleries";
 
 function GalleryRoot() {
     const { galleryId } = useParams();
@@ -71,6 +72,7 @@ function SettingsRoot() {
             <ResponsiveDrawer menu={<AdminMenu />} title={"Paramètres globaux"}>
                 <Routes>
                     <Route path="/users" element={<Users />} />
+                    <Route path="/galleries" element={<Galleries />} />
                 </Routes>
             </ResponsiveDrawer>
         </UsersStoreProvider>
