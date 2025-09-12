@@ -1,5 +1,4 @@
 name: Setup environment for GitHub Copilot Agent
-description: Install .NET 9 SDK and configure Node.js with Yarn for the Galerie Photos project
 
 # Automatically run the setup steps when they are changed to allow for easy validation, and
 # allow manual testing through the repository's "Actions" tab
@@ -16,8 +15,28 @@ jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
 
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     permissions:
       contents: read
+
+    env:
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/galerie"
+      Administrator__Login: admin@example.com
+      Administrator__Password: copilot
 
     steps:
       - name: Checkout code
