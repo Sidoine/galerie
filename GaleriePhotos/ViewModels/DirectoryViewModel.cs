@@ -6,7 +6,7 @@ namespace GaleriePhotos.ViewModels
     public class DirectoryViewModel
     {
         public int Id { get; set; }
-        public DirectoryVisibility Visibility { get; set; }
+        public int Visibility { get; set; }
         public string Name { get; set; }
         public int? CoverPhotoId { get; set; }
         public int NumberOfPhotos { get; set; }

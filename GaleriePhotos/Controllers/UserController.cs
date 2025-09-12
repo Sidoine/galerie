@@ -59,10 +59,13 @@ namespace GaleriePhotos.Controllers
             return Ok();
         }
 
-        [HttpGet("administrator")]
-        public ActionResult<bool> IsAdministrator()
+        [HttpGet("me")]
+        public async Task<ActionResult<UserViewModel>> GetMe()
         {
-            return Ok(this.User.Claims.Any(x => x.Type == Claims.Administrator && x.Value == true.ToString()));
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+            var claims = await applicationDbContext.UserClaims.Where(uc => uc.UserId == user.Id).ToArrayAsync();
+            return Ok(new UserViewModel(user, claims));
         }
 
         [HttpGet("{userId}/galleries")]
@@ -107,7 +110,7 @@ namespace GaleriePhotos.Controllers
             var galleryMember = new GalleryMember(
                 galleryId,
                 userId,
-                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : DirectoryVisibility.None,
+                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : 0,
                 viewModel.IsAdministrator.IsSet && viewModel.IsAdministrator.Value
             );
 

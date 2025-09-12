@@ -1,4 +1,31 @@
-import * as enums from "./enums";
+
+export interface GalleryDirectoryVisibility {
+    id: number;
+
+    name: string;
+
+    icon: string;
+
+    value: number;
+
+    galleryId: number;
+}
+
+export interface GalleryDirectoryVisibilityCreate {
+    name: string;
+
+    icon: string;
+
+    value: number;
+}
+
+export interface GalleryDirectoryVisibilityPatch {
+    name: string | null;
+
+    icon: string | null;
+
+    value: number | null;
+}
 
 export interface GalleryMember {
     id: number;
@@ -11,7 +38,7 @@ export interface GalleryMember {
 
     userName: string;
 
-    directoryVisibility: enums.DirectoryVisibility;
+    directoryVisibility: number;
 
     isAdministrator: boolean;
 }
@@ -29,7 +56,7 @@ export interface UserPatch {
 }
 
 export interface GalleryMemberPatch {
-    directoryVisibility?: enums.DirectoryVisibility | undefined;
+    directoryVisibility?: number | undefined;
 
     isAdministrator?: boolean | undefined;
 }
@@ -37,7 +64,7 @@ export interface GalleryMemberPatch {
 export interface Directory {
     id: number;
 
-    visibility: enums.DirectoryVisibility;
+    visibility: number;
 
     name: string;
 
@@ -53,7 +80,7 @@ export interface DirectoryFull {
 
     id: number;
 
-    visibility: enums.DirectoryVisibility;
+    visibility: number;
 
     name: string;
 
@@ -73,7 +100,7 @@ export interface Photo {
 }
 
 export interface DirectoryPatch {
-    visibility?: enums.DirectoryVisibility | undefined;
+    visibility?: number | undefined;
 
     coverPhotoId?: number | undefined;
 }

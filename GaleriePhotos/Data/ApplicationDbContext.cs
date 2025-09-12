@@ -11,6 +11,7 @@ namespace GaleriePhotos.Data
         public DbSet<PhotoDirectory> PhotoDirectories { get; set; } = null!;
         public DbSet<Gallery> Galleries { get; set; } = null!;
         public DbSet<GalleryMember> GalleryMembers { get; set; } = null!;
+        public DbSet<GalleryDirectoryVisibility> GalleryDirectoryVisibilities { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)

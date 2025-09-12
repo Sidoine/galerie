@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useMembersStore } from "../../stores/members";
 import { useCallback, useMemo, useState } from "react";
-import { DirectoryVisibility } from "../../services/enums";
 import {
     Button,
     Checkbox,
@@ -16,18 +15,17 @@ import { User } from "../../services/views";
 function GalleryMemberCreate() {
     const membersStore = useMembersStore();
     const usersStore = useUsersStore();
-    const [visibility, setVisibility] = useState(DirectoryVisibility.None);
     const [isAdmin, setIsAdmin] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const canSubmit = selectedUser && !submitting;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedUser) return;
         setSubmitting(true);
         try {
-            await membersStore.addMembership(selectedUser, visibility, isAdmin);
-            setVisibility(DirectoryVisibility.None);
+            await membersStore.addMembership(selectedUser, 0, isAdmin);
             setIsAdmin(false);
         } finally {
             setSubmitting(false);
@@ -59,24 +57,6 @@ function GalleryMemberCreate() {
                             {user.name}
                         </MenuItem>
                     ))}
-                </Select>
-                <Select
-                    size="small"
-                    value={visibility}
-                    onChange={(e) =>
-                        setVisibility(e.target.value as DirectoryVisibility)
-                    }
-                >
-                    <MenuItem value={DirectoryVisibility.None}>None</MenuItem>
-                    <MenuItem value={DirectoryVisibility.Mylene}>
-                        Mylene
-                    </MenuItem>
-                    <MenuItem value={DirectoryVisibility.Sidoine}>
-                        Sidoine
-                    </MenuItem>
-                    <MenuItem value={DirectoryVisibility.SidoineEtMylene}>
-                        SidoineEtMylene
-                    </MenuItem>
                 </Select>
                 <FormControlLabel
                     control={

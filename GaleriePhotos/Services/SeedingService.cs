@@ -42,7 +42,43 @@ namespace GaleriePhotos.Services
                 var user = await this.applicationDbContext.Users.FirstAsync();
                 await userManager.AddClaimAsync(user, new Claim(Claims.Administrator, true.ToString())); 
             }
+
+            // Seed default directory visibilities for galleries that don't have any
+            await SeedDefaultDirectoryVisibilities();
+            
             await this.applicationDbContext.SaveChangesAsync();
+        }
+
+        private async Task SeedDefaultDirectoryVisibilities()
+        {
+            var galleries = await this.applicationDbContext.Galleries
+                .Where(g => !this.applicationDbContext.GalleryDirectoryVisibilities.Any(v => v.GalleryId == g.Id))
+                .ToListAsync();
+
+            foreach (var gallery in galleries)
+            {
+                var defaultVisibilities = new[]
+                {
+                    new GalleryDirectoryVisibility
+                    {
+                        Name = "Mylène",
+                        Icon = "👩",
+                        Value = 1,
+                        GalleryId = gallery.Id,
+                        Gallery = gallery
+                    },
+                    new GalleryDirectoryVisibility
+                    {
+                        Name = "Sidoine",
+                        Icon = "🧑",
+                        Value = 2,
+                        GalleryId = gallery.Id,
+                        Gallery = gallery
+                    }
+                };
+
+                this.applicationDbContext.GalleryDirectoryVisibilities.AddRange(defaultVisibilities);
+            }
         }
     }
 }

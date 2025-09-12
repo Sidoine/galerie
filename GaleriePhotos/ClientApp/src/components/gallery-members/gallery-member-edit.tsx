@@ -1,25 +1,21 @@
 import {
     Checkbox,
     FormControlLabel,
-    MenuItem,
-    Select,
     TableCell,
     TableRow,
+    Box,
 } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useMembersStore } from "../../stores/members";
+import { useDirectoryVisibilitiesStore } from "../../stores/directory-visibilities";
 
 import { GalleryMember } from "../../services/views";
-import { DirectoryVisibility } from "../../services/enums";
 
 function GalleryMemberEdit({ selectedUser }: { selectedUser: GalleryMember }) {
     const membersStore = useMembersStore();
-    const visibilityValues = [
-        DirectoryVisibility.None,
-        DirectoryVisibility.Mylene,
-        DirectoryVisibility.Sidoine,
-        DirectoryVisibility.SidoineEtMylene,
-    ];
+    const visibilitiesStore = useDirectoryVisibilitiesStore();
+    const visibilityOptions = visibilitiesStore.visibilities;
+
     return (
         <TableRow>
             <TableCell>{selectedUser.userName}</TableCell>
@@ -40,22 +36,36 @@ function GalleryMemberEdit({ selectedUser }: { selectedUser: GalleryMember }) {
                 />
             </TableCell>
             <TableCell>
-                <Select
-                    size="small"
-                    value={selectedUser.directoryVisibility}
-                    onChange={(e) =>
-                        membersStore.setMembershipVisibility(
-                            selectedUser,
-                            e.target.value as DirectoryVisibility
-                        )
-                    }
-                >
-                    {visibilityValues.map((v) => (
-                        <MenuItem key={v} value={v}>
-                            {String(DirectoryVisibility[v])}
-                        </MenuItem>
-                    ))}
-                </Select>
+                {visibilityOptions.map((option) => (
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={0.5}
+                        key={option.id}
+                    >
+                        <Checkbox
+                            checked={
+                                (selectedUser.directoryVisibility &
+                                    option.value) >
+                                0
+                            }
+                            onChange={(e) =>
+                                membersStore.setMembershipVisibility(
+                                    selectedUser,
+                                    e.target.checked
+                                        ? selectedUser.directoryVisibility |
+                                              option.value
+                                        : selectedUser.directoryVisibility &
+                                              ~option.value
+                                )
+                            }
+                        />
+                        <Box component="span" sx={{ fontSize: "16px" }}>
+                            {option.icon}
+                        </Box>
+                        {option.name}
+                    </Box>
+                ))}
             </TableCell>
         </TableRow>
     );

@@ -80,7 +80,7 @@ namespace GaleriePhotos.Services
                 .FirstOrDefault(x => x.Path == "" && x.GalleryId == gallery.Id);
             if (root == null)
             {
-                root = new PhotoDirectory("", DirectoryVisibility.None, null, gallery.Id) { Gallery = gallery };
+                root = new PhotoDirectory("", 0, null, gallery.Id) { Gallery = gallery };
                 applicationDbContext.PhotoDirectories.Add(root);
                 await applicationDbContext.SaveChangesAsync();
             }
@@ -89,15 +89,15 @@ namespace GaleriePhotos.Services
         }
 
         // Get directory visibility from GalleryMember for a specific gallery
-        public DirectoryVisibility GetDirectoryVisibility(ClaimsPrincipal claimsPrincipal, int galleryId)
+        public int GetDirectoryVisibility(ClaimsPrincipal claimsPrincipal, int galleryId)
         {
             var userId = claimsPrincipal.GetUserId();
-            if (userId == null) return DirectoryVisibility.None;
+            if (userId == null) return 0;
 
             var galleryMember = applicationDbContext.GalleryMembers
                 .FirstOrDefault(gm => gm.UserId == userId && gm.GalleryId == galleryId);
             
-            return galleryMember?.DirectoryVisibility ?? DirectoryVisibility.None;
+            return galleryMember?.DirectoryVisibility ?? 0;
         }
 
         // Check directory visibility using GalleryMember
@@ -247,7 +247,7 @@ namespace GaleriePhotos.Services
             {
                 if (!directories.Any(x => x.Path == path))
                 {
-                    var subPhotoDirectory = new PhotoDirectory(path, DirectoryVisibility.None, null)
+                    var subPhotoDirectory = new PhotoDirectory(path, 0, null)
                     { 
                         Gallery = photoDirectory.Gallery,
                         GalleryId = photoDirectory.GalleryId

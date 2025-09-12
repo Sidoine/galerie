@@ -4,8 +4,8 @@ import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useCallback, useState } from "react";
 import { PhotoFull } from "../../services/views";
-import { useUsersStore } from "../../stores/users";
 import { useDirectoriesStore } from "../../stores/directories";
+import { useMembersStore } from "../../stores/members";
 
 const WhiteButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.common.white,
@@ -23,7 +23,7 @@ function TopActions({
     photo: PhotoFull;
 }) {
     const directoriesStore = useDirectoriesStore();
-    const usersStore = useUsersStore();
+    const membersStore = useMembersStore();
     const handleMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     }, []);
@@ -70,7 +70,7 @@ function TopActions({
                 <WhiteButton onClickCapture={onDetailsToggle}>
                     <InfoOutlined />
                 </WhiteButton>
-                {usersStore.isAdministrator && (
+                {membersStore.administrator && (
                     <WhiteButton onClickCapture={handleMenu}>
                         <MoreVertIcon />
                     </WhiteButton>
