@@ -18,6 +18,14 @@ function AdminMenu() {
             >
                 Utilisateurs
             </ListItemButton>
+
+            <ListItemButton
+                selected={location.pathname === "/settings/galleries"}
+                component={Link}
+                to={`/settings/galleries`}
+            >
+                Galeries
+            </ListItemButton>
         </List>
     );
 }

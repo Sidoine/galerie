@@ -27,6 +27,28 @@ export interface GalleryDirectoryVisibilityPatch {
     value: number | null;
 }
 
+export interface Gallery {
+    id: number;
+
+    name: string;
+
+    rootDirectory: string;
+
+    thumbnailsDirectory: string | null;
+
+    administratorNames: string[];
+}
+
+export interface GalleryCreate {
+    name: string;
+
+    rootDirectory: string;
+
+    thumbnailsDirectory: string | null;
+
+    userId: string;
+}
+
 export interface GalleryMember {
     id: number;
 
