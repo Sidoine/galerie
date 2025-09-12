@@ -2,7 +2,7 @@ import { List, ListItemButton } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useLocation, Link } from "react-router";
 
-function Menu() {
+function AdminMenu() {
     const location = useLocation();
 
     return (
@@ -22,4 +22,4 @@ function Menu() {
     );
 }
 
-export default observer(Menu);
+export default observer(AdminMenu);
