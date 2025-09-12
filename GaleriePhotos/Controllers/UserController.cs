@@ -77,6 +77,18 @@ namespace GaleriePhotos.Controllers
             return Ok(galleryMembers.Select(gm => new GalleryMemberViewModel(gm)).ToArray());
         }
 
+        [HttpGet("galleries/{galleryId}/members")]
+        public async Task<ActionResult<GalleryMemberViewModel[]>> GetGalleryMembers(int galleryId)
+        {
+            var galleryMembers = await applicationDbContext.GalleryMembers
+                .Include(gm => gm.Gallery)
+                .Include(gm => gm.User)
+                .Where(gm => gm.GalleryId == galleryId)
+                .ToArrayAsync();
+            
+            return Ok(galleryMembers.Select(gm => new GalleryMemberViewModel(gm)).ToArray());
+        }
+
         [HttpPost("{userId}/galleries/{galleryId}")]
         public async Task<ActionResult<GalleryMemberViewModel>> AddUserToGallery(string userId, int galleryId, [FromBody]GalleryMemberPatchViewModel viewModel)
         {

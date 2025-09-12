@@ -60,7 +60,7 @@ namespace Galerie.Server.Controllers
             }
             
             var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
-            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
+            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
             return Ok(new DirectoryFullViewModel(directory, parentDirectory, photoService.GetNumberOfPhotos(directory), photoService.GetNumberOfSubDirectories(directory)));
         }
 

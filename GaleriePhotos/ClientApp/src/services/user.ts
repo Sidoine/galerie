@@ -13,6 +13,10 @@ export class UserController {
         return this.client.fetchJson<views.User[]>("api/users/", "GET", undefined);
     }
 
+    getGalleryMembers = (galleryId: number) => {
+        return this.client.fetchJson<views.GalleryMember[]>(`api/users/galleries/${galleryId}/members`, "GET", undefined);
+    }
+
     getUserGalleries = (userId: string) => {
         return this.client.fetchJson<views.GalleryMember[]>(`api/users/${userId}/galleries`, "GET", undefined);
     }

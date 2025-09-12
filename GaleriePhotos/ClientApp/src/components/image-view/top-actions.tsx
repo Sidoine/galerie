@@ -37,21 +37,21 @@ function TopActions({
         directoriesStore.patchDirectoryAndClearCache(directoryId, {
             coverPhotoId: photo.id,
         });
-    }, [handleCloseMenu]);
+    }, [directoriesStore, directoryId, handleCloseMenu, photo.id]);
     const handleShareClick = useCallback(() => {
         handleCloseMenu();
         directoriesStore.setAccess(directoryId, photo, false);
-    }, [handleCloseMenu]);
+    }, [directoriesStore, directoryId, handleCloseMenu, photo]);
     const handleUnshareClick = useCallback(() => {
         handleCloseMenu();
         directoriesStore.setAccess(directoryId, photo, true);
-    }, [handleCloseMenu]);
+    }, [directoriesStore, directoryId, handleCloseMenu, photo]);
     const handleRotate = useCallback(
         async (angle: number) => {
             handleCloseMenu();
             await directoriesStore.rotatePhoto(directoryId, photo, angle);
         },
-        [handleCloseMenu, directoryId, photo]
+        [handleCloseMenu, directoriesStore, directoryId, photo]
     );
     const handleRotateLeft = useCallback(() => {
         handleRotate(270);

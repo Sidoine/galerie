@@ -120,7 +120,7 @@ export function DirectoriesStoreProvider({
             photoService,
             galleryId
         );
-    }, [apiClient]);
+    }, [apiClient, galleryId]);
     return (
         <DirectoriesStoreContext.Provider value={store}>
             {children}

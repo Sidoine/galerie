@@ -1,83 +1,69 @@
-import {
-    Route,
-    Routes,
-    useLocation,
-    useNavigate,
-    useParams,
-} from "react-router";
+import { Route, Routes, useNavigate, useParams } from "react-router";
 import { CssBaseline, List, ListItemButton } from "@mui/material";
 import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
-import { Link } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { Users } from "./components/users";
 import BreadCrumbs from "./components/bread-crumbs";
 import { UsersStoreProvider } from "./stores/users";
 import { GalleriesStoreProvider, useGalleriesStore } from "./stores/galleries";
 import { DirectoriesStoreProvider } from "./stores/directories";
 import { ApiClientProvider } from "folke-service-helpers";
+import { GalleryMembers } from "./components/gallery-members";
+import { Users } from "./components/users";
+import Menu from "./components/menu";
+import { MembersStoreProvider } from "./stores/members";
 
 function GalleryRoot() {
     const { galleryId } = useParams();
     return (
         <DirectoriesStoreProvider galleryId={Number(galleryId)}>
-            <UsersStoreProvider>
-                <Routes>
-                    <Route path="/" element={<RootDirectoryPage />} />
-                    <Route
-                        path="/directory/:id/*"
-                        element={<DirectoryPage />}
-                    />
-                    <Route path="/users" element={<Users />} />
-                </Routes>
-            </UsersStoreProvider>
+            <MembersStoreProvider>
+                <UsersStoreProvider>
+                    const location = useLocation(); return (
+                    <ResponsiveDrawer
+                        menu={<Menu />}
+                        title={
+                            <Routes>
+                                <Route
+                                    path="/directory/:directoryId/*"
+                                    element={<BreadCrumbs />}
+                                ></Route>
+                                <Route path="*" element={<>Galerie photo</>} />
+                            </Routes>
+                        }
+                    >
+                        <Routes>
+                            <Route
+                                path="/directory/:id/*"
+                                element={<DirectoryPage />}
+                            />
+                            <Route
+                                path="/members"
+                                element={<GalleryMembers />}
+                            />
+                            <Route path="*" element={<RootDirectoryPage />} />
+                        </Routes>
+                    </ResponsiveDrawer>
+                </UsersStoreProvider>
+            </MembersStoreProvider>
         </DirectoriesStoreProvider>
     );
 }
 
 const MainScreen = observer(function MainScreen() {
-    // const usersStore = useUsersStore();
-    const location = useLocation();
     return (
-        <ResponsiveDrawer
-            menu={
-                <List>
-                    <ListItemButton
-                        selected={
-                            location.pathname === "/" ||
-                            location.pathname.startsWith("/directory")
-                        }
-                        component={Link}
-                        to="/"
-                    >
-                        Galerie
-                    </ListItemButton>
-                    {/* {usersStore.isAdministrator && (
-                        <ListItemButton
-                            selected={location.pathname === "/users"}
-                            component={Link}
-                            to="/users"
-                        >
-                            Utilisateurs
-                        </ListItemButton>
-                    )} */}
-                </List>
-            }
-            title={
-                <Routes>
-                    <Route
-                        path="/g/:galleryId/directory/:directoryId/*"
-                        element={<BreadCrumbs />}
-                    ></Route>
-                    <Route path="*" element={<>Galerie photo</>} />
-                </Routes>
-            }
-        >
-            <Routes>
-                <Route path="/" element={<GalleryChooser />} />
-                <Route path="/g/:galleryId/*" element={<GalleryRoot />} />
-            </Routes>
-        </ResponsiveDrawer>
+        <Routes>
+            <Route path="/" element={<GalleryChooser />} />
+            <Route
+                path="/users"
+                element={
+                    <UsersStoreProvider>
+                        <Users />
+                    </UsersStoreProvider>
+                }
+            />
+            <Route path="/g/:galleryId/*" element={<GalleryRoot />} />
+        </Routes>
     );
 });
 

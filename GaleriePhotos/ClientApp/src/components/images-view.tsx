@@ -28,7 +28,12 @@ const ImageCard = observer(function ImageCard({
     return (
         <ImageListItem
             component={Link}
-            to={createPhotoUrl(directoryId, value.id, order)}
+            to={createPhotoUrl(
+                directoriesStore.galleryId,
+                directoryId,
+                value.id,
+                order
+            )}
             sx={{ minHeight: 200, position: "relative" }}
         >
             <img
@@ -75,11 +80,11 @@ export const ImagesView = observer(function ImagesView({
         order === "date-desc" ? values.slice().reverse() : values;
     const handleSortDateDesc = useCallback(
         () => navigateToDirectory(directoryId, "date-desc"),
-        [directoryId]
+        [directoryId, navigateToDirectory]
     );
     const handleSortDateAsc = useCallback(
         () => navigateToDirectory(directoryId, "date-asc"),
-        [directoryId]
+        [directoryId, navigateToDirectory]
     );
 
     if (values.length === 0) return <></>;

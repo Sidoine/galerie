@@ -2,7 +2,7 @@ import { action, makeObservable, observable } from "mobx";
 import { GalleryMember } from "../services/views";
 import { MeController } from "../services/me";
 import { createContext, useContext, useMemo } from "react";
-import { SimpleApiClient } from "folke-service-helpers";
+import { useApiClient } from "folke-service-helpers";
 
 class GalleriesStore {
     memberships: GalleryMember[] | null = null;
@@ -39,7 +39,7 @@ export function GalleriesStoreProvider({
 }: {
     children: React.ReactNode;
 }) {
-    const apiClient = new SimpleApiClient(null);
+    const apiClient = useApiClient();
     const store = useMemo(
         () => new GalleriesStore(new MeController(apiClient)),
         [apiClient]
