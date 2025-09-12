@@ -29,23 +29,21 @@ namespace Galerie.Server.Controllers
             this.applicationDbContext = applicationDbContext;
         }
 
-        [HttpGet("root")]
-        public async Task<ActionResult<DirectoryViewModel>> GetRoot()
+        // New: get root directory for a specific gallery (used when galleryId is in the URL)
+        [HttpGet("root/{galleryId}")]
+        public async Task<ActionResult<DirectoryViewModel>> GetGalleryRoot(int galleryId)
         {
-            // Get the user's first gallery
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
 
-            var firstGalleryMember = await applicationDbContext.GalleryMembers
-                .Include(gm => gm.Gallery)
-                .FirstOrDefaultAsync(gm => gm.UserId == userId);
+            var isMember = await applicationDbContext.GalleryMembers.AnyAsync(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+            if (!isMember) return Forbid();
 
-            if (firstGalleryMember == null)
-            {
-                return Forbid();
-            }
+            var gallery = await applicationDbContext.Galleries.FindAsync(galleryId);
 
-            var galleryRootDirectory = await photoService.GetRootDirectory(firstGalleryMember.GalleryId);
+            if (gallery == null) return NotFound();
+
+            var galleryRootDirectory = await photoService.GetRootDirectory(gallery);
             return Ok(new DirectoryViewModel(galleryRootDirectory, photoService.GetNumberOfPhotos(galleryRootDirectory), photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
         }
 
@@ -62,7 +60,7 @@ namespace Galerie.Server.Controllers
             }
             
             var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
-            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
+            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
             return Ok(new DirectoryFullViewModel(directory, parentDirectory, photoService.GetNumberOfPhotos(directory), photoService.GetNumberOfSubDirectories(directory)));
         }
 

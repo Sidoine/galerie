@@ -24,6 +24,6 @@ namespace GaleriePhotos.Models
         }
 
         // Navigation properties
-        public Gallery Gallery { get; set; } = null!;
+        public required Gallery Gallery { get; set; }
     }
 }

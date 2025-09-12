@@ -9,12 +9,12 @@ export class DirectoryController {
         return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
 
-    getPhotos = (id: number) => {
-        return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos`, "GET", undefined);
+    getGalleryRoot = (galleryId: number) => {
+        return this.client.fetchJson<views.Directory>(`api/directories/root/${galleryId}`, "GET", undefined);
     }
 
-    getRoot = () => {
-        return this.client.fetchJson<views.Directory>("api/directories/root", "GET", undefined);
+    getPhotos = (id: number) => {
+        return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos`, "GET", undefined);
     }
 
     getSubdirectories = (id: number) => {

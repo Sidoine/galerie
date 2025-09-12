@@ -2,11 +2,17 @@ import { defineConfig } from "eslint/config";
 import js from "@eslint/js";
 import reactPlugin from "eslint-plugin-react";
 import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 // import globals from "globals";
 
 export default defineConfig([
     {
-        plugins: { js: js, react: reactPlugin, ts: tseslint.plugin },
+        plugins: {
+            js: js,
+            react: reactPlugin,
+            ts: tseslint.plugin,
+            reactHooks: reactHooks,
+        },
         languageOptions: {
             ...reactPlugin.configs.flat.recommended.languageOptions,
             parser: tseslint.parser,
@@ -20,6 +26,7 @@ export default defineConfig([
             "js/recommended",
             reactPlugin.configs.flat.recommended,
             tseslint.configs.recommended,
+            "reactHooks/recommended-latest",
         ],
         rules: {
             "react/react-in-jsx-scope": "off",

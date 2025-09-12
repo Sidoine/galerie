@@ -1,17 +1,5 @@
 import * as enums from "./enums";
 
-export interface User {
-    id: string;
-
-    name: string;
-
-    administrator: boolean;
-}
-
-export interface UserPatch {
-    administrator?: boolean | undefined;
-}
-
 export interface GalleryMember {
     id: number;
 
@@ -24,10 +12,26 @@ export interface GalleryMember {
     userName: string;
 
     directoryVisibility: enums.DirectoryVisibility;
+
+    isAdministrator: boolean;
+}
+
+export interface User {
+    id: string;
+
+    name: string;
+
+    administrator: boolean;
+}
+
+export interface UserPatch {
+    administrator?: boolean | undefined;
 }
 
 export interface GalleryMemberPatch {
     directoryVisibility?: enums.DirectoryVisibility | undefined;
+
+    isAdministrator?: boolean | undefined;
 }
 
 export interface Directory {

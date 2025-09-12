@@ -1,4 +1,3 @@
-import { useStores } from "../../stores";
 import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Box, useTheme, Stack } from "@mui/material";
@@ -9,6 +8,7 @@ import { ImageDetails } from "./image-details";
 import { useSwipeable } from "react-swipeable";
 import TopActions from "./top-actions";
 import { useUi } from "../../stores/ui";
+import { useDirectoriesStore } from "../../stores/directories";
 
 export default observer(function ImageView({
     directoryId,
@@ -16,7 +16,7 @@ export default observer(function ImageView({
     directoryId: number;
 }) {
     const { id } = useParams();
-    const { directoriesStore } = useStores();
+    const directoriesStore = useDirectoriesStore();
     const photo =
         directoryId && id
             ? directoriesStore.imageLoader.getValue(

@@ -77,6 +77,18 @@ namespace GaleriePhotos.Controllers
             return Ok(galleryMembers.Select(gm => new GalleryMemberViewModel(gm)).ToArray());
         }
 
+        [HttpGet("galleries/{galleryId}/members")]
+        public async Task<ActionResult<GalleryMemberViewModel[]>> GetGalleryMembers(int galleryId)
+        {
+            var galleryMembers = await applicationDbContext.GalleryMembers
+                .Include(gm => gm.Gallery)
+                .Include(gm => gm.User)
+                .Where(gm => gm.GalleryId == galleryId)
+                .ToArrayAsync();
+            
+            return Ok(galleryMembers.Select(gm => new GalleryMemberViewModel(gm)).ToArray());
+        }
+
         [HttpPost("{userId}/galleries/{galleryId}")]
         public async Task<ActionResult<GalleryMemberViewModel>> AddUserToGallery(string userId, int galleryId, [FromBody]GalleryMemberPatchViewModel viewModel)
         {
@@ -93,9 +105,10 @@ namespace GaleriePhotos.Controllers
                 return BadRequest("User is already a member of this gallery");
 
             var galleryMember = new GalleryMember(
-                galleryId, 
-                userId, 
-                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : DirectoryVisibility.None
+                galleryId,
+                userId,
+                viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : DirectoryVisibility.None,
+                viewModel.IsAdministrator.IsSet && viewModel.IsAdministrator.Value
             );
 
             applicationDbContext.GalleryMembers.Add(galleryMember);
@@ -124,6 +137,10 @@ namespace GaleriePhotos.Controllers
             if (viewModel.DirectoryVisibility.IsSet)
             {
                 galleryMember.DirectoryVisibility = viewModel.DirectoryVisibility.Value;
+            }
+            if (viewModel.IsAdministrator.IsSet)
+            {
+                galleryMember.IsAdministrator = viewModel.IsAdministrator.Value;
             }
 
             await applicationDbContext.SaveChangesAsync();
