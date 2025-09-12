@@ -1,5 +1,33 @@
 import * as enums from "./enums";
 
+export interface GalleryDirectoryVisibility {
+    id: number;
+
+    name: string;
+
+    icon: string;
+
+    value: number;
+
+    galleryId: number;
+}
+
+export interface GalleryDirectoryVisibilityCreate {
+    name: string;
+
+    icon: string;
+
+    value: number;
+}
+
+export interface GalleryDirectoryVisibilityPatch {
+    name: string | null;
+
+    icon: string | null;
+
+    value: number | null;
+}
+
 export interface GalleryMember {
     id: number;
 
