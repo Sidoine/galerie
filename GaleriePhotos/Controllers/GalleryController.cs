@@ -41,6 +41,27 @@ namespace GaleriePhotos.Controllers
             return Ok(galleryViewModels);
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<GalleryViewModel>> GetById(int id)
+        {
+            var gallery = await applicationDbContext.Galleries
+                .Include(g => g.Members)
+                .ThenInclude(gm => gm.User)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            var administratorNames = gallery.Members
+                .Where(gm => gm.IsAdministrator)
+                .Select(gm => gm.User?.UserName ?? "Unknown")
+                .ToArray();
+
+            return Ok(new GalleryViewModel(gallery, administratorNames));
+        }
+
         [HttpPost("")]
         public async Task<ActionResult<GalleryViewModel>> Create([FromBody] GalleryCreateViewModel model)
         {
@@ -70,6 +91,46 @@ namespace GaleriePhotos.Controllers
             var galleryViewModel = new GalleryViewModel(gallery, administratorNames);
 
             return CreatedAtAction(nameof(GetAll), galleryViewModel);
+        }
+
+        [HttpPatch("{id}")]
+        public async Task<ActionResult<GalleryViewModel>> Update(int id, [FromBody] GalleryPatchViewModel model)
+        {
+            var gallery = await applicationDbContext.Galleries
+                .Include(g => g.Members)
+                .ThenInclude(gm => gm.User)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            // Update gallery properties if provided
+            if (!string.IsNullOrEmpty(model.Name))
+            {
+                gallery.Name = model.Name;
+            }
+
+            if (!string.IsNullOrEmpty(model.RootDirectory))
+            {
+                gallery.RootDirectory = model.RootDirectory;
+            }
+
+            if (model.ThumbnailsDirectory != null)
+            {
+                gallery.ThumbnailsDirectory = model.ThumbnailsDirectory;
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+
+            // Return updated gallery
+            var administratorNames = gallery.Members
+                .Where(gm => gm.IsAdministrator)
+                .Select(gm => gm.User?.UserName ?? "Unknown")
+                .ToArray();
+
+            return Ok(new GalleryViewModel(gallery, administratorNames));
         }
     }
 }

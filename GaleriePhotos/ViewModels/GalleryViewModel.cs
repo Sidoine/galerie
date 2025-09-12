@@ -31,4 +31,11 @@ namespace GaleriePhotos.ViewModels
         public string? ThumbnailsDirectory { get; set; }
         public string UserId { get; set; } = string.Empty;
     }
+
+    public class GalleryPatchViewModel
+    {
+        public string? Name { get; set; }
+        public string? RootDirectory { get; set; }
+        public string? ThumbnailsDirectory { get; set; }
+    }
 }

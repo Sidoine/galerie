@@ -41,6 +41,16 @@ function Menu() {
                             <ListItemButton
                                 sx={{ pl: 4 }}
                                 component={Link}
+                                to={`/g/${directoriesStore.galleryId}/settings/gallery`}
+                                selected={location.pathname.includes(
+                                    "/settings/gallery"
+                                )}
+                            >
+                                Galerie
+                            </ListItemButton>
+                            <ListItemButton
+                                sx={{ pl: 4 }}
+                                component={Link}
                                 to={`/g/${directoriesStore.galleryId}/settings/visibility`}
                                 selected={location.pathname.includes(
                                     "/settings/visibility"
