@@ -49,6 +49,14 @@ export interface GalleryCreate {
     userId: string;
 }
 
+export interface GalleryPatch {
+    name: string | null;
+
+    rootDirectory: string | null;
+
+    thumbnailsDirectory: string | null;
+}
+
 export interface GalleryMember {
     id: number;
 

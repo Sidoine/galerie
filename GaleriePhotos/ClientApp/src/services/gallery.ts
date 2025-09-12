@@ -12,5 +12,13 @@ export class GalleryController {
     getAll = () => {
         return this.client.fetchJson<views.Gallery[]>("api/galleries/", "GET", undefined);
     }
+
+    getById = (id: number) => {
+        return this.client.fetchJson<views.Gallery>(`api/galleries/${id}`, "GET", undefined);
+    }
+
+    update = (id: number, model: views.GalleryPatch) => {
+        return this.client.fetchJson<views.Gallery>(`api/galleries/${id}`, "PATCH", JSON.stringify(model));
+    }
 }
 

@@ -17,6 +17,7 @@ import DirectoryVisibilitySettings from "./components/settings/directory-visibil
 import AdminMenu from "./components/admin-menu";
 import GalleryChooser from "./components/gallery-chooser";
 import Galleries from "./components/settings/galleries";
+import GallerySettings from "./components/settings/gallery-settings";
 
 function GalleryRoot() {
     const { galleryId } = useParams();
@@ -52,6 +53,10 @@ function GalleryRoot() {
                                 <Route
                                     path="/settings/visibility"
                                     element={<DirectoryVisibilitySettings />}
+                                />
+                                <Route
+                                    path="/settings/gallery"
+                                    element={<GallerySettings />}
                                 />
                                 <Route
                                     path="*"
