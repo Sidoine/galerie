@@ -1,3 +1,4 @@
+using GaleriePhotos.Models;
 using GaleriePhotos.Services;
 using System;
 using Xunit;
@@ -10,11 +11,16 @@ namespace GaleriePhotosTest.Services
         public void Constructor_WithValidParameters_ShouldCreateInstance()
         {
             // Arrange
-            var serverUrl = "https://cloud.example.com";
-            var apiKey = "test-api-key";
+            var gallery = new GaleriePhotos.Models.Gallery(
+                "Test Gallery",
+                "lib123",
+                "lib456",
+                DataProviderType.Seafile,
+                "https://cloud.example.com",
+                "test-api-key");
 
             // Act
-            using var provider = new SeafileDataProvider(serverUrl, apiKey);
+            using var provider = new SeafileDataProvider(gallery);
 
             // Assert
             Assert.NotNull(provider);
@@ -26,70 +32,35 @@ namespace GaleriePhotosTest.Services
             // Arrange
             var serverUrl = "https://cloud.example.com/";
             var apiKey = "test-api-key";
+            var originals = "lib-originals";
+            var thumbs = "lib-thumbs";
+            var gallery = new GaleriePhotos.Models.Gallery(
+                "Test Gallery",
+                originals,
+                thumbs,
+                DataProviderType.Seafile,
+                serverUrl,
+                apiKey);
 
             // Act & Assert - Should not throw
-            using var provider = new SeafileDataProvider(serverUrl, apiKey);
+            using var provider = new SeafileDataProvider(gallery);
             Assert.NotNull(provider);
         }
 
-        [Theory]
-        [InlineData("lib123/path/to/file", "lib123", "/path/to/file")]
-        [InlineData("lib123", "lib123", "/")]
-        [InlineData("/lib123/path/to/file", "lib123", "/path/to/file")]
-        public void ParseSeafilePath_WithValidPaths_ShouldReturnCorrectParts(
-            string input, 
-            string expectedLibraryId, 
-            string expectedFilePath)
-        {
-            // Arrange
-            using var provider = new SeafileDataProvider("https://test.com", "key");
-            var method = typeof(SeafileDataProvider)
-                .GetMethod("ParseSeafilePath", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            // Act
-            var result = method!.Invoke(provider, new object[] { input });
-            var (libraryId, filePath) = ((string, string))result!;
-
-            // Assert
-            Assert.Equal(expectedLibraryId, libraryId);
-            Assert.Equal(expectedFilePath, filePath);
-        }
-
-        [Theory]
-        [InlineData("")]
-        public void ParseSeafilePath_WithInvalidPaths_ShouldThrowArgumentException(string input)
-        {
-            // Arrange
-            using var provider = new SeafileDataProvider("https://test.com", "key");
-            var method = typeof(SeafileDataProvider)
-                .GetMethod("ParseSeafilePath", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            // Act & Assert
-            Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                method!.Invoke(provider, new object[] { input }));
-        }
-
-        [Fact]
-        public void ParseSeafilePath_WithNullPath_ShouldThrowArgumentException()
-        {
-            // Arrange
-            using var provider = new SeafileDataProvider("https://test.com", "key");
-            var method = typeof(SeafileDataProvider)
-                .GetMethod("ParseSeafilePath", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            // Act & Assert
-            Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                method!.Invoke(provider, new object[] { null! }));
-        }
+        // ParseSeafilePath tests removed because parsing logic was inlined and library IDs are provided explicitly.
 
         [Fact]
         public void Dispose_ShouldDisposeHttpClient()
         {
             // Arrange
-            var provider = new SeafileDataProvider("https://test.com", "key");
+            var gallery = new GaleriePhotos.Models.Gallery(
+                "Test Gallery",
+                "lib-o",
+                "lib-t",
+                DataProviderType.Seafile,
+                "https://test.com",
+                "key");
+            var provider = new SeafileDataProvider(gallery);
 
             // Act & Assert - Should not throw
             provider.Dispose();

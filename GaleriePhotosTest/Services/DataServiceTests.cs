@@ -18,17 +18,6 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void GetDefaultDataProvider_ReturnsFileSystemProvider()
-        {
-            // Act
-            var provider = _dataService.GetDefaultDataProvider();
-
-            // Assert
-            Assert.NotNull(provider);
-            Assert.IsType<FileSystemProvider>(provider);
-        }
-
-        [Fact]
         public void GetDataProvider_WithFileSystemGallery_ReturnsFileSystemProvider()
         {
             // Arrange
@@ -47,11 +36,11 @@ namespace GaleriePhotosTest.Services
         {
             // Arrange
             var gallery = new Gallery(
-                "Test Gallery", 
-                "lib123", 
-                null, 
-                DataProviderType.Seafile, 
-                "https://cloud.example.com", 
+                "Test Gallery",
+                "lib123",
+                null,
+                DataProviderType.Seafile,
+                "https://cloud.example.com",
                 "test-api-key");
 
             // Act
@@ -67,10 +56,10 @@ namespace GaleriePhotosTest.Services
         {
             // Arrange
             var gallery = new Gallery(
-                "Test Gallery", 
-                "lib123", 
-                null, 
-                DataProviderType.Seafile, 
+                "Test Gallery",
+                "lib123",
+                null,
+                DataProviderType.Seafile,
                 null, // Missing URL
                 "test-api-key");
 
@@ -83,11 +72,11 @@ namespace GaleriePhotosTest.Services
         {
             // Arrange
             var gallery = new Gallery(
-                "Test Gallery", 
-                "lib123", 
-                null, 
-                DataProviderType.Seafile, 
-                "https://cloud.example.com", 
+                "Test Gallery",
+                "lib123",
+                null,
+                DataProviderType.Seafile,
+                "https://cloud.example.com",
                 null); // Missing API key
 
             // Act & Assert
@@ -111,18 +100,18 @@ namespace GaleriePhotosTest.Services
         {
             // Arrange
             var gallery1 = new Gallery(
-                "Gallery 1", 
-                "lib123", 
-                null, 
-                DataProviderType.Seafile, 
-                "https://cloud.example.com", 
+                "Gallery 1",
+                "lib123",
+                null,
+                DataProviderType.Seafile,
+                "https://cloud.example.com",
                 "test-api-key");
             var gallery2 = new Gallery(
-                "Gallery 2", 
-                "lib456", 
-                null, 
-                DataProviderType.Seafile, 
-                "https://cloud.example.com", 
+                "Gallery 2",
+                "lib456",
+                null,
+                DataProviderType.Seafile,
+                "https://cloud.example.com",
                 "test-api-key");
 
             // Act
@@ -150,51 +139,51 @@ namespace GaleriePhotosTest.Services
             _provider = new FileSystemProvider();
             _testDirectory = Path.Combine(Path.GetTempPath(), "GalerieTest_" + Guid.NewGuid().ToString());
             _testFile = Path.Combine(_testDirectory, "test.txt");
-            
+
             // Setup test environment
             Directory.CreateDirectory(_testDirectory);
             File.WriteAllText(_testFile, "Test content");
         }
 
         [Fact]
-        public void DirectoryExists_WithExistingDirectory_ReturnsTrue()
+        public async Task DirectoryExists_WithExistingDirectory_ReturnsTrue()
         {
             // Act & Assert
-            Assert.True(_provider.DirectoryExists(_testDirectory));
+            Assert.True(await _provider.DirectoryExists(_testDirectory));
         }
 
         [Fact]
-        public void DirectoryExists_WithNonExistentDirectory_ReturnsFalse()
+        public async Task DirectoryExists_WithNonExistentDirectory_ReturnsFalse()
         {
             // Arrange
             var nonExistentDir = Path.Combine(_testDirectory, "nonexistent");
 
             // Act & Assert
-            Assert.False(_provider.DirectoryExists(nonExistentDir));
+            Assert.False(await _provider.DirectoryExists(nonExistentDir));
         }
 
         [Fact]
-        public void FileExists_WithExistingFile_ReturnsTrue()
+        public async Task FileExists_WithExistingFile_ReturnsTrue()
         {
             // Act & Assert
-            Assert.True(_provider.FileExists(_testFile));
+            Assert.True(await _provider.FileExists(_testFile));
         }
 
         [Fact]
-        public void FileExists_WithNonExistentFile_ReturnsFalse()
+        public async Task FileExists_WithNonExistentFile_ReturnsFalse()
         {
             // Arrange
             var nonExistentFile = Path.Combine(_testDirectory, "nonexistent.txt");
 
             // Act & Assert
-            Assert.False(_provider.FileExists(nonExistentFile));
+            Assert.False(await _provider.FileExists(nonExistentFile));
         }
 
         [Fact]
-        public void GetFiles_WithExistingDirectory_ReturnsFiles()
+        public async Task GetFiles_WithExistingDirectory_ReturnsFiles()
         {
             // Act
-            var files = _provider.GetFiles(_testDirectory);
+            var files = await _provider.GetFiles(_testDirectory);
 
             // Assert
             Assert.NotNull(files);
@@ -202,14 +191,14 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void GetDirectories_WithSubdirectories_ReturnsDirectories()
+        public async Task GetDirectories_WithSubdirectories_ReturnsDirectories()
         {
             // Arrange
             var subDir = Path.Combine(_testDirectory, "subdir");
             Directory.CreateDirectory(subDir);
 
             // Act
-            var directories = _provider.GetDirectories(_testDirectory);
+            var directories = await _provider.GetDirectories(_testDirectory);
 
             // Assert
             Assert.NotNull(directories);
@@ -217,10 +206,10 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void GetFileCreationTimeUtc_WithExistingFile_ReturnsTime()
+        public async Task GetFileCreationTimeUtc_WithExistingFile_ReturnsTime()
         {
             // Act
-            var creationTime = _provider.GetFileCreationTimeUtc(_testFile);
+            var creationTime = await _provider.GetFileCreationTimeUtc(_testFile);
 
             // Assert
             Assert.True(creationTime > DateTime.MinValue);
@@ -228,20 +217,20 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void CreateDirectory_CreatesDirectory()
+        public async Task CreateDirectory_CreatesDirectory()
         {
             // Arrange
             var newDir = Path.Combine(_testDirectory, "newdir");
 
             // Act
-            _provider.CreateDirectory(newDir);
+            await _provider.CreateDirectory(newDir);
 
             // Assert
             Assert.True(Directory.Exists(newDir));
         }
 
         [Fact]
-        public void MoveFile_MovesFileSuccessfully()
+        public async Task MoveFile_MovesFileSuccessfully()
         {
             // Arrange
             var sourceFile = Path.Combine(_testDirectory, "source.txt");
@@ -249,7 +238,7 @@ namespace GaleriePhotosTest.Services
             File.WriteAllText(sourceFile, "Move test");
 
             // Act
-            _provider.MoveFile(sourceFile, destFile);
+            await _provider.MoveFile(sourceFile, destFile);
 
             // Assert
             Assert.False(File.Exists(sourceFile));
@@ -258,14 +247,14 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void ReadFileBytes_ReturnsFileContent()
+        public async Task ReadFileBytes_ReturnsFileContent()
         {
             // Arrange
             var content = "Test content for reading";
             File.WriteAllText(_testFile, content);
 
             // Act
-            var bytes = _provider.ReadFileBytes(_testFile);
+            var bytes = await _provider.ReadFileBytes(_testFile);
 
             // Assert
             Assert.NotNull(bytes);
@@ -273,10 +262,10 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void OpenFileRead_ReturnsReadableStream()
+        public async Task OpenFileRead_ReturnsReadableStream()
         {
             // Act
-            using var stream = _provider.OpenFileRead(_testFile);
+            using var stream = await _provider.OpenFileRead(_testFile);
 
             // Assert
             Assert.NotNull(stream);

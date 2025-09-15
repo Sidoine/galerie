@@ -39,7 +39,9 @@ const GallerySettings = observer(() => {
     const [name, setName] = useState("");
     const [rootDirectory, setRootDirectory] = useState("");
     const [thumbnailsDirectory, setThumbnailsDirectory] = useState("");
-    const [dataProvider, setDataProvider] = useState<DataProviderType>(DataProviderType.FileSystem);
+    const [dataProvider, setDataProvider] = useState<DataProviderType>(
+        DataProviderType.FileSystem
+    );
     const [seafileServerUrl, setSeafileServerUrl] = useState("");
     const [seafileApiKey, setSeafileApiKey] = useState("");
 
@@ -100,9 +102,7 @@ const GallerySettings = observer(() => {
                         ? thumbnailsDirectory || null
                         : null,
                 dataProvider:
-                    dataProvider !== gallery.dataProvider
-                        ? dataProvider
-                        : null,
+                    dataProvider !== gallery.dataProvider ? dataProvider : null,
                 seafileServerUrl:
                     seafileServerUrl !== (gallery.seafileServerUrl || "")
                         ? seafileServerUrl || null
@@ -208,7 +208,11 @@ const GallerySettings = observer(() => {
                         <InputLabel>Type de stockage</InputLabel>
                         <Select
                             value={dataProvider}
-                            onChange={(e) => setDataProvider(e.target.value as DataProviderType)}
+                            onChange={(e) =>
+                                setDataProvider(
+                                    e.target.value as DataProviderType
+                                )
+                            }
                             label="Type de stockage"
                         >
                             <MenuItem value={DataProviderType.FileSystem}>
@@ -225,7 +229,9 @@ const GallerySettings = observer(() => {
                             <TextField
                                 label="Répertoire racine"
                                 value={rootDirectory}
-                                onChange={(e) => setRootDirectory(e.target.value)}
+                                onChange={(e) =>
+                                    setRootDirectory(e.target.value)
+                                }
                                 fullWidth
                                 required
                                 variant="outlined"
@@ -235,7 +241,9 @@ const GallerySettings = observer(() => {
                             <TextField
                                 label="Répertoire des miniatures"
                                 value={thumbnailsDirectory}
-                                onChange={(e) => setThumbnailsDirectory(e.target.value)}
+                                onChange={(e) =>
+                                    setThumbnailsDirectory(e.target.value)
+                                }
                                 fullWidth
                                 variant="outlined"
                                 helperText="Chemin vers le répertoire des miniatures (optionnel)"
@@ -248,7 +256,9 @@ const GallerySettings = observer(() => {
                             <TextField
                                 label="URL du serveur Seafile"
                                 value={seafileServerUrl}
-                                onChange={(e) => setSeafileServerUrl(e.target.value)}
+                                onChange={(e) =>
+                                    setSeafileServerUrl(e.target.value)
+                                }
                                 fullWidth
                                 required
                                 variant="outlined"
@@ -259,7 +269,9 @@ const GallerySettings = observer(() => {
                             <TextField
                                 label="Clé API Seafile"
                                 value={seafileApiKey}
-                                onChange={(e) => setSeafileApiKey(e.target.value)}
+                                onChange={(e) =>
+                                    setSeafileApiKey(e.target.value)
+                                }
                                 fullWidth
                                 required
                                 variant="outlined"
@@ -270,7 +282,9 @@ const GallerySettings = observer(() => {
                             <TextField
                                 label="ID de la bibliothèque Seafile"
                                 value={rootDirectory}
-                                onChange={(e) => setRootDirectory(e.target.value)}
+                                onChange={(e) =>
+                                    setRootDirectory(e.target.value)
+                                }
                                 fullWidth
                                 required
                                 variant="outlined"
@@ -280,10 +294,13 @@ const GallerySettings = observer(() => {
                             <TextField
                                 label="Chemin des miniatures"
                                 value={thumbnailsDirectory}
-                                onChange={(e) => setThumbnailsDirectory(e.target.value)}
+                                onChange={(e) =>
+                                    setThumbnailsDirectory(e.target.value)
+                                }
                                 fullWidth
+                                required
                                 variant="outlined"
-                                helperText="Chemin vers le dossier des miniatures dans la bibliothèque (optionnel)"
+                                helperText="ID de la bibliothèque Seafile où sont stockées les miniatures"
                             />
                         </>
                     )}

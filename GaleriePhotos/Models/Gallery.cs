@@ -7,12 +7,12 @@ namespace GaleriePhotos.Models
         public int Id { get; set; }
         public string Name { get; set; }
         public string RootDirectory { get; set; }
-        public string? ThumbnailsDirectory { get; set; }
+        public string ThumbnailsDirectory { get; set; }
         public DataProviderType DataProvider { get; set; } = DataProviderType.FileSystem;
         public string? SeafileServerUrl { get; set; }
         public string? SeafileApiKey { get; set; }
 
-        public Gallery(string name, string rootDirectory, string? thumbnailsDirectory = null, DataProviderType dataProvider = DataProviderType.FileSystem, string? seafileServerUrl = null, string? seafileApiKey = null)
+        public Gallery(string name, string rootDirectory, string thumbnailsDirectory, DataProviderType dataProvider = DataProviderType.FileSystem, string? seafileServerUrl = null, string? seafileApiKey = null)
         {
             Name = name;
             RootDirectory = rootDirectory;

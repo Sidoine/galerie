@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using GaleriePhotos.Models;
 
 namespace GaleriePhotos.Services
 {
@@ -10,58 +11,49 @@ namespace GaleriePhotos.Services
     /// </summary>
     public class FileSystemProvider : IDataProvider
     {
-        /// <inheritdoc />
-        public bool DirectoryExists(string path)
+        public FileSystemProvider(Gallery gallery)
         {
-            return Directory.Exists(path);
+            Gallery = gallery;
+        }
+
+        private Gallery Gallery { get; }
+
+        /// <inheritdoc />
+        public Task<bool> DirectoryExists(string path) => Task.FromResult(Directory.Exists(Path.Combine(Gallery.RootDirectory, path)));
+
+        /// <inheritdoc />
+        public Task<bool> FileExists(string path) => Task.FromResult(File.Exists(Path.Combine(Gallery.RootDirectory, path)));
+
+        /// <inheritdoc />
+        public Task<IEnumerable<string>> GetFiles(string path) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateFiles(Path.Combine(Gallery.RootDirectory, path))));
+
+        /// <inheritdoc />
+        public Task<IEnumerable<string>> GetDirectories(string path) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateDirectories(Path.Combine(Gallery.RootDirectory, path))));
+
+        /// <inheritdoc />
+        public Task<DateTime> GetFileCreationTimeUtc(string path) => Task.FromResult(File.GetCreationTimeUtc(Path.Combine(Gallery.RootDirectory, path)));
+
+        /// <inheritdoc />
+        public Task CreateDirectory(string path)
+        {
+            Directory.CreateDirectory(Path.Combine(Gallery.RootDirectory, path));
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public bool FileExists(string path)
-        {
-            return File.Exists(path);
-        }
-
-        /// <inheritdoc />
-        public IEnumerable<string> GetFiles(string path)
-        {
-            return Directory.EnumerateFiles(path);
-        }
-
-        /// <inheritdoc />
-        public IEnumerable<string> GetDirectories(string path)
-        {
-            return Directory.EnumerateDirectories(path);
-        }
-
-        /// <inheritdoc />
-        public DateTime GetFileCreationTimeUtc(string path)
-        {
-            return File.GetCreationTimeUtc(path);
-        }
-
-        /// <inheritdoc />
-        public void CreateDirectory(string path)
-        {
-            Directory.CreateDirectory(path);
-        }
-
-        /// <inheritdoc />
-        public void MoveFile(string sourcePath, string destinationPath)
+        public Task MoveFile(string sourcePath, string destinationPath)
         {
             File.Move(sourcePath, destinationPath);
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public byte[] ReadFileBytes(string path)
-        {
-            return File.ReadAllBytes(path);
-        }
+        public Task<byte[]> ReadFileBytes(string path) => Task.FromResult(File.ReadAllBytes(path));
 
         /// <inheritdoc />
-        public FileStream OpenFileRead(string path)
+        public Task<FileStream> OpenFileRead(string path)
         {
-            return new FileStream(path, FileMode.Open, FileAccess.Read);
+            return Task.FromResult(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
         }
 
         /// <inheritdoc />
@@ -69,5 +61,14 @@ namespace GaleriePhotos.Services
         {
             await File.WriteAllBytesAsync(path, content);
         }
+
+        // Thumbnail specialized operations simply reuse the same file system semantics
+        public Task<bool> ThumbnailExists(string path) => Task.FromResult(File.Exists(Path.Combine(Gallery.ThumbnailsDirectory, path)));
+
+        public Task<byte[]> ReadThumbnailBytes(string path) => Task.FromResult(File.ReadAllBytes(Path.Combine(Gallery.ThumbnailsDirectory, path)));
+
+        public Task<FileStream> OpenThumbnailRead(string path) => Task.FromResult(new FileStream(Path.Combine(Gallery.ThumbnailsDirectory, path), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
+
+        public Task WriteThumbnailBytesAsync(string path, byte[] content) => Task.FromResult(File.WriteAllBytesAsync(Path.Combine(Gallery.ThumbnailsDirectory, path), content));
     }
 }

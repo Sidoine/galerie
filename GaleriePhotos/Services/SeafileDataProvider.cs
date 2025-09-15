@@ -7,130 +7,91 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Text;
 using System.Linq;
+using GaleriePhotos.Models;
 
 namespace GaleriePhotos.Services
 {
     /// <summary>
     /// Implementation of IDataProvider that uses Seafile Web API for cloud storage.
     /// </summary>
-    public class SeafileDataProvider : IDataProvider, IDisposable
+    public class SeafileDataProvider : AbstractDataProvider, IDataProvider, IDisposable
     {
         private readonly HttpClient _httpClient;
         private readonly string _serverUrl;
         private readonly string _apiKey;
         private readonly string _baseApiUrl;
+        private readonly string _originalsLibraryId;
+        private readonly string _thumbnailsLibraryId;
 
-        public SeafileDataProvider(string serverUrl, string apiKey)
+        public SeafileDataProvider(Gallery gallery)
         {
-            _serverUrl = serverUrl.TrimEnd('/');
-            _apiKey = apiKey;
+            if (gallery.SeafileServerUrl == null) throw new ArgumentNullException(nameof(gallery.SeafileServerUrl));
+            if (gallery.SeafileApiKey == null) throw new ArgumentNullException(nameof(gallery.SeafileApiKey));
+            _serverUrl = gallery.SeafileServerUrl.TrimEnd('/');
+            _apiKey = gallery.SeafileApiKey;
             _baseApiUrl = $"{_serverUrl}/api/v2.1";
-            
+            _originalsLibraryId = gallery.RootDirectory;
+            _thumbnailsLibraryId = gallery.ThumbnailsDirectory;
+
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Token {_apiKey}");
         }
 
         /// <inheritdoc />
-        public bool DirectoryExists(string path)
-        {
-            // For Seafile, we'll treat this as checking if the path exists as a directory
-            // This is a synchronous wrapper around an async operation
-            try
-            {
-                return DirectoryExistsAsync(path).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        public Task<bool> DirectoryExists(PhotoDirectory photoDirectory) => DirectoryExistsInternal(_originalsLibraryId, photoDirectory.Path);
 
         /// <inheritdoc />
-        public bool FileExists(string path)
-        {
-            // For Seafile, we'll treat this as checking if the path exists as a file
-            try
-            {
-                return FileExistsAsync(path).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        public Task<bool> FileExists(PhotoDirectory photoDirectory, Photo photo) => FileExistsInternal(_originalsLibraryId, Path.Combine(photoDirectory.Path, photo.FileName));
 
         /// <inheritdoc />
-        public IEnumerable<string> GetFiles(string path)
-        {
-            try
-            {
-                return GetFilesAsync(path).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                return Enumerable.Empty<string>();
-            }
-        }
+        public Task<IEnumerable<string>> GetFiles(PhotoDirectory photoDirectory) => GetFilesInternal(_originalsLibraryId, photoDirectory.Path);
 
         /// <inheritdoc />
-        public IEnumerable<string> GetDirectories(string path)
-        {
-            try
-            {
-                return GetDirectoriesAsync(path).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                return Enumerable.Empty<string>();
-            }
-        }
+        public Task<IEnumerable<string>> GetDirectories(PhotoDirectory photoDirectory) => GetDirectoriesInternal(_originalsLibraryId, photoDirectory.Path);
 
         /// <inheritdoc />
-        public DateTime GetFileCreationTimeUtc(string path)
-        {
-            // For Seafile, we'll return the modification time from file info
-            try
-            {
-                return GetFileCreationTimeUtcAsync(path).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                return DateTime.UtcNow;
-            }
-        }
+        public Task<DateTime> GetFileCreationTimeUtc(PhotoDirectory photoDirectory, Photo photo) => GetFileCreationTimeUtcInternal(_originalsLibraryId, Path.Combine(photoDirectory.Path, photo.FileName));
 
         /// <inheritdoc />
-        public void CreateDirectory(string path)
+        public async Task CreateDirectory(PhotoDirectory photoDirectory)
         {
             try
             {
-                CreateDirectoryAsync(path).GetAwaiter().GetResult();
+                await CreateDirectoryAsync(photoDirectory.Path);
             }
             catch (Exception ex)
             {
-                throw new DirectoryServiceException($"Failed to create directory: {path}", ex);
+                throw new DirectoryServiceException($"Failed to create directory: {photoDirectory.Path}", ex);
             }
         }
 
         /// <inheritdoc />
-        public void MoveFile(string sourcePath, string destinationPath)
+        public async Task MoveFile(PhotoDirectory sourceDirectory, PhotoDirectory destinationDirectory, Photo photo)
         {
-            try
+            var sourcePath = Path.Combine(sourceDirectory.Path, photo.FileName);
+            var destinationPath = Path.Combine(destinationDirectory.Path, photo.FileName);
+            var sourceFilePath = NormalizePath(sourcePath);
+            var destFilePath = NormalizePath(destinationPath);
+
+            var requestData = new
             {
-                MoveFileAsync(sourcePath, destinationPath).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                throw new DirectoryServiceException($"Failed to move file from {sourcePath} to {destinationPath}", ex);
-            }
+                operation = "move",
+                dst_repo = _originalsLibraryId,
+                dst_dir = Path.GetDirectoryName(destFilePath) ?? "/",
+                file_names = new[] { Path.GetFileName(sourceFilePath) }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{_originalsLibraryId}/fileops/", content);
+            response.EnsureSuccessStatusCode();
         }
 
         /// <inheritdoc />
-        public byte[] ReadFileBytes(string path)
+        public async Task<byte[]> ReadFileBytes(PhotoDirectory directory, Photo photo)
         {
             try
             {
-                return ReadFileBytesAsync(path).GetAwaiter().GetResult();
+                return await ReadFileBytesAsync(path);
             }
             catch (Exception ex)
             {
@@ -139,15 +100,15 @@ namespace GaleriePhotos.Services
         }
 
         /// <inheritdoc />
-        public FileStream OpenFileRead(string path)
+        public async Task<FileStream> OpenFileRead(string path)
         {
             // For Seafile, we'll download the file to a temporary location and return a stream
             try
             {
-                var bytes = ReadFileBytes(path);
+                var bytes = await ReadFileBytes(path);
                 var tempPath = Path.GetTempFileName();
-                File.WriteAllBytes(tempPath, bytes);
-                return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
+                await File.WriteAllBytesAsync(tempPath, bytes);
+                return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
             }
             catch (Exception ex)
             {
@@ -158,15 +119,19 @@ namespace GaleriePhotos.Services
         /// <inheritdoc />
         public async Task WriteFileBytesAsync(string path, byte[] content)
         {
+            await WriteFileBytesAsync(_originalsLibraryId, path, content);
+        }
+
+        public async Task WriteFileBytesAsync(string repository, string path, byte[] content)
+        {
             try
             {
-                // Parse the path to get library and file path
-                var (libraryId, filePath) = ParseSeafilePath(path);
-                
+                var filePath = NormalizePath(path);
+
                 // Get upload link
-                var uploadLinkResponse = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/upload-link/");
+                var uploadLinkResponse = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{repository}/upload-link/");
                 uploadLinkResponse.EnsureSuccessStatusCode();
-                
+
                 var uploadLinkJson = await uploadLinkResponse.Content.ReadAsStringAsync();
                 var uploadLink = JsonSerializer.Deserialize<JsonElement>(uploadLinkJson).GetString();
 
@@ -187,11 +152,11 @@ namespace GaleriePhotos.Services
 
         // Async helper methods for Seafile API operations
 
-        private async Task<bool> DirectoryExistsAsync(string path)
+        private async Task<bool> DirectoryExistsInternal(string libraryId, string path)
         {
             try
             {
-                var (libraryId, dirPath) = ParseSeafilePath(path);
+                var dirPath = NormalizePath(path);
                 var response = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/dir/?p={Uri.EscapeDataString(dirPath)}");
                 return response.IsSuccessStatusCode;
             }
@@ -201,11 +166,11 @@ namespace GaleriePhotos.Services
             }
         }
 
-        private async Task<bool> FileExistsAsync(string path)
+        private async Task<bool> FileExistsInternal(string libraryId, string path)
         {
             try
             {
-                var (libraryId, filePath) = ParseSeafilePath(path);
+                var filePath = NormalizePath(path);
                 var response = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/file/detail/?p={Uri.EscapeDataString(filePath)}");
                 return response.IsSuccessStatusCode;
             }
@@ -215,20 +180,20 @@ namespace GaleriePhotos.Services
             }
         }
 
-        private async Task<IEnumerable<string>> GetFilesAsync(string path)
+        private async Task<IEnumerable<string>> GetFilesInternal(string libraryId, string path)
         {
             try
             {
-                var (libraryId, dirPath) = ParseSeafilePath(path);
+                var dirPath = NormalizePath(path);
                 var response = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/dir/?p={Uri.EscapeDataString(dirPath)}");
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
                 var items = JsonSerializer.Deserialize<JsonElement[]>(json);
-                
+
                 return items?
                     .Where(item => item.GetProperty("type").GetString() == "file")
-                    .Select(item => Path.Combine(path, item.GetProperty("name").GetString()!))
+            .Select(item => Path.Combine(path, item.GetProperty("name").GetString()!))
                     .ToList() ?? Enumerable.Empty<string>();
             }
             catch
@@ -237,20 +202,20 @@ namespace GaleriePhotos.Services
             }
         }
 
-        private async Task<IEnumerable<string>> GetDirectoriesAsync(string path)
+        private async Task<IEnumerable<string>> GetDirectoriesInternal(string libraryId, string path)
         {
             try
             {
-                var (libraryId, dirPath) = ParseSeafilePath(path);
+                var dirPath = NormalizePath(path);
                 var response = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/dir/?p={Uri.EscapeDataString(dirPath)}");
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
                 var items = JsonSerializer.Deserialize<JsonElement[]>(json);
-                
+
                 return items?
                     .Where(item => item.GetProperty("type").GetString() == "dir")
-                    .Select(item => Path.Combine(path, item.GetProperty("name").GetString()!))
+            .Select(item => Path.Combine(path, item.GetProperty("name").GetString()!))
                     .ToList() ?? Enumerable.Empty<string>();
             }
             catch
@@ -259,23 +224,23 @@ namespace GaleriePhotos.Services
             }
         }
 
-        private async Task<DateTime> GetFileCreationTimeUtcAsync(string path)
+        private async Task<DateTime> GetFileCreationTimeUtcInternal(string libraryId, string path)
         {
             try
             {
-                var (libraryId, filePath) = ParseSeafilePath(path);
+                var filePath = NormalizePath(path);
                 var response = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/file/detail/?p={Uri.EscapeDataString(filePath)}");
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
                 var fileInfo = JsonSerializer.Deserialize<JsonElement>(json);
-                
+
                 if (fileInfo.TryGetProperty("mtime", out var mtimeElement))
                 {
                     var mtime = mtimeElement.GetInt64();
                     return DateTimeOffset.FromUnixTimeSeconds(mtime).UtcDateTime;
                 }
-                
+
                 return DateTime.UtcNow;
             }
             catch
@@ -286,7 +251,8 @@ namespace GaleriePhotos.Services
 
         private async Task CreateDirectoryAsync(string path)
         {
-            var (libraryId, dirPath) = ParseSeafilePath(path);
+            var libraryId = _originalsLibraryId;
+            var dirPath = NormalizePath(path);
             var parentDir = Path.GetDirectoryName(dirPath) ?? "/";
             var dirName = Path.GetFileName(dirPath);
 
@@ -301,64 +267,75 @@ namespace GaleriePhotos.Services
             response.EnsureSuccessStatusCode();
         }
 
-        private async Task MoveFileAsync(string sourcePath, string destinationPath)
-        {
-            var (sourceLibraryId, sourceFilePath) = ParseSeafilePath(sourcePath);
-            var (destLibraryId, destFilePath) = ParseSeafilePath(destinationPath);
-
-            if (sourceLibraryId != destLibraryId)
-            {
-                throw new NotSupportedException("Moving files between different Seafile libraries is not supported");
-            }
-
-            var requestData = new
-            {
-                operation = "move",
-                dst_repo = destLibraryId,
-                dst_dir = Path.GetDirectoryName(destFilePath) ?? "/",
-                file_names = new[] { Path.GetFileName(sourceFilePath) }
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{sourceLibraryId}/fileops/", content);
-            response.EnsureSuccessStatusCode();
-        }
 
         private async Task<byte[]> ReadFileBytesAsync(string path)
         {
-            var (libraryId, filePath) = ParseSeafilePath(path);
-            
+            var libraryId = _originalsLibraryId;
+            var filePath = NormalizePath(path);
+
             // Get download link
             var downloadLinkResponse = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/file/?p={Uri.EscapeDataString(filePath)}");
             downloadLinkResponse.EnsureSuccessStatusCode();
-            
+
             var downloadLinkJson = await downloadLinkResponse.Content.ReadAsStringAsync();
             var downloadLink = JsonSerializer.Deserialize<JsonElement>(downloadLinkJson).GetString();
 
             // Download file content
             var response = await _httpClient.GetAsync(downloadLink);
             response.EnsureSuccessStatusCode();
-            
+
             return await response.Content.ReadAsByteArrayAsync();
         }
 
-        /// <summary>
-        /// Parses a Seafile path in format "libraryId/path/to/file" to extract library ID and file path.
-        /// </summary>
-        private (string libraryId, string filePath) ParseSeafilePath(string path)
+        // Normalize relative paths to start with '/'
+        private static string NormalizePath(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                throw new ArgumentException("Path cannot be null or empty", nameof(path));
-
-            var parts = path.TrimStart('/').Split('/', 2);
-            if (parts.Length < 1)
-                throw new ArgumentException("Invalid Seafile path format. Expected: libraryId/path/to/file", nameof(path));
-
-            var libraryId = parts[0];
-            var filePath = parts.Length > 1 ? "/" + parts[1] : "/";
-
-            return (libraryId, filePath);
+            if (string.IsNullOrWhiteSpace(path)) return "/";
+            var trimmed = path.Trim();
+            return trimmed.StartsWith('/') ? trimmed : "/" + trimmed;
         }
+
+        // Thumbnail specialized implementations (use thumbnails library id)
+        public Task<bool> ThumbnailExists(string path) => FileExistsInternal(_thumbnailsLibraryId, path);
+
+        public async Task<byte[]> ReadThumbnailBytes(string path)
+        {
+            var libraryId = _thumbnailsLibraryId;
+            var filePath = NormalizePath(path);
+            var downloadLinkResponse = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/file/?p={Uri.EscapeDataString(filePath)}");
+            downloadLinkResponse.EnsureSuccessStatusCode();
+            var downloadLinkJson = await downloadLinkResponse.Content.ReadAsStringAsync();
+            var downloadLink = JsonSerializer.Deserialize<JsonElement>(downloadLinkJson).GetString();
+            var response = await _httpClient.GetAsync(downloadLink);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+
+        public async Task<FileStream> OpenThumbnailRead(string path)
+        {
+            var bytes = await ReadThumbnailBytes(path);
+            var tempPath = Path.GetTempFileName();
+            await File.WriteAllBytesAsync(tempPath, bytes);
+            return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+        }
+
+        public async Task WriteThumbnailBytesAsync(string path, byte[] content)
+        {
+            var libraryId = _thumbnailsLibraryId;
+            var filePath = NormalizePath(path);
+            var uploadLinkResponse = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/upload-link/");
+            uploadLinkResponse.EnsureSuccessStatusCode();
+            var uploadLinkJson = await uploadLinkResponse.Content.ReadAsStringAsync();
+            var uploadLink = JsonSerializer.Deserialize<JsonElement>(uploadLinkJson).GetString();
+            using var formContent = new MultipartFormDataContent();
+            formContent.Add(new StringContent(Path.GetDirectoryName(filePath) ?? "/"), "parent_dir");
+            formContent.Add(new StringContent("1"), "replace");
+            formContent.Add(new ByteArrayContent(content), "file", Path.GetFileName(filePath));
+            var uploadResponse = await _httpClient.PostAsync(uploadLink, formContent);
+            uploadResponse.EnsureSuccessStatusCode();
+        }
+
+        // (removed duplicate ThumbnailExists)
 
         public void Dispose()
         {

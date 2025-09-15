@@ -10,13 +10,11 @@ namespace GaleriePhotos.Services
     /// </summary>
     public class DataService : IDisposable
     {
-        private readonly FileSystemProvider _fileSystemProvider;
-        private readonly ConcurrentDictionary<string, SeafileDataProvider> _seafileProviders;
+        private readonly ConcurrentDictionary<Gallery, SeafileDataProvider> _seafileProviders;
 
         public DataService()
         {
-            _fileSystemProvider = new FileSystemProvider();
-            _seafileProviders = new ConcurrentDictionary<string, SeafileDataProvider>();
+            _seafileProviders = new ConcurrentDictionary<Gallery, SeafileDataProvider>();
         }
 
         /// <summary>
@@ -28,20 +26,10 @@ namespace GaleriePhotos.Services
         {
             return gallery.DataProvider switch
             {
-                DataProviderType.FileSystem => _fileSystemProvider,
+                DataProviderType.FileSystem => new FileSystemProvider(gallery),
                 DataProviderType.Seafile => GetSeafileProvider(gallery),
                 _ => throw new NotSupportedException($"Data provider type {gallery.DataProvider} is not supported")
             };
-        }
-
-        /// <summary>
-        /// Gets the default file system data provider.
-        /// Used for operations that don't require a specific gallery context.
-        /// </summary>
-        /// <returns>The default file system data provider.</returns>
-        public IDataProvider GetDefaultDataProvider()
-        {
-            return _fileSystemProvider;
         }
 
         /// <summary>
@@ -50,13 +38,7 @@ namespace GaleriePhotos.Services
         /// </summary>
         private SeafileDataProvider GetSeafileProvider(Gallery gallery)
         {
-            if (string.IsNullOrEmpty(gallery.SeafileServerUrl) || string.IsNullOrEmpty(gallery.SeafileApiKey))
-            {
-                throw new InvalidOperationException("Seafile server URL and API key must be configured for Seafile galleries");
-            }
-
-            var key = $"{gallery.SeafileServerUrl}|{gallery.SeafileApiKey}";
-            return _seafileProviders.GetOrAdd(key, _ => new SeafileDataProvider(gallery.SeafileServerUrl, gallery.SeafileApiKey));
+            return _seafileProviders.GetOrAdd(gallery, _ => new SeafileDataProvider(gallery));
         }
 
         public void Dispose()
