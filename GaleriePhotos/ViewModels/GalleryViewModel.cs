@@ -34,7 +34,7 @@ namespace GaleriePhotos.ViewModels
     {
         public string Name { get; set; } = string.Empty;
         public string RootDirectory { get; set; } = string.Empty;
-        public string? ThumbnailsDirectory { get; set; }
+        public string ThumbnailsDirectory { get; set; } = string.Empty;
         public DataProviderType DataProvider { get; set; } = DataProviderType.FileSystem;
         public string? SeafileServerUrl { get; set; }
         public string? SeafileApiKey { get; set; }

@@ -13,20 +13,6 @@ namespace GaleriePhotos.Services
     public interface IDataProvider
     {
         /// <summary>
-        /// Checks if a directory exists at the specified path.
-        /// </summary>
-        /// <param name="path">The directory path to check.</param>
-        /// <returns>Task resolving to true if the directory exists, false otherwise.</returns>
-        Task<bool> DirectoryExists(PhotoDirectory directory);
-
-        /// <summary>
-        /// Checks if a file exists at the specified path.
-        /// </summary>
-        /// <param name="path">The file path to check.</param>
-        /// <returns>Task resolving to true if the file exists, false otherwise.</returns>
-        Task<bool> FileExists(PhotoDirectory directory, Photo photo);
-
-        /// <summary>
         /// Gets all files in the specified directory.
         /// </summary>
         /// <param name="directory">The directory to get files from.</param>
@@ -65,7 +51,7 @@ namespace GaleriePhotos.Services
         /// </summary>
         /// <param name="path">The file path to open.</param>
         /// <returns>Task resolving to a FileStream for reading the file.</returns>
-        Task<FileStream?> OpenFileRead(PhotoDirectory directory, Photo photo);
+        Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo);
 
         // Thumbnail specialized operations
         /// <summary>
@@ -78,7 +64,7 @@ namespace GaleriePhotos.Services
         /// Reads all bytes from a thumbnail file.
         /// </summary>
         /// <param name="path">The thumbnail path to read.</param>
-        Task<FileStream?> OpenThumbnailRead(Photo photo);
+        Task<Stream?> OpenThumbnailRead(Photo photo);
 
         Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo);
 

@@ -91,7 +91,7 @@ namespace GaleriePhotos.Services
         }
 
 
-        public async Task<FileStream?> GetThumbnail(PhotoDirectory photoDirectory, Photo photo)
+        public async Task<Stream?> GetThumbnail(PhotoDirectory photoDirectory, Photo photo)
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
             if (!await dataProvider.ThumbnailExists(photo))

@@ -51,7 +51,7 @@ export interface GalleryCreate {
 
     rootDirectory: string;
 
-    thumbnailsDirectory: string | null;
+    thumbnailsDirectory: string;
 
     dataProvider: enums.DataProviderType;
 

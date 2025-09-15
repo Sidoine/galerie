@@ -9,7 +9,7 @@ namespace GaleriePhotos.Services
     /// <summary>
     /// Implementation of IDataProvider that uses the local file system.
     /// </summary>
-    public class FileSystemProvider : IDataProvider
+    public class FileSystemProvider : AbstractDataProvider, IDataProvider
     {
         public FileSystemProvider(Gallery gallery)
         {
@@ -25,50 +25,54 @@ namespace GaleriePhotos.Services
         public Task<bool> FileExists(string path) => Task.FromResult(File.Exists(Path.Combine(Gallery.RootDirectory, path)));
 
         /// <inheritdoc />
-        public Task<IEnumerable<string>> GetFiles(string path) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateFiles(Path.Combine(Gallery.RootDirectory, path))));
+        public Task<IEnumerable<string>> GetFiles(PhotoDirectory photoDirectory) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateFiles(Path.Combine(Gallery.RootDirectory, photoDirectory.Path)));
 
         /// <inheritdoc />
-        public Task<IEnumerable<string>> GetDirectories(string path) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateDirectories(Path.Combine(Gallery.RootDirectory, path))));
+        public Task<IEnumerable<string>> GetDirectories(PhotoDirectory photoDirectory) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateDirectories(Path.Combine(Gallery.RootDirectory, photoDirectory.Path)));
 
         /// <inheritdoc />
-        public Task<DateTime> GetFileCreationTimeUtc(string path) => Task.FromResult(File.GetCreationTimeUtc(Path.Combine(Gallery.RootDirectory, path)));
+        public Task<DateTime> GetFileCreationTimeUtc(PhotoDirectory photoDirectory, Photo photo) => Task.FromResult(File.GetCreationTimeUtc(Path.Combine(Gallery.RootDirectory, photoDirectory.Path, photo.FileName)));
 
         /// <inheritdoc />
-        public Task CreateDirectory(string path)
+        public Task CreateDirectory(PhotoDirectory photoDirectory)
         {
-            Directory.CreateDirectory(Path.Combine(Gallery.RootDirectory, path));
+            Directory.CreateDirectory(Path.Combine(Gallery.RootDirectory, photoDirectory.Path));
             return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task MoveFile(string sourcePath, string destinationPath)
+        public Task MoveFile(PhotoDirectory sourceDirectory, PhotoDirectory destinationDirectory, Photo photo)
         {
+            var sourcePath = Path.Combine(Gallery.RootDirectory, sourceDirectory.Path, photo.FileName);
+            var destinationPath = Path.Combine(Gallery.RootDirectory, destinationDirectory.Path, photo.FileName);
             File.Move(sourcePath, destinationPath);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task<byte[]> ReadFileBytes(string path) => Task.FromResult(File.ReadAllBytes(path));
-
-        /// <inheritdoc />
-        public Task<FileStream> OpenFileRead(string path)
+        public Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo)
         {
-            return Task.FromResult(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
-        }
-
-        /// <inheritdoc />
-        public async Task WriteFileBytesAsync(string path, byte[] content)
-        {
-            await File.WriteAllBytesAsync(path, content);
+            var path = Path.Combine(Gallery.RootDirectory, directory.Path, photo.FileName);
+            return Task.FromResult<Stream?>(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
         }
 
         // Thumbnail specialized operations simply reuse the same file system semantics
-        public Task<bool> ThumbnailExists(string path) => Task.FromResult(File.Exists(Path.Combine(Gallery.ThumbnailsDirectory, path)));
+        public Task<bool> ThumbnailExists(Photo photo) => Task.FromResult(File.Exists(Path.Combine(Gallery.ThumbnailsDirectory, GetThumbnailFileName(photo))));
 
-        public Task<byte[]> ReadThumbnailBytes(string path) => Task.FromResult(File.ReadAllBytes(Path.Combine(Gallery.ThumbnailsDirectory, path)));
+        public Task<Stream?> OpenThumbnailRead(Photo photo) => Task.FromResult<Stream?>(new FileStream(Path.Combine(Gallery.ThumbnailsDirectory, GetThumbnailFileName(photo)), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
 
-        public Task<FileStream> OpenThumbnailRead(string path) => Task.FromResult(new FileStream(Path.Combine(Gallery.ThumbnailsDirectory, path), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
-
-        public Task WriteThumbnailBytesAsync(string path, byte[] content) => Task.FromResult(File.WriteAllBytesAsync(Path.Combine(Gallery.ThumbnailsDirectory, path), content));
+        public Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo)
+        {
+            var path = Path.Combine(Gallery.RootDirectory, directory.Path, photo.FileName);
+            var exists = File.Exists(path);
+            return Task.FromResult<IFileName>(new FileSystemFileName(path, exists));
+        }
+        
+        public Task<IFileName> GetLocalThumbnailFileName(Photo photo)
+        {
+            var path = Path.Combine(Gallery.ThumbnailsDirectory, GetThumbnailFileName(photo));
+            var exists = File.Exists(path);
+            return Task.FromResult<IFileName>(new FileSystemFileName(path, exists));
+        }
     }
 }

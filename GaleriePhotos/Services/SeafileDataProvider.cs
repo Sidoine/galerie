@@ -89,31 +89,15 @@ namespace GaleriePhotos.Services
         /// <inheritdoc />
         public async Task<byte[]> ReadFileBytes(PhotoDirectory directory, Photo photo)
         {
-            try
-            {
-                return await ReadFileBytesAsync(path);
-            }
-            catch (Exception ex)
-            {
-                throw new FileNotFoundException($"Failed to read file: {path}", ex);
-            }
+            return await ReadFileBytesAsync(_originalsLibraryId, Path.Combine(directory.Path, photo.FileName));
         }
 
         /// <inheritdoc />
-        public async Task<FileStream> OpenFileRead(string path)
+        public async Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo)
         {
-            // For Seafile, we'll download the file to a temporary location and return a stream
-            try
-            {
-                var bytes = await ReadFileBytes(path);
-                var tempPath = Path.GetTempFileName();
-                await File.WriteAllBytesAsync(tempPath, bytes);
-                return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
-            }
-            catch (Exception ex)
-            {
-                throw new FileNotFoundException($"Failed to open file for reading: {path}", ex);
-            }
+            var path = Path.Combine(directory.Path, photo.FileName);
+
+            return await ReadStreamAsync(_originalsLibraryId, path);
         }
 
         /// <inheritdoc />
@@ -267,10 +251,32 @@ namespace GaleriePhotos.Services
             response.EnsureSuccessStatusCode();
         }
 
-
-        private async Task<byte[]> ReadFileBytesAsync(string path)
+        private async Task<Stream?> ReadStreamAsync(string libraryId, string path)
         {
-            var libraryId = _originalsLibraryId;
+            var filePath = NormalizePath(path);
+
+            // Get download link
+            var downloadLinkResponse = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/file/?p={Uri.EscapeDataString(filePath)}");
+            if (downloadLinkResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            downloadLinkResponse.EnsureSuccessStatusCode();
+
+            var downloadLinkJson = await downloadLinkResponse.Content.ReadAsStringAsync();
+            var downloadLink = JsonSerializer.Deserialize<JsonElement>(downloadLinkJson).GetString();
+
+            // Download file content
+            var response = await _httpClient.GetAsync(downloadLink);
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadAsStreamAsync();
+        }
+
+
+        private async Task<byte[]> ReadFileBytesAsync(string libraryId, string path)
+        {
             var filePath = NormalizePath(path);
 
             // Get download link
@@ -296,7 +302,7 @@ namespace GaleriePhotos.Services
         }
 
         // Thumbnail specialized implementations (use thumbnails library id)
-        public Task<bool> ThumbnailExists(string path) => FileExistsInternal(_thumbnailsLibraryId, path);
+        public Task<bool> ThumbnailExists(Photo photo) => FileExistsInternal(_thumbnailsLibraryId, GetThumbnailFileName(photo));
 
         public async Task<byte[]> ReadThumbnailBytes(string path)
         {
@@ -311,12 +317,29 @@ namespace GaleriePhotos.Services
             return await response.Content.ReadAsByteArrayAsync();
         }
 
-        public async Task<FileStream> OpenThumbnailRead(string path)
+        public async Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo)
         {
-            var bytes = await ReadThumbnailBytes(path);
-            var tempPath = Path.GetTempFileName();
-            await File.WriteAllBytesAsync(tempPath, bytes);
-            return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+            var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.{Path.GetExtension(photo.FileName)}");
+            using var stream = await ReadStreamAsync(_originalsLibraryId, Path.Combine(directory.Path, photo.FileName));
+            if (stream == null) return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(directory.Path, photo.FileName), false);
+            using var fileStream = File.Create(localPath);
+            await stream.CopyToAsync(fileStream);
+            return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(directory.Path, photo.FileName), true);
+        }
+
+        public async Task<IFileName> GetLocalThumbnailFileName(Photo photo)
+        {
+            var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.jpg");
+            using var stream = await ReadStreamAsync(_thumbnailsLibraryId, GetThumbnailFileName(photo));
+            if (stream == null) return new SeafileFileName(localPath, this, _thumbnailsLibraryId, GetThumbnailFileName(photo), false);
+            using var fileStream = File.Create(localPath);
+            await stream.CopyToAsync(fileStream);
+            return new SeafileFileName(localPath, this, _thumbnailsLibraryId, GetThumbnailFileName(photo), true);
+        }
+
+        public async Task<Stream?> OpenThumbnailRead(Photo photo)
+        {
+            return await ReadStreamAsync(_thumbnailsLibraryId, GetThumbnailFileName(photo));
         }
 
         public async Task WriteThumbnailBytesAsync(string path, byte[] content)
