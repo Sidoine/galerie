@@ -154,6 +154,14 @@ const GallerySettings = observer(() => {
             seafileServerUrl !== (gallery.seafileServerUrl || "") ||
             seafileApiKey !== (gallery.seafileApiKey || ""));
 
+    // Validation: rootDirectory and thumbnailsDirectory must be different when both provided
+    const sameDirectoryError =
+        !!rootDirectory &&
+        !!thumbnailsDirectory &&
+        rootDirectory.trim() !== "" &&
+        thumbnailsDirectory.trim() !== "" &&
+        rootDirectory === thumbnailsDirectory;
+
     if (loading) {
         return (
             <Container maxWidth="md">
@@ -245,7 +253,12 @@ const GallerySettings = observer(() => {
                                     fullWidth
                                     required
                                     variant="outlined"
-                                    helperText="Chemin vers le répertoire contenant les photos"
+                                    error={sameDirectoryError}
+                                    helperText={
+                                        sameDirectoryError
+                                            ? "Le répertoire racine et celui des miniatures doivent être différents"
+                                            : "Chemin vers le répertoire contenant les photos"
+                                    }
                                 />
 
                                 <TextField
@@ -256,7 +269,12 @@ const GallerySettings = observer(() => {
                                     }
                                     fullWidth
                                     variant="outlined"
-                                    helperText="Chemin vers le répertoire des miniatures (optionnel)"
+                                    error={sameDirectoryError}
+                                    helperText={
+                                        sameDirectoryError
+                                            ? "Doit être différent du répertoire racine"
+                                            : "Chemin vers le répertoire des miniatures (optionnel)"
+                                    }
                                 />
                             </>
                         )}
@@ -327,8 +345,15 @@ const GallerySettings = observer(() => {
                                     apiKey={seafileApiKey}
                                     serverUrl={seafileServerUrl}
                                     required
-                                    helperText="Sélectionnez la bibliothèque Seafile contenant les miniatures (JPEG générés)"
+                                    helperText="Sélectionnez la bibliothèque Seafile où seront stockées les miniatures (doit être vide)"
                                 />
+                                {sameDirectoryError && (
+                                    <Alert severity="error">
+                                        La bibliothèque des miniatures doit être
+                                        différente de la bibliothèque des
+                                        photos.
+                                    </Alert>
+                                )}
                             </>
                         )}
 
@@ -343,7 +368,9 @@ const GallerySettings = observer(() => {
                                 variant="contained"
                                 color="primary"
                                 onClick={handleSave}
-                                disabled={!hasChanges || saving}
+                                disabled={
+                                    !hasChanges || saving || sameDirectoryError
+                                }
                                 startIcon={
                                     saving ? (
                                         <CircularProgress size={20} />
