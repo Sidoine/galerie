@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using GaleriePhotos.Models;
 
 namespace GaleriePhotos.Services
 {
@@ -12,73 +13,63 @@ namespace GaleriePhotos.Services
     public interface IDataProvider
     {
         /// <summary>
-        /// Checks if a directory exists at the specified path.
-        /// </summary>
-        /// <param name="path">The directory path to check.</param>
-        /// <returns>True if the directory exists, false otherwise.</returns>
-        bool DirectoryExists(string path);
-
-        /// <summary>
-        /// Checks if a file exists at the specified path.
-        /// </summary>
-        /// <param name="path">The file path to check.</param>
-        /// <returns>True if the file exists, false otherwise.</returns>
-        bool FileExists(string path);
-
-        /// <summary>
         /// Gets all files in the specified directory.
         /// </summary>
-        /// <param name="path">The directory path.</param>
-        /// <returns>An enumerable of file paths in the directory.</returns>
-        IEnumerable<string> GetFiles(string path);
+        /// <param name="directory">The directory to get files from.</param>
+        /// <returns>Task resolving to an enumerable of file paths in the directory.</returns>
+        Task<IEnumerable<string>> GetFiles(PhotoDirectory directory);
 
         /// <summary>
         /// Gets all subdirectories in the specified directory.
         /// </summary>
-        /// <param name="path">The directory path.</param>
-        /// <returns>An enumerable of directory paths.</returns>
-        IEnumerable<string> GetDirectories(string path);
+        /// <param name="directory">The directory to get subdirectories from.</param>
+        /// <returns>Task resolving to an enumerable of directory paths.</returns>
+        Task<IEnumerable<string>> GetDirectories(PhotoDirectory directory);
 
         /// <summary>
         /// Gets the creation time of a file in UTC.
         /// </summary>
         /// <param name="path">The file path.</param>
-        /// <returns>The UTC creation time of the file.</returns>
-        DateTime GetFileCreationTimeUtc(string path);
+        /// <returns>Task resolving to the UTC creation time of the file.</returns>
+        Task<DateTime> GetFileCreationTimeUtc(PhotoDirectory directory, Photo photo);
 
         /// <summary>
         /// Creates a directory at the specified path.
         /// </summary>
         /// <param name="path">The directory path to create.</param>
-        void CreateDirectory(string path);
+        Task CreateDirectory(PhotoDirectory directory);
 
         /// <summary>
         /// Moves a file from source to destination path.
         /// </summary>
         /// <param name="sourcePath">The source file path.</param>
         /// <param name="destinationPath">The destination file path.</param>
-        void MoveFile(string sourcePath, string destinationPath);
-
-        /// <summary>
-        /// Reads all bytes from a file.
-        /// </summary>
-        /// <param name="path">The file path to read.</param>
-        /// <returns>The file content as a byte array.</returns>
-        byte[] ReadFileBytes(string path);
+        Task MoveFile(PhotoDirectory sourceDirectory, PhotoDirectory destinationDirectory, Photo photo);
 
         /// <summary>
         /// Opens a file stream for reading.
         /// </summary>
         /// <param name="path">The file path to open.</param>
-        /// <returns>A FileStream for reading the file.</returns>
-        FileStream OpenFileRead(string path);
+        /// <returns>Task resolving to a FileStream for reading the file.</returns>
+        Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo);
+
+        // Thumbnail specialized operations
+        /// <summary>
+        /// Checks if a thumbnail exists at the specified path.
+        /// </summary>
+        /// <param name="path">The thumbnail path to check.</param>
+        Task<bool> ThumbnailExists(Photo photo);
 
         /// <summary>
-        /// Saves bytes to a file at the specified path.
+        /// Reads all bytes from a thumbnail file.
         /// </summary>
-        /// <param name="path">The file path to write to.</param>
-        /// <param name="content">The content to write.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        Task WriteFileBytesAsync(string path, byte[] content);
+        /// <param name="path">The thumbnail path to read.</param>
+        Task<Stream?> OpenThumbnailRead(Photo photo);
+
+        Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo);
+
+        Task<IFileName> GetLocalThumbnailFileName(Photo photo);
+
+        bool IsSetup { get; }
     }
 }

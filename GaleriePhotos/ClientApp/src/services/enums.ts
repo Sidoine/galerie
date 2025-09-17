@@ -1,10 +1,6 @@
 
-export enum DirectoryVisibility {
-    None = 0,
+export enum DataProviderType {
+    FileSystem = 0,
 
-    Mylene = 1,
-
-    Sidoine = 2,
-
-    SidoineEtMylene = 3
+    Seafile = 1
 }

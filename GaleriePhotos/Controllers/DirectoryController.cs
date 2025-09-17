@@ -22,11 +22,13 @@ namespace Galerie.Server.Controllers
     {
         private readonly PhotoService photoService;
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly DataService dataService;
 
-        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext)
+        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService)
         {
             this.photoService = photoService;
             this.applicationDbContext = applicationDbContext;
+            this.dataService = dataService;
         }
 
         // New: get root directory for a specific gallery (used when galleryId is in the URL)
@@ -41,10 +43,10 @@ namespace Galerie.Server.Controllers
 
             var gallery = await applicationDbContext.Galleries.FindAsync(galleryId);
 
-            if (gallery == null) return NotFound();
+            if (gallery == null || !dataService.GetDataProvider(gallery).IsSetup) return NotFound();
 
             var galleryRootDirectory = await photoService.GetRootDirectory(gallery);
-            return Ok(new DirectoryViewModel(galleryRootDirectory, photoService.GetNumberOfPhotos(galleryRootDirectory), photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
+            return Ok(new DirectoryViewModel(galleryRootDirectory, await photoService.GetNumberOfPhotos(galleryRootDirectory), await photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
         }
 
         [HttpGet("{id}")]
@@ -52,16 +54,16 @@ namespace Galerie.Server.Controllers
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
-            
+
             // Use new gallery-aware visibility check, fallback to claims-based for administrators
             if (!User.IsAdministrator() && !photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
             }
-            
+
             var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
             var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
-            return Ok(new DirectoryFullViewModel(directory, parentDirectory, photoService.GetNumberOfPhotos(directory), photoService.GetNumberOfSubDirectories(directory)));
+            return Ok(new DirectoryFullViewModel(directory, parentDirectory, await photoService.GetNumberOfPhotos(directory), await photoService.GetNumberOfSubDirectories(directory)));
         }
 
         // GET: api/values
@@ -73,15 +75,18 @@ namespace Galerie.Server.Controllers
             var subDirectories = await photoService.GetSubDirectories(directory);
             if (subDirectories == null) return NotFound();
             var isAdministrator = User.IsAdministrator();
-            
+
             // For administrators, use the old visibility approach; for regular users, use gallery membership
             if (isAdministrator)
             {
-                return Ok(subDirectories.Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
+                return Ok(subDirectories.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x))).Select(t => t.Result));
             }
             else
             {
-                return Ok(subDirectories.Where(x => photoService.IsDirectoryVisible(User, x)).Select(x => new DirectoryViewModel(x, photoService.GetNumberOfPhotos(x), photoService.GetNumberOfSubDirectories(x))));
+                var visible = subDirectories.Where(x => photoService.IsDirectoryVisible(User, x));
+                var tasks = visible.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x)));
+                var results = await Task.WhenAll(tasks);
+                return Ok(results);
             }
         }
 
@@ -90,13 +95,13 @@ namespace Galerie.Server.Controllers
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
-            
+
             // Use new gallery-aware visibility check, fallback to claims-based for administrators
             if (!User.IsAdministrator() && !photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
             }
-            
+
             var photos = await photoService.GetDirectoryImages(directory);
             if (photos == null) return NotFound();
             return Ok(photos.Select(x => new PhotoViewModel(x)));
@@ -104,7 +109,7 @@ namespace Galerie.Server.Controllers
 
         [Authorize(Policy = Policies.Administrator)]
         [HttpPatch("{id}")]
-        public async Task<ActionResult> Patch(int id, [FromBody]DirectoryPatchViewModel viewModel)
+        public async Task<ActionResult> Patch(int id, [FromBody] DirectoryPatchViewModel viewModel)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();

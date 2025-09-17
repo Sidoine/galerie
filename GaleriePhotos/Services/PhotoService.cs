@@ -46,38 +46,6 @@ namespace GaleriePhotos.Services
             this.dataService = dataService;
         }
 
-        public string? GetAbsoluteDirectoryPath(string? relativeDirectoryPath)
-        {
-            var rootPath = options.Value.Root;
-            if (relativeDirectoryPath != null && (relativeDirectoryPath.Contains("..") || relativeDirectoryPath.StartsWith("/"))) return null;
-            if (rootPath == null) return null;
-            var path = relativeDirectoryPath != null ? Path.Combine(rootPath, relativeDirectoryPath) : rootPath;
-            var dataProvider = dataService.GetDefaultDataProvider();
-            if (!dataProvider.DirectoryExists(path)) return null;
-            return path;
-        }
-
-        public string? GetAbsoluteDirectoryPath(PhotoDirectory photoDirectory)
-        {
-            // Gallery property must be loaded for this method to work
-            if (photoDirectory.Gallery.RootDirectory == null) return null;
-            var path = Path.Combine(photoDirectory.Gallery.RootDirectory, photoDirectory.Path);
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            if (!dataProvider.DirectoryExists(path)) return null;
-            return path;
-        }
-
-        public string? GetAbsoluteImagePath(PhotoDirectory photoDirectory, Photo photo)
-        {
-            if (options.Value.Root == null) return null;
-            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
-            if (photoDirectoryPath == null) return null;
-            var imagePath = Path.Combine(photoDirectoryPath, photo.FileName);
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            if (!dataProvider.FileExists(imagePath)) return null;
-            return imagePath;
-        }
-
         public async Task<PhotoDirectory> GetRootDirectory(Gallery gallery)
         {
             var root = applicationDbContext.PhotoDirectories
@@ -101,14 +69,14 @@ namespace GaleriePhotos.Services
 
             var galleryMember = applicationDbContext.GalleryMembers
                 .FirstOrDefault(gm => gm.UserId == userId && gm.GalleryId == galleryId);
-            
+
             return galleryMember?.DirectoryVisibility ?? 0;
         }
 
         // Check directory visibility using GalleryMember
         public bool IsDirectoryVisible(ClaimsPrincipal claimsPrincipal, PhotoDirectory directory)
         {
-            return claimsPrincipal.IsAdministrator() || 
+            return claimsPrincipal.IsAdministrator() ||
                    (directory.Visibility & GetDirectoryVisibility(claimsPrincipal, directory.GalleryId)) != 0;
         }
 
@@ -122,53 +90,47 @@ namespace GaleriePhotos.Services
             return MimeTypes[Path.GetExtension(photo.FileName).ToLowerInvariant()];
         }
 
-        public async Task<string?> GetThumbnailPath(PhotoDirectory photoDirectory, Photo photo)
-        {
-            // Use gallery-specific thumbnails directory, fallback to global setting for backwards compatibility
-            var thumbnailsDirectory = photoDirectory.Gallery?.ThumbnailsDirectory ?? options.Value.ThumbnailsDirectory;
-            if (thumbnailsDirectory == null || photoDirectory.Gallery == null) return null;
-            var thumbnailPath = Path.Combine(thumbnailsDirectory, Path.ChangeExtension(photo.FileName, "jpg"));
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            if (!dataProvider.FileExists(thumbnailPath))
-            {
-                var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
-                if (imagePath == null) return null;
 
+        public async Task<Stream?> GetThumbnail(PhotoDirectory photoDirectory, Photo photo)
+        {
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            if (!await dataProvider.ThumbnailExists(photo))
+            {
+                using var imagePath = await dataProvider.GetLocalFileName(photoDirectory, photo);
+                if (imagePath == null) return null;
+                using var thumbnailPath = await dataProvider.GetLocalThumbnailFileName(photo);
                 if (IsVideo(photo))
                 {
-                    IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(imagePath, thumbnailPath, TimeSpan.FromSeconds(0));
+                    IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(imagePath.Path, thumbnailPath.Path, TimeSpan.FromSeconds(0));
                     IConversionResult result = await conversion.Start();
                 }
                 else
                 {
-                    using var image = await Image.LoadAsync(imagePath);
+                    using var image = await Image.LoadAsync(imagePath.Path);
                     image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new Size { Width = 400, Height = 400 } }));
-                    image.Save(thumbnailPath);
+                    image.Save(thumbnailPath.Path);
                 }
+                await thumbnailPath.SaveChanges();
             }
-            return thumbnailPath;
+            return await dataProvider.OpenThumbnailRead(photo);
         }
 
-        public int GetNumberOfPhotos(PhotoDirectory photoDirectory)
+        public async Task<int> GetNumberOfPhotos(PhotoDirectory photoDirectory)
         {
-            var path = GetAbsoluteDirectoryPath(photoDirectory);
-            if (path == null) return 0;
-
-            return GetDirectoryPhotosFileNames(path, photoDirectory).Length;
+            var fileNames = await GetDirectoryPhotosFileNames(photoDirectory);
+            return fileNames.Length;
         }
 
-        private string[] GetDirectoryPhotosFileNames(string path, PhotoDirectory photoDirectory)
+        private async Task<string[]> GetDirectoryPhotosFileNames(PhotoDirectory photoDirectory)
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            return dataProvider.GetFiles(path).Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant())).ToArray();
+            var files = await dataProvider.GetFiles(photoDirectory);
+            return files.Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant())).ToArray();
         }
 
         public async Task<Photo[]?> GetDirectoryImages(PhotoDirectory photoDirectory)
         {
-            var path = GetAbsoluteDirectoryPath(photoDirectory);
-            if (path == null) return null;
-
-            var fileNames = GetDirectoryPhotosFileNames(path, photoDirectory);
+            var fileNames = await GetDirectoryPhotosFileNames(photoDirectory);
 
             var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
 
@@ -179,17 +141,19 @@ namespace GaleriePhotos.Services
                 applicationDbContext.Photos.RemoveRange(toDelete);
             }
 
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+
             foreach (var fileName in fileNames)
             {
                 if (!photos.Any(x => x.FileName == fileName))
                 {
                     var photo = new Photo(fileName) { Gallery = photoDirectory.Gallery };
                     photo.GalleryId = photoDirectory.GalleryId;
-                    var imagePath = Path.Combine(path, fileName);
 
                     if (!IsVideo(photo))
                     {
-                        using var fileStream = new FileStream(imagePath, FileMode.Open);
+                        using var fileStream = await dataProvider.OpenFileRead(photoDirectory, photo);
+                        if (fileStream == null) continue;
                         try
                         {
                             var image = Image.Identify(fileStream);
@@ -219,8 +183,7 @@ namespace GaleriePhotos.Services
 
                     if (photo.DateTime == default)
                     {
-                        var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-                        photo.DateTime = dataProvider.GetFileCreationTimeUtc(imagePath);
+                        photo.DateTime = await dataProvider.GetFileCreationTimeUtc(photoDirectory, photo);
                     }
 
                     applicationDbContext.Photos.Add(photo);
@@ -247,17 +210,15 @@ namespace GaleriePhotos.Services
 
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)
         {
-            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
-            if (photoDirectoryPath == null) return null;
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            string[] directoryPaths = GetSubDirectoryPaths(photoDirectory, photoDirectoryPath, dataProvider);
+            string[] directoryPaths = await GetSubDirectoryPaths(photoDirectory);
             var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
             foreach (var path in directoryPaths)
             {
                 if (!directories.Any(x => x.Path == path))
                 {
                     var subPhotoDirectory = new PhotoDirectory(path, 0, null)
-                    { 
+                    {
                         Gallery = photoDirectory.Gallery,
                         GalleryId = photoDirectory.GalleryId
                     };
@@ -266,9 +227,9 @@ namespace GaleriePhotos.Services
                 }
             }
 
-            var numberOfPhotosInDirectory = GetNumberOfPhotos(photoDirectory);
+            var numberOfPhotosInDirectory = await GetNumberOfPhotos(photoDirectory);
             logger.LogInformation($"Récupération des sous-dossiers de {photoDirectory.Path} ({photoDirectory.Id}) ({numberOfPhotosInDirectory} photos, {directories.Count} sous-dossiers). Couverture : {photoDirectory.CoverPhotoId}.");
-            if (photoDirectory.CoverPhotoId == null && GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
+            if (photoDirectory.CoverPhotoId == null && await GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
             {
                 var newCoverPhotoId = directories.FirstOrDefault(x => x.CoverPhotoId.HasValue)?.CoverPhotoId;
                 logger.LogInformation($"Mise-à-jour de la photo de couverture de {photoDirectory.Path} en {newCoverPhotoId}");
@@ -280,17 +241,43 @@ namespace GaleriePhotos.Services
             return directories.OrderBy(x => x.Path).ToArray();
         }
 
-        public void MoveToPrivate(PhotoDirectory photoDirectory, Photo photo)
+        public async Task<PhotoDirectory> GetPhotoDirectoryAsync(string path, Gallery gallery)
         {
-            if (photoDirectory.Path.EndsWith(PrivateDirectory)) return;
-            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
-            if (photoDirectoryPath == null) return;
-            var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
-            var newPath = Path.Combine(photoDirectoryPath, PrivateDirectory, photo.FileName);
-            string privateDirectoryPath = Path.Combine(photoDirectoryPath, PrivateDirectory);
+            var directory = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == path && x.GalleryId == gallery.Id);
+            if (directory == null)
+            {
+                directory = new PhotoDirectory(path, 0, null, gallery.Id) { Gallery = gallery };
+                applicationDbContext.PhotoDirectories.Add(directory);
+                await applicationDbContext.SaveChangesAsync();
+            }
+            return directory;
+        }
+
+        public async Task<PhotoDirectory> GetOrCreatePrivateDirectory(PhotoDirectory parentDirectory)
+        {
+            var privateDirectoryPath = Path.Combine(parentDirectory.Path, PrivateDirectory);
+            var privateDirectory = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == privateDirectoryPath && x.GalleryId == parentDirectory.GalleryId);
+            if (privateDirectory == null)
+            {
+                privateDirectory = new PhotoDirectory(privateDirectoryPath, 1, null)
+                {
+                    Gallery = parentDirectory.Gallery,
+                    GalleryId = parentDirectory.GalleryId
+                };
+                applicationDbContext.PhotoDirectories.Add(privateDirectory);
+                await applicationDbContext.SaveChangesAsync();
+                var dataProvider = dataService.GetDataProvider(parentDirectory.Gallery);
+                await dataProvider.CreateDirectory(privateDirectory);
+            }
+            return privateDirectory;
+        }
+
+        public async Task MoveToPrivate(PhotoDirectory photoDirectory, Photo photo)
+        {
+            if (IsPrivate(photoDirectory)) return;
+            var privateDirectory = await GetOrCreatePrivateDirectory(photoDirectory);
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            if (!dataProvider.DirectoryExists(privateDirectoryPath)) dataProvider.CreateDirectory(Path.Combine(photoDirectoryPath, PrivateDirectory));
-            dataProvider.MoveFile(currentPath, newPath);
+            await dataProvider.MoveFile(photoDirectory, privateDirectory, photo);
         }
 
         public bool IsPrivate(PhotoDirectory photoDirectory)
@@ -298,30 +285,26 @@ namespace GaleriePhotos.Services
             return photoDirectory.Path.EndsWith(PrivateDirectory);
         }
 
-        public void MoveToPublic(PhotoDirectory photoDirectory, Photo photo)
+        public async Task MoveToPublic(PhotoDirectory photoDirectory, Photo photo)
         {
             if (!photoDirectory.Path.EndsWith(PrivateDirectory)) return;
-            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
-            if (photoDirectoryPath == null) return;
-            var currentPath = Path.Combine(photoDirectoryPath, photo.FileName);
-            var newPath = Path.Combine(photoDirectoryPath, "..", photo.FileName);
+            var newPath = Path.Combine(photoDirectory.Path, "..");
+            var publicPath = await GetPhotoDirectoryAsync(newPath, photoDirectory.Gallery);
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            dataProvider.MoveFile(currentPath, newPath);
+            await dataProvider.MoveFile(photoDirectory, publicPath, photo);
         }
 
-        private static string[] GetSubDirectoryPaths(PhotoDirectory photoDirectory, string photoDirectoryPath, IDataProvider dataProvider)
+        private async Task<string[]> GetSubDirectoryPaths(PhotoDirectory photoDirectory)
         {
-            var directoryAbsolutePaths = dataProvider.GetDirectories(photoDirectoryPath);
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            var directoryAbsolutePaths = await dataProvider.GetDirectories(photoDirectory);
             var directoryPaths = directoryAbsolutePaths.Select(x => Path.GetFileName(x)).Where(x => !x.StartsWith(".") && !x.StartsWith("_")).Select(x => Path.Combine(photoDirectory.Path, x)).ToArray();
             return directoryPaths;
         }
 
-        internal int GetNumberOfSubDirectories(PhotoDirectory photoDirectory)
+        internal async Task<int> GetNumberOfSubDirectories(PhotoDirectory photoDirectory)
         {
-            var photoDirectoryPath = GetAbsoluteDirectoryPath(photoDirectory);
-            if (photoDirectoryPath == null) return 0;
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            return GetSubDirectoryPaths(photoDirectory, photoDirectoryPath, dataProvider).Length;
+            return (await GetSubDirectoryPaths(photoDirectory)).Length;
         }
 
         private static double Convert(string reference, Rational[] values)
@@ -352,18 +335,19 @@ namespace GaleriePhotos.Services
             if (angle != 90 && angle != 180 && angle != 270)
                 throw new ArgumentException("L'angle doit être 90, 180 ou 270.", nameof(angle));
 
-            var imagePath = GetAbsoluteImagePath(photoDirectory, photo);
-            var thumbnailPath = await GetThumbnailPath(photoDirectory, photo);
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            
-            if (imagePath == null || !dataProvider.FileExists(imagePath) || thumbnailPath == null || !dataProvider.FileExists(thumbnailPath))
+
+            using var imagePath = await dataProvider.GetLocalFileName(photoDirectory, photo);
+            using var thumbnailFileName = await dataProvider.GetLocalThumbnailFileName(photo);
+
+            if (!imagePath.Exists || !thumbnailFileName.Exists)
                 return false;
 
-            
+
             try
             {
-                using var image = await Image.LoadAsync(imagePath);
-                using var thumbnail = await Image.LoadAsync(thumbnailPath);
+                using var image = await Image.LoadAsync(imagePath.Path);
+                using var thumbnail = await Image.LoadAsync(thumbnailFileName.Path);
                 switch (angle)
                 {
                     case 90:
@@ -379,8 +363,10 @@ namespace GaleriePhotos.Services
                         thumbnail.Mutate(x => x.Rotate(RotateMode.Rotate270));
                         break;
                 }
-                await image.SaveAsync(imagePath);
-                await thumbnail.SaveAsync(thumbnailPath);
+                await image.SaveAsync(imagePath.Path);
+                await thumbnail.SaveAsync(thumbnailFileName.Path);
+                await imagePath.SaveChanges();
+                await thumbnailFileName.SaveChanges();
                 return true;
             }
             catch (Exception ex)

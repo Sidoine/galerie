@@ -12,12 +12,14 @@ import { action, computed, makeObservable, observable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class DirectoriesStore {
+    root: Directory | null = null;
+    isInError = false;
+
     constructor(
         public subDirectoriesLoader: ValueLoader<Directory[], [number]>,
         public contentLoader: ValueLoader<Photo[], [number]>,
         public imageLoader: ValueLoader<PhotoFull, [number, number]>,
         public infoLoader: ValueLoader<DirectoryFull, [number]>,
-        public galleryRootLoader: ValueLoader<Directory, [number]>,
         private directoryService: DirectoryController,
         private photoService: PhotoController,
         public galleryId: number
@@ -29,14 +31,30 @@ class DirectoriesStore {
             patchPhoto: action,
             setAccess: action,
             rotatePhoto: action,
-            root: computed,
+            root: observable,
+            isInError: observable,
+            setRoot: action,
+            loadRoot: action,
         });
+        this.loadRoot();
     }
 
     photoReloadSuffix = new Map<number, number>();
 
-    get root() {
-        return this.galleryRootLoader.getValue(this.galleryId);
+    public async loadRoot() {
+        this.isInError = false;
+        const result = await this.directoryService.getGalleryRoot(
+            this.galleryId
+        );
+        if (result.ok) {
+            this.setRoot(result.value);
+        } else {
+            this.isInError = true;
+        }
+    }
+
+    setRoot(root: Directory | null) {
+        this.root = root;
     }
 
     getImage(directoryId: number, id: number) {
@@ -107,15 +125,11 @@ export function DirectoriesStoreProvider({
         );
         const imageLoader = new ValueLoader(photoService.get);
         const directoryInfoLoader = new ValueLoader(directoryService.get);
-        const galleryRootLoader = new ValueLoader(
-            directoryService.getGalleryRoot
-        );
         return new DirectoriesStore(
             directoriesLoader,
             directoryContentLoader,
             imageLoader,
             directoryInfoLoader,
-            galleryRootLoader,
             directoryService,
             photoService,
             galleryId

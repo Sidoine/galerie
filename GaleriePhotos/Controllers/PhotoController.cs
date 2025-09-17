@@ -45,10 +45,11 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
-            if (imagePath == null) return NotFound();
             if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
-            return PhysicalFile(imagePath, photoService.GetMimeType(photo), Path.GetFileName(imagePath));
+            var dataProvider = dataService.GetDataProvider(directory.Gallery);
+            var bytes = await dataProvider.OpenFileRead(directory, photo);
+            if (bytes == null) return NotFound();
+            return File(bytes, photoService.GetMimeType(photo), photo.FileName);
         }
 
         [HttpGet("{directoryId}/photos/{id}/thumbnail")]
@@ -59,10 +60,9 @@ namespace Galerie.Server.Controllers
             if (directory == null || photo == null) return NotFound();
 
             if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
-            var thumbnailPath = await photoService.GetThumbnailPath(directory, photo);
-            if (thumbnailPath == null) return NotFound();
-            var dataProvider = dataService.GetDataProvider(directory.Gallery);
-            return File(dataProvider.ReadFileBytes(thumbnailPath), "image/jpeg", photo.FileName);
+            var bytes = await photoService.GetThumbnail(directory, photo);
+            if (bytes == null) return NotFound();
+            return File(bytes, "image/jpeg", photo.FileName);
         }
 
         private (Photo? previous, Photo? next) GetNextAndPrevious(Photo photo, Photo[] images)
@@ -84,8 +84,6 @@ namespace Galerie.Server.Controllers
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
             if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
-            var imagePath = photoService.GetAbsoluteImagePath(directory, photo);
-            if (imagePath == null) return NotFound();
             var images = await photoService.GetDirectoryImages(directory);
             if (images == null) return NotFound();
             var (previous, next) = GetNextAndPrevious(photo, images);
@@ -110,8 +108,8 @@ namespace Galerie.Server.Controllers
         {
             var (directory, photo) = await GetPhoto(directoryId, id);
             if (directory == null || photo == null) return NotFound();
-            if (viewModel.Private) photoService.MoveToPrivate(directory, photo);
-            else photoService.MoveToPublic(directory, photo);
+            if (viewModel.Private) await photoService.MoveToPrivate(directory, photo);
+            else await photoService.MoveToPublic(directory, photo);
             return Ok();
         }
 

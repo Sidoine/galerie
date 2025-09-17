@@ -1,19 +1,20 @@
 using GaleriePhotos.Models;
+using System;
+using System.Collections.Concurrent;
 
 namespace GaleriePhotos.Services
 {
     /// <summary>
     /// Service responsible for providing appropriate IDataProvider instances based on Gallery configuration.
-    /// Currently returns FileSystemProvider for all galleries, but can be extended to support
-    /// different storage backends per gallery (cloud storage, etc.).
+    /// Returns FileSystemProvider or SeafileDataProvider based on gallery's DataProvider setting.
     /// </summary>
-    public class DataService
+    public class DataService : IDisposable
     {
-        private readonly FileSystemProvider _fileSystemProvider;
+        private readonly ConcurrentDictionary<Gallery, SeafileDataProvider> _seafileProviders;
 
         public DataService()
         {
-            _fileSystemProvider = new FileSystemProvider();
+            _seafileProviders = new ConcurrentDictionary<Gallery, SeafileDataProvider>();
         }
 
         /// <summary>
@@ -23,20 +24,30 @@ namespace GaleriePhotos.Services
         /// <returns>An IDataProvider instance for accessing the gallery's data.</returns>
         public IDataProvider GetDataProvider(Gallery gallery)
         {
-            // For now, all galleries use the file system provider
-            // In the future, this could be extended to support different providers
-            // based on gallery configuration (e.g., gallery.StorageType)
-            return _fileSystemProvider;
+            return gallery.DataProvider switch
+            {
+                DataProviderType.FileSystem => new FileSystemProvider(gallery),
+                DataProviderType.Seafile => GetSeafileProvider(gallery),
+                _ => throw new NotSupportedException($"Data provider type {gallery.DataProvider} is not supported")
+            };
         }
 
         /// <summary>
-        /// Gets the default file system data provider.
-        /// Used for operations that don't require a specific gallery context.
+        /// Gets or creates a Seafile data provider for the specified gallery.
+        /// Providers are cached by server URL and API key combination.
         /// </summary>
-        /// <returns>The default file system data provider.</returns>
-        public IDataProvider GetDefaultDataProvider()
+        private SeafileDataProvider GetSeafileProvider(Gallery gallery)
         {
-            return _fileSystemProvider;
+            return _seafileProviders.GetOrAdd(gallery, _ => new SeafileDataProvider(gallery));
+        }
+
+        public void Dispose()
+        {
+            foreach (var provider in _seafileProviders.Values)
+            {
+                provider.Dispose();
+            }
+            _seafileProviders.Clear();
         }
     }
 }

@@ -8,7 +8,6 @@ import {
 } from "mobx";
 import { User, GalleryMember } from "../services/views";
 import { UserController } from "../services/user";
-import { DirectoryVisibility } from "../services/enums";
 import { createContext, useContext, useMemo } from "react";
 import { useDirectoriesStore } from "./directories";
 import { UsersStore, useUsersStore } from "./users";
@@ -69,7 +68,7 @@ class MembersStore {
 
     async setMembershipVisibility(
         membership: GalleryMember,
-        directoryVisibility: DirectoryVisibility
+        directoryVisibility: number
     ) {
         membership.directoryVisibility = directoryVisibility;
         await this.userService.updateUserGalleryMembership(
@@ -81,7 +80,7 @@ class MembersStore {
 
     async addMembership(
         user: User,
-        visibility: DirectoryVisibility,
+        visibility: number,
         isAdministrator: boolean
     ) {
         const created = await this.userService.addUserToGallery(
