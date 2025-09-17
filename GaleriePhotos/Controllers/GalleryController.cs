@@ -191,5 +191,48 @@ namespace GaleriePhotos.Controllers
                 return BadRequest($"HTTP error while contacting Seafile server: {ex.Message}");
             }
         }
+
+        [HttpPost("seafile/repositories")]
+        public async Task<ActionResult<SeafileRepositoriesResponse>> GetSeafileRepositories([FromBody] SeafileRepositoriesRequest request)
+        {
+            var serverUrl = request.ServerUrl?.TrimEnd('/');
+            if (string.IsNullOrEmpty(serverUrl)) return BadRequest("Seafile server URL is not set");
+            if (string.IsNullOrWhiteSpace(request.ApiKey)) return BadRequest("API key is required");
+
+            var apiBase = serverUrl + "/api2";
+            try
+            {
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("Authorization", $"Token {request.ApiKey}");
+                // Seafile docs: GET /api2/repos/ returns array of libraries
+                var response = await client.GetAsync(apiBase + "/repos/");
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                }
+                var json = await response.Content.ReadAsStringAsync();
+                var doc = JsonDocument.Parse(json);
+                var result = new SeafileRepositoriesResponse();
+                foreach (var element in doc.RootElement.EnumerateArray())
+                {
+                    // Expect fields: id, name, size, permission, encrypted, owner (owner_name?)
+                    var vm = new SeafileRepositoryViewModel
+                    {
+                        Id = element.GetProperty("id").GetString() ?? string.Empty,
+                        Name = element.GetProperty("name").GetString() ?? string.Empty,
+                        Size = element.TryGetProperty("size", out var sizeEl) && sizeEl.TryGetInt64(out var sizeVal) ? sizeVal : 0,
+                        Permission = element.TryGetProperty("permission", out var permEl) ? permEl.GetString() ?? string.Empty : string.Empty,
+                        Encrypted = element.TryGetProperty("encrypted", out var encEl) && encEl.ValueKind == JsonValueKind.True,
+                        Owner = element.TryGetProperty("owner", out var ownerEl) ? ownerEl.GetString() ?? string.Empty : string.Empty
+                    };
+                    result.Repositories.Add(vm);
+                }
+                return Ok(result);
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest($"HTTP error while contacting Seafile server: {ex.Message}");
+            }
+        }
     }
 }

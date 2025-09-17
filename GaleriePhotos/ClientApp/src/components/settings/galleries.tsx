@@ -27,6 +27,7 @@ import { useApiClient } from "folke-service-helpers";
 import { GalleryController } from "../../services/gallery";
 import { UserController } from "../../services/user";
 import * as views from "../../services/views";
+import { DataProviderType } from "../../services/enums";
 
 const Galleries = observer(function Galleries() {
     const apiClient = useApiClient();
@@ -83,8 +84,11 @@ const Galleries = observer(function Galleries() {
             const result = await galleryController.create({
                 name: createForm.name,
                 rootDirectory: createForm.rootDirectory,
-                thumbnailsDirectory: createForm.thumbnailsDirectory || null,
+                thumbnailsDirectory: createForm.thumbnailsDirectory,
                 userId: createForm.userId,
+                dataProvider: DataProviderType.FileSystem,
+                seafileServerUrl: null,
+                seafileApiKey: null,
             });
 
             if (result.ok) {

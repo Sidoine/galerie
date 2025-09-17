@@ -22,6 +22,7 @@ import { useApiClient } from "folke-service-helpers";
 import { Gallery, GalleryPatch } from "../../services/views";
 import { DataProviderType } from "../../services/enums";
 import SeafileApiKeyDialog from "./seafile-api-key-dialog";
+import SeafileRepositorySelect from "./seafile-repository-select";
 
 const GallerySettings = observer(() => {
     const directoriesStore = useDirectoriesStore();
@@ -284,7 +285,7 @@ const GallerySettings = observer(() => {
                                     required
                                     variant="outlined"
                                     type="password"
-                                    helperText="Clé API générée dans votre profil Seafile"
+                                    helperText="Cliquez sur le bouton Obtenir pour générer une clé API"
                                     slotProps={{
                                         input: {
                                             endAdornment: (
@@ -309,28 +310,23 @@ const GallerySettings = observer(() => {
                                     }}
                                 />
 
-                                <TextField
-                                    label="ID de la bibliothèque Seafile"
+                                <SeafileRepositorySelect
+                                    label="Bibliothèque des photos"
                                     value={rootDirectory}
-                                    onChange={(e) =>
-                                        setRootDirectory(e.target.value)
-                                    }
-                                    fullWidth
+                                    onChange={setRootDirectory}
+                                    apiKey={seafileApiKey}
+                                    serverUrl={seafileServerUrl}
                                     required
-                                    variant="outlined"
-                                    helperText="ID de la bibliothèque Seafile où sont stockées les photos"
+                                    helperText="Sélectionnez la bibliothèque Seafile où sont stockées les photos"
                                 />
-
-                                <TextField
-                                    label="Chemin des miniatures"
+                                <SeafileRepositorySelect
+                                    label="Bibliothèque des miniatures"
                                     value={thumbnailsDirectory}
-                                    onChange={(e) =>
-                                        setThumbnailsDirectory(e.target.value)
-                                    }
-                                    fullWidth
+                                    onChange={setThumbnailsDirectory}
+                                    apiKey={seafileApiKey}
+                                    serverUrl={seafileServerUrl}
                                     required
-                                    variant="outlined"
-                                    helperText="ID de la bibliothèque Seafile où sont stockées les miniatures"
+                                    helperText="Sélectionnez la bibliothèque Seafile contenant les miniatures (JPEG générés)"
                                 />
                             </>
                         )}

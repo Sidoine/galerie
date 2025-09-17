@@ -86,6 +86,30 @@ export interface SeafileApiKeyResponse {
     apiKey: string;
 }
 
+export interface SeafileRepositoriesRequest {
+    apiKey: string;
+
+    serverUrl: string;
+}
+
+export interface SeafileRepository {
+    id: string;
+
+    name: string;
+
+    size: number;
+
+    permission: string;
+
+    encrypted: boolean;
+
+    owner: string;
+}
+
+export interface SeafileRepositoriesResponse {
+    repositories: SeafileRepository[];
+}
+
 export interface GalleryMember {
     id: number;
 

@@ -21,6 +21,10 @@ export class GalleryController {
         return this.client.fetchJson<views.SeafileApiKeyResponse>(`api/galleries/${id}/seafile/apikey`, "POST", JSON.stringify(request));
     }
 
+    getSeafileRepositories = (request: views.SeafileRepositoriesRequest) => {
+        return this.client.fetchJson<views.SeafileRepositoriesResponse>("api/galleries/seafile/repositories", "POST", JSON.stringify(request));
+    }
+
     update = (id: number, model: views.GalleryPatch) => {
         return this.client.fetchJson<views.Gallery>(`api/galleries/${id}`, "PATCH", JSON.stringify(model));
     }
