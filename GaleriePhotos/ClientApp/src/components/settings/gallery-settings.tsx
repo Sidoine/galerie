@@ -13,6 +13,7 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    InputAdornment,
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { useDirectoriesStore } from "../../stores/directories";
@@ -20,6 +21,7 @@ import { GalleryController } from "../../services/gallery";
 import { useApiClient } from "folke-service-helpers";
 import { Gallery, GalleryPatch } from "../../services/views";
 import { DataProviderType } from "../../services/enums";
+import SeafileApiKeyDialog from "./seafile-api-key-dialog";
 
 const GallerySettings = observer(() => {
     const directoriesStore = useDirectoriesStore();
@@ -44,6 +46,7 @@ const GallerySettings = observer(() => {
     );
     const [seafileServerUrl, setSeafileServerUrl] = useState("");
     const [seafileApiKey, setSeafileApiKey] = useState("");
+    const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
 
     const loadGallery = useMemo(
         () => async () => {
@@ -173,164 +176,197 @@ const GallerySettings = observer(() => {
     }
 
     return (
-        <Container maxWidth="md">
-            <Typography variant="h4" component="h1" gutterBottom>
-                Paramètres de la galerie
-            </Typography>
+        <>
+            <Container maxWidth="md">
+                <Typography variant="h4" component="h1" gutterBottom>
+                    Paramètres de la galerie
+                </Typography>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
-                </Alert>
-            )}
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
 
-            {success && (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                    Galerie mise à jour avec succès
-                </Alert>
-            )}
+                {success && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        Galerie mise à jour avec succès
+                    </Alert>
+                )}
 
-            <Paper elevation={2} sx={{ p: 3 }}>
-                <Box
-                    component="form"
-                    sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-                >
-                    <TextField
-                        label="Nom de la galerie"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        fullWidth
-                        required
-                        variant="outlined"
-                    />
-
-                    <FormControl fullWidth variant="outlined">
-                        <InputLabel>Type de stockage</InputLabel>
-                        <Select
-                            value={dataProvider}
-                            onChange={(e) =>
-                                setDataProvider(
-                                    e.target.value as DataProviderType
-                                )
-                            }
-                            label="Type de stockage"
-                        >
-                            <MenuItem value={DataProviderType.FileSystem}>
-                                Système de fichiers local
-                            </MenuItem>
-                            <MenuItem value={DataProviderType.Seafile}>
-                                Seafile
-                            </MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    {dataProvider === DataProviderType.FileSystem && (
-                        <>
-                            <TextField
-                                label="Répertoire racine"
-                                value={rootDirectory}
-                                onChange={(e) =>
-                                    setRootDirectory(e.target.value)
-                                }
-                                fullWidth
-                                required
-                                variant="outlined"
-                                helperText="Chemin vers le répertoire contenant les photos"
-                            />
-
-                            <TextField
-                                label="Répertoire des miniatures"
-                                value={thumbnailsDirectory}
-                                onChange={(e) =>
-                                    setThumbnailsDirectory(e.target.value)
-                                }
-                                fullWidth
-                                variant="outlined"
-                                helperText="Chemin vers le répertoire des miniatures (optionnel)"
-                            />
-                        </>
-                    )}
-
-                    {dataProvider === DataProviderType.Seafile && (
-                        <>
-                            <TextField
-                                label="URL du serveur Seafile"
-                                value={seafileServerUrl}
-                                onChange={(e) =>
-                                    setSeafileServerUrl(e.target.value)
-                                }
-                                fullWidth
-                                required
-                                variant="outlined"
-                                helperText="URL complète du serveur Seafile (ex: https://cloud.example.com)"
-                                placeholder="https://cloud.example.com"
-                            />
-
-                            <TextField
-                                label="Clé API Seafile"
-                                value={seafileApiKey}
-                                onChange={(e) =>
-                                    setSeafileApiKey(e.target.value)
-                                }
-                                fullWidth
-                                required
-                                variant="outlined"
-                                type="password"
-                                helperText="Clé API générée dans votre profil Seafile"
-                            />
-
-                            <TextField
-                                label="ID de la bibliothèque Seafile"
-                                value={rootDirectory}
-                                onChange={(e) =>
-                                    setRootDirectory(e.target.value)
-                                }
-                                fullWidth
-                                required
-                                variant="outlined"
-                                helperText="ID de la bibliothèque Seafile où sont stockées les photos"
-                            />
-
-                            <TextField
-                                label="Chemin des miniatures"
-                                value={thumbnailsDirectory}
-                                onChange={(e) =>
-                                    setThumbnailsDirectory(e.target.value)
-                                }
-                                fullWidth
-                                required
-                                variant="outlined"
-                                helperText="ID de la bibliothèque Seafile où sont stockées les miniatures"
-                            />
-                        </>
-                    )}
-
+                <Paper elevation={2} sx={{ p: 3 }}>
                     <Box
+                        component="form"
                         sx={{
                             display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 2,
+                            flexDirection: "column",
+                            gap: 3,
                         }}
                     >
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleSave}
-                            disabled={!hasChanges || saving}
-                            startIcon={
-                                saving ? (
-                                    <CircularProgress size={20} />
-                                ) : (
-                                    <Save />
-                                )
-                            }
+                        <TextField
+                            label="Nom de la galerie"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            fullWidth
+                            required
+                            variant="outlined"
+                        />
+
+                        <FormControl fullWidth variant="outlined">
+                            <InputLabel>Type de stockage</InputLabel>
+                            <Select
+                                value={dataProvider}
+                                onChange={(e) =>
+                                    setDataProvider(
+                                        e.target.value as DataProviderType
+                                    )
+                                }
+                                label="Type de stockage"
+                            >
+                                <MenuItem value={DataProviderType.FileSystem}>
+                                    Système de fichiers local
+                                </MenuItem>
+                                <MenuItem value={DataProviderType.Seafile}>
+                                    Seafile
+                                </MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        {dataProvider === DataProviderType.FileSystem && (
+                            <>
+                                <TextField
+                                    label="Répertoire racine"
+                                    value={rootDirectory}
+                                    onChange={(e) =>
+                                        setRootDirectory(e.target.value)
+                                    }
+                                    fullWidth
+                                    required
+                                    variant="outlined"
+                                    helperText="Chemin vers le répertoire contenant les photos"
+                                />
+
+                                <TextField
+                                    label="Répertoire des miniatures"
+                                    value={thumbnailsDirectory}
+                                    onChange={(e) =>
+                                        setThumbnailsDirectory(e.target.value)
+                                    }
+                                    fullWidth
+                                    variant="outlined"
+                                    helperText="Chemin vers le répertoire des miniatures (optionnel)"
+                                />
+                            </>
+                        )}
+
+                        {dataProvider === DataProviderType.Seafile && (
+                            <>
+                                <TextField
+                                    label="URL du serveur Seafile"
+                                    value={seafileServerUrl}
+                                    onChange={(e) =>
+                                        setSeafileServerUrl(e.target.value)
+                                    }
+                                    fullWidth
+                                    required
+                                    variant="outlined"
+                                    helperText="URL complète du serveur Seafile (ex: https://cloud.example.com)"
+                                    placeholder="https://cloud.example.com"
+                                />
+
+                                <TextField
+                                    label="Clé API Seafile"
+                                    value={seafileApiKey}
+                                    onChange={(e) =>
+                                        setSeafileApiKey(e.target.value)
+                                    }
+                                    fullWidth
+                                    required
+                                    variant="outlined"
+                                    type="password"
+                                    helperText="Clé API générée dans votre profil Seafile"
+                                    slotProps={{
+                                        input: {
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        onClick={() =>
+                                                            setApiKeyDialogOpen(
+                                                                true
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            !seafileServerUrl
+                                                        }
+                                                    >
+                                                        Obtenir
+                                                    </Button>
+                                                </InputAdornment>
+                                            ),
+                                        },
+                                    }}
+                                />
+
+                                <TextField
+                                    label="ID de la bibliothèque Seafile"
+                                    value={rootDirectory}
+                                    onChange={(e) =>
+                                        setRootDirectory(e.target.value)
+                                    }
+                                    fullWidth
+                                    required
+                                    variant="outlined"
+                                    helperText="ID de la bibliothèque Seafile où sont stockées les photos"
+                                />
+
+                                <TextField
+                                    label="Chemin des miniatures"
+                                    value={thumbnailsDirectory}
+                                    onChange={(e) =>
+                                        setThumbnailsDirectory(e.target.value)
+                                    }
+                                    fullWidth
+                                    required
+                                    variant="outlined"
+                                    helperText="ID de la bibliothèque Seafile où sont stockées les miniatures"
+                                />
+                            </>
+                        )}
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 2,
+                            }}
                         >
-                            {saving ? "Enregistrement..." : "Enregistrer"}
-                        </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleSave}
+                                disabled={!hasChanges || saving}
+                                startIcon={
+                                    saving ? (
+                                        <CircularProgress size={20} />
+                                    ) : (
+                                        <Save />
+                                    )
+                                }
+                            >
+                                {saving ? "Enregistrement..." : "Enregistrer"}
+                            </Button>
+                        </Box>
                     </Box>
-                </Box>
-            </Paper>
-        </Container>
+                </Paper>
+            </Container>
+            <SeafileApiKeyDialog
+                open={apiKeyDialogOpen}
+                onClose={() => setApiKeyDialogOpen(false)}
+                onSave={(apiKey) => setSeafileApiKey(apiKey)}
+            />
+        </>
     );
 });
 

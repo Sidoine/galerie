@@ -76,6 +76,16 @@ export interface GalleryPatch {
     seafileApiKey: string | null;
 }
 
+export interface SeafileApiKeyRequest {
+    username: string;
+
+    password: string;
+}
+
+export interface SeafileApiKeyResponse {
+    apiKey: string;
+}
+
 export interface GalleryMember {
     id: number;
 

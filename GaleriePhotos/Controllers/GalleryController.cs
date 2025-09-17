@@ -6,6 +6,10 @@ using GaleriePhotos.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Net;
 
 namespace GaleriePhotos.Controllers
 {
@@ -152,6 +156,40 @@ namespace GaleriePhotos.Controllers
                 .ToArray();
 
             return Ok(new GalleryViewModel(gallery, administratorNames));
+        }
+
+        [HttpPost("{id}/seafile/apikey")]
+        public async Task<ActionResult<SeafileApiKeyResponse>> GetSeafileApiKey(int id, [FromBody] SeafileApiKeyRequest request)
+        {
+            var gallery = await applicationDbContext.Galleries.FirstOrDefaultAsync(g => g.Id == id);
+            if (gallery == null) return NotFound();
+            if (gallery.DataProvider != DataProviderType.Seafile) return BadRequest("Gallery is not configured for Seafile");
+            if (string.IsNullOrEmpty(gallery.SeafileServerUrl)) return BadRequest("Seafile server URL is not set on gallery");
+
+            // Seafile auth endpoint: POST /api2/auth-token/ with username & password form-urlencoded returns {"token":"API_KEY"}
+            var authUrl = gallery.SeafileServerUrl.TrimEnd('/') + "/api2/auth-token/";
+            using var client = new HttpClient();
+            var content = new StringContent($"username={WebUtility.UrlEncode(request.Username)}&password={WebUtility.UrlEncode(request.Password)}", Encoding.UTF8, "application/x-www-form-urlencoded");
+            try
+            {
+                var response = await client.PostAsync(authUrl, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                }
+                var stream = await response.Content.ReadAsStreamAsync();
+                var json = await JsonDocument.ParseAsync(stream);
+                if (!json.RootElement.TryGetProperty("token", out var tokenElement))
+                {
+                    return BadRequest("Token not found in response");
+                }
+                var token = tokenElement.GetString() ?? string.Empty;
+                return Ok(new SeafileApiKeyResponse { ApiKey = token });
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest($"HTTP error while contacting Seafile server: {ex.Message}");
+            }
         }
     }
 }
