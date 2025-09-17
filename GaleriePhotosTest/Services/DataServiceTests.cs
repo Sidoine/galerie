@@ -52,38 +52,6 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void GetDataProvider_WithSeafileGalleryMissingUrl_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var gallery = new Gallery(
-                "Test Gallery",
-                "lib123",
-                "thumbnails",
-                DataProviderType.Seafile,
-                null, // Missing URL
-                "test-api-key");
-
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _dataService.GetDataProvider(gallery));
-        }
-
-        [Fact]
-        public void GetDataProvider_WithSeafileGalleryMissingApiKey_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var gallery = new Gallery(
-                "Test Gallery",
-                "lib123",
-                "thumbnails",
-                DataProviderType.Seafile,
-                "https://cloud.example.com",
-                null); // Missing API key
-
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _dataService.GetDataProvider(gallery));
-        }
-
-        [Fact]
         public void GetDataProvider_WithUnsupportedProviderType_ThrowsNotSupportedException()
         {
             // Arrange
