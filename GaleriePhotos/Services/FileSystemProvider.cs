@@ -18,6 +18,8 @@ namespace GaleriePhotos.Services
 
         private Gallery Gallery { get; }
 
+        public bool IsSetup => Directory.Exists(Gallery.RootDirectory) && Directory.Exists(Gallery.ThumbnailsDirectory);
+
         /// <inheritdoc />
         public Task<bool> DirectoryExists(string path) => Task.FromResult(Directory.Exists(Path.Combine(Gallery.RootDirectory, path)));
 

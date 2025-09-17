@@ -69,5 +69,7 @@ namespace GaleriePhotos.Services
         Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo);
 
         Task<IFileName> GetLocalThumbnailFileName(Photo photo);
+
+        bool IsSetup { get; }
     }
 }

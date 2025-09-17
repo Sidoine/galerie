@@ -15,7 +15,13 @@ import {
     Box,
 } from "@mui/material";
 import { ImagesView } from "./images-view";
-import { Route, Link as RouterLink, Routes, useParams } from "react-router-dom";
+import {
+    Route,
+    Link as RouterLink,
+    Routes,
+    useNavigate,
+    useParams,
+} from "react-router-dom";
 import { Directory } from "../services/views";
 import placeholder from "../assets/placeholder.png";
 import { useDirectoriesStore } from "../stores/directories";
@@ -183,6 +189,14 @@ export function DirectoryPage() {
 export const RootDirectoryPage = observer(function RootDirectoryPage() {
     const directoriesStore = useDirectoriesStore();
     const root = directoriesStore.root;
-    if (!root) return <CircularProgress />;
+    const navigate = useNavigate();
+    if (!root) {
+        if (directoriesStore.isInError) {
+            navigate(`/g/${directoriesStore.galleryId}/settings/gallery`, {
+                replace: true,
+            });
+        }
+        return <CircularProgress />;
+    }
     return <DirectoryView id={root.id} />;
 });

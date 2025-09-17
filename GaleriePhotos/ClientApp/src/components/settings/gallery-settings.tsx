@@ -133,6 +133,7 @@ const GallerySettings = observer(() => {
                 if (result.ok) {
                     setGallery(result.value);
                     setSuccess(true);
+                    directoriesStore.loadRoot();
                 }
             }
         } catch (err) {

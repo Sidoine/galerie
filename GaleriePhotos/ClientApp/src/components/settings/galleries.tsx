@@ -49,6 +49,8 @@ const Galleries = observer(function Galleries() {
         rootDirectory: "",
         thumbnailsDirectory: "",
         userId: "",
+        dataProvider: DataProviderType.FileSystem,
+        seafileServerUrl: "",
     });
 
     const loadData = useMemo(
@@ -83,11 +85,20 @@ const Galleries = observer(function Galleries() {
         try {
             const result = await galleryController.create({
                 name: createForm.name,
-                rootDirectory: createForm.rootDirectory,
-                thumbnailsDirectory: createForm.thumbnailsDirectory,
+                rootDirectory:
+                    createForm.dataProvider === DataProviderType.FileSystem
+                        ? createForm.rootDirectory
+                        : "",
+                thumbnailsDirectory:
+                    createForm.dataProvider === DataProviderType.FileSystem
+                        ? createForm.thumbnailsDirectory
+                        : "",
                 userId: createForm.userId,
-                dataProvider: DataProviderType.FileSystem,
-                seafileServerUrl: null,
+                dataProvider: createForm.dataProvider,
+                seafileServerUrl:
+                    createForm.dataProvider === DataProviderType.Seafile
+                        ? createForm.seafileServerUrl || null
+                        : null,
                 seafileApiKey: null,
             });
 
@@ -99,6 +110,8 @@ const Galleries = observer(function Galleries() {
                     rootDirectory: "",
                     thumbnailsDirectory: "",
                     userId: "",
+                    dataProvider: DataProviderType.FileSystem,
+                    seafileServerUrl: "",
                 });
             }
         } catch (error) {
@@ -176,6 +189,7 @@ const Galleries = observer(function Galleries() {
                         label="Nom"
                         fullWidth
                         margin="normal"
+                        required
                         value={createForm.name}
                         onChange={(e) =>
                             setCreateForm({
@@ -184,33 +198,94 @@ const Galleries = observer(function Galleries() {
                             })
                         }
                     />
-                    <TextField
-                        label="Répertoire racine"
-                        fullWidth
-                        margin="normal"
-                        value={createForm.rootDirectory}
-                        onChange={(e) =>
-                            setCreateForm({
-                                ...createForm,
-                                rootDirectory: e.target.value,
-                            })
-                        }
-                    />
-                    <TextField
-                        label="Répertoire des miniatures (optionnel)"
-                        fullWidth
-                        margin="normal"
-                        value={createForm.thumbnailsDirectory}
-                        onChange={(e) =>
-                            setCreateForm({
-                                ...createForm,
-                                thumbnailsDirectory: e.target.value,
-                            })
-                        }
-                    />
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Type de données</InputLabel>
+                        <Select
+                            label="Type de données"
+                            value={createForm.dataProvider}
+                            onChange={(e) =>
+                                setCreateForm({
+                                    ...createForm,
+                                    dataProvider: e.target
+                                        .value as DataProviderType,
+                                    // reset champs spécifiques quand on change
+                                    rootDirectory:
+                                        e.target.value ===
+                                        DataProviderType.FileSystem
+                                            ? createForm.rootDirectory
+                                            : "",
+                                    thumbnailsDirectory:
+                                        e.target.value ===
+                                        DataProviderType.FileSystem
+                                            ? createForm.thumbnailsDirectory
+                                            : "",
+                                    seafileServerUrl:
+                                        e.target.value ===
+                                        DataProviderType.Seafile
+                                            ? createForm.seafileServerUrl
+                                            : "",
+                                })
+                            }
+                        >
+                            <MenuItem value={DataProviderType.FileSystem}>
+                                Système de fichiers
+                            </MenuItem>
+                            <MenuItem value={DataProviderType.Seafile}>
+                                Seafile
+                            </MenuItem>
+                        </Select>
+                    </FormControl>
+                    {createForm.dataProvider ===
+                        DataProviderType.FileSystem && (
+                        <>
+                            <TextField
+                                label="Répertoire racine"
+                                fullWidth
+                                margin="normal"
+                                required
+                                value={createForm.rootDirectory}
+                                onChange={(e) =>
+                                    setCreateForm({
+                                        ...createForm,
+                                        rootDirectory: e.target.value,
+                                    })
+                                }
+                            />
+                            <TextField
+                                label="Répertoire des miniatures"
+                                fullWidth
+                                required
+                                margin="normal"
+                                value={createForm.thumbnailsDirectory}
+                                onChange={(e) =>
+                                    setCreateForm({
+                                        ...createForm,
+                                        thumbnailsDirectory: e.target.value,
+                                    })
+                                }
+                            />
+                        </>
+                    )}
+                    {createForm.dataProvider === DataProviderType.Seafile && (
+                        <TextField
+                            label="URL du serveur Seafile"
+                            fullWidth
+                            required
+                            margin="normal"
+                            value={createForm.seafileServerUrl}
+                            onChange={(e) =>
+                                setCreateForm({
+                                    ...createForm,
+                                    seafileServerUrl: e.target.value,
+                                })
+                            }
+                            placeholder="https://seafile.example.com"
+                        />
+                    )}
                     <FormControl fullWidth margin="normal">
                         <InputLabel>Administrateur initial</InputLabel>
                         <Select
+                            required
                             value={createForm.userId}
                             label="Administrateur initial"
                             onChange={(e) =>
@@ -237,8 +312,13 @@ const Galleries = observer(function Galleries() {
                         variant="contained"
                         disabled={
                             !createForm.name ||
-                            !createForm.rootDirectory ||
-                            !createForm.userId
+                            !createForm.userId ||
+                            (createForm.dataProvider ===
+                                DataProviderType.FileSystem &&
+                                !createForm.rootDirectory) ||
+                            (createForm.dataProvider ===
+                                DataProviderType.Seafile &&
+                                !createForm.seafileServerUrl)
                         }
                     >
                         Créer

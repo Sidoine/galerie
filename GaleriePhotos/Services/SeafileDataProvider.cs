@@ -25,10 +25,8 @@ namespace GaleriePhotos.Services
 
         public SeafileDataProvider(Gallery gallery)
         {
-            if (gallery.SeafileServerUrl == null) throw new ArgumentNullException(nameof(gallery.SeafileServerUrl));
-            if (gallery.SeafileApiKey == null) throw new ArgumentNullException(nameof(gallery.SeafileApiKey));
-            _serverUrl = gallery.SeafileServerUrl.TrimEnd('/');
-            _apiKey = gallery.SeafileApiKey;
+            _serverUrl = (gallery.SeafileServerUrl ?? "").TrimEnd('/');
+            _apiKey = gallery.SeafileApiKey ?? "";
             _baseApiUrl = $"{_serverUrl}/api2";
             _originalsLibraryId = gallery.RootDirectory;
             _thumbnailsLibraryId = gallery.ThumbnailsDirectory;
@@ -36,6 +34,8 @@ namespace GaleriePhotos.Services
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Token {_apiKey}");
         }
+
+        public bool IsSetup => !string.IsNullOrWhiteSpace(_originalsLibraryId) && !string.IsNullOrWhiteSpace(_thumbnailsLibraryId) && !string.IsNullOrWhiteSpace(_serverUrl) && !string.IsNullOrWhiteSpace(_apiKey);
 
         /// <inheritdoc />
         public Task<bool> DirectoryExists(PhotoDirectory photoDirectory) => DirectoryExistsInternal(_originalsLibraryId, photoDirectory.Path);
