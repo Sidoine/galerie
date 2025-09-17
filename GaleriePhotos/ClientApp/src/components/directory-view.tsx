@@ -62,7 +62,9 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
 
     return (
         <ImageListItem sx={{ color: "inherit", textDecoration: "none" }}>
-            <RouterLink to={`directory/${directory.id}`}>
+            <RouterLink
+                to={`/g/${directoriesStore.galleryId}/directory/${directory.id}`}
+            >
                 {directory.coverPhotoId && (
                     <Image
                         src={directoriesStore.getThumbnail(
