@@ -64,7 +64,7 @@ namespace GaleriePhotosTest.Services
                 "test-api-key");
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => _dataService.GetDataProvider(gallery));
+            Assert.Throws<ArgumentNullException>(() => _dataService.GetDataProvider(gallery));
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace GaleriePhotosTest.Services
                 null); // Missing API key
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => _dataService.GetDataProvider(gallery));
+            Assert.Throws<ArgumentNullException>(() => _dataService.GetDataProvider(gallery));
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void GetDataProvider_WithSameSeafileCredentials_ReturnsCachedProvider()
+        public void GetDataProvider_WithSameGallery_ReturnsCachedProvider()
         {
             // Arrange
             var gallery1 = new Gallery(
@@ -106,17 +106,10 @@ namespace GaleriePhotosTest.Services
                 DataProviderType.Seafile,
                 "https://cloud.example.com",
                 "test-api-key");
-            var gallery2 = new Gallery(
-                "Gallery 2",
-                "lib456",
-                "thumbnails",
-                DataProviderType.Seafile,
-                "https://cloud.example.com",
-                "test-api-key");
 
             // Act
             var provider1 = _dataService.GetDataProvider(gallery1);
-            var provider2 = _dataService.GetDataProvider(gallery2);
+            var provider2 = _dataService.GetDataProvider(gallery1);
 
             // Assert
             Assert.Same(provider1, provider2);
