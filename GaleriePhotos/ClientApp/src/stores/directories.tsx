@@ -8,7 +8,7 @@ import {
     DirectoryFull,
 } from "../services/views";
 import { DirectoryController, PhotoController } from "../services/services";
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class DirectoriesStore {

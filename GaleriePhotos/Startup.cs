@@ -71,6 +71,7 @@ namespace GaleriePhotos
             });
 
             services.Configure<SendGridOptions>(Configuration.GetSection("SendGrid"));
+            services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
             services.Configure<GalerieOptions>(Configuration.GetSection("Galerie"));
             services.Configure<AdministratorOptions>(Configuration.GetSection("Administrator"));
             services.AddSingleton<DataService>();
@@ -84,7 +85,17 @@ namespace GaleriePhotos
                     .RequireAuthenticatedUser()
                     .Build();
             });
-            services.AddScoped<IEmailSender, EmailSender>();
+            // Choix dynamique entre SMTP et SendGrid
+            var smtpSection = Configuration.GetSection("Smtp");
+            var smtpHost = smtpSection.GetValue<string>("Host");
+            if (!string.IsNullOrWhiteSpace(smtpHost))
+            {
+                services.AddScoped<IEmailSender, SmtpEmailSender>();
+            }
+            else
+            {
+                services.AddScoped<IEmailSender, SendGridEmailSender>();
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

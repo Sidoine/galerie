@@ -9,6 +9,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { Box, useTheme } from "@mui/material";
+import UserAccountMenu from "./user-account-menu";
 
 const drawerWidth = 240;
 
@@ -24,6 +25,7 @@ export const ResponsiveDrawer = observer(
     }) => {
         const theme = useTheme();
         const [mobileOpen, setMobileOpen] = React.useState(false);
+        // Menu utilisateur désormais externalisé dans UserAccountMenu
 
         const handleDrawerToggle = () => {
             setMobileOpen(!mobileOpen);
@@ -63,6 +65,7 @@ export const ResponsiveDrawer = observer(
                         <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
                             {title}
                         </Typography>
+                        <UserAccountMenu />
                     </Toolbar>
                 </AppBar>
                 <Box

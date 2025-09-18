@@ -9,9 +9,9 @@
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class EmailSender : IEmailSender
+    public class SendGridEmailSender : IEmailSender
     {
-        public EmailSender(IOptions<SendGridOptions> optionsAccessor)
+        public SendGridEmailSender(IOptions<SendGridOptions> optionsAccessor)
         {
             Options = optionsAccessor.Value;
         }
