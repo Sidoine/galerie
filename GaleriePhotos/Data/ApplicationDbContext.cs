@@ -15,6 +15,7 @@ namespace GaleriePhotos.Data
         public DbSet<GalleryMember> GalleryMembers { get; set; } = null!;
         public DbSet<GalleryDirectoryVisibility> GalleryDirectoryVisibilities { get; set; } = null!;
         public DbSet<Face> Faces { get; set; } = null!;
+        public DbSet<FaceName> FaceNames { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)
@@ -46,8 +47,21 @@ namespace GaleriePhotos.Data
                     .HasForeignKey(e => e.PhotoId)
                     .OnDelete(DeleteBehavior.Cascade);
                     
+                entity.HasOne(e => e.FaceName)
+                    .WithMany(fn => fn.Faces)
+                    .HasForeignKey(e => e.FaceNameId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                    
                 entity.HasIndex(e => e.PhotoId);
-                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.FaceNameId);
+            });
+            
+            // Configure FaceName entity
+            modelBuilder.Entity<FaceName>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired();
+                entity.HasIndex(e => e.Name).IsUnique();
             });
         }
 

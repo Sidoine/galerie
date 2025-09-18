@@ -26,7 +26,7 @@ namespace GaleriePhotos.Models
         [Required]
         public float Height { get; set; }
         
-        public string? Name { get; set; }
+        public int? FaceNameId { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
@@ -34,5 +34,6 @@ namespace GaleriePhotos.Models
         
         // Navigation properties
         public required Photo Photo { get; set; }
+        public FaceName? FaceName { get; set; }
     }
 }

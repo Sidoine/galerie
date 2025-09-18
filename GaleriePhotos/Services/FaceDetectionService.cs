@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using FaceAiSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +19,9 @@ namespace GaleriePhotos.Services
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<FaceDetectionService> logger;
         private readonly DataService dataService;
+        // TODO: Re-enable FaceAiSharp when the correct API is identified
+        // private readonly FaceDetector faceDetector;
+        // private readonly FaceEmbeddingsGenerator embeddingsGenerator;
 
         public FaceDetectionService(
             ApplicationDbContext applicationDbContext,
@@ -27,6 +31,10 @@ namespace GaleriePhotos.Services
             this.applicationDbContext = applicationDbContext;
             this.logger = logger;
             this.dataService = dataService;
+            
+            // TODO: Initialize FaceAiSharp components when API is confirmed
+            // this.faceDetector = new FaceDetector();
+            // this.embeddingsGenerator = new FaceEmbeddingsGenerator();
         }
 
         public async Task<bool> ProcessPhotoAsync(Photo photo)
@@ -53,12 +61,38 @@ namespace GaleriePhotos.Services
                     return false;
                 }
 
-                // For now, create a placeholder implementation
-                // This will be enhanced once FaceAiSharp integration is properly configured
-                logger.LogInformation("Face detection placeholder - would process photo {PhotoId}", photo.Id);
+                // Get the photo directory
+                var photoDirectory = await applicationDbContext.PhotoDirectories
+                    .Include(pd => pd.Gallery)
+                    .FirstOrDefaultAsync(pd => pd.GalleryId == photo.GalleryId);
+
+                if (photoDirectory == null)
+                {
+                    logger.LogWarning("Photo directory not found for photo {PhotoId}", photo.Id);
+                    return false;
+                }
+
+                var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
                 
-                // TODO: Integrate actual face detection once FaceAiSharp is properly configured
-                // This is a placeholder that can be enhanced later
+                // Open the photo file
+                using var fileStream = await dataProvider.OpenFileRead(photoDirectory, photo);
+                if (fileStream == null)
+                {
+                    logger.LogWarning("Could not open file {FileName} for photo {PhotoId}", photo.FileName, photo.Id);
+                    return false;
+                }
+
+                // Load the image
+                using var image = Image.Load<Rgb24>(fileStream);
+                
+                // TODO: Implement actual face detection with FaceAiSharp
+                // For now, this is a placeholder that logs the action
+                logger.LogInformation("Face detection processing photo {PhotoId} - FaceAiSharp integration pending", photo.Id);
+                
+                // Placeholder - in actual implementation, this would detect faces and create Face entities
+                // var detectedFaces = faceDetector.DetectFaces(image);
+                // Process each detected face and save to database
+                
                 return true;
             }
             catch (Exception ex)
@@ -73,7 +107,8 @@ namespace GaleriePhotos.Services
             // Get all named faces for the given name
             var namedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
-                .Where(f => f.Name == name)
+                .Include(f => f.FaceName)
+                .Where(f => f.FaceName != null && f.FaceName.Name == name)
                 .ToListAsync();
 
             if (!namedFaces.Any())
@@ -87,7 +122,7 @@ namespace GaleriePhotos.Services
             // Find similar unnamed faces using cosine similarity
             var unnamedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
-                .Where(f => f.Name == null)
+                .Where(f => f.FaceName == null)
                 .ToListAsync();
 
             // Calculate similarities in memory (for simplicity)
@@ -104,7 +139,7 @@ namespace GaleriePhotos.Services
         {
             var unnamedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
-                .Where(f => f.Name == null)
+                .Where(f => f.FaceName == null)
                 .OrderBy(f => Guid.NewGuid()) // Random sample
                 .Take(count)
                 .ToListAsync();
@@ -123,7 +158,18 @@ namespace GaleriePhotos.Services
                     return false;
                 }
 
-                face.Name = name;
+                // Find or create the FaceName
+                var faceName = await applicationDbContext.FaceNames
+                    .FirstOrDefaultAsync(fn => fn.Name == name);
+                
+                if (faceName == null)
+                {
+                    faceName = new FaceName { Name = name };
+                    applicationDbContext.FaceNames.Add(faceName);
+                    await applicationDbContext.SaveChangesAsync(); // Save to get the ID
+                }
+
+                face.FaceNameId = faceName.Id;
                 face.NamedAt = DateTime.UtcNow;
 
                 await applicationDbContext.SaveChangesAsync();

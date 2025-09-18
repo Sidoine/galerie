@@ -43,13 +43,20 @@ namespace GaleriePhotosTest.Controllers
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
 
+            // Create FaceNames
+            var faceNameAlice = new FaceName { Name = "Alice" };
+            var faceNameBob = new FaceName { Name = "Bob" };
+            context.FaceNames.AddRange(faceNameAlice, faceNameBob);
+            await context.SaveChangesAsync();
+
             var face1 = new Face
             {
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Vector(new float[] { 1.0f, 2.0f }),
                 X = 10, Y = 20, Width = 30, Height = 40,
-                Name = "Alice"
+                FaceNameId = faceNameAlice.Id,
+                FaceName = faceNameAlice
             };
             var face2 = new Face
             {
@@ -57,7 +64,8 @@ namespace GaleriePhotosTest.Controllers
                 Photo = photo,
                 Embedding = new Vector(new float[] { 3.0f, 4.0f }),
                 X = 50, Y = 60, Width = 70, Height = 80,
-                Name = "Bob"
+                FaceNameId = faceNameBob.Id,
+                FaceName = faceNameBob
             };
             var face3 = new Face
             {
@@ -65,7 +73,8 @@ namespace GaleriePhotosTest.Controllers
                 Photo = photo,
                 Embedding = new Vector(new float[] { 5.0f, 6.0f }),
                 X = 90, Y = 100, Width = 110, Height = 120,
-                Name = "Alice" // Duplicate name
+                FaceNameId = faceNameAlice.Id,
+                FaceName = faceNameAlice // Same name as face1
             };
 
             context.Faces.AddRange(face1, face2, face3);
@@ -168,9 +177,12 @@ namespace GaleriePhotosTest.Controllers
             Assert.IsType<OkResult>(result);
             
             // Verify face was updated
-            var updatedFace = await context.Faces.FindAsync(face.Id);
+            var updatedFace = await context.Faces
+                .Include(f => f.FaceName)
+                .FirstOrDefaultAsync(f => f.Id == face.Id);
             Assert.NotNull(updatedFace);
-            Assert.Equal("TestName", updatedFace.Name);
+            Assert.NotNull(updatedFace.FaceName);
+            Assert.Equal("TestName", updatedFace.FaceName.Name);
             Assert.NotNull(updatedFace.NamedAt);
         }
     }

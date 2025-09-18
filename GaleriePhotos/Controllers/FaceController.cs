@@ -73,7 +73,7 @@ namespace GaleriePhotos.Controllers
                 Y = f.Y,
                 Width = f.Width,
                 Height = f.Height,
-                Name = f.Name,
+                Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
                 PhotoFileName = f.Photo?.FileName,
@@ -101,7 +101,7 @@ namespace GaleriePhotos.Controllers
                 Y = f.Y,
                 Width = f.Width,
                 Height = f.Height,
-                Name = f.Name,
+                Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
                 PhotoFileName = f.Photo?.FileName,
@@ -121,6 +121,7 @@ namespace GaleriePhotos.Controllers
         {
             var faces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
+                .Include(f => f.FaceName)
                 .Where(f => f.PhotoId == photoId)
                 .ToListAsync();
 
@@ -132,7 +133,7 @@ namespace GaleriePhotos.Controllers
                 Y = f.Y,
                 Width = f.Width,
                 Height = f.Height,
-                Name = f.Name,
+                Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
                 PhotoFileName = f.Photo?.FileName
@@ -148,9 +149,8 @@ namespace GaleriePhotos.Controllers
         [HttpGet("names")]
         public async Task<ActionResult<string[]>> GetDistinctNames()
         {
-            var names = await applicationDbContext.Faces
-                .Where(f => !string.IsNullOrEmpty(f.Name))
-                .Select(f => f.Name!)
+            var names = await applicationDbContext.FaceNames
+                .Select(fn => fn.Name)
                 .Distinct()
                 .OrderBy(n => n)
                 .ToArrayAsync();
