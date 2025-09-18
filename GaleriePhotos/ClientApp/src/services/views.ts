@@ -28,6 +28,44 @@ export interface GalleryDirectoryVisibilityPatch {
     value: number | null;
 }
 
+export interface FaceAssignName {
+    name: string;
+}
+
+export interface SimilarFacesRequest {
+    name: string;
+
+    limit: number;
+}
+
+export interface Face {
+    id: number;
+
+    photoId: number;
+
+    x: number;
+
+    y: number;
+
+    width: number;
+
+    height: number;
+
+    name: string | null;
+
+    createdAt: string;
+
+    namedAt: string | null;
+
+    photoFileName: string | null;
+
+    photoThumbnailUrl: string | null;
+}
+
+export interface UnnamedFacesSampleRequest {
+    count: number;
+}
+
 export interface Gallery {
     id: number;
 
