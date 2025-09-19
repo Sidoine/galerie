@@ -1,4 +1,4 @@
-import { List, ListItemButton } from "@mui/material";
+import { List, ListItemButton, Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 import { useGalleriesStore } from "../stores/galleries";
@@ -30,6 +30,13 @@ const GalleryChooser = observer(function GalleryChooser() {
                     {m.galleryName}
                 </ListItemButton>
             ))}
+            {memberships.length === 0 && (
+                <Typography variant="body1">
+                    Vous n'êtes membre d'aucune galerie. Demandez à en rejoindre
+                    une ou demandez à l'administrateur de créer une nouvelle
+                    galerie.
+                </Typography>
+            )}
         </List>
     );
 });

@@ -126,6 +126,12 @@ export interface GalleryMember {
     isAdministrator: boolean;
 }
 
+export interface GalleryMemberPatch {
+    directoryVisibility?: number | undefined;
+
+    isAdministrator?: boolean | undefined;
+}
+
 export interface User {
     id: string;
 
@@ -136,12 +142,6 @@ export interface User {
 
 export interface UserPatch {
     administrator?: boolean | undefined;
-}
-
-export interface GalleryMemberPatch {
-    directoryVisibility?: number | undefined;
-
-    isAdministrator?: boolean | undefined;
 }
 
 export interface Directory {

@@ -10,10 +10,10 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Net;
+using System.Security.Claims;
 
 namespace GaleriePhotos.Controllers
 {
-    [Authorize(Policy = Policies.Administrator)]
     [Route("api/galleries")]
     public class GalleryController : Controller
     {
@@ -25,6 +25,7 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpGet("")]
+        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult<GalleryViewModel[]>> GetAll()
         {
             var galleries = await applicationDbContext.Galleries
@@ -48,6 +49,7 @@ namespace GaleriePhotos.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GalleryViewModel>> GetById(int id)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var gallery = await applicationDbContext.Galleries
                 .Include(g => g.Members)
                 .ThenInclude(gm => gm.User)
@@ -56,6 +58,11 @@ namespace GaleriePhotos.Controllers
             if (gallery == null)
             {
                 return NotFound();
+            }
+
+            if (!User.IsGalleryAdministrator(gallery))
+            {
+                return Forbid();
             }
 
             var administratorNames = gallery.Members
@@ -67,6 +74,7 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpPost("")]
+        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult<GalleryViewModel>> Create([FromBody] GalleryCreateViewModel model)
         {
             // Check if user exists
@@ -114,6 +122,11 @@ namespace GaleriePhotos.Controllers
             if (gallery == null)
             {
                 return NotFound();
+            }
+
+            if (!User.IsGalleryAdministrator(gallery))
+            {
+                return Forbid();
             }
 
             // Update gallery properties if provided

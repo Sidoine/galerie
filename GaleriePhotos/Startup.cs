@@ -77,6 +77,7 @@ namespace GaleriePhotos
             services.AddSingleton<DataService>();
             services.AddScoped<PhotoService>();
             services.AddScoped<SeedingService>();
+            services.AddScoped<GalleryService>();
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));

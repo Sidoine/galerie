@@ -72,22 +72,19 @@ namespace Galerie.Server.Controllers
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
+
+            if (!photoService.IsDirectoryVisible(User, directory))
+            {
+                return Forbid();
+            }
+
             var subDirectories = await photoService.GetSubDirectories(directory);
             if (subDirectories == null) return NotFound();
-            var isAdministrator = User.IsAdministrator();
-
-            // For administrators, use the old visibility approach; for regular users, use gallery membership
-            if (isAdministrator)
-            {
-                return Ok(subDirectories.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x))).Select(t => t.Result));
-            }
-            else
-            {
-                var visible = subDirectories.Where(x => photoService.IsDirectoryVisible(User, x));
-                var tasks = visible.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x)));
-                var results = await Task.WhenAll(tasks);
-                return Ok(results);
-            }
+       
+            var visible = subDirectories.Where(x => photoService.IsDirectoryVisible(User, x));
+            var tasks = visible.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x)));
+            var results = await Task.WhenAll(tasks);
+            return Ok(results);
         }
 
         [HttpGet("{id}/photos")]
@@ -97,7 +94,7 @@ namespace Galerie.Server.Controllers
             if (directory == null) return NotFound();
 
             // Use new gallery-aware visibility check, fallback to claims-based for administrators
-            if (!User.IsAdministrator() && !photoService.IsDirectoryVisible(User, directory))
+            if (!photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
             }

@@ -10,7 +10,7 @@ import {
 import Logout from "@mui/icons-material/Logout";
 import LockReset from "@mui/icons-material/LockReset";
 import { observer } from "mobx-react-lite";
-import { useUsersStore } from "../stores/users";
+import { useMeStore } from "../stores/me";
 
 /**
  * Menu de compte utilisateur (changer mot de passe, déconnexion)
@@ -18,8 +18,8 @@ import { useUsersStore } from "../stores/users";
 const UserAccountMenu = observer(function UserAccountMenu() {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
-    const usersStore = useUsersStore();
-    const initial = usersStore.me?.name?.[0]?.toUpperCase() || "U";
+    const meStore = useMeStore();
+    const initial = meStore.me?.name?.[0]?.toUpperCase() || "U";
 
     const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);

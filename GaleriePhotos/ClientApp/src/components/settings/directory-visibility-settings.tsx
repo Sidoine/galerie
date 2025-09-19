@@ -22,6 +22,13 @@ import {
     Alert,
     CircularProgress,
 } from "@mui/material";
+import {
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    FormHelperText,
+} from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { useDirectoryVisibilitiesStore } from "../../stores/directory-visibilities";
 import {
@@ -202,6 +209,7 @@ const DirectoryVisibilitySettings = observer(() => {
             <EditVisibilityDialog
                 open={editDialog.open}
                 visibility={editDialog.visibility}
+                visibilities={visibilities}
                 onClose={() => setEditDialog({ open: false })}
                 onSubmit={handleSubmit}
                 loading={loading}
@@ -221,6 +229,7 @@ const DirectoryVisibilitySettings = observer(() => {
 interface EditVisibilityDialogProps {
     open: boolean;
     visibility?: GalleryDirectoryVisibility;
+    visibilities: GalleryDirectoryVisibility[];
     onClose: () => void;
     onSubmit: (
         data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch
@@ -231,6 +240,7 @@ interface EditVisibilityDialogProps {
 const EditVisibilityDialog = ({
     open,
     visibility,
+    visibilities,
     onClose,
     onSubmit,
     loading,
@@ -238,6 +248,10 @@ const EditVisibilityDialog = ({
     const [name, setName] = useState("");
     const [icon, setIcon] = useState("");
     const [value, setValue] = useState(1);
+    const powerValues = React.useMemo(
+        () => [1, 2, 4, 8, 16, 32, 64, 128, 256],
+        []
+    );
 
     React.useEffect(() => {
         if (visibility) {
@@ -251,8 +265,19 @@ const EditVisibilityDialog = ({
         }
     }, [visibility, open]);
 
+    const usedValues = React.useMemo(
+        () =>
+            visibilities
+                .filter((v) => !visibility || v.id !== visibility.id)
+                .map((v) => v.value),
+        [visibilities, visibility]
+    );
+
+    const valueAlreadyUsed = usedValues.includes(value);
+
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
+        if (valueAlreadyUsed) return; // sécurité côté UI
         if (visibility) {
             onSubmit({ name, icon, value });
         } else {
@@ -277,7 +302,7 @@ const EditVisibilityDialog = ({
                             disabled={loading}
                         />
                         <TextField
-                            label="Icon (HTML/SVG)"
+                            label="Icon"
                             value={icon}
                             onChange={(e) => setIcon(e.target.value)}
                             required
@@ -287,18 +312,42 @@ const EditVisibilityDialog = ({
                             disabled={loading}
                             helperText="Enter the icon"
                         />
-                        <TextField
-                            label="Value (Power of 2)"
-                            type="number"
-                            value={value}
-                            onChange={(e) =>
-                                setValue(parseInt(e.target.value) || 1)
-                            }
-                            required
+                        <FormControl
                             fullWidth
                             disabled={loading}
-                            helperText="Must be a power of 2 (1, 2, 4, 8, 16, etc.)"
-                        />
+                            required
+                            error={valueAlreadyUsed}
+                        >
+                            <InputLabel id="visibility-value-label">
+                                Value (Power of 2)
+                            </InputLabel>
+                            <Select
+                                labelId="visibility-value-label"
+                                label="Value (Power of 2)"
+                                value={value}
+                                onChange={(e) =>
+                                    setValue(Number(e.target.value))
+                                }
+                            >
+                                {powerValues.map((v) => {
+                                    const taken = usedValues.includes(v);
+                                    return (
+                                        <MenuItem
+                                            key={v}
+                                            value={v}
+                                            disabled={taken}
+                                        >
+                                            {v}
+                                        </MenuItem>
+                                    );
+                                })}
+                            </Select>
+                            <FormHelperText>
+                                {valueAlreadyUsed
+                                    ? "This value is already used by another visibility"
+                                    : "Must be a power of 2 (1 - 256) and unique"}
+                            </FormHelperText>
+                        </FormControl>
                         {icon && (
                             <Box>
                                 <Typography variant="caption">
@@ -319,7 +368,13 @@ const EditVisibilityDialog = ({
                     <Button
                         type="submit"
                         variant="contained"
-                        disabled={loading || !name || !icon || value < 1}
+                        disabled={
+                            loading ||
+                            !name ||
+                            !icon ||
+                            value < 1 ||
+                            valueAlreadyUsed
+                        }
                     >
                         {loading ? (
                             <CircularProgress size={20} />
