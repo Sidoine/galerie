@@ -79,6 +79,8 @@ namespace GaleriePhotos
             services.AddScoped<SeedingService>();
             services.AddScoped<FaceDetectionService>();
             services.AddHostedService<FaceDetectionBackgroundService>();
+            services.AddScoped<GalleryService>();
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));

@@ -3,13 +3,13 @@ import { observer } from "mobx-react-lite";
 import { useLocation, Link } from "react-router";
 import { ExpandLess, ExpandMore, Settings } from "@mui/icons-material";
 import { useDirectoriesStore } from "../stores/directories";
-import { useUsersStore } from "../stores/users";
 import { useState } from "react";
 import { useMembersStore } from "../stores/members";
+import { useMeStore } from "../stores/me";
 
 function Menu() {
     const directoriesStore = useDirectoriesStore();
-    const usersStore = useUsersStore();
+    const meStore = useMeStore();
     const membersStore = useMembersStore();
     const location = useLocation();
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -73,7 +73,7 @@ function Menu() {
                 </>
             )}
 
-            {usersStore.administrator && (
+            {meStore.administrator && (
                 <>
                     <ListItemButton
                         selected={location.pathname === "/settings/users"}

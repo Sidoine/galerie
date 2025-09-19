@@ -9,30 +9,19 @@ export class UsersStore {
     loadingMemberships = false;
 
     constructor(
-        private meLoader: SingletonLoader<User>,
         public usersLoader: SingletonLoader<User[]>,
         private userService: UserController
     ) {
         makeObservable(this, {
             memberships: observable.ref,
             loadingMemberships: observable,
-            me: computed,
             patch: action,
             users: computed,
-            administrator: computed,
         });
     }
 
     get users() {
         return this.usersLoader.getValue() || [];
-    }
-
-    get me() {
-        return this.meLoader.getValue();
-    }
-
-    get administrator() {
-        return this.me?.administrator || false;
     }
 
     patch(user: User, patch: UserPatch) {
@@ -55,7 +44,6 @@ export function UsersStoreProvider({
     const store = useMemo(() => {
         const userService = new UserController(apiClient);
         return new UsersStore(
-            new SingletonLoader(() => userService.getMe()),
             new SingletonLoader(() => userService.getAll()),
             userService
         );

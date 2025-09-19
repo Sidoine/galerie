@@ -61,7 +61,7 @@ namespace GaleriePhotos.Services
                 {
                     new GalleryDirectoryVisibility
                     {
-                        Name = "Mylène",
+                        Name = "Exemple 1",
                         Icon = "👩",
                         Value = 1,
                         GalleryId = gallery.Id,
@@ -69,7 +69,7 @@ namespace GaleriePhotos.Services
                     },
                     new GalleryDirectoryVisibility
                     {
-                        Name = "Sidoine",
+                        Name = "Exemple 2",
                         Icon = "🧑",
                         Value = 2,
                         GalleryId = gallery.Id,

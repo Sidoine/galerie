@@ -7,6 +7,7 @@ using GaleriePhotos.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GaleriePhotos.Services;
 
 namespace GaleriePhotos.Controllers
 {
@@ -16,10 +17,14 @@ namespace GaleriePhotos.Controllers
     public class DirectoryVisibilityController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly GalleryService galleryService;
 
-        public DirectoryVisibilityController(ApplicationDbContext context)
+
+        public DirectoryVisibilityController(ApplicationDbContext context, GalleryService galleryService)
         {
             _context = context;
+            this.galleryService = galleryService;
+
         }
 
         [HttpGet("")]
@@ -34,15 +39,17 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpPost("")]
-        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult<GalleryDirectoryVisibilityViewModel>> Post(int galleryId, [FromBody] GalleryDirectoryVisibilityCreateViewModel model)
         {
             // Check if gallery exists
-            var gallery = await _context.Galleries.FindAsync(galleryId);
+            var gallery = await galleryService.Get(galleryId);
             if (gallery == null)
             {
                 return NotFound();
             }
+
+            if (!User.IsGalleryAdministrator(gallery))
+                return Forbid();
 
             // Check if value already exists for this gallery
             var existingVisibility = await _context.GalleryDirectoryVisibilities
@@ -82,9 +89,17 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpPatch("{id}")]
-        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult<GalleryDirectoryVisibilityViewModel>> Update(int galleryId, int id, [FromBody] GalleryDirectoryVisibilityPatchViewModel model)
         {
+            var gallery = await galleryService.Get(galleryId);
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            if (!User.IsGalleryAdministrator(gallery))
+                return Forbid();
+
             var visibility = await _context.GalleryDirectoryVisibilities
                 .FirstOrDefaultAsync(v => v.Id == id && v.GalleryId == galleryId);
 
@@ -115,9 +130,17 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult> Delete(int galleryId, int id)
         {
+            var gallery = await galleryService.Get(galleryId);
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            if (!User.IsGalleryAdministrator(gallery))
+                return Forbid();
+
             var visibility = await _context.GalleryDirectoryVisibilities
                 .FirstOrDefaultAsync(v => v.Id == id && v.GalleryId == galleryId);
 

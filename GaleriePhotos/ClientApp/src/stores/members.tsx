@@ -1,26 +1,20 @@
 import { useApiClient, ValueLoader } from "folke-service-helpers";
-import {
-    action,
-    computed,
-    makeObservable,
-    observable,
-    runInAction,
-} from "mobx";
+import { action, computed, makeObservable, observable } from "mobx";
 import { User, GalleryMember } from "../services/views";
-import { UserController } from "../services/user";
 import { createContext, useContext, useMemo } from "react";
 import { useDirectoriesStore } from "./directories";
-import { UsersStore, useUsersStore } from "./users";
+import { GalleryMemberController } from "../services/galleryMember";
+import { MeStore, useMeStore } from "./me";
 
 class MembersStore {
     memberships: GalleryMember[] | null = null;
     loadingMemberships = false;
 
     constructor(
-        private userService: UserController,
+        private galleryMemberService: GalleryMemberController,
         public galleryId: number,
         public membersLoader: ValueLoader<GalleryMember[], [number]>,
-        private userStore: UsersStore
+        private meStore: MeStore
     ) {
         makeObservable(this, {
             memberships: observable.ref,
@@ -38,28 +32,16 @@ class MembersStore {
     }
 
     get member() {
-        return this.members.find((x) => x.userId === this.userStore.me?.id);
+        return this.members.find((x) => x.userId === this.meStore.me?.id);
     }
 
     get administrator() {
         return this.member?.isAdministrator || false;
     }
 
-    async loadMemberships(userId: string) {
-        this.loadingMemberships = true;
-        try {
-            const result = await this.userService.getUserGalleries(userId);
-            if (result.ok) {
-                runInAction(() => (this.memberships = result.value));
-            }
-        } finally {
-            runInAction(() => (this.loadingMemberships = false));
-        }
-    }
-
     async setMembershipAdmin(membership: GalleryMember, isAdmin: boolean) {
         membership.isAdministrator = isAdmin;
-        await this.userService.updateUserGalleryMembership(
+        await this.galleryMemberService.updateUserGalleryMembership(
             membership.userId,
             membership.galleryId,
             { isAdministrator: isAdmin }
@@ -71,7 +53,7 @@ class MembersStore {
         directoryVisibility: number
     ) {
         membership.directoryVisibility = directoryVisibility;
-        await this.userService.updateUserGalleryMembership(
+        await this.galleryMemberService.updateUserGalleryMembership(
             membership.userId,
             membership.galleryId,
             { directoryVisibility }
@@ -83,7 +65,7 @@ class MembersStore {
         visibility: number,
         isAdministrator: boolean
     ) {
-        const created = await this.userService.addUserToGallery(
+        const created = await this.galleryMemberService.addUserToGallery(
             user.id,
             this.galleryId,
             {
@@ -110,19 +92,19 @@ export function MembersStoreProvider({
 }) {
     const { galleryId } = useDirectoriesStore();
     const apiClient = useApiClient();
-    const usersStore = useUsersStore();
+    const meStore = useMeStore();
     const store = useMemo(() => {
-        const userService = new UserController(apiClient);
+        const galleryMemberService = new GalleryMemberController(apiClient);
         const galleryMembersLoader = new ValueLoader(
-            userService.getGalleryMembers
+            galleryMemberService.getGalleryMembers
         );
         return new MembersStore(
-            userService,
+            galleryMemberService,
             galleryId,
             galleryMembersLoader,
-            usersStore
+            meStore
         );
-    }, [apiClient, galleryId, usersStore]);
+    }, [apiClient, galleryId, meStore]);
     return (
         <MembersStoreContext.Provider value={store}>
             {children}

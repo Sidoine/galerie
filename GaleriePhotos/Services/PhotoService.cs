@@ -62,22 +62,25 @@ namespace GaleriePhotos.Services
         }
 
         // Get directory visibility from GalleryMember for a specific gallery
-        public int GetDirectoryVisibility(ClaimsPrincipal claimsPrincipal, int galleryId)
+        private GalleryMember? GetGalleryMember(ClaimsPrincipal claimsPrincipal, int galleryId)
         {
             var userId = claimsPrincipal.GetUserId();
-            if (userId == null) return 0;
+            if (userId == null) return null;
 
             var galleryMember = applicationDbContext.GalleryMembers
                 .FirstOrDefault(gm => gm.UserId == userId && gm.GalleryId == galleryId);
 
-            return galleryMember?.DirectoryVisibility ?? 0;
+            return galleryMember;
         }
 
         // Check directory visibility using GalleryMember
         public bool IsDirectoryVisible(ClaimsPrincipal claimsPrincipal, PhotoDirectory directory)
         {
-            return claimsPrincipal.IsAdministrator() ||
-                   (directory.Visibility & GetDirectoryVisibility(claimsPrincipal, directory.GalleryId)) != 0;
+            if (claimsPrincipal.IsAdministrator()) return true;
+            var galleryMember = GetGalleryMember(claimsPrincipal, directory.GalleryId);
+            if (galleryMember == null) return false;
+            return galleryMember.IsAdministrator ||
+                   (directory.Visibility & galleryMember.DirectoryVisibility) != 0;
         }
 
         public static bool IsVideo(Photo photo)
@@ -205,14 +208,14 @@ namespace GaleriePhotos.Services
 
         public async Task<PhotoDirectory?> GetPhotoDirectoryAsync(int id)
         {
-            return await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Id == id);
+            return await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
             string[] directoryPaths = await GetSubDirectoryPaths(photoDirectory);
-            var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path)).ToListAsync();
+            var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path) && x.GalleryId == photoDirectory.GalleryId).ToListAsync();
             foreach (var path in directoryPaths)
             {
                 if (!directories.Any(x => x.Path == path))

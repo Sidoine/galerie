@@ -18,54 +18,59 @@ import AdminMenu from "./components/admin-menu";
 import GalleryChooser from "./components/gallery-chooser";
 import Galleries from "./components/settings/galleries";
 import GallerySettings from "./components/settings/gallery-settings";
+import { MeStoreProvider } from "./stores/me";
 
 function GalleryRoot() {
     const { galleryId } = useParams();
     return (
         <DirectoriesStoreProvider galleryId={Number(galleryId)}>
             <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
-                <UsersStoreProvider>
-                    <MembersStoreProvider>
-                        <ResponsiveDrawer
-                            menu={<Menu />}
-                            title={
+                <MeStoreProvider>
+                    <UsersStoreProvider>
+                        <MembersStoreProvider>
+                            <ResponsiveDrawer
+                                menu={<Menu />}
+                                title={
+                                    <Routes>
+                                        <Route
+                                            path="/directory/:directoryId/*"
+                                            element={<BreadCrumbs />}
+                                        ></Route>
+                                        <Route
+                                            path="*"
+                                            element={<>Galerie photo</>}
+                                        />
+                                    </Routes>
+                                }
+                            >
                                 <Routes>
                                     <Route
-                                        path="/directory/:directoryId/*"
-                                        element={<BreadCrumbs />}
-                                    ></Route>
+                                        path="/directory/:id/*"
+                                        element={<DirectoryPage />}
+                                    />
+                                    <Route
+                                        path="/settings/members"
+                                        element={<GalleryMembers />}
+                                    />
+                                    <Route
+                                        path="/settings/visibility"
+                                        element={
+                                            <DirectoryVisibilitySettings />
+                                        }
+                                    />
+                                    <Route
+                                        path="/settings/gallery"
+                                        element={<GallerySettings />}
+                                    />
                                     <Route
                                         path="*"
-                                        element={<>Galerie photo</>}
+                                        element={<RootDirectoryPage />}
                                     />
                                 </Routes>
-                            }
-                        >
-                            <Routes>
-                                <Route
-                                    path="/directory/:id/*"
-                                    element={<DirectoryPage />}
-                                />
-                                <Route
-                                    path="/settings/members"
-                                    element={<GalleryMembers />}
-                                />
-                                <Route
-                                    path="/settings/visibility"
-                                    element={<DirectoryVisibilitySettings />}
-                                />
-                                <Route
-                                    path="/settings/gallery"
-                                    element={<GallerySettings />}
-                                />
-                                <Route
-                                    path="*"
-                                    element={<RootDirectoryPage />}
-                                />
-                            </Routes>
-                        </ResponsiveDrawer>
-                    </MembersStoreProvider>
-                </UsersStoreProvider>
+                            </ResponsiveDrawer>
+                        </MembersStoreProvider>
+                    </UsersStoreProvider>
+                </MeStoreProvider>
             </DirectoryVisibilitiesStoreProvider>
         </DirectoriesStoreProvider>
     );
@@ -74,12 +79,17 @@ function GalleryRoot() {
 function SettingsRoot() {
     return (
         <UsersStoreProvider>
-            <ResponsiveDrawer menu={<AdminMenu />} title={"Paramètres globaux"}>
-                <Routes>
-                    <Route path="/users" element={<Users />} />
-                    <Route path="/galleries" element={<Galleries />} />
-                </Routes>
-            </ResponsiveDrawer>
+            <MeStoreProvider>
+                <ResponsiveDrawer
+                    menu={<AdminMenu />}
+                    title={"Paramètres globaux"}
+                >
+                    <Routes>
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/galleries" element={<Galleries />} />
+                    </Routes>
+                </ResponsiveDrawer>
+            </MeStoreProvider>
         </UsersStoreProvider>
     );
 }

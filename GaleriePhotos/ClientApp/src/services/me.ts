@@ -5,8 +5,11 @@ import * as views from "./views";
 export class MeController {
 	constructor(private client: helpers.ApiClient) {}
 
+    getMe = () => {
+        return this.client.fetchJson<views.User>("api/me/me", "GET", undefined);
+    }
+
     getMyGalleries = () => {
         return this.client.fetchJson<views.GalleryMember[]>("api/me/galleries", "GET", undefined);
     }
 }
-
