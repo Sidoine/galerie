@@ -5,24 +5,28 @@ import * as views from "./views";
 export class FaceController {
 	constructor(private client: helpers.ApiClient) {}
 
-    assignName = (faceId: number, model: views.FaceAssignName) => {
-        return this.client.fetch(`api/faces/${faceId}/name`, "POST", JSON.stringify(model));
+    assignName = (galleryId: number, faceId: number, model: views.FaceAssignName) => {
+        return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/name`, "POST", JSON.stringify(model));
     }
 
-    getDistinctNames = () => {
-        return this.client.fetchJson<string[]>("api/faces/names", "GET", undefined);
+    getDistinctNames = (galleryId: number) => {
+        return this.client.fetchJson<string[]>(`api/gallery/${galleryId}/faces/names`, "GET", undefined);
     }
 
-    getFacesByPhoto = (photoId: number) => {
-        return this.client.fetchJson<views.Face[]>(`api/faces/photo/${photoId}`, "GET", undefined);
+    getFacesByPhoto = (galleryId: number, photoId: number) => {
+        return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/photos/${photoId}/faces`, "GET", undefined);
     }
 
-    getSimilarFaces = (model: views.SimilarFacesRequest) => {
-        return this.client.fetchJson<views.Face[]>("api/faces/similar", "POST", JSON.stringify(model));
+    getSimilarFaces = (galleryId: number, model: views.SimilarFacesRequest) => {
+        return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/faces/similar`, "POST", JSON.stringify(model));
     }
 
-    getUnnamedFacesSample = (model: views.UnnamedFacesSampleRequest) => {
-        return this.client.fetchJson<views.Face[]>("api/faces/unnamed-sample", "POST", JSON.stringify(model));
+    getUnnamedFacesSample = (galleryId: number, model: views.UnnamedFacesSampleRequest) => {
+        return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/faces/unnamed-sample`, "POST", JSON.stringify(model));
+    }
+
+    suggestName = (galleryId: number, faceId: number, model: views.FaceNameSuggestionRequest) => {
+        return this.client.fetchJson<views.FaceNameSuggestionResponse>(`api/gallery/${galleryId}/faces/${faceId}/suggest-name`, "POST", JSON.stringify(model));
     }
 }
 

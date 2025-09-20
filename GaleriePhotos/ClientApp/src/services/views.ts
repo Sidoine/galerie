@@ -56,14 +56,20 @@ export interface Face {
     createdAt: string;
 
     namedAt: string | null;
-
-    photoFileName: string | null;
-
-    photoThumbnailUrl: string | null;
 }
 
 export interface UnnamedFacesSampleRequest {
     count: number;
+}
+
+export interface FaceNameSuggestionRequest {
+    threshold: number;
+}
+
+export interface FaceNameSuggestionResponse {
+    name: string | null;
+
+    similarity: number | null;
 }
 
 export interface Gallery {
@@ -246,6 +252,8 @@ export interface PhotoFull {
     video: boolean;
 
     private: boolean;
+
+    faceDetectionStatus: enums.FaceDetectionStatus;
 }
 
 export interface PhotoPatch {

@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Box } from "@mui/material";
 import { Face } from "../../services/views";
 import { FaceController } from "../../services/face";
 import { useApiClient } from "folke-service-helpers";
+import FaceSelector from "./face-selector";
+import { useDirectoriesStore } from "../../stores/directories";
 
 /**
  * Composant d'affichage des visages détectés sur une photo.
@@ -19,6 +21,7 @@ export function ImageFaces({
     imageRef: React.RefObject<HTMLImageElement | null>;
     visible: boolean;
 }) {
+    const directoriesStore = useDirectoriesStore();
     const apiClient = useApiClient();
     const faceController = useMemo(
         () => new FaceController(apiClient),
@@ -27,7 +30,6 @@ export function ImageFaces({
     const [faces, setFaces] = useState<Face[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [, force] = useState(0);
 
     // Charger les visages quand visible passe à true ou photoId change
     useEffect(() => {
@@ -35,7 +37,10 @@ export function ImageFaces({
         setLoading(true);
         setError(null);
         async function loadFaces() {
-            const result = await faceController.getFacesByPhoto(photoId);
+            const result = await faceController.getFacesByPhoto(
+                directoriesStore.galleryId,
+                photoId
+            );
             setLoading(false);
             if (result.ok) {
                 setFaces(result.value);
@@ -44,32 +49,37 @@ export function ImageFaces({
             }
         }
         loadFaces();
-    }, [photoId, faceController, visible]);
+    }, [photoId, faceController, visible, directoriesStore.galleryId]);
 
     // Observer resize de l'image pour recalculer sans re-render superflu
     const resizeObserver = useRef<ResizeObserver | null>(null);
-    useEffect(() => {
-        if (!imageRef.current) return;
-        resizeObserver.current = new ResizeObserver(() => {
-            // Déclenche un nouveau calcul d'échelle
-            force((v) => v + 1);
-        });
-        resizeObserver.current.observe(imageRef.current);
-        return () => resizeObserver.current?.disconnect();
-    }, [imageRef]);
-
     const img = imageRef.current;
-    const metrics = useMemo(() => {
-        if (!img) return null;
+    const [metrics, setMetrics] = useState<{
+        scaleX: number;
+        scaleY: number;
+    } | null>(null);
+    const updateMetrics = useCallback((img: HTMLImageElement) => {
         const naturalWidth = img.naturalWidth || 1;
         const naturalHeight = img.naturalHeight || 1;
         const renderedWidth = img.clientWidth || naturalWidth;
         const renderedHeight = img.clientHeight || naturalHeight;
-        return {
+        setMetrics({
             scaleX: renderedWidth / naturalWidth,
             scaleY: renderedHeight / naturalHeight,
-        };
-    }, [img]);
+        });
+    }, []);
+    useEffect(() => {
+        if (!imageRef.current) return;
+        resizeObserver.current = new ResizeObserver(() => {
+            if (imageRef.current) updateMetrics(imageRef.current);
+        });
+        resizeObserver.current.observe(imageRef.current);
+        return () => resizeObserver.current?.disconnect();
+    }, [imageRef, updateMetrics]);
+
+    useEffect(() => {
+        if (img) updateMetrics(img);
+    }, [img, updateMetrics]);
 
     if (!visible) return null;
     if (loading) {
@@ -144,20 +154,33 @@ export function ImageFaces({
                             fontWeight: 600,
                             color: "#00e5ff",
                             textShadow: "0 0 2px #000",
+                            pointerEvents: "auto",
+                            backdropFilter: f.name ? undefined : "blur(1px)",
                         }}
                     >
-                        {f.name && (
-                            <Box
-                                sx={{
-                                    backgroundColor: "rgba(0,0,0,0.6)",
-                                    px: 0.5,
-                                    py: 0.25,
-                                    borderBottomRightRadius: 4,
-                                }}
-                            >
-                                {f.name}
-                            </Box>
-                        )}
+                        <Box
+                            sx={{
+                                backgroundColor: "rgba(0,0,0,0.55)",
+                                p: 0.5,
+                                borderBottomRightRadius: 4,
+                            }}
+                        >
+                            <FaceSelector
+                                face={f}
+                                dense
+                                onNameAssigned={(name) =>
+                                    setFaces((prev) =>
+                                        prev
+                                            ? prev.map((pf) =>
+                                                  pf.id === f.id
+                                                      ? { ...pf, name }
+                                                      : pf
+                                              )
+                                            : prev
+                                    )
+                                }
+                            />
+                        </Box>
                     </Box>
                 );
             })}

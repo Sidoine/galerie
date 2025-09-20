@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Pgvector;
+using SixLabors.ImageSharp.Processing;
 
 namespace GaleriePhotos.Services
 {
@@ -20,7 +21,7 @@ namespace GaleriePhotos.Services
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<FaceDetectionService> logger;
         private readonly DataService dataService;
-        private readonly IFaceDetectorWithLandmarks faceLandmarksDetector;
+        private readonly IFaceDetector faceDetector;
         private readonly IFaceEmbeddingsGenerator faceEmbeddingsGenerator;
 
         public FaceDetectionService(
@@ -33,7 +34,7 @@ namespace GaleriePhotos.Services
             this.dataService = dataService;
 
             // TODO: Initialize FaceAiSharp components when API is confirmed
-            faceLandmarksDetector = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
+            faceDetector = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
             faceEmbeddingsGenerator = FaceAiSharpBundleFactory.CreateFaceEmbeddingsGenerator();
         }
 
@@ -99,12 +100,13 @@ namespace GaleriePhotos.Services
                 }
 
                 // Load the image
-                using var image = Image.Load<Rgb24>(fileStream);
+                using var image = await Image.LoadAsync<Rgb24>(fileStream);
+                image.Mutate(x => x.AutoOrient());
                 
                 logger.LogInformation("Face detection processing photo {PhotoId}", photo.Id);
                 
                 // Placeholder - in actual implementation, this would detect faces and create Face entities
-                var detectedFaces = faceLandmarksDetector.DetectFaces(image);
+                var detectedFaces = faceDetector.DetectFaces(image);
                 foreach (var detectedFace in detectedFaces)
                 {
                     if (detectedFace.Landmarks == null) continue;
@@ -144,13 +146,13 @@ namespace GaleriePhotos.Services
             }
         }
 
-        public async Task<IEnumerable<Face>> GetSimilarFacesAsync(string name, int limit = 10)
+        public async Task<IEnumerable<Face>> GetSimilarFacesAsync(int galleryId, string name, int limit = 10)
         {
             // Get all named faces for the given name
             var namedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
-                .Where(f => f.FaceName != null && f.FaceName.Name == name)
+                .Where(f => f.FaceName != null && f.FaceName.Name == name && f.Photo.GalleryId == galleryId)
                 .ToListAsync();
 
             if (!namedFaces.Any())
@@ -177,11 +179,11 @@ namespace GaleriePhotos.Services
             return similarities;
         }
 
-        public async Task<IEnumerable<Face>> GetUnnamedFacesSampleAsync(int count = 20)
+        public async Task<IEnumerable<Face>> GetUnnamedFacesSampleAsync(int galleryId, int count = 20)
         {
             var unnamedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
-                .Where(f => f.FaceName == null)
+                .Where(f => f.FaceName == null && f.Photo.GalleryId == galleryId)
                 .OrderBy(f => Guid.NewGuid()) // Random sample
                 .Take(count)
                 .ToListAsync();
@@ -189,7 +191,7 @@ namespace GaleriePhotos.Services
             return unnamedFaces;
         }
 
-        public async Task<bool> AssignNameToFaceAsync(int faceId, string name)
+        public async Task<bool> AssignNameToFaceAsync(Gallery gallery, int faceId, string name)
         {
             try
             {
@@ -206,7 +208,7 @@ namespace GaleriePhotos.Services
                 
                 if (faceName == null)
                 {
-                    faceName = new FaceName { Name = name };
+                    faceName = new FaceName { Name = name, Gallery = gallery, GalleryId = gallery.Id };
                     applicationDbContext.FaceNames.Add(faceName);
                     await applicationDbContext.SaveChangesAsync(); // Save to get the ID
                 }
@@ -224,6 +226,75 @@ namespace GaleriePhotos.Services
                 logger.LogError(ex, "Error assigning name to face {FaceId}", faceId);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Suggest a name for an unnamed face based on similarity with existing named faces.
+        /// Returns null if no sufficiently similar name is found above the threshold.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID</param>
+        /// <param name="faceId">Face ID</param>
+        /// <param name="threshold">Similarity threshold (0..1)</param>
+        public async Task<(string Name, float Similarity)?> SuggestNameForFaceAsync(int galleryId, int faceId, float threshold = 0.7f)
+        {
+            // Load target face with photo to ensure gallery match
+            var targetFace = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                .FirstOrDefaultAsync(f => f.Id == faceId && f.Photo.GalleryId == galleryId);
+
+            if (targetFace == null)
+            {
+                logger.LogDebug("SuggestName: face {FaceId} not found in gallery {GalleryId}", faceId, galleryId);
+                return null;
+            }
+
+            // If already named, we don't suggest
+            if (targetFace.FaceNameId != null)
+            {
+                logger.LogDebug("SuggestName: face {FaceId} already has a name", faceId);
+                return null;
+            }
+
+            // Get all named faces in this gallery
+            var namedFaces = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                .Include(f => f.FaceName)
+                .Where(f => f.FaceNameId != null && f.Photo.GalleryId == galleryId)
+                .ToListAsync();
+
+            if (!namedFaces.Any())
+            {
+                return null; // No knowledge base
+            }
+
+            // Group by name and compute average embedding per name
+            string? bestName = null;
+            float bestSimilarity = -1f;
+            foreach (var group in namedFaces.GroupBy(f => f.FaceName!.Name))
+            {
+                try
+                {
+                    var avg = CalculateAverageEmbedding(group.Select(g => g.Embedding));
+                    var sim = CalculateCosineSimilarity(targetFace.Embedding, avg);
+                    if (sim > bestSimilarity)
+                    {
+                        bestSimilarity = sim;
+                        bestName = group.Key;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Error computing similarity for name group {Name}", group.Key);
+                }
+            }
+
+            if (bestName == null || bestSimilarity < threshold)
+            {
+                logger.LogDebug("SuggestName: no name above threshold {Threshold} (best={BestSimilarity})", threshold, bestSimilarity);
+                return null;
+            }
+
+            return (bestName, bestSimilarity);
         }
 
         private Vector CalculateAverageEmbedding(IEnumerable<Vector> embeddings)

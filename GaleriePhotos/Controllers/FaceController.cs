@@ -12,18 +12,21 @@ using Microsoft.EntityFrameworkCore;
 namespace GaleriePhotos.Controllers
 {
     [Authorize(Policy = Policies.Images)]
-    [Route("api/faces")]
+    [Route("api/gallery")]
     public class FaceController : Controller
     {
         private readonly ApplicationDbContext applicationDbContext;
         private readonly FaceDetectionService faceDetectionService;
+        private readonly GalleryService _galleryService;
 
         public FaceController(
             ApplicationDbContext applicationDbContext,
-            FaceDetectionService faceDetectionService)
+            FaceDetectionService faceDetectionService,
+            GalleryService galleryService)
         {
             this.applicationDbContext = applicationDbContext;
             this.faceDetectionService = faceDetectionService;
+            _galleryService = galleryService;
         }
 
         /// <summary>
@@ -32,15 +35,19 @@ namespace GaleriePhotos.Controllers
         /// <param name="faceId">ID du visage</param>
         /// <param name="model">Nom à assigner</param>
         /// <returns>Succès ou échec de l'opération</returns>
-        [HttpPost("{faceId}/name")]
-        public async Task<ActionResult> AssignName(int faceId, [FromBody] FaceAssignNameViewModel model)
+        [HttpPost("{galleryId}/faces/{faceId}/name")]
+        public async Task<ActionResult> AssignName(int galleryId, int faceId, [FromBody] FaceAssignNameViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Name))
             {
                 return BadRequest("Le nom ne peut pas être vide");
             }
 
-            var success = await faceDetectionService.AssignNameToFaceAsync(faceId, model.Name.Trim());
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            var success = await faceDetectionService.AssignNameToFaceAsync(gallery, faceId, model.Name.Trim());
             
             if (!success)
             {
@@ -55,15 +62,15 @@ namespace GaleriePhotos.Controllers
         /// </summary>
         /// <param name="model">Nom et nombre de résultats souhaités</param>
         /// <returns>Liste des visages similaires non nommés</returns>
-        [HttpPost("similar")]
-        public async Task<ActionResult<FaceViewModel[]>> GetSimilarFaces([FromBody] SimilarFacesRequestViewModel model)
+        [HttpPost("{galleryId}/faces/similar")]
+        public async Task<ActionResult<FaceViewModel[]>> GetSimilarFaces(int galleryId, [FromBody] SimilarFacesRequestViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Name))
             {
                 return BadRequest("Le nom ne peut pas être vide");
             }
 
-            var similarFaces = await faceDetectionService.GetSimilarFacesAsync(model.Name.Trim(), model.Limit);
+            var similarFaces = await faceDetectionService.GetSimilarFacesAsync(galleryId, model.Name.Trim(), model.Limit);
             
             var result = similarFaces.Select(f => new FaceViewModel
             {
@@ -76,8 +83,6 @@ namespace GaleriePhotos.Controllers
                 Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
-                PhotoFileName = f.Photo?.FileName,
-                PhotoThumbnailUrl = f.Photo != null ? $"/api/directory/{GetPhotoDirectoryId(f.Photo)}/photos/{f.PhotoId}/thumbnail" : null
             }).ToArray();
 
             return Ok(result);
@@ -88,10 +93,10 @@ namespace GaleriePhotos.Controllers
         /// </summary>
         /// <param name="model">Nombre de visages souhaités</param>
         /// <returns>Liste des visages sans nom</returns>
-        [HttpPost("unnamed-sample")]
-        public async Task<ActionResult<FaceViewModel[]>> GetUnnamedFacesSample([FromBody] UnnamedFacesSampleRequestViewModel model)
+        [HttpPost("{galleryId}/faces/unnamed-sample")]
+        public async Task<ActionResult<FaceViewModel[]>> GetUnnamedFacesSample(int galleryId, [FromBody] UnnamedFacesSampleRequestViewModel model)
         {
-            var unnamedFaces = await faceDetectionService.GetUnnamedFacesSampleAsync(model.Count);
+            var unnamedFaces = await faceDetectionService.GetUnnamedFacesSampleAsync(galleryId, model.Count);
             
             var result = unnamedFaces.Select(f => new FaceViewModel
             {
@@ -104,8 +109,6 @@ namespace GaleriePhotos.Controllers
                 Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
-                PhotoFileName = f.Photo?.FileName,
-                PhotoThumbnailUrl = f.Photo != null ? $"/api/directory/{GetPhotoDirectoryId(f.Photo)}/photos/{f.PhotoId}/thumbnail" : null
             }).ToArray();
 
             return Ok(result);
@@ -116,13 +119,17 @@ namespace GaleriePhotos.Controllers
         /// </summary>
         /// <param name="photoId">ID de la photo</param>
         /// <returns>Liste des visages détectés dans la photo</returns>
-        [HttpGet("photo/{photoId}")]
-        public async Task<ActionResult<FaceViewModel[]>> GetFacesByPhoto(int photoId)
+        [HttpGet("{galleryId}/photos/{photoId}/faces")]
+        public async Task<ActionResult<FaceViewModel[]>> GetFacesByPhoto(int galleryId, int photoId)
         {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
             var faces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
-                .Where(f => f.PhotoId == photoId)
+                .Where(f => f.PhotoId == photoId && f.Photo.GalleryId == galleryId)
                 .ToListAsync();
 
             var result = faces.Select(f => new FaceViewModel
@@ -136,7 +143,6 @@ namespace GaleriePhotos.Controllers
                 Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
-                PhotoFileName = f.Photo?.FileName
             }).ToArray();
 
             return Ok(result);
@@ -146,10 +152,15 @@ namespace GaleriePhotos.Controllers
         /// Obtient les noms distincts assignés aux visages
         /// </summary>
         /// <returns>Liste des noms distincts</returns>
-        [HttpGet("names")]
-        public async Task<ActionResult<string[]>> GetDistinctNames()
+        [HttpGet("{galleryId}/faces/names")]
+        public async Task<ActionResult<string[]>> GetDistinctNames(int galleryId)
         {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
             var names = await applicationDbContext.FaceNames
+                .Where(x => x.GalleryId == galleryId)
                 .Select(fn => fn.Name)
                 .Distinct()
                 .OrderBy(n => n)
@@ -158,12 +169,24 @@ namespace GaleriePhotos.Controllers
             return Ok(names);
         }
 
-        private int GetPhotoDirectoryId(Photo photo)
+        /// <summary>
+        /// Suggère un nom pour un visage sans nom. Retourne { name, similarity } ou { name: null } si aucun visage suffisamment proche.
+        /// </summary>
+        [HttpPost("{galleryId}/faces/{faceId}/suggest-name")]
+        public async Task<ActionResult<FaceNameSuggestionResponseViewModel>> SuggestName(int galleryId, int faceId, [FromBody] FaceNameSuggestionRequestViewModel model)
         {
-            // This is a simplified approach - in a real scenario, you might need to
-            // look up the photo directory based on the photo's gallery and path
-            // For now, we'll assume we can derive it from the gallery ID
-            return photo.GalleryId;
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            var suggestion = await faceDetectionService.SuggestNameForFaceAsync(galleryId, faceId, model.Threshold);
+
+            if (suggestion == null)
+            {
+                return Ok(new FaceNameSuggestionResponseViewModel { Name = null, Similarity = null });
+            }
+
+            return Ok(new FaceNameSuggestionResponseViewModel { Name = suggestion.Value.Name, Similarity = suggestion.Value.Similarity });
         }
     }
 }

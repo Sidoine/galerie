@@ -32,7 +32,8 @@ namespace GaleriePhotosTest.Controllers
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var faceDetectionService = new FaceDetectionService(context, logger, dataService);
-            var controller = new FaceController(context, faceDetectionService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService);
 
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
@@ -44,8 +45,8 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Create FaceNames
-            var faceNameAlice = new FaceName { Name = "Alice" };
-            var faceNameBob = new FaceName { Name = "Bob" };
+            var faceNameAlice = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            var faceNameBob = new FaceName { Name = "Bob", Gallery = gallery, GalleryId = gallery.Id };
             context.FaceNames.AddRange(faceNameAlice, faceNameBob);
             await context.SaveChangesAsync();
 
@@ -81,7 +82,7 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Act
-            var result = await controller.GetDistinctNames();
+            var result = await controller.GetDistinctNames(gallery.Id);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -99,7 +100,8 @@ namespace GaleriePhotosTest.Controllers
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var faceDetectionService = new FaceDetectionService(context, logger, dataService);
-            var controller = new FaceController(context, faceDetectionService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService);
 
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
@@ -130,7 +132,7 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Act
-            var result = await controller.GetFacesByPhoto(photo1.Id);
+            var result = await controller.GetFacesByPhoto(gallery.Id, photo1.Id);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -148,7 +150,8 @@ namespace GaleriePhotosTest.Controllers
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var faceDetectionService = new FaceDetectionService(context, logger, dataService);
-            var controller = new FaceController(context, faceDetectionService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService);
 
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
@@ -171,7 +174,7 @@ namespace GaleriePhotosTest.Controllers
 
             // Act
             var model = new FaceAssignNameViewModel { Name = "TestName" };
-            var result = await controller.AssignName(face.Id, model);
+            var result = await controller.AssignName(gallery.Id, face.Id, model);
 
             // Assert
             Assert.IsType<OkResult>(result);
@@ -184,6 +187,40 @@ namespace GaleriePhotosTest.Controllers
             Assert.NotNull(updatedFace.FaceName);
             Assert.Equal("TestName", updatedFace.FaceName.Name);
             Assert.NotNull(updatedFace.NamedAt);
+        }
+        [Fact]
+        public async Task SuggestName_ReturnsNullWhenNoNamedFaces()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService);
+
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var photo = new Photo("test.jpg") { Gallery = gallery, GalleryId = gallery.Id };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+
+            var face = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = new Vector(new float[] { 0.11f, 0.22f }),
+                X = 1, Y = 2, Width = 3, Height = 4
+            };
+            context.Faces.Add(face);
+            await context.SaveChangesAsync();
+
+            var response = await controller.SuggestName(gallery.Id, face.Id, new FaceNameSuggestionRequestViewModel { Threshold = 0.8f });
+            var okResult = Assert.IsType<OkObjectResult>(response.Result);
+            var vm = Assert.IsType<FaceNameSuggestionResponseViewModel>(okResult.Value);
+            Assert.Null(vm.Name);
+            Assert.Null(vm.Similarity);
         }
     }
 

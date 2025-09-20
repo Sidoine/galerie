@@ -180,7 +180,7 @@ export default observer(function ImageView({
                                     maxHeight: "100%",
                                     imageOrientation: "from-image",
                                 }}
-                                onClick={handleNext}
+                                onClick={!showFaces ? handleNext : undefined}
                                 ref={imageRef}
                             />
                             <ImageFaces

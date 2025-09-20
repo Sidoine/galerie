@@ -10,6 +10,10 @@ namespace GaleriePhotos.Models
         
         [Required]
         public string Name { get; set; } = string.Empty;
+
+        public int GalleryId { get; set; }
+
+        public required Gallery Gallery { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         

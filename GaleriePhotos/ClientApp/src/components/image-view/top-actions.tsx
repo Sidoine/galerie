@@ -1,5 +1,12 @@
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { IconButton, Menu, MenuItem, Stack, styled } from "@mui/material";
+import {
+    IconButton,
+    Menu,
+    MenuItem,
+    Stack,
+    styled,
+    Tooltip,
+} from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import TagFacesOutlined from "@mui/icons-material/TagFacesOutlined";
@@ -8,6 +15,7 @@ import { useCallback, useState } from "react";
 import { PhotoFull } from "../../services/views";
 import { useDirectoriesStore } from "../../stores/directories";
 import { useMembersStore } from "../../stores/members";
+import { FaceDetectionStatus } from "../../services/enums";
 
 const WhiteButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.common.white,
@@ -22,7 +30,7 @@ function TopActions({
     photo,
 }: {
     onDetailsToggle: () => void;
-    onFacesToggle?: () => void;
+    onFacesToggle: () => void;
     showFaces?: boolean;
     onClose: () => void;
     directoryId: number;
@@ -76,14 +84,22 @@ function TopActions({
                 <WhiteButton onClickCapture={onDetailsToggle}>
                     <InfoOutlined />
                 </WhiteButton>
-                {onFacesToggle && (
-                    <WhiteButton onClickCapture={onFacesToggle}>
-                        {showFaces ? (
-                            <TagFacesOutlined />
-                        ) : (
-                            <VisibilityOffOutlined />
-                        )}
-                    </WhiteButton>
+                {photo.faceDetectionStatus ===
+                    FaceDetectionStatus.Completed && (
+                    <Tooltip
+                        arrow
+                        title={
+                            showFaces ? "Visages affichés" : "Visages masqués"
+                        }
+                    >
+                        <WhiteButton onClickCapture={onFacesToggle}>
+                            {showFaces ? (
+                                <TagFacesOutlined />
+                            ) : (
+                                <VisibilityOffOutlined />
+                            )}
+                        </WhiteButton>
+                    </Tooltip>
                 )}
                 {membersStore.administrator && (
                     <WhiteButton onClickCapture={handleMenu}>

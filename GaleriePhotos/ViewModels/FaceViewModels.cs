@@ -13,10 +13,6 @@ namespace GaleriePhotos.ViewModels
         public string? Name { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? NamedAt { get; set; }
-        
-        // Optional photo information
-        public string? PhotoFileName { get; set; }
-        public string? PhotoThumbnailUrl { get; set; }
     }
 
     public class FaceAssignNameViewModel
@@ -33,5 +29,16 @@ namespace GaleriePhotos.ViewModels
     public class UnnamedFacesSampleRequestViewModel
     {
         public int Count { get; set; } = 20;
+    }
+
+    public class FaceNameSuggestionRequestViewModel
+    {
+        public float Threshold { get; set; } = 0.7f; // défaut
+    }
+
+    public class FaceNameSuggestionResponseViewModel
+    {
+        public string? Name { get; set; }
+        public float? Similarity { get; set; }
     }
 }
