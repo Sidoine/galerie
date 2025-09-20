@@ -13,10 +13,11 @@ using System.Threading.Tasks;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Galerie.Server.Controllers
 {
-    [Route("api/directory")]
+    [Route("api/photos")]
     public class PhotoController : Controller
     {
         private readonly IOptions<GalerieOptions> options;
@@ -32,35 +33,28 @@ namespace Galerie.Server.Controllers
             this.dataService = dataService;
         }
 
-        private async Task<(PhotoDirectory?, Photo?)> GetPhoto(int directoryId, int id)
-        {
-            var directory = await photoService.GetPhotoDirectoryAsync(directoryId);
-            var image = await applicationDbContext.Photos.FindAsync(id);
-            return (directory, image);
-        }
-
-        [HttpGet("{directoryId}/photos/{id}/image")]
+        [HttpGet("{id}/image")]
         [Authorize(Policies.Images)]
-        public async Task<IActionResult> GetImage(int directoryId, int id)
+        public async Task<IActionResult> GetImage(int id)
         {
-            var (directory, photo) = await GetPhoto(directoryId, id);
-            if (directory == null || photo == null) return NotFound();
-            if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
-            var dataProvider = dataService.GetDataProvider(directory.Gallery);
-            var bytes = await dataProvider.OpenFileRead(directory, photo);
+            var photo = await photoService.GetPhoto(id);
+            if (photo == null) return NotFound();
+            if (!photoService.IsDirectoryVisible(User, photo.Directory)) return Forbid();
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
+            var bytes = await dataProvider.OpenFileRead(photo);
             if (bytes == null) return NotFound();
             return File(bytes, photoService.GetMimeType(photo), photo.FileName);
         }
 
-        [HttpGet("{directoryId}/photos/{id}/thumbnail")]
+        [HttpGet("{id}/thumbnail")]
         [Authorize(Policies.Images)]
-        public async Task<IActionResult> GetThumbnail(int directoryId, int id)
+        public async Task<IActionResult> GetThumbnail(int id)
         {
-            var (directory, photo) = await GetPhoto(directoryId, id);
-            if (directory == null || photo == null) return NotFound();
+            var photo = await photoService.GetPhoto(id);
+            if (photo == null) return NotFound();
 
-            if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
-            var bytes = await photoService.GetThumbnail(directory, photo);
+            if (!photoService.IsDirectoryVisible(User, photo.Directory)) return Forbid();
+            var bytes = await photoService.GetThumbnail(photo);
             if (bytes == null) return NotFound();
             return File(bytes, "image/jpeg", photo.FileName);
         }
@@ -78,48 +72,48 @@ namespace Galerie.Server.Controllers
             return (previous, next);
         }
 
-        [HttpGet("{directoryId}/photos/{id}")]
-        public async Task<ActionResult<PhotoFullViewModel>> Get(int directoryId, int id)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<PhotoFullViewModel>> Get(int id)
         {
-            var (directory, photo) = await GetPhoto(directoryId, id);
-            if (directory == null || photo == null) return NotFound();
-            if (!photoService.IsDirectoryVisible(User, directory)) return Forbid();
-            var images = await photoService.GetDirectoryImages(directory);
+            var photo = await photoService.GetPhoto(id);
+            if (photo == null) return NotFound();
+            if (!photoService.IsDirectoryVisible(User, photo.Directory)) return Forbid();
+            var images = await photoService.GetDirectoryImages(photo.Directory);
             if (images == null) return NotFound();
             var (previous, next) = GetNextAndPrevious(photo, images);
-            var isPrivate = photoService.IsPrivate(directory);
+            var isPrivate = photoService.IsPrivate(photo.Directory);
             var viewModel = new PhotoFullViewModel(photo, previous, next, isPrivate);
             return Ok(viewModel);
         }
 
         [Authorize(Policy = Policies.Administrator)]
-        [HttpPatch("{directoryId}/photos/{id}")]
-        public async Task<ActionResult> Patch(int directoryId, int id, [FromBody] PhotoPatchViewModel viewModel)
+        [HttpPatch("{id}")]
+        public async Task<ActionResult> Patch(int id, [FromBody] PhotoPatchViewModel viewModel)
         {
-            var photo = await applicationDbContext.Photos.FindAsync(id);
+            var photo = await photoService.GetPhoto(id);
             if (photo == null) return NotFound();
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }
 
         [Authorize(Policy = Policies.Administrator)]
-        [HttpPatch("{directoryId}/photos/{id}/access")]
-        public async Task<ActionResult> SetAccess(int directoryId, int id, [FromBody] PhotoAccessViewModel viewModel)
+        [HttpPatch("{id}/access")]
+        public async Task<ActionResult> SetAccess(int id, [FromBody] PhotoAccessViewModel viewModel)
         {
-            var (directory, photo) = await GetPhoto(directoryId, id);
-            if (directory == null || photo == null) return NotFound();
-            if (viewModel.Private) await photoService.MoveToPrivate(directory, photo);
-            else await photoService.MoveToPublic(directory, photo);
+            var photo = await photoService.GetPhoto(id);
+            if (photo == null) return NotFound();
+            if (viewModel.Private) await photoService.MoveToPrivate(photo);
+            else await photoService.MoveToPublic(photo);
             return Ok();
         }
 
         [Authorize(Policy = Policies.Administrator)]
-        [HttpPatch("{directoryId}/photos/{id}/rotate")]
-        public async Task<ActionResult> Rotate(int directoryId, int id, [FromBody] PhotoRotateViewModel viewModel)
+        [HttpPatch("{id}/rotate")]
+        public async Task<ActionResult> Rotate(int id, [FromBody] PhotoRotateViewModel viewModel)
         {
-            var (directory, photo) = await GetPhoto(directoryId, id);
-            if (directory == null || photo == null) return NotFound();
-            if (!await photoService.RotatePhoto(directory, photo, viewModel.Angle))
+            var photo = await photoService.GetPhoto(id);
+            if (photo == null) return NotFound();
+            if (!await photoService.RotatePhoto(photo, viewModel.Angle))
                 return BadRequest("Impossible de faire pivoter la photo (angle invalide ou erreur interne).");
             return Ok();
         }

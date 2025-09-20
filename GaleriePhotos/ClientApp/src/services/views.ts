@@ -62,6 +62,22 @@ export interface UnnamedFacesSampleRequest {
     count: number;
 }
 
+export interface FaceName {
+    id: number;
+
+    name: string;
+}
+
+export interface Photo {
+    id: number;
+
+    name: string;
+
+    video: boolean;
+
+    directoryId: number;
+}
+
 export interface FaceNameSuggestionRequest {
     threshold: number;
 }
@@ -218,14 +234,6 @@ export interface DirectoryFull {
     numberOfSubDirectories: number;
 }
 
-export interface Photo {
-    id: number;
-
-    name: string;
-
-    video: boolean;
-}
-
 export interface DirectoryPatch {
     visibility?: number | undefined;
 
@@ -254,6 +262,8 @@ export interface PhotoFull {
     private: boolean;
 
     faceDetectionStatus: enums.FaceDetectionStatus;
+
+    directoryId: number;
 }
 
 export interface PhotoPatch {

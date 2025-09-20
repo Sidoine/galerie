@@ -56,11 +56,9 @@ export function FaceSelector({
         let cancelled = false;
         setLoadingNames(true);
         async function loadFaceNames() {
-            const n = await faceController.getDistinctNames(
-                directoriesStore.galleryId
-            );
+            const n = await faceController.getNames(directoriesStore.galleryId);
             if (cancelled) return;
-            if (n.ok) setNames(n.value);
+            if (n.ok) setNames(n.value.map((x) => x.name));
             else setNames([]);
             setLoadingNames(false);
         }

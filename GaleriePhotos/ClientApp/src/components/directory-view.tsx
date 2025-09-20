@@ -68,7 +68,6 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                 {directory.coverPhotoId && (
                     <Image
                         src={directoriesStore.getThumbnail(
-                            directory.id,
                             directory.coverPhotoId
                         )}
                         alt={directory.name}
@@ -174,7 +173,7 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
                     path="images/:id"
                     element={
                         <Suspense>
-                            <ImageView directoryId={id} />
+                            <ImageView />
                         </Suspense>
                     }
                 />

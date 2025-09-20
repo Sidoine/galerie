@@ -17,8 +17,9 @@ namespace Galerie.Server.ViewModels
         public bool Video { get; set; }
         public bool Private { get; set; }
         public FaceDetectionStatus FaceDetectionStatus { get; set; }
+        public int DirectoryId { get; set; }
 
         public PhotoFullViewModel(Photo photo, Photo? previous, Photo? next, bool @private) =>
-            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Video, Private, FaceDetectionStatus) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, PhotoService.IsVideo(photo), @private, photo.FaceDetectionStatus);
+            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Video, Private, FaceDetectionStatus, DirectoryId) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, PhotoService.IsVideo(photo), @private, photo.FaceDetectionStatus, photo.DirectoryId);
     }
 }

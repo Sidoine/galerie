@@ -40,7 +40,11 @@ namespace GaleriePhotosTest.Controllers
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
 
-            var photo = new Photo("test.jpg") { Gallery = gallery, GalleryId = gallery.Id };
+            var directory = new PhotoDirectory("Test Directory", 0, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
 
@@ -82,7 +86,7 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Act
-            var result = await controller.GetDistinctNames(gallery.Id);
+            var result = await controller.GetNames(gallery.Id);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -106,10 +110,13 @@ namespace GaleriePhotosTest.Controllers
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
+
+            var directory = new PhotoDirectory("/test", 0, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
 
-            var photo1 = new Photo("test1.jpg") { Gallery = gallery, GalleryId = gallery.Id };
-            var photo2 = new Photo("test2.jpg") { Gallery = gallery, GalleryId = gallery.Id };
+            var photo1 = new Photo("test1.jpg") { Directory = directory };
+            var photo2 = new Photo("test2.jpg") { Directory = directory };
             context.Photos.AddRange(photo1, photo2);
             await context.SaveChangesAsync();
 
@@ -156,9 +163,9 @@ namespace GaleriePhotosTest.Controllers
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
-            await context.SaveChangesAsync();
-
-            var photo = new Photo("test.jpg") { Gallery = gallery, GalleryId = gallery.Id };
+            var directory = new PhotoDirectory("/", 0, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
 
@@ -200,9 +207,9 @@ namespace GaleriePhotosTest.Controllers
 
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
-            await context.SaveChangesAsync();
-
-            var photo = new Photo("test.jpg") { Gallery = gallery, GalleryId = gallery.Id };
+            var directory = new PhotoDirectory("", 0, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
 

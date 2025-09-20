@@ -26,14 +26,12 @@ function TopActions({
     onFacesToggle,
     showFaces,
     onClose,
-    directoryId,
     photo,
 }: {
     onDetailsToggle: () => void;
     onFacesToggle: () => void;
     showFaces?: boolean;
     onClose: () => void;
-    directoryId: number;
     photo: PhotoFull;
 }) {
     const directoriesStore = useDirectoriesStore();
@@ -48,24 +46,24 @@ function TopActions({
     const open = Boolean(anchorEl);
     const handleCoverClick = useCallback(async () => {
         handleCloseMenu();
-        directoriesStore.patchDirectoryAndClearCache(directoryId, {
+        directoriesStore.patchDirectoryAndClearCache(photo.directoryId, {
             coverPhotoId: photo.id,
         });
-    }, [directoriesStore, directoryId, handleCloseMenu, photo.id]);
+    }, [directoriesStore, handleCloseMenu, photo.directoryId, photo.id]);
     const handleShareClick = useCallback(() => {
         handleCloseMenu();
-        directoriesStore.setAccess(directoryId, photo, false);
-    }, [directoriesStore, directoryId, handleCloseMenu, photo]);
+        directoriesStore.setAccess(photo, false);
+    }, [directoriesStore, handleCloseMenu, photo]);
     const handleUnshareClick = useCallback(() => {
         handleCloseMenu();
-        directoriesStore.setAccess(directoryId, photo, true);
-    }, [directoriesStore, directoryId, handleCloseMenu, photo]);
+        directoriesStore.setAccess(photo, true);
+    }, [directoriesStore, handleCloseMenu, photo]);
     const handleRotate = useCallback(
         async (angle: number) => {
             handleCloseMenu();
-            await directoriesStore.rotatePhoto(directoryId, photo, angle);
+            await directoriesStore.rotatePhoto(photo, angle);
         },
-        [handleCloseMenu, directoriesStore, directoryId, photo]
+        [handleCloseMenu, directoriesStore, photo]
     );
     const handleRotateLeft = useCallback(() => {
         handleRotate(270);

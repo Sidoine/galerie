@@ -17,6 +17,7 @@ import DirectoryVisibilitySettings from "./components/settings/directory-visibil
 import AdminMenu from "./components/admin-menu";
 import GalleryChooser from "./components/gallery-chooser";
 import Galleries from "./components/settings/galleries";
+import FaceNames from "./components/face-names";
 import GallerySettings from "./components/settings/gallery-settings";
 import { MeStoreProvider } from "./stores/me";
 
@@ -47,6 +48,10 @@ function GalleryRoot() {
                                     <Route
                                         path="/directory/:id/*"
                                         element={<DirectoryPage />}
+                                    />
+                                    <Route
+                                        path="/face-names"
+                                        element={<FaceNames />}
                                     />
                                     <Route
                                         path="/settings/members"

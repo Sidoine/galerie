@@ -53,8 +53,8 @@ namespace GaleriePhotosTest.Services
         [Fact]
         public void IsVideo_ReturnsExpected()
         {
-            var photoVideo = new Photo("video.mp4") { Gallery = _gallery, GalleryId = _gallery.Id };
-            var photoImage = new Photo("image.jpg") { Gallery = _gallery, GalleryId = _gallery.Id };
+            var photoVideo = new Photo("video.mp4") { Directory = _rootDirectory };
+            var photoImage = new Photo("image.jpg") { Directory = _rootDirectory };
             Assert.True(PhotoService.IsVideo(photoVideo));
             Assert.False(PhotoService.IsVideo(photoImage));
         }
@@ -62,7 +62,7 @@ namespace GaleriePhotosTest.Services
         [Fact]
         public void GetMimeType_ReturnsCorrectMapping()
         {
-            var photo = new Photo("test.PNG") { Gallery = _gallery, GalleryId = _gallery.Id };
+            var photo = new Photo("test.PNG") { Directory = _rootDirectory };
             var mime = _photoService.GetMimeType(photo);
             Assert.Equal("image/png", mime);
         }
@@ -70,7 +70,7 @@ namespace GaleriePhotosTest.Services
         [Fact]
         public void IsPrivate_DetectsPrivatePath()
         {
-            var dir = new PhotoDirectory(Path.Combine(_rootDirectory.Path, "Privé"), 0, null, _gallery.Id) { Gallery = _gallery };
+            var dir = new PhotoDirectory(Path.Combine(_rootDirectory.Path, "Privé"), 0, null, PhotoDirectoryType.Private) { Gallery = _gallery };
             Assert.True(_photoService.IsPrivate(dir));
             Assert.False(_photoService.IsPrivate(_rootDirectory));
         }
@@ -112,8 +112,8 @@ namespace GaleriePhotosTest.Services
         [Fact]
         public async Task RotatePhoto_InvalidAngle_Throws()
         {
-            var photo = new Photo("rot2.jpg") { Gallery = _gallery, GalleryId = _gallery.Id };
-            await Assert.ThrowsAsync<ArgumentException>(() => _photoService.RotatePhoto(_rootDirectory, photo, 45));
+            var photo = new Photo("rot2.jpg") { Directory = _rootDirectory };
+            await Assert.ThrowsAsync<ArgumentException>(() => _photoService.RotatePhoto(photo, 45));
         }
 
         public void Dispose()

@@ -73,9 +73,7 @@ namespace GaleriePhotos.Services
                 await applicationDbContext.SaveChangesAsync();
 
                 // Get the photo directory
-                var photoDirectory = await applicationDbContext.PhotoDirectories
-                    .Include(pd => pd.Gallery)
-                    .FirstOrDefaultAsync(pd => pd.GalleryId == photo.GalleryId);
+                var photoDirectory = photo.Directory;
 
                 if (photoDirectory == null)
                 {
@@ -89,7 +87,7 @@ namespace GaleriePhotos.Services
                 var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
                 
                 // Open the photo file
-                using var fileStream = await dataProvider.OpenFileRead(photoDirectory, photo);
+                using var fileStream = await dataProvider.OpenFileRead(photo);
                 if (fileStream == null)
                 {
                     photo.FaceDetectionStatus = FaceDetectionStatus.Failed;
@@ -152,7 +150,7 @@ namespace GaleriePhotos.Services
             var namedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
-                .Where(f => f.FaceName != null && f.FaceName.Name == name && f.Photo.GalleryId == galleryId)
+                .Where(f => f.FaceName != null && f.FaceName.Name == name && f.Photo.Directory.GalleryId == galleryId)
                 .ToListAsync();
 
             if (!namedFaces.Any())
@@ -183,7 +181,7 @@ namespace GaleriePhotos.Services
         {
             var unnamedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
-                .Where(f => f.FaceName == null && f.Photo.GalleryId == galleryId)
+                .Where(f => f.FaceName == null && f.Photo.Directory.GalleryId == galleryId)
                 .OrderBy(f => Guid.NewGuid()) // Random sample
                 .Take(count)
                 .ToListAsync();
@@ -240,7 +238,7 @@ namespace GaleriePhotos.Services
             // Load target face with photo to ensure gallery match
             var targetFace = await applicationDbContext.Faces
                 .Include(f => f.Photo)
-                .FirstOrDefaultAsync(f => f.Id == faceId && f.Photo.GalleryId == galleryId);
+                .FirstOrDefaultAsync(f => f.Id == faceId && f.Photo.Directory.GalleryId == galleryId);
 
             if (targetFace == null)
             {
@@ -259,7 +257,7 @@ namespace GaleriePhotos.Services
             var namedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
-                .Where(f => f.FaceNameId != null && f.Photo.GalleryId == galleryId)
+                .Where(f => f.FaceNameId != null && f.Photo.Directory.GalleryId == galleryId)
                 .ToListAsync();
 
             if (!namedFaces.Any())

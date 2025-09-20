@@ -18,7 +18,7 @@ class DirectoriesStore {
     constructor(
         public subDirectoriesLoader: ValueLoader<Directory[], [number]>,
         public contentLoader: ValueLoader<Photo[], [number]>,
-        public imageLoader: ValueLoader<PhotoFull, [number, number]>,
+        public imageLoader: ValueLoader<PhotoFull, [number]>,
         public infoLoader: ValueLoader<DirectoryFull, [number]>,
         private directoryService: DirectoryController,
         private photoService: PhotoController,
@@ -57,16 +57,16 @@ class DirectoriesStore {
         this.root = root;
     }
 
-    getImage(directoryId: number, id: number) {
-        const result = `/api/directory/${directoryId}/photos/${id}/image`;
+    getImage(id: number) {
+        const result = `/api/photos/${id}/image`;
         if (this.photoReloadSuffix.has(id)) {
             return `${result}?reload=${this.photoReloadSuffix.get(id)}`;
         }
         return result;
     }
 
-    getThumbnail(directoryId: number, id: number) {
-        const result = `/api/directory/${directoryId}/photos/${id}/thumbnail`;
+    getThumbnail(id: number) {
+        const result = `/api/photos/${id}/thumbnail`;
         if (this.photoReloadSuffix.has(id)) {
             return `${result}?reload=${this.photoReloadSuffix.get(id)}`;
         }
@@ -86,19 +86,19 @@ class DirectoriesStore {
         await this.directoryService.patch(directory.id, patch);
     }
 
-    async patchPhoto(directoryId: number, photo: Photo, patch: PhotoPatch) {
-        await this.photoService.patch(directoryId, photo.id, patch);
+    async patchPhoto(photo: Photo, patch: PhotoPatch) {
+        await this.photoService.patch(photo.id, patch);
     }
 
-    async setAccess(directoryId: number, photo: Photo, isPrivate: boolean) {
-        await this.photoService.setAccess(directoryId, photo.id, {
+    async setAccess(photo: Photo, isPrivate: boolean) {
+        await this.photoService.setAccess(photo.id, {
             private: isPrivate,
         });
         this.contentLoader.invalidate();
     }
 
-    async rotatePhoto(directoryId: number, photo: Photo, angle: number) {
-        await this.photoService.rotate(directoryId, photo.id, { angle });
+    async rotatePhoto(photo: Photo, angle: number) {
+        await this.photoService.rotate(photo.id, { angle });
         this.photoReloadSuffix.set(photo.id, Date.now());
         this.imageLoader.invalidate();
     }

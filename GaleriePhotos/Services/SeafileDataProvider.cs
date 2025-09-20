@@ -38,19 +38,13 @@ namespace GaleriePhotos.Services
         public bool IsSetup => !string.IsNullOrWhiteSpace(_originalsLibraryId) && !string.IsNullOrWhiteSpace(_thumbnailsLibraryId) && !string.IsNullOrWhiteSpace(_serverUrl) && !string.IsNullOrWhiteSpace(_apiKey);
 
         /// <inheritdoc />
-        public Task<bool> DirectoryExists(PhotoDirectory photoDirectory) => DirectoryExistsInternal(_originalsLibraryId, photoDirectory.Path);
-
-        /// <inheritdoc />
-        public Task<bool> FileExists(PhotoDirectory photoDirectory, Photo photo) => FileExistsInternal(_originalsLibraryId, Path.Combine(photoDirectory.Path, photo.FileName));
-
-        /// <inheritdoc />
         public Task<IEnumerable<string>> GetFiles(PhotoDirectory photoDirectory) => GetFilesInternal(_originalsLibraryId, photoDirectory.Path);
 
         /// <inheritdoc />
         public Task<IEnumerable<string>> GetDirectories(PhotoDirectory photoDirectory) => GetDirectoriesInternal(_originalsLibraryId, photoDirectory.Path);
 
         /// <inheritdoc />
-        public Task<DateTime> GetFileCreationTimeUtc(PhotoDirectory photoDirectory, Photo photo) => GetFileCreationTimeUtcInternal(_originalsLibraryId, Path.Combine(photoDirectory.Path, photo.FileName));
+        public Task<DateTime> GetFileCreationTimeUtc(Photo photo) => GetFileCreationTimeUtcInternal(_originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName));
 
         /// <inheritdoc />
         public async Task CreateDirectory(PhotoDirectory photoDirectory)
@@ -59,9 +53,9 @@ namespace GaleriePhotos.Services
         }
 
         /// <inheritdoc />
-        public async Task MoveFile(PhotoDirectory sourceDirectory, PhotoDirectory destinationDirectory, Photo photo)
+        public async Task MoveFile(PhotoDirectory destinationDirectory, Photo photo)
         {
-            var sourcePath = Path.Combine(sourceDirectory.Path, photo.FileName);
+            var sourcePath = Path.Combine(photo.Directory.Path, photo.FileName);
             var destinationPath = Path.Combine(destinationDirectory.Path, photo.FileName);
             var sourceFilePath = NormalizePath(sourcePath);
             var destFilePath = NormalizePath(destinationPath);
@@ -80,15 +74,15 @@ namespace GaleriePhotos.Services
         }
 
         /// <inheritdoc />
-        public async Task<byte[]> ReadFileBytes(PhotoDirectory directory, Photo photo)
+        public async Task<byte[]> ReadFileBytes(Photo photo)
         {
-            return await ReadFileBytesAsync(_originalsLibraryId, Path.Combine(directory.Path, photo.FileName));
+            return await ReadFileBytesAsync(_originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName));
         }
 
         /// <inheritdoc />
-        public async Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo)
+        public async Task<Stream?> OpenFileRead(Photo photo)
         {
-            var path = Path.Combine(directory.Path, photo.FileName);
+            var path = Path.Combine(photo.Directory.Path, photo.FileName);
 
             return await ReadStreamAsync(_originalsLibraryId, path);
         }
@@ -297,14 +291,14 @@ namespace GaleriePhotos.Services
             return await response.Content.ReadAsByteArrayAsync();
         }
 
-        public async Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo)
+        public async Task<IFileName> GetLocalFileName(Photo photo)
         {
             var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.{Path.GetExtension(photo.FileName)}");
-            using var stream = await ReadStreamAsync(_originalsLibraryId, Path.Combine(directory.Path, photo.FileName));
-            if (stream == null) return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(directory.Path, photo.FileName), false);
+            using var stream = await ReadStreamAsync(_originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName));
+            if (stream == null) return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName), false);
             using var fileStream = File.Create(localPath);
             await stream.CopyToAsync(fileStream);
-            return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(directory.Path, photo.FileName), true);
+            return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName), true);
         }
 
         public async Task<IFileName> GetLocalThumbnailFileName(Photo photo)

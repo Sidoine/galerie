@@ -5,6 +5,7 @@ using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using GaleriePhotos.Services;
 using GaleriePhotos.ViewModels;
+using Galerie.Server.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -129,7 +130,7 @@ namespace GaleriePhotos.Controllers
             var faces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
-                .Where(f => f.PhotoId == photoId && f.Photo.GalleryId == galleryId)
+                .Where(f => f.PhotoId == photoId && f.Photo.Directory.GalleryId == galleryId)
                 .ToListAsync();
 
             var result = faces.Select(f => new FaceViewModel
@@ -153,20 +154,44 @@ namespace GaleriePhotos.Controllers
         /// </summary>
         /// <returns>Liste des noms distincts</returns>
         [HttpGet("{galleryId}/faces/names")]
-        public async Task<ActionResult<string[]>> GetDistinctNames(int galleryId)
+        public async Task<ActionResult<FaceNameViewModel[]>> GetNames(int galleryId)
         {
             var gallery = await _galleryService.Get(galleryId);
             if (gallery == null) return NotFound();
-            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
 
             var names = await applicationDbContext.FaceNames
                 .Where(x => x.GalleryId == galleryId)
-                .Select(fn => fn.Name)
-                .Distinct()
-                .OrderBy(n => n)
+                .OrderBy(n => n.Name)
                 .ToArrayAsync();
 
-            return Ok(names);
+            return Ok(names.Select(x => new FaceNameViewModel(x)));
+        }
+
+        /// <summary>
+        /// Retourne la liste des photos associées à un nom de visage donné dans la galerie.
+        /// </summary>
+        /// <param name="galleryId">Identifiant de la galerie</param>
+        /// <param name="name">Nom du visage</param>
+        /// <returns>Liste de PhotoViewModel</returns>
+        [HttpGet("{galleryId}/face-names/{id}/photos")]
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
+            var photos = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                .Include(f => f.FaceName)
+                .Where(f => f.FaceName != null && f.FaceNameId == id && f.Photo.Directory.GalleryId == galleryId)
+                .Select(f => f.Photo)
+                .Distinct()
+                .OrderBy(p => p.Id)
+                .ToListAsync();
+
+            var result = photos.Select(p => new PhotoViewModel(p)).ToArray();
+            return Ok(result);
         }
 
         /// <summary>

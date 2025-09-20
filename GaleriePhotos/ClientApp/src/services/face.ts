@@ -9,12 +9,16 @@ export class FaceController {
         return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/name`, "POST", JSON.stringify(model));
     }
 
-    getDistinctNames = (galleryId: number) => {
-        return this.client.fetchJson<string[]>(`api/gallery/${galleryId}/faces/names`, "GET", undefined);
-    }
-
     getFacesByPhoto = (galleryId: number, photoId: number) => {
         return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/photos/${photoId}/faces`, "GET", undefined);
+    }
+
+    getNames = (galleryId: number) => {
+        return this.client.fetchJson<views.FaceName[]>(`api/gallery/${galleryId}/faces/names`, "GET", undefined);
+    }
+
+    getPhotosByFaceName = (galleryId: number, id: number) => {
+        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/face-names/${id}/photos`, "GET", undefined);
     }
 
     getSimilarFaces = (galleryId: number, model: views.SimilarFacesRequest) => {

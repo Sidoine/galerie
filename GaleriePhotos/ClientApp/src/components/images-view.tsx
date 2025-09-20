@@ -15,13 +15,7 @@ import { createPhotoUrl, useUi } from "../stores/ui";
 import { useDirectoriesStore } from "../stores/directories";
 import { useMembersStore } from "../stores/members";
 
-const ImageCard = observer(function ImageCard({
-    value,
-    directoryId,
-}: {
-    value: Photo;
-    directoryId: number;
-}) {
+const ImageCard = observer(function ImageCard({ value }: { value: Photo }) {
     const directoriesStore = useDirectoriesStore();
     const { order } = useUi();
 
@@ -30,14 +24,14 @@ const ImageCard = observer(function ImageCard({
             component={Link}
             to={createPhotoUrl(
                 directoriesStore.galleryId,
-                directoryId,
+                value.directoryId,
                 value.id,
                 order
             )}
             sx={{ minHeight: 200, position: "relative" }}
         >
             <img
-                src={directoriesStore.getThumbnail(directoryId, value.id)}
+                src={directoriesStore.getThumbnail(value.id)}
                 alt={value.name}
                 loading="lazy"
             />
@@ -119,7 +113,7 @@ export const ImagesView = observer(function ImagesView({
             </Stack>
             <ImageList>
                 {sortedValues.map((x) => (
-                    <ImageCard directoryId={directoryId} value={x} key={x.id} />
+                    <ImageCard value={x} key={x.id} />
                 ))}
             </ImageList>
         </>

@@ -11,32 +11,23 @@ import ImageFaces from "./image-faces";
 import { useUi } from "../../stores/ui";
 import { useDirectoriesStore } from "../../stores/directories";
 
-export default observer(function ImageView({
-    directoryId,
-}: {
-    directoryId: number;
-}) {
+export default observer(function ImageView() {
     const { id } = useParams();
     const directoriesStore = useDirectoriesStore();
-    const photo =
-        directoryId && id
-            ? directoriesStore.imageLoader.getValue(
-                  Number(directoryId),
-                  Number(id)
-              )
-            : null;
+    const photo = id ? directoriesStore.imageLoader.getValue(Number(id)) : null;
     const { navigateToPhoto, navigateToDirectory } = useUi();
     const theme = useTheme();
     const handleNext = useCallback(() => {
-        if (photo && photo.nextId) navigateToPhoto(directoryId, photo.nextId);
-    }, [navigateToPhoto, directoryId, photo]);
+        if (photo && photo.nextId)
+            navigateToPhoto(photo.directoryId, photo.nextId);
+    }, [navigateToPhoto, photo]);
     const handlePrevious = useCallback(() => {
         if (photo && photo.previousId)
-            navigateToPhoto(directoryId, photo.previousId);
-    }, [navigateToPhoto, directoryId, photo]);
+            navigateToPhoto(photo.directoryId, photo.previousId);
+    }, [navigateToPhoto, photo]);
     const handleClose = useCallback(() => {
-        navigateToDirectory(directoryId);
-    }, [navigateToDirectory, directoryId]);
+        if (photo) navigateToDirectory(photo.directoryId);
+    }, [navigateToDirectory, photo]);
     const handleKeyPress = useCallback(
         (e: KeyboardEvent) => {
             if (e.code === "ArrowLeft") {
@@ -91,7 +82,6 @@ export default observer(function ImageView({
                     onDetailsToggle={handleDetailsToggle}
                     onFacesToggle={handleFacesToggle}
                     showFaces={showFaces}
-                    directoryId={directoryId}
                     photo={photo}
                 />
             )}
@@ -155,10 +145,7 @@ export default observer(function ImageView({
                             component="video"
                             autoPlay
                             controls
-                            src={directoriesStore.getImage(
-                                Number(directoryId),
-                                Number(id)
-                            )}
+                            src={directoriesStore.getImage(Number(id))}
                             sx={{
                                 maxWidth: "100%",
                                 maxHeight: "100%",
@@ -171,10 +158,7 @@ export default observer(function ImageView({
                             <Box
                                 component="img"
                                 alt=""
-                                src={directoriesStore.getImage(
-                                    Number(directoryId),
-                                    Number(id)
-                                )}
+                                src={directoriesStore.getImage(Number(id))}
                                 sx={{
                                     maxWidth: "100%",
                                     maxHeight: "100%",

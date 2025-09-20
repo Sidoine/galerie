@@ -7,20 +7,14 @@
         public int Visibility { get; set; }
         public int? CoverPhotoId { get; set; }
         public int GalleryId { get; set; }
+        public PhotoDirectoryType PhotoDirectoryType { get; set; }
 
-        public PhotoDirectory(string path, int visibility, int? coverPhotoId)
+        public PhotoDirectory(string path, int visibility, int? coverPhotoId, PhotoDirectoryType photoDirectoryType = PhotoDirectoryType.Regular)
         {
             Path = path;
             Visibility = visibility;
             CoverPhotoId = coverPhotoId;
-        }
-
-        public PhotoDirectory(string path, int visibility, int? coverPhotoId, int galleryId)
-        {
-            Path = path;
-            Visibility = visibility;
-            CoverPhotoId = coverPhotoId;
-            GalleryId = galleryId;
+            PhotoDirectoryType = photoDirectoryType;
         }
 
         // Navigation properties

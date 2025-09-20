@@ -31,7 +31,7 @@ namespace GaleriePhotos.Services
         /// </summary>
         /// <param name="path">The file path.</param>
         /// <returns>Task resolving to the UTC creation time of the file.</returns>
-        Task<DateTime> GetFileCreationTimeUtc(PhotoDirectory directory, Photo photo);
+        Task<DateTime> GetFileCreationTimeUtc(Photo photo);
 
         /// <summary>
         /// Creates a directory at the specified path.
@@ -44,14 +44,14 @@ namespace GaleriePhotos.Services
         /// </summary>
         /// <param name="sourcePath">The source file path.</param>
         /// <param name="destinationPath">The destination file path.</param>
-        Task MoveFile(PhotoDirectory sourceDirectory, PhotoDirectory destinationDirectory, Photo photo);
+        Task MoveFile(PhotoDirectory destinationDirectory, Photo photo);
 
         /// <summary>
         /// Opens a file stream for reading.
         /// </summary>
         /// <param name="path">The file path to open.</param>
         /// <returns>Task resolving to a FileStream for reading the file.</returns>
-        Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo);
+        Task<Stream?> OpenFileRead(Photo photo);
 
         // Thumbnail specialized operations
         /// <summary>
@@ -66,7 +66,7 @@ namespace GaleriePhotos.Services
         /// <param name="path">The thumbnail path to read.</param>
         Task<Stream?> OpenThumbnailRead(Photo photo);
 
-        Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo);
+        Task<IFileName> GetLocalFileName(Photo photo);
 
         Task<IFileName> GetLocalThumbnailFileName(Photo photo);
 
