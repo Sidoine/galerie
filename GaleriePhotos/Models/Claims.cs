@@ -28,5 +28,12 @@ namespace GaleriePhotos.Models
             if (userId == null) return false;
             return gallery.Members.Any(gm => gm.UserId == userId && gm.IsAdministrator);
         }
+
+        public static bool IsGalleryMember(this ClaimsPrincipal claimsPrincipal, Gallery gallery)
+        {
+            var userId = claimsPrincipal.GetUserId();
+            if (userId == null) return false;
+            return gallery.Members.Any(gm => gm.UserId == userId);
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { Route, Routes, useParams } from "react-router";
 import { CssBaseline } from "@mui/material";
-import { DirectoryPage, RootDirectoryPage } from "./components/directory-view";
+import { DirectoryPage } from "./components/directory-page";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
 import { observer } from "mobx-react-lite";
 import BreadCrumbs from "./components/bread-crumbs";
@@ -17,8 +17,11 @@ import DirectoryVisibilitySettings from "./components/settings/directory-visibil
 import AdminMenu from "./components/admin-menu";
 import GalleryChooser from "./components/gallery-chooser";
 import Galleries from "./components/settings/galleries";
+import FaceNames from "./components/face-names";
+import FaceNamePhotos from "./components/face-name-photos";
 import GallerySettings from "./components/settings/gallery-settings";
 import { MeStoreProvider } from "./stores/me";
+import { RootDirectoryPage } from "./components/root-directory-page";
 
 function GalleryRoot() {
     const { galleryId } = useParams();
@@ -47,6 +50,14 @@ function GalleryRoot() {
                                     <Route
                                         path="/directory/:id/*"
                                         element={<DirectoryPage />}
+                                    />
+                                    <Route
+                                        path="/face-names"
+                                        element={<FaceNames />}
+                                    />
+                                    <Route
+                                        path="/face-names/:faceNameId"
+                                        element={<FaceNamePhotos />}
                                     />
                                     <Route
                                         path="/settings/members"

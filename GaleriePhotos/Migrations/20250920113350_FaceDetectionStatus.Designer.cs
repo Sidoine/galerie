@@ -3,6 +3,7 @@ using System;
 using GaleriePhotos.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GaleriePhotos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250920113350_FaceDetectionStatus")]
+    partial class FaceDetectionStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,16 +146,11 @@ namespace GaleriePhotos.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("GalleryId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GalleryId");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -267,9 +265,6 @@ namespace GaleriePhotos.Migrations
                     b.Property<DateTime>("DateTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("DirectoryId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("FaceDetectionStatus")
                         .HasColumnType("integer");
 
@@ -277,7 +272,7 @@ namespace GaleriePhotos.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("GalleryId")
+                    b.Property<int>("GalleryId")
                         .HasColumnType("integer");
 
                     b.Property<double?>("Latitude")
@@ -287,8 +282,6 @@ namespace GaleriePhotos.Migrations
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DirectoryId");
 
                     b.HasIndex("GalleryId");
 
@@ -312,9 +305,6 @@ namespace GaleriePhotos.Migrations
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("PhotoDirectoryType")
-                        .HasColumnType("integer");
 
                     b.Property<int>("Visibility")
                         .HasColumnType("integer");
@@ -480,17 +470,6 @@ namespace GaleriePhotos.Migrations
                     b.Navigation("Photo");
                 });
 
-            modelBuilder.Entity("GaleriePhotos.Models.FaceName", b =>
-                {
-                    b.HasOne("GaleriePhotos.Models.Gallery", "Gallery")
-                        .WithMany()
-                        .HasForeignKey("GalleryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Gallery");
-                });
-
             modelBuilder.Entity("GaleriePhotos.Models.GalleryDirectoryVisibility", b =>
                 {
                     b.HasOne("GaleriePhotos.Models.Gallery", "Gallery")
@@ -523,17 +502,13 @@ namespace GaleriePhotos.Migrations
 
             modelBuilder.Entity("GaleriePhotos.Models.Photo", b =>
                 {
-                    b.HasOne("GaleriePhotos.Models.PhotoDirectory", "Directory")
-                        .WithMany()
-                        .HasForeignKey("DirectoryId")
+                    b.HasOne("GaleriePhotos.Models.Gallery", "Gallery")
+                        .WithMany("Photos")
+                        .HasForeignKey("GalleryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GaleriePhotos.Models.Gallery", null)
-                        .WithMany("Photos")
-                        .HasForeignKey("GalleryId");
-
-                    b.Navigation("Directory");
+                    b.Navigation("Gallery");
                 });
 
             modelBuilder.Entity("GaleriePhotos.Models.PhotoDirectory", b =>

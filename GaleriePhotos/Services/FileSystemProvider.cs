@@ -21,19 +21,13 @@ namespace GaleriePhotos.Services
         public bool IsSetup => Directory.Exists(Gallery.RootDirectory) && Directory.Exists(Gallery.ThumbnailsDirectory);
 
         /// <inheritdoc />
-        public Task<bool> DirectoryExists(string path) => Task.FromResult(Directory.Exists(Path.Combine(Gallery.RootDirectory, path)));
-
-        /// <inheritdoc />
-        public Task<bool> FileExists(string path) => Task.FromResult(File.Exists(Path.Combine(Gallery.RootDirectory, path)));
-
-        /// <inheritdoc />
         public Task<IEnumerable<string>> GetFiles(PhotoDirectory photoDirectory) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateFiles(Path.Combine(Gallery.RootDirectory, photoDirectory.Path)));
 
         /// <inheritdoc />
         public Task<IEnumerable<string>> GetDirectories(PhotoDirectory photoDirectory) => Task.FromResult<IEnumerable<string>>(Directory.EnumerateDirectories(Path.Combine(Gallery.RootDirectory, photoDirectory.Path)));
 
         /// <inheritdoc />
-        public Task<DateTime> GetFileCreationTimeUtc(PhotoDirectory photoDirectory, Photo photo) => Task.FromResult(File.GetCreationTimeUtc(Path.Combine(Gallery.RootDirectory, photoDirectory.Path, photo.FileName)));
+        public Task<DateTime> GetFileCreationTimeUtc(Photo photo) => Task.FromResult(File.GetCreationTimeUtc(Path.Combine(Gallery.RootDirectory, photo.Directory.Path, photo.FileName)));
 
         /// <inheritdoc />
         public Task CreateDirectory(PhotoDirectory photoDirectory)
@@ -43,18 +37,22 @@ namespace GaleriePhotos.Services
         }
 
         /// <inheritdoc />
-        public Task MoveFile(PhotoDirectory sourceDirectory, PhotoDirectory destinationDirectory, Photo photo)
+        public Task MoveFile(PhotoDirectory destinationDirectory, Photo photo)
         {
-            var sourcePath = Path.Combine(Gallery.RootDirectory, sourceDirectory.Path, photo.FileName);
+            var sourcePath = Path.Combine(Gallery.RootDirectory, photo.Directory.Path, photo.FileName);
             var destinationPath = Path.Combine(Gallery.RootDirectory, destinationDirectory.Path, photo.FileName);
             File.Move(sourcePath, destinationPath);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo)
+        public Task<Stream?> OpenFileRead(Photo photo)
         {
-            var path = Path.Combine(Gallery.RootDirectory, directory.Path, photo.FileName);
+            var path = Path.Combine(Gallery.RootDirectory, photo.Directory.Path, photo.FileName);
+            if (!File.Exists(path))
+            {
+                return Task.FromResult<Stream?>(null);
+            }
             return Task.FromResult<Stream?>(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
         }
 
@@ -63,9 +61,9 @@ namespace GaleriePhotos.Services
 
         public Task<Stream?> OpenThumbnailRead(Photo photo) => Task.FromResult<Stream?>(new FileStream(Path.Combine(Gallery.ThumbnailsDirectory, GetThumbnailFileName(photo)), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
 
-        public Task<IFileName> GetLocalFileName(PhotoDirectory directory, Photo photo)
+        public Task<IFileName> GetLocalFileName(Photo photo)
         {
-            var path = Path.Combine(Gallery.RootDirectory, directory.Path, photo.FileName);
+            var path = Path.Combine(Gallery.RootDirectory, photo.Directory.Path, photo.FileName);
             var exists = File.Exists(path);
             return Task.FromResult<IFileName>(new FileSystemFileName(path, exists));
         }

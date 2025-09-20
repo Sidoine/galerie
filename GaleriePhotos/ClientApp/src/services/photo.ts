@@ -5,28 +5,28 @@ import * as views from "./views";
 export class PhotoController {
 	constructor(private client: helpers.ApiClient) {}
 
-    get = (directoryId: number, id: number) => {
-        return this.client.fetchJson<views.PhotoFull>(`api/directory/${directoryId}/photos/${id}`, "GET", undefined);
+    get = (id: number) => {
+        return this.client.fetchJson<views.PhotoFull>(`api/photos/${id}`, "GET", undefined);
     }
 
-    getImage = (directoryId: number, id: number) => {
-        return this.client.fetch(`api/directory/${directoryId}/photos/${id}/image`, "GET", undefined);
+    getImage = (id: number) => {
+        return this.client.fetch(`api/photos/${id}/image`, "GET", undefined);
     }
 
-    getThumbnail = (directoryId: number, id: number) => {
-        return this.client.fetch(`api/directory/${directoryId}/photos/${id}/thumbnail`, "GET", undefined);
+    getThumbnail = (id: number) => {
+        return this.client.fetch(`api/photos/${id}/thumbnail`, "GET", undefined);
     }
 
-    patch = (directoryId: number, id: number, viewModel: views.PhotoPatch) => {
-        return this.client.fetch(`api/directory/${directoryId}/photos/${id}`, "PATCH", JSON.stringify(viewModel));
+    patch = (id: number, viewModel: views.PhotoPatch) => {
+        return this.client.fetch(`api/photos/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 
-    rotate = (directoryId: number, id: number, viewModel: views.PhotoRotate) => {
-        return this.client.fetch(`api/directory/${directoryId}/photos/${id}/rotate`, "PATCH", JSON.stringify(viewModel));
+    rotate = (id: number, viewModel: views.PhotoRotate) => {
+        return this.client.fetch(`api/photos/${id}/rotate`, "PATCH", JSON.stringify(viewModel));
     }
 
-    setAccess = (directoryId: number, id: number, viewModel: views.PhotoAccess) => {
-        return this.client.fetch(`api/directory/${directoryId}/photos/${id}/access`, "PATCH", JSON.stringify(viewModel));
+    setAccess = (id: number, viewModel: views.PhotoAccess) => {
+        return this.client.fetch(`api/photos/${id}/access`, "PATCH", JSON.stringify(viewModel));
     }
 }
 

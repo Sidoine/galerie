@@ -26,7 +26,13 @@ function Menu() {
             >
                 Galerie
             </ListItemButton>
-
+            <ListItemButton
+                component={Link}
+                to={`/g/${directoriesStore.galleryId}/face-names`}
+                selected={location.pathname.includes("/face-names")}
+            >
+                Noms des visages
+            </ListItemButton>
             {membersStore.administrator && (
                 <>
                     <ListItemButton
@@ -48,6 +54,7 @@ function Menu() {
                             >
                                 Galerie
                             </ListItemButton>
+
                             <ListItemButton
                                 sx={{ pl: 4 }}
                                 component={Link}

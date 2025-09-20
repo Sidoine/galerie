@@ -1,11 +1,21 @@
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { IconButton, Menu, MenuItem, Stack, styled } from "@mui/material";
+import {
+    IconButton,
+    Menu,
+    MenuItem,
+    Stack,
+    styled,
+    Tooltip,
+} from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import TagFacesOutlined from "@mui/icons-material/TagFacesOutlined";
+import VisibilityOffOutlined from "@mui/icons-material/VisibilityOffOutlined";
 import { useCallback, useState } from "react";
 import { PhotoFull } from "../../services/views";
 import { useDirectoriesStore } from "../../stores/directories";
 import { useMembersStore } from "../../stores/members";
+import { FaceDetectionStatus } from "../../services/enums";
 
 const WhiteButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.common.white,
@@ -13,13 +23,15 @@ const WhiteButton = styled(IconButton)(({ theme }) => ({
 
 function TopActions({
     onDetailsToggle,
+    onFacesToggle,
+    showFaces,
     onClose,
-    directoryId,
     photo,
 }: {
     onDetailsToggle: () => void;
+    onFacesToggle: () => void;
+    showFaces?: boolean;
     onClose: () => void;
-    directoryId: number;
     photo: PhotoFull;
 }) {
     const directoriesStore = useDirectoriesStore();
@@ -34,24 +46,24 @@ function TopActions({
     const open = Boolean(anchorEl);
     const handleCoverClick = useCallback(async () => {
         handleCloseMenu();
-        directoriesStore.patchDirectoryAndClearCache(directoryId, {
+        directoriesStore.patchDirectoryAndClearCache(photo.directoryId, {
             coverPhotoId: photo.id,
         });
-    }, [directoriesStore, directoryId, handleCloseMenu, photo.id]);
+    }, [directoriesStore, handleCloseMenu, photo.directoryId, photo.id]);
     const handleShareClick = useCallback(() => {
         handleCloseMenu();
-        directoriesStore.setAccess(directoryId, photo, false);
-    }, [directoriesStore, directoryId, handleCloseMenu, photo]);
+        directoriesStore.setAccess(photo, false);
+    }, [directoriesStore, handleCloseMenu, photo]);
     const handleUnshareClick = useCallback(() => {
         handleCloseMenu();
-        directoriesStore.setAccess(directoryId, photo, true);
-    }, [directoriesStore, directoryId, handleCloseMenu, photo]);
+        directoriesStore.setAccess(photo, true);
+    }, [directoriesStore, handleCloseMenu, photo]);
     const handleRotate = useCallback(
         async (angle: number) => {
             handleCloseMenu();
-            await directoriesStore.rotatePhoto(directoryId, photo, angle);
+            await directoriesStore.rotatePhoto(photo, angle);
         },
-        [handleCloseMenu, directoriesStore, directoryId, photo]
+        [handleCloseMenu, directoriesStore, photo]
     );
     const handleRotateLeft = useCallback(() => {
         handleRotate(270);
@@ -70,6 +82,23 @@ function TopActions({
                 <WhiteButton onClickCapture={onDetailsToggle}>
                     <InfoOutlined />
                 </WhiteButton>
+                {photo.faceDetectionStatus ===
+                    FaceDetectionStatus.Completed && (
+                    <Tooltip
+                        arrow
+                        title={
+                            showFaces ? "Visages affichés" : "Visages masqués"
+                        }
+                    >
+                        <WhiteButton onClickCapture={onFacesToggle}>
+                            {showFaces ? (
+                                <TagFacesOutlined />
+                            ) : (
+                                <VisibilityOffOutlined />
+                            )}
+                        </WhiteButton>
+                    </Tooltip>
+                )}
                 {membersStore.administrator && (
                     <WhiteButton onClickCapture={handleMenu}>
                         <MoreVertIcon />

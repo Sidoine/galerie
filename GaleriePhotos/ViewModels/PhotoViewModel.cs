@@ -11,7 +11,9 @@ namespace Galerie.Server.ViewModels
 
         public bool Video { get; set; }
 
+        public int DirectoryId { get; set; }
+
         public PhotoViewModel(Photo photo) =>
-            (Id, Name, Video) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo));
+            (Id, Name, Video, DirectoryId) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId);
     }
 }

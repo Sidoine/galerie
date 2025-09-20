@@ -50,10 +50,10 @@ namespace GaleriePhotos.Services
         {
             var root = applicationDbContext.PhotoDirectories
                 .Include(pd => pd.Gallery)
-                .FirstOrDefault(x => x.Path == "" && x.GalleryId == gallery.Id);
+                .FirstOrDefault(x => (x.Path == "" || x.PhotoDirectoryType == PhotoDirectoryType.Root) && x.GalleryId == gallery.Id);
             if (root == null)
             {
-                root = new PhotoDirectory("", 0, null, gallery.Id) { Gallery = gallery };
+                root = new PhotoDirectory("", 0, null, PhotoDirectoryType.Root) { Gallery = gallery };
                 applicationDbContext.PhotoDirectories.Add(root);
                 await applicationDbContext.SaveChangesAsync();
             }
@@ -94,12 +94,12 @@ namespace GaleriePhotos.Services
         }
 
 
-        public async Task<Stream?> GetThumbnail(PhotoDirectory photoDirectory, Photo photo)
+        public async Task<Stream?> GetThumbnail(Photo photo)
         {
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
             if (!await dataProvider.ThumbnailExists(photo))
             {
-                using var imagePath = await dataProvider.GetLocalFileName(photoDirectory, photo);
+                using var imagePath = await dataProvider.GetLocalFileName(photo);
                 if (imagePath == null) return null;
                 using var thumbnailPath = await dataProvider.GetLocalThumbnailFileName(photo);
                 if (IsVideo(photo))
@@ -135,14 +135,7 @@ namespace GaleriePhotos.Services
         {
             var fileNames = await GetDirectoryPhotosFileNames(photoDirectory);
 
-            var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
-
-            var duplicates = photos.GroupBy(x => x.FileName).Where(x => x.Count() > 1).ToArray();
-            foreach (var duplicate in duplicates)
-            {
-                var toDelete = duplicate.OrderBy(x => x.Id).Skip(1).ToArray();
-                applicationDbContext.Photos.RemoveRange(toDelete);
-            }
+            var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName) && x.DirectoryId == photoDirectory.Id).ToListAsync();
 
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
 
@@ -150,12 +143,11 @@ namespace GaleriePhotos.Services
             {
                 if (!photos.Any(x => x.FileName == fileName))
                 {
-                    var photo = new Photo(fileName) { Gallery = photoDirectory.Gallery };
-                    photo.GalleryId = photoDirectory.GalleryId;
-
+                    var photo = new Photo(fileName) { Directory = photoDirectory };
+                    
                     if (!IsVideo(photo))
                     {
-                        using var fileStream = await dataProvider.OpenFileRead(photoDirectory, photo);
+                        using var fileStream = await dataProvider.OpenFileRead(photo);
                         if (fileStream == null) continue;
                         try
                         {
@@ -186,7 +178,7 @@ namespace GaleriePhotos.Services
 
                     if (photo.DateTime == default)
                     {
-                        photo.DateTime = await dataProvider.GetFileCreationTimeUtc(photoDirectory, photo);
+                        photo.DateTime = await dataProvider.GetFileCreationTimeUtc(photo);
                     }
 
                     applicationDbContext.Photos.Add(photo);
@@ -211,6 +203,11 @@ namespace GaleriePhotos.Services
             return await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<Photo?> GetPhoto(int id)
+        {
+            return await applicationDbContext.Photos.Include(x => x.Directory).ThenInclude(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.Id == id);
+        }
+
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
@@ -220,11 +217,7 @@ namespace GaleriePhotos.Services
             {
                 if (!directories.Any(x => x.Path == path))
                 {
-                    var subPhotoDirectory = new PhotoDirectory(path, 0, null)
-                    {
-                        Gallery = photoDirectory.Gallery,
-                        GalleryId = photoDirectory.GalleryId
-                    };
+                    var subPhotoDirectory = new PhotoDirectory(path, 0, null, path.EndsWith(PrivateDirectory) ? PhotoDirectoryType.Private : PhotoDirectoryType.Regular) { Gallery = photoDirectory.Gallery };
                     applicationDbContext.PhotoDirectories.Add(subPhotoDirectory);
                     directories.Add(subPhotoDirectory);
                 }
@@ -249,7 +242,7 @@ namespace GaleriePhotos.Services
             var directory = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == path && x.GalleryId == gallery.Id);
             if (directory == null)
             {
-                directory = new PhotoDirectory(path, 0, null, gallery.Id) { Gallery = gallery };
+                directory = new PhotoDirectory(path, 0, null) { Gallery = gallery };
                 applicationDbContext.PhotoDirectories.Add(directory);
                 await applicationDbContext.SaveChangesAsync();
             }
@@ -262,11 +255,7 @@ namespace GaleriePhotos.Services
             var privateDirectory = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == privateDirectoryPath && x.GalleryId == parentDirectory.GalleryId);
             if (privateDirectory == null)
             {
-                privateDirectory = new PhotoDirectory(privateDirectoryPath, 1, null)
-                {
-                    Gallery = parentDirectory.Gallery,
-                    GalleryId = parentDirectory.GalleryId
-                };
+                privateDirectory = new PhotoDirectory(privateDirectoryPath, 1, null, PhotoDirectoryType.Private) { Gallery = parentDirectory.Gallery };
                 applicationDbContext.PhotoDirectories.Add(privateDirectory);
                 await applicationDbContext.SaveChangesAsync();
                 var dataProvider = dataService.GetDataProvider(parentDirectory.Gallery);
@@ -275,26 +264,30 @@ namespace GaleriePhotos.Services
             return privateDirectory;
         }
 
-        public async Task MoveToPrivate(PhotoDirectory photoDirectory, Photo photo)
+        public async Task MoveToPrivate(Photo photo)
         {
-            if (IsPrivate(photoDirectory)) return;
-            var privateDirectory = await GetOrCreatePrivateDirectory(photoDirectory);
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            await dataProvider.MoveFile(photoDirectory, privateDirectory, photo);
+            if (IsPrivate(photo.Directory)) return;
+            var privateDirectory = await GetOrCreatePrivateDirectory(photo.Directory);
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
+            await dataProvider.MoveFile(privateDirectory, photo);
+            photo.Directory = privateDirectory;
+            photo.DirectoryId = privateDirectory.Id;
+            applicationDbContext.Update(photo);
+            await applicationDbContext.SaveChangesAsync();
         }
 
         public bool IsPrivate(PhotoDirectory photoDirectory)
         {
-            return photoDirectory.Path.EndsWith(PrivateDirectory);
+            return photoDirectory.Path.EndsWith(PrivateDirectory) || photoDirectory.PhotoDirectoryType == PhotoDirectoryType.Private;
         }
 
-        public async Task MoveToPublic(PhotoDirectory photoDirectory, Photo photo)
+        public async Task MoveToPublic(Photo photo)
         {
-            if (!photoDirectory.Path.EndsWith(PrivateDirectory)) return;
-            var newPath = Path.Combine(photoDirectory.Path, "..");
-            var publicPath = await GetPhotoDirectoryAsync(newPath, photoDirectory.Gallery);
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-            await dataProvider.MoveFile(photoDirectory, publicPath, photo);
+            if (!photo.Directory.Path.EndsWith(PrivateDirectory)) return;
+            var newPath = Path.Combine(photo.Directory.Path, "..");
+            var publicPath = await GetPhotoDirectoryAsync(newPath, photo.Directory.Gallery);
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
+            await dataProvider.MoveFile(publicPath, photo);
         }
 
         private async Task<string[]> GetSubDirectoryPaths(PhotoDirectory photoDirectory)
@@ -333,14 +326,14 @@ namespace GaleriePhotos.Services
         /// <param name="photo">La photo à faire pivoter.</param>
         /// <param name="angle">L'angle de rotation (90, 180 ou 270 degrés).</param>
         /// <returns>True si la rotation a réussi, false sinon.</returns>
-        public async Task<bool> RotatePhoto(PhotoDirectory photoDirectory, Photo photo, int angle)
+        public async Task<bool> RotatePhoto(Photo photo, int angle)
         {
             if (angle != 90 && angle != 180 && angle != 270)
                 throw new ArgumentException("L'angle doit être 90, 180 ou 270.", nameof(angle));
 
-            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
 
-            using var imagePath = await dataProvider.GetLocalFileName(photoDirectory, photo);
+            using var imagePath = await dataProvider.GetLocalFileName(photo);
             using var thumbnailFileName = await dataProvider.GetLocalThumbnailFileName(photo);
 
             if (!imagePath.Exists || !thumbnailFileName.Exists)

@@ -28,6 +28,66 @@ export interface GalleryDirectoryVisibilityPatch {
     value: number | null;
 }
 
+export interface FaceAssignName {
+    name: string;
+}
+
+export interface SimilarFacesRequest {
+    name: string;
+
+    limit: number;
+}
+
+export interface Face {
+    id: number;
+
+    photoId: number;
+
+    x: number;
+
+    y: number;
+
+    width: number;
+
+    height: number;
+
+    name: string | null;
+
+    createdAt: string;
+
+    namedAt: string | null;
+}
+
+export interface UnnamedFacesSampleRequest {
+    count: number;
+}
+
+export interface FaceName {
+    id: number;
+
+    name: string;
+}
+
+export interface Photo {
+    id: number;
+
+    name: string;
+
+    video: boolean;
+
+    directoryId: number;
+}
+
+export interface FaceNameSuggestionRequest {
+    threshold: number;
+}
+
+export interface FaceNameSuggestionResponse {
+    name: string | null;
+
+    similarity: number | null;
+}
+
 export interface Gallery {
     id: number;
 
@@ -174,14 +234,6 @@ export interface DirectoryFull {
     numberOfSubDirectories: number;
 }
 
-export interface Photo {
-    id: number;
-
-    name: string;
-
-    video: boolean;
-}
-
 export interface DirectoryPatch {
     visibility?: number | undefined;
 
@@ -208,6 +260,10 @@ export interface PhotoFull {
     video: boolean;
 
     private: boolean;
+
+    faceDetectionStatus: enums.FaceDetectionStatus;
+
+    directoryId: number;
 }
 
 export interface PhotoPatch {
