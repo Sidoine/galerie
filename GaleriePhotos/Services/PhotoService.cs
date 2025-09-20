@@ -135,14 +135,7 @@ namespace GaleriePhotos.Services
         {
             var fileNames = await GetDirectoryPhotosFileNames(photoDirectory);
 
-            var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName)).ToListAsync();
-
-            var duplicates = photos.GroupBy(x => x.FileName).Where(x => x.Count() > 1).ToArray();
-            foreach (var duplicate in duplicates)
-            {
-                var toDelete = duplicate.OrderBy(x => x.Id).Skip(1).ToArray();
-                applicationDbContext.Photos.RemoveRange(toDelete);
-            }
+            var photos = await applicationDbContext.Photos.Where(x => fileNames.Contains(x.FileName) && x.DirectoryId == photoDirectory.Id).ToListAsync();
 
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
 

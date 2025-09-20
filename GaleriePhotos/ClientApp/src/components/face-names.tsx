@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useApiClient } from "folke-service-helpers";
 import { FaceController } from "../services/face";
 import { FaceName } from "../services/views";
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router";
 import {
     Box,
     CircularProgress,
@@ -56,7 +56,13 @@ const FaceNames = observer(function FaceNames() {
             {names && names.length > 0 && (
                 <List>
                     {names.map((n) => (
-                        <ListItem key={n.id} disableGutters>
+                        <ListItem
+                            key={n.id}
+                            disableGutters
+                            component={Link}
+                            to={`/g/${galleryId}/face-names/${n.id}`}
+                            sx={{ textDecoration: "none", color: "inherit" }}
+                        >
                             <ListItemText primary={n.name} />
                         </ListItem>
                     ))}

@@ -4,62 +4,15 @@ import {
     Button,
     CircularProgress,
     ImageList,
-    ImageListItem,
     Stack,
     Typography,
 } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { Photo } from "../services/views";
-import { Link } from "react-router-dom";
-import { createPhotoUrl, useUi } from "../stores/ui";
+import { useUi } from "../stores/ui";
 import { useDirectoriesStore } from "../stores/directories";
 import { useMembersStore } from "../stores/members";
+import ImageCard from "./image-card";
 
-const ImageCard = observer(function ImageCard({ value }: { value: Photo }) {
-    const directoriesStore = useDirectoriesStore();
-    const { order } = useUi();
-
-    return (
-        <ImageListItem
-            component={Link}
-            to={createPhotoUrl(
-                directoriesStore.galleryId,
-                value.directoryId,
-                value.id,
-                order
-            )}
-            sx={{ minHeight: 200, position: "relative" }}
-        >
-            <img
-                src={directoriesStore.getThumbnail(value.id)}
-                alt={value.name}
-                loading="lazy"
-            />
-            {value.video && (
-                <Stack
-                    sx={{
-                        position: "absolute",
-                        left: 0,
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    }}
-                >
-                    <PlayArrowIcon
-                        sx={{
-                            fontSize: 140,
-                        }}
-                    />
-                </Stack>
-            )}
-        </ImageListItem>
-    );
-});
-
-export const ImagesView = observer(function ImagesView({
+export const DirectoryImagesView = observer(function DirectoryImagesView({
     directoryId,
 }: {
     directoryId: number;
