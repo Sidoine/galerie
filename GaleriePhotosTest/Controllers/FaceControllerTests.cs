@@ -11,6 +11,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace GaleriePhotosTest.Controllers
 {
@@ -24,6 +26,20 @@ namespace GaleriePhotosTest.Controllers
             return new ApplicationDbContext(options);
         }
 
+        private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId)
+            };
+            if (globalAdmin)
+            {
+                claims.Add(new Claim(Claims.Administrator, true.ToString()));
+            }
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            return new ClaimsPrincipal(identity);
+        }
+
         [Fact]
         public async Task GetDistinctNames_ReturnsUniqueNames()
         {
@@ -35,10 +51,22 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService);
 
+            var userId = "user-1";
+
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
+
+            // User is simple member (GetNames requires member, not necessarily admin)
+            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false);
+            context.Add(member);
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
 
             var directory = new PhotoDirectory("Test Directory", 0, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
@@ -90,10 +118,11 @@ namespace GaleriePhotosTest.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var names = Assert.IsType<string[]>(okResult.Value);
+            // Le contrôleur retourne IEnumerable (Select) que nous matérialisons en tableau
+            var names = ((IEnumerable<FaceNameViewModel>)okResult.Value!).ToArray();
             Assert.Equal(2, names.Length);
-            Assert.Contains("Alice", names);
-            Assert.Contains("Bob", names);
+            Assert.Contains(names, n => n.Name == "Alice");
+            Assert.Contains(names, n => n.Name == "Bob");
         }
 
         [Fact]
@@ -107,6 +136,8 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService);
 
+            var userId = "user-2";
+
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
@@ -114,6 +145,16 @@ namespace GaleriePhotosTest.Controllers
             var directory = new PhotoDirectory("/test", 0, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
+
+            // Member must be admin for GetFacesByPhoto (requires IsGalleryAdministrator)
+            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true);
+            context.Add(adminMember);
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
 
             var photo1 = new Photo("test1.jpg") { Directory = directory };
             var photo2 = new Photo("test2.jpg") { Directory = directory };
@@ -160,6 +201,8 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService);
 
+            var userId = "user-3";
+
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
@@ -168,6 +211,15 @@ namespace GaleriePhotosTest.Controllers
             var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
+
+            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true);
+            context.Add(adminMember);
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
 
             var face = new Face
             {
@@ -195,6 +247,7 @@ namespace GaleriePhotosTest.Controllers
             Assert.Equal("TestName", updatedFace.FaceName.Name);
             Assert.NotNull(updatedFace.NamedAt);
         }
+
         [Fact]
         public async Task SuggestName_ReturnsNullWhenNoNamedFaces()
         {
@@ -205,6 +258,8 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService);
 
+            var userId = "user-4";
+
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             var directory = new PhotoDirectory("", 0, null) { Gallery = gallery };
@@ -212,6 +267,15 @@ namespace GaleriePhotosTest.Controllers
             var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
+
+            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true);
+            context.Add(adminMember);
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
 
             var face = new Face
             {
