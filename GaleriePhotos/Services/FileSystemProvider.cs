@@ -55,6 +55,10 @@ namespace GaleriePhotos.Services
         public Task<Stream?> OpenFileRead(PhotoDirectory directory, Photo photo)
         {
             var path = Path.Combine(Gallery.RootDirectory, directory.Path, photo.FileName);
+            if (!File.Exists(path))
+            {
+                return Task.FromResult<Stream?>(null);
+            }
             return Task.FromResult<Stream?>(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous));
         }
 

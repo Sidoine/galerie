@@ -58,7 +58,7 @@ namespace GaleriePhotos.Services
             {
                 // Find photos that haven't been processed for face detection yet
                 var unprocessedPhotos = await context.Photos
-                    .Where(p => !context.Faces.Any(f => f.PhotoId == p.Id))
+                    .Where(p => p.FaceDetectionStatus == FaceDetectionStatus.NotStarted)
                     .Include(p => p.Gallery)
                     .Take(10) // Process 10 photos at a time to avoid overwhelming the system
                     .ToListAsync(cancellationToken);

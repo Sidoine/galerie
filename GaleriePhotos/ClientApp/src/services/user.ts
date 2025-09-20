@@ -13,3 +13,4 @@ export class UserController {
         return this.client.fetch(`api/users/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 }
+

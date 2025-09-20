@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Box, useTheme, Stack } from "@mui/material";
 import { useParams } from "react-router-dom";
@@ -7,6 +7,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { ImageDetails } from "./image-details";
 import { useSwipeable } from "react-swipeable";
 import TopActions from "./top-actions";
+import ImageFaces from "./image-faces";
 import { useUi } from "../../stores/ui";
 import { useDirectoriesStore } from "../../stores/directories";
 
@@ -52,12 +53,18 @@ export default observer(function ImageView({
     }, [handleKeyPress]);
 
     const [details, setDetails] = useState(false);
+    const [showFaces, setShowFaces] = useState(false);
     const handleDetailsClose = useCallback(() => {
         setDetails(false);
     }, []);
     const handleDetailsToggle = useCallback(() => {
         setDetails((prev) => !prev);
     }, []);
+    const handleFacesToggle = useCallback(() => {
+        setShowFaces((prev) => !prev);
+    }, []);
+
+    const imageRef = useRef<HTMLImageElement>(null);
 
     const handlers = useSwipeable({
         onSwipedLeft: handleNext,
@@ -82,6 +89,8 @@ export default observer(function ImageView({
                 <TopActions
                     onClose={handleClose}
                     onDetailsToggle={handleDetailsToggle}
+                    onFacesToggle={handleFacesToggle}
+                    showFaces={showFaces}
                     directoryId={directoryId}
                     photo={photo}
                 />
@@ -158,20 +167,28 @@ export default observer(function ImageView({
                         />
                     )}
                     {!photo.video && (
-                        <Box
-                            component="img"
-                            alt=""
-                            src={directoriesStore.getImage(
-                                Number(directoryId),
-                                Number(id)
-                            )}
-                            sx={{
-                                maxWidth: "100%",
-                                maxHeight: "100%",
-                                imageOrientation: "from-image",
-                            }}
-                            onClick={handleNext}
-                        />
+                        <>
+                            <Box
+                                component="img"
+                                alt=""
+                                src={directoriesStore.getImage(
+                                    Number(directoryId),
+                                    Number(id)
+                                )}
+                                sx={{
+                                    maxWidth: "100%",
+                                    maxHeight: "100%",
+                                    imageOrientation: "from-image",
+                                }}
+                                onClick={handleNext}
+                                ref={imageRef}
+                            />
+                            <ImageFaces
+                                photoId={photo.id}
+                                imageRef={imageRef}
+                                visible={showFaces}
+                            />
+                        </>
                     )}
                 </Stack>
             )}

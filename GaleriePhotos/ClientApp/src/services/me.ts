@@ -13,3 +13,4 @@ export class MeController {
         return this.client.fetchJson<views.GalleryMember[]>("api/me/galleries", "GET", undefined);
     }
 }
+

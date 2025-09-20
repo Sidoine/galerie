@@ -1,5 +1,6 @@
 export * from "./directory";
 export * from "./directoryVisibility";
+export * from "./face";
 export * from "./gallery";
 export * from "./galleryMember";
 export * from "./me";

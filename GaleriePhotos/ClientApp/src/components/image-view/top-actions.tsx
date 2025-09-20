@@ -2,6 +2,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { IconButton, Menu, MenuItem, Stack, styled } from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import TagFacesOutlined from "@mui/icons-material/TagFacesOutlined";
+import VisibilityOffOutlined from "@mui/icons-material/VisibilityOffOutlined";
 import { useCallback, useState } from "react";
 import { PhotoFull } from "../../services/views";
 import { useDirectoriesStore } from "../../stores/directories";
@@ -13,11 +15,15 @@ const WhiteButton = styled(IconButton)(({ theme }) => ({
 
 function TopActions({
     onDetailsToggle,
+    onFacesToggle,
+    showFaces,
     onClose,
     directoryId,
     photo,
 }: {
     onDetailsToggle: () => void;
+    onFacesToggle?: () => void;
+    showFaces?: boolean;
     onClose: () => void;
     directoryId: number;
     photo: PhotoFull;
@@ -70,6 +76,15 @@ function TopActions({
                 <WhiteButton onClickCapture={onDetailsToggle}>
                     <InfoOutlined />
                 </WhiteButton>
+                {onFacesToggle && (
+                    <WhiteButton onClickCapture={onFacesToggle}>
+                        {showFaces ? (
+                            <TagFacesOutlined />
+                        ) : (
+                            <VisibilityOffOutlined />
+                        )}
+                    </WhiteButton>
+                )}
                 {membersStore.administrator && (
                     <WhiteButton onClickCapture={handleMenu}>
                         <MoreVertIcon />

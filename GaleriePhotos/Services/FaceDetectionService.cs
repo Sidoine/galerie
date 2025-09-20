@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using FaceAiSharp;
+using FaceAiSharp.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,9 +20,8 @@ namespace GaleriePhotos.Services
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<FaceDetectionService> logger;
         private readonly DataService dataService;
-        // TODO: Re-enable FaceAiSharp when the correct API is identified
-        // private readonly FaceDetector faceDetector;
-        // private readonly FaceEmbeddingsGenerator embeddingsGenerator;
+        private readonly IFaceDetectorWithLandmarks faceLandmarksDetector;
+        private readonly IFaceEmbeddingsGenerator faceEmbeddingsGenerator;
 
         public FaceDetectionService(
             ApplicationDbContext applicationDbContext,
@@ -31,10 +31,10 @@ namespace GaleriePhotos.Services
             this.applicationDbContext = applicationDbContext;
             this.logger = logger;
             this.dataService = dataService;
-            
+
             // TODO: Initialize FaceAiSharp components when API is confirmed
-            // this.faceDetector = new FaceDetector();
-            // this.embeddingsGenerator = new FaceEmbeddingsGenerator();
+            faceLandmarksDetector = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
+            faceEmbeddingsGenerator = FaceAiSharpBundleFactory.CreateFaceEmbeddingsGenerator();
         }
 
         public async Task<bool> ProcessPhotoAsync(Photo photo)
@@ -42,11 +42,14 @@ namespace GaleriePhotos.Services
             try
             {
                 logger.LogInformation("Processing photo {PhotoId} for face detection", photo.Id);
-
+                
                 // Check if photo is an image (not video)
                 if (PhotoService.IsVideo(photo))
                 {
                     logger.LogDebug("Skipping video file {FileName}", photo.FileName);
+                    photo.FaceDetectionStatus = FaceDetectionStatus.Skipped;
+                    applicationDbContext.Photos.Update(photo);
+                    await applicationDbContext.SaveChangesAsync();
                     return false;
                 }
 
@@ -57,9 +60,16 @@ namespace GaleriePhotos.Services
 
                 if (existingFaces)
                 {
+                    photo.FaceDetectionStatus = FaceDetectionStatus.Completed;
+                    applicationDbContext.Photos.Update(photo);
+                    await applicationDbContext.SaveChangesAsync();
                     logger.LogDebug("Photo {PhotoId} already has faces processed", photo.Id);
                     return false;
                 }
+
+                photo.FaceDetectionStatus = FaceDetectionStatus.InProgress;
+                applicationDbContext.Photos.Update(photo);
+                await applicationDbContext.SaveChangesAsync();
 
                 // Get the photo directory
                 var photoDirectory = await applicationDbContext.PhotoDirectories
@@ -68,6 +78,9 @@ namespace GaleriePhotos.Services
 
                 if (photoDirectory == null)
                 {
+                    photo.FaceDetectionStatus = FaceDetectionStatus.Failed;
+                    applicationDbContext.Photos.Update(photo);
+                    await applicationDbContext.SaveChangesAsync();
                     logger.LogWarning("Photo directory not found for photo {PhotoId}", photo.Id);
                     return false;
                 }
@@ -78,6 +91,9 @@ namespace GaleriePhotos.Services
                 using var fileStream = await dataProvider.OpenFileRead(photoDirectory, photo);
                 if (fileStream == null)
                 {
+                    photo.FaceDetectionStatus = FaceDetectionStatus.Failed;
+                    applicationDbContext.Photos.Update(photo);
+                    await applicationDbContext.SaveChangesAsync();
                     logger.LogWarning("Could not open file {FileName} for photo {PhotoId}", photo.FileName, photo.Id);
                     return false;
                 }
@@ -85,18 +101,44 @@ namespace GaleriePhotos.Services
                 // Load the image
                 using var image = Image.Load<Rgb24>(fileStream);
                 
-                // TODO: Implement actual face detection with FaceAiSharp
-                // For now, this is a placeholder that logs the action
-                logger.LogInformation("Face detection processing photo {PhotoId} - FaceAiSharp integration pending", photo.Id);
+                logger.LogInformation("Face detection processing photo {PhotoId}", photo.Id);
                 
                 // Placeholder - in actual implementation, this would detect faces and create Face entities
-                // var detectedFaces = faceDetector.DetectFaces(image);
-                // Process each detected face and save to database
-                
+                var detectedFaces = faceLandmarksDetector.DetectFaces(image);
+                foreach (var detectedFace in detectedFaces)
+                {
+                    if (detectedFace.Landmarks == null) continue;
+                    var faceImage = image.Clone();
+                    faceEmbeddingsGenerator.AlignFaceUsingLandmarks(faceImage, detectedFace.Landmarks);
+                    var embedding = faceEmbeddingsGenerator.GenerateEmbedding(faceImage);
+                    if (embedding != null)
+                    {
+                        var face = new Face
+                        {
+                            PhotoId = photo.Id,
+                            Photo = photo,
+                            Embedding = new Vector(embedding),
+                            X = detectedFace.Box.X,
+                            Y = detectedFace.Box.Y,
+                            Width = detectedFace.Box.Width,
+                            Height = detectedFace.Box.Height,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await applicationDbContext.Faces.AddAsync(face);
+                    }
+                }
+
+                photo.FaceDetectionStatus = FaceDetectionStatus.Completed;
+                applicationDbContext.Photos.Update(photo);
+                await applicationDbContext.SaveChangesAsync();
+
                 return true;
             }
             catch (Exception ex)
             {
+                photo.FaceDetectionStatus = FaceDetectionStatus.Failed;
+                applicationDbContext.Photos.Update(photo);
+                await applicationDbContext.SaveChangesAsync();
                 logger.LogError(ex, "Error processing photo {PhotoId} for face detection", photo.Id);
                 return false;
             }
