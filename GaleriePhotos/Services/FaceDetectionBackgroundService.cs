@@ -16,7 +16,7 @@ namespace GaleriePhotos.Services
     {
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<FaceDetectionBackgroundService> logger;
-        private readonly TimeSpan ProcessingInterval = TimeSpan.FromMinutes(5); // Process every 5 minutes
+        private readonly TimeSpan ProcessingInterval = TimeSpan.FromMinutes(1); // Process every 1 minute
 
         public FaceDetectionBackgroundService(
             IServiceProvider serviceProvider,
