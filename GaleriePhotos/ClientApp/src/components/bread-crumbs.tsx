@@ -1,46 +1,23 @@
-import { Link as RouterLink, useParams } from "react-router";
-import { Breadcrumbs, Link, Typography } from "@mui/material";
-import { observer } from "mobx-react-lite";
-import { useDirectoriesStore } from "../stores/directories";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-function BreadCrumbs() {
-    const { directoryId, galleryId } = useParams();
-    const directoriesStore = useDirectoriesStore();
-    const directory =
-        directoryId &&
-        directoriesStore.infoLoader.getValue(Number(directoryId));
+const BreadCrumbs = () => {
     return (
-        <Breadcrumbs>
-            <Link
-                component={RouterLink}
-                sx={{ color: (theme) => theme.palette.common.white }}
-                to="/"
-            >
-                Galeries
-            </Link>
-            {galleryId && (
-                <Link
-                    component={RouterLink}
-                    sx={{ color: (theme) => theme.palette.common.white }}
-                    to={`/g/${galleryId}`}
-                >
-                    Galerie
-                </Link>
-            )}
-            {directory && directory.parent && directory.parent.name && (
-                <Link
-                    component={RouterLink}
-                    to={`/g/${galleryId}/directory/${directory.parent.id}`}
-                    sx={{ color: (theme) => theme.palette.common.white }}
-                >
-                    {directory.parent.name}
-                </Link>
-            )}
-            {directory && directory.name && (
-                <Typography color="white">{directory.name}</Typography>
-            )}
-        </Breadcrumbs>
+        <View style={styles.container}>
+            <Text style={styles.text}>Galerie Photos</Text>
+        </View>
     );
-}
+};
 
-export default observer(BreadCrumbs);
+const styles = StyleSheet.create({
+    container: {
+        padding: 8,
+    },
+    text: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+});
+
+export default BreadCrumbs;
