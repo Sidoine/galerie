@@ -124,12 +124,15 @@ namespace Galerie.Server.Controllers
             return Ok();
         }
 
-        [Authorize(Policy = Policies.Administrator)]
         [HttpPost("{id}/set-parent-cover")]
         public async Task<ActionResult> SetParentCover(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
+            if (!User.IsGalleryAdministrator(directory.Gallery))
+            {
+                return Forbid();
+            }
             
             var parentDirectory = await photoService.GetParentDirectory(directory);
             if (parentDirectory == null) return BadRequest("No parent directory found");
