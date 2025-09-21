@@ -23,10 +23,10 @@ const FaceNames = observer(function FaceNames() {
             .getNames(Number(galleryId))
             .then((resp) => {
                 if (!resp.ok) {
-                    setError(`Erreur ${resp.status}: ${resp.statusText}`);
+                    setError(resp.message || "Erreur inconnue");
                     return;
                 }
-                setNames(resp.data);
+                setNames(resp.value);
             })
             .catch((error) => {
                 setError(error.message);
@@ -64,10 +64,9 @@ const FaceNames = observer(function FaceNames() {
     const renderFaceName = ({ item }: { item: FaceName }) => (
         <TouchableOpacity
             style={styles.faceNameItem}
-            onPress={() => navigation.navigate('FaceNamePhotos' as never, { faceNameId: item.id } as never)}
+            onPress={() => (navigation as any).navigate('FaceNamePhotos', { faceNameId: item.id })}
         >
             <Text style={styles.faceNameText}>{item.name}</Text>
-            <Text style={styles.photoCount}>{item.photoCount} photos</Text>
         </TouchableOpacity>
     );
 

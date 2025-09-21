@@ -17,7 +17,7 @@ const GalleryChooser = observer(function GalleryChooser() {
     useEffect(() => {
         if (memberships && memberships.length === 1) {
             const galleryId = memberships[0].galleryId;
-            navigation.navigate('Gallery' as never, { galleryId } as never);
+            (navigation as any).navigate('Gallery', { galleryId });
         }
     }, [memberships, navigation]);
     
@@ -37,7 +37,7 @@ const GalleryChooser = observer(function GalleryChooser() {
                     key={m.galleryId}
                     style={styles.galleryButton}
                     onPress={() => {
-                        navigation.navigate('Gallery' as never, { galleryId: m.galleryId } as never);
+                        (navigation as any).navigate('Gallery', { galleryId: m.galleryId });
                     }}
                 >
                     <Text style={styles.galleryText}>{m.galleryName}</Text>

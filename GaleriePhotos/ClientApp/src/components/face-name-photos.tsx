@@ -32,7 +32,7 @@ const FaceNamePhotos = observer(function FaceNamePhotos() {
                     setError(resp.message || "Erreur de chargement");
                     return;
                 }
-                setPhotos(resp.data);
+                setPhotos(resp.value);
             })
             .catch((error) => {
                 setError(error.message);

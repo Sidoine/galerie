@@ -34,7 +34,9 @@ export const Users = observer(() => {
     const usersStore = useUsersStore();
     
     if (!usersStore.users) {
-        usersStore.load();
+        if (!usersStore.usersLoader.loading) {
+            usersStore.usersLoader.load();
+        }
         return (
             <View style={styles.container}>
                 <Text style={styles.loadingText}>Chargement...</Text>
