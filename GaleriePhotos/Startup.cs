@@ -44,7 +44,7 @@ namespace GaleriePhotos
                         connectionString = $"Host={server};Port={port};User ID={userName};Password={password};Database={database}";
                     }
                 }
-                options.UseNpgsql(connectionString);
+                options.UseNpgsql(connectionString, x => x.UseVector());
             });
 
             services.AddDefaultIdentity<ApplicationUser>(options =>

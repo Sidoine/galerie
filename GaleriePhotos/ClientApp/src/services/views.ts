@@ -84,8 +84,6 @@ export interface FaceNameSuggestionRequest {
 
 export interface FaceNameSuggestionResponse {
     name: string | null;
-
-    similarity: number | null;
 }
 
 export interface Gallery {

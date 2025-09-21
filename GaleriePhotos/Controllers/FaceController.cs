@@ -208,10 +208,10 @@ namespace GaleriePhotos.Controllers
 
             if (suggestion == null)
             {
-                return Ok(new FaceNameSuggestionResponseViewModel { Name = null, Similarity = null });
+                return Ok(new FaceNameSuggestionResponseViewModel { Name = null });
             }
 
-            return Ok(new FaceNameSuggestionResponseViewModel { Name = suggestion.Value.Name, Similarity = suggestion.Value.Similarity });
+            return Ok(new FaceNameSuggestionResponseViewModel { Name = suggestion.Name });
         }
     }
 }

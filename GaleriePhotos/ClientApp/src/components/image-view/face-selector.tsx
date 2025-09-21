@@ -46,9 +46,6 @@ export function FaceSelector({
     const [error, setError] = useState<string | null>(null);
     const [suggestionLoading, setSuggestionLoading] = useState(false);
     const [suggestedName, setSuggestedName] = useState<string | null>(null);
-    const [suggestedSimilarity, setSuggestedSimilarity] = useState<
-        number | null
-    >(null);
 
     // Charger la liste des noms quand on passe en édition
     useEffect(() => {
@@ -74,16 +71,14 @@ export function FaceSelector({
         if (face.name) return; // déjà nommé
         setSuggestionLoading(true);
         setSuggestedName(null);
-        setSuggestedSimilarity(null);
         try {
             const resp = await faceController.suggestName(
                 directoriesStore.galleryId,
                 face.id,
-                { threshold: 0.7 }
+                { threshold: 0.8 }
             );
             if (resp.ok) {
                 setSuggestedName(resp.value.name);
-                setSuggestedSimilarity(resp.value.similarity);
             }
         } finally {
             setSuggestionLoading(false);
@@ -105,7 +100,6 @@ export function FaceSelector({
         setValue(face.name ?? "");
         setError(null);
         setSuggestedName(null);
-        setSuggestedSimilarity(null);
     }, [face.name]);
 
     const canSubmit = value.trim().length > 0 && value.trim() !== face.name;
@@ -208,9 +202,7 @@ export function FaceSelector({
                             (suggestionLoading
                                 ? "Recherche suggestion..."
                                 : suggestedName
-                                ? `Suggestion: ${suggestedName} (${(
-                                      suggestedSimilarity ?? 0
-                                  ).toFixed(2)})`
+                                ? `Suggestion: ${suggestedName}`
                                 : " ")
                         }
                         InputProps={{
