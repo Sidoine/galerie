@@ -1,60 +1,100 @@
-import { useCallback } from "react";
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Switch } from 'react-native';
 import { observer } from "mobx-react-lite";
-import {
-    Table,
-    TableHead,
-    TableContainer,
-    Paper,
-    TableRow,
-    TableCell,
-    TableBody,
-    Switch,
-} from "@mui/material";
 import { User } from "../services/views";
 import { useUsersStore } from "../stores/users";
 
 const UserRow = observer(({ user }: { user: User }) => {
     const usersStore = useUsersStore();
     const handleToggleCheck = useCallback(
-        (_: unknown, checked: boolean) => {
+        (checked: boolean) => {
             usersStore.patch(user, { administrator: checked });
         },
         [usersStore, user]
     );
+    
     return (
-        <TableRow>
-            <TableCell>{user.name}</TableCell>
-            <TableCell>
+        <View style={styles.userRow}>
+            <View style={styles.userInfo}>
+                <Text style={styles.userName}>{user.displayName || user.userName}</Text>
+                <Text style={styles.userEmail}>{user.userName}</Text>
+            </View>
+            <View style={styles.adminSwitch}>
+                <Text style={styles.switchLabel}>Admin</Text>
                 <Switch
-                    checked={user.administrator}
-                    onChange={handleToggleCheck}
+                    value={user.administrator}
+                    onValueChange={handleToggleCheck}
                 />
-            </TableCell>
-        </TableRow>
+            </View>
+        </View>
     );
 });
 
 export const Users = observer(() => {
     const usersStore = useUsersStore();
-    const users = usersStore.usersLoader.getValue() || [];
+    
+    if (!usersStore.users) {
+        usersStore.load();
+        return (
+            <View style={styles.container}>
+                <Text style={styles.loadingText}>Chargement...</Text>
+            </View>
+        );
+    }
 
     return (
-        <>
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Nom</TableCell>
-                            <TableCell>Administrator global</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {users.map((x) => (
-                            <UserRow key={x.id} user={x} />
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </>
+        <View style={styles.container}>
+            <Text style={styles.title}>Utilisateurs</Text>
+            <FlatList
+                data={usersStore.users}
+                keyExtractor={(user) => user.id.toString()}
+                renderItem={({ item }) => <UserRow user={item} />}
+            />
+        </View>
     );
+});
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 16,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 16,
+    },
+    userRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    userInfo: {
+        flex: 1,
+    },
+    userName: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    userEmail: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    adminSwitch: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    switchLabel: {
+        fontSize: 14,
+        marginRight: 8,
+    },
+    loadingText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginTop: 32,
+    },
 });

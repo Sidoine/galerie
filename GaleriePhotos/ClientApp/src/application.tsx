@@ -4,7 +4,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { StatusBar } from 'expo-status-bar';
 import { DirectoryPage } from "./components/directory-page";
-import { ResponsiveDrawer } from "./components/responsive-drawer";
 import { observer } from "mobx-react-lite";
 import BreadCrumbs from "./components/bread-crumbs";
 import { UsersStoreProvider } from "./stores/users";

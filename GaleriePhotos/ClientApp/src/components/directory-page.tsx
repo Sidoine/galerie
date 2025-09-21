@@ -1,7 +1,9 @@
-import { useParams } from "react-router";
+import React from 'react';
+import { useRoute } from "@react-navigation/native";
 import { DirectoryView } from "./directory-view";
 
 export function DirectoryPage() {
-    const { id } = useParams();
+    const route = useRoute();
+    const { id } = route.params as { id: number };
     return <DirectoryView id={Number(id)} />;
 }

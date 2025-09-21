@@ -1,20 +1,15 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
 import { useApiClient } from "folke-service-helpers";
 import { FaceController } from "../services/face";
 import { FaceName } from "../services/views";
-import { useParams, Link } from "react-router";
-import {
-    Box,
-    CircularProgress,
-    List,
-    ListItem,
-    ListItemText,
-    Typography,
-} from "@mui/material";
+import { useRoute, useNavigation } from "@react-navigation/native";
 
 const FaceNames = observer(function FaceNames() {
-    const { galleryId } = useParams();
+    const route = useRoute();
+    const navigation = useNavigation();
+    const { galleryId } = route.params as { galleryId: number };
     const apiClient = useApiClient();
     const [names, setNames] = useState<FaceName[] | null>(null);
     const [loading, setLoading] = useState(false);
@@ -28,48 +23,114 @@ const FaceNames = observer(function FaceNames() {
             .getNames(Number(galleryId))
             .then((resp) => {
                 if (!resp.ok) {
-                    setError(resp.message || "Erreur inconnue");
+                    setError(`Erreur ${resp.status}: ${resp.statusText}`);
                     return;
                 }
-                setNames(resp.value);
-                setError(null);
+                setNames(resp.data);
             })
-            .catch((e) => {
-                console.error(e);
-                setError("Erreur lors du chargement des noms de visages");
+            .catch((error) => {
+                setError(error.message);
             })
-            .finally(() => setLoading(false));
-    }, [apiClient, galleryId]);
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [galleryId, apiClient]);
 
-    if (loading && !names) return <CircularProgress />;
-    if (error) return <Typography color="error">{error}</Typography>;
+    if (loading) {
+        return (
+            <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" />
+                <Text style={styles.loadingText}>Chargement...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text style={styles.errorText}>Erreur: {error}</Text>
+            </View>
+        );
+    }
+
+    if (!names || names.length === 0) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text style={styles.emptyText}>Aucun nom de visage trouvé</Text>
+            </View>
+        );
+    }
+
+    const renderFaceName = ({ item }: { item: FaceName }) => (
+        <TouchableOpacity
+            style={styles.faceNameItem}
+            onPress={() => navigation.navigate('FaceNamePhotos' as never, { faceNameId: item.id } as never)}
+        >
+            <Text style={styles.faceNameText}>{item.name}</Text>
+            <Text style={styles.photoCount}>{item.photoCount} photos</Text>
+        </TouchableOpacity>
+    );
 
     return (
-        <Box>
-            <Typography variant="h5" gutterBottom>
-                Noms des visages
-            </Typography>
-            {!names && <Typography>Aucun nom trouvé.</Typography>}
-            {names && names.length === 0 && (
-                <Typography>Aucun nom trouvé.</Typography>
-            )}
-            {names && names.length > 0 && (
-                <List>
-                    {names.map((n) => (
-                        <ListItem
-                            key={n.id}
-                            disableGutters
-                            component={Link}
-                            to={`/g/${galleryId}/face-names/${n.id}`}
-                            sx={{ textDecoration: "none", color: "inherit" }}
-                        >
-                            <ListItemText primary={n.name} />
-                        </ListItem>
-                    ))}
-                </List>
-            )}
-        </Box>
+        <View style={styles.container}>
+            <Text style={styles.title}>Noms des visages</Text>
+            <FlatList
+                data={names}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderFaceName}
+            />
+        </View>
     );
+});
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 16,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 16,
+    },
+    faceNameItem: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+        backgroundColor: '#f9f9f9',
+        marginBottom: 8,
+        borderRadius: 8,
+    },
+    faceNameText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    photoCount: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    loadingText: {
+        fontSize: 16,
+        color: '#666',
+        marginTop: 16,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#d32f2f',
+        textAlign: 'center',
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+    },
 });
 
 export default FaceNames;
