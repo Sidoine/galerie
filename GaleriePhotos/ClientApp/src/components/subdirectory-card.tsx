@@ -143,7 +143,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                     </Stack>
                 }
                 actionIcon={
-                    membersStore.administrator && (
+                    membersStore.administrator && directory.coverPhotoId && (
                         <IconButton
                             color="inherit"
                             onClick={handleMenuClick}
