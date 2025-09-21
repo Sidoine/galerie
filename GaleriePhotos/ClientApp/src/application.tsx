@@ -1,5 +1,8 @@
-import { Route, Routes, useParams } from "react-router";
-import { CssBaseline } from "@mui/material";
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { StatusBar } from 'expo-status-bar';
 import { DirectoryPage } from "./components/directory-page";
 import { ResponsiveDrawer } from "./components/responsive-drawer";
 import { observer } from "mobx-react-lite";
@@ -23,62 +26,61 @@ import GallerySettings from "./components/settings/gallery-settings";
 import { MeStoreProvider } from "./stores/me";
 import { RootDirectoryPage } from "./components/root-directory-page";
 
-function GalleryRoot() {
-    const { galleryId } = useParams();
+const Stack = createStackNavigator();
+const Drawer = createDrawerNavigator();
+
+function GalleryRoot({ route }: { route: any }) {
+    const { galleryId } = route.params;
     return (
         <DirectoriesStoreProvider galleryId={Number(galleryId)}>
             <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
                 <MeStoreProvider>
                     <UsersStoreProvider>
                         <MembersStoreProvider>
-                            <ResponsiveDrawer
-                                menu={<Menu />}
-                                title={
-                                    <Routes>
-                                        <Route
-                                            path="/directory/:directoryId/*"
-                                            element={<BreadCrumbs />}
-                                        ></Route>
-                                        <Route
-                                            path="*"
-                                            element={<>Galerie photo</>}
-                                        />
-                                    </Routes>
-                                }
+                            <Drawer.Navigator
+                                drawerContent={() => <Menu />}
+                                screenOptions={{
+                                    headerTitle: "Galerie photo"
+                                }}
                             >
-                                <Routes>
-                                    <Route
-                                        path="/directory/:id/*"
-                                        element={<DirectoryPage />}
-                                    />
-                                    <Route
-                                        path="/face-names"
-                                        element={<FaceNames />}
-                                    />
-                                    <Route
-                                        path="/face-names/:faceNameId"
-                                        element={<FaceNamePhotos />}
-                                    />
-                                    <Route
-                                        path="/settings/members"
-                                        element={<GalleryMembers />}
-                                    />
-                                    <Route
-                                        path="/settings/visibility"
-                                        element={
-                                            <DirectoryVisibilitySettings />
-                                        }
-                                    />
-                                    <Route
-                                        path="/settings/gallery"
-                                        element={<GallerySettings />}
-                                    />
-                                    <Route
-                                        path="*"
-                                        element={<RootDirectoryPage />}
-                                    />
-                                </Routes>
-                            </ResponsiveDrawer>
+                                <Drawer.Screen
+                                    name="Directory"
+                                    component={DirectoryPage}
+                                    options={{
+                                        headerTitle: () => <BreadCrumbs />
+                                    }}
+                                />
+                                <Drawer.Screen
+                                    name="FaceNames"
+                                    component={FaceNames}
+                                    options={{ title: "Noms des visages" }}
+                                />
+                                <Drawer.Screen
+                                    name="FaceNamePhotos"
+                                    component={FaceNamePhotos}
+                                    options={{ title: "Photos du visage" }}
+                                />
+                                <Drawer.Screen
+                                    name="GalleryMembers"
+                                    component={GalleryMembers}
+                                    options={{ title: "Membres" }}
+                                />
+                                <Drawer.Screen
+                                    name="DirectoryVisibilitySettings"
+                                    component={DirectoryVisibilitySettings}
+                                    options={{ title: "Visibilité" }}
+                                />
+                                <Drawer.Screen
+                                    name="GallerySettings"
+                                    component={GallerySettings}
+                                    options={{ title: "Paramètres" }}
+                                />
+                                <Drawer.Screen
+                                    name="RootDirectory"
+                                    component={RootDirectoryPage}
+                                    options={{ title: "Galerie" }}
+                                />
+                            </Drawer.Navigator>
                         </MembersStoreProvider>
                     </UsersStoreProvider>
                 </MeStoreProvider>
@@ -91,15 +93,23 @@ function SettingsRoot() {
     return (
         <UsersStoreProvider>
             <MeStoreProvider>
-                <ResponsiveDrawer
-                    menu={<AdminMenu />}
-                    title={"Paramètres globaux"}
+                <Drawer.Navigator
+                    drawerContent={() => <AdminMenu />}
+                    screenOptions={{
+                        headerTitle: "Paramètres globaux"
+                    }}
                 >
-                    <Routes>
-                        <Route path="/users" element={<Users />} />
-                        <Route path="/galleries" element={<Galleries />} />
-                    </Routes>
-                </ResponsiveDrawer>
+                    <Drawer.Screen
+                        name="Users"
+                        component={Users}
+                        options={{ title: "Utilisateurs" }}
+                    />
+                    <Drawer.Screen
+                        name="Galleries"
+                        component={Galleries}
+                        options={{ title: "Galeries" }}
+                    />
+                </Drawer.Navigator>
             </MeStoreProvider>
         </UsersStoreProvider>
     );
@@ -107,11 +117,28 @@ function SettingsRoot() {
 
 const MainScreen = observer(function MainScreen() {
     return (
-        <Routes>
-            <Route path="/" element={<GalleryChooser />} />
-            <Route path="/settings/*" element={<SettingsRoot />} />
-            <Route path="/g/:galleryId/*" element={<GalleryRoot />} />
-        </Routes>
+        <Stack.Navigator
+            initialRouteName="GalleryChooser"
+            screenOptions={{
+                headerShown: false
+            }}
+        >
+            <Stack.Screen
+                name="GalleryChooser"
+                component={GalleryChooser}
+                options={{ title: "Choisir une galerie" }}
+            />
+            <Stack.Screen
+                name="Settings"
+                component={SettingsRoot}
+                options={{ title: "Paramètres" }}
+            />
+            <Stack.Screen
+                name="Gallery"
+                component={GalleryRoot}
+                options={{ title: "Galerie" }}
+            />
+        </Stack.Navigator>
     );
 });
 
@@ -119,9 +146,10 @@ function Application() {
     return (
         <ApiClientProvider>
             <GalleriesStoreProvider>
-                <CssBaseline />
-
-                <MainScreen />
+                <NavigationContainer>
+                    <StatusBar style="auto" />
+                    <MainScreen />
+                </NavigationContainer>
             </GalleriesStoreProvider>
         </ApiClientProvider>
     );

@@ -1,0 +1,50 @@
+{
+    "name": "galeriephotos",
+    "version": "0.1.0",
+    "private": true,
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
+        "@mui/icons-material": "^7.1.0",
+        "@mui/material": "^7.1.0",
+        "@types/jest": "^29.5.14",
+        "@types/leaflet": "^1.9.17",
+        "@types/node": "^22.15.18",
+        "@types/react": "^19.1.4",
+        "@types/react-dom": "^19.1.5",
+        "folke-service-helpers": "^3.7.0",
+        "history": "^5.3.0",
+        "leaflet": "^1.9.4",
+        "mobx": "^6.13.7",
+        "mobx-react-lite": "^4.1.0",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "react-leaflet": "^5.0.0",
+        "react-router": "^7.6.0",
+        "react-router-dom": "^7.6.0",
+        "react-swipeable": "^7.0.2"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^4.4.1",
+        "eslint": "^9.27.0",
+        "eslint-plugin-import": "^2.31.0",
+        "eslint-plugin-jsx-a11y": "^6.10.2",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.43.0",
+        "vite": "^6.3.6"
+    },
+    "eslintConfig": {
+        "extends": "react-app"
+    },
+    "scripts": {
+        "build": "vite build",
+        "start": "vite",
+        "test": "cross-env CI=true react-scripts test --env=jsdom",
+        "lint": "eslint ./src/**/*.ts ./src/**/*.tsx",
+        "typecheck": "tsc --noEmit -w -p tsconfig.app.json"
+    },
+    "packageManager": "yarn@4.5.3"
+}

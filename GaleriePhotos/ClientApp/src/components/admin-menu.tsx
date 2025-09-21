@@ -1,33 +1,61 @@
-import { List, ListItemButton } from "@mui/material";
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { observer } from "mobx-react-lite";
-import { useLocation, Link } from "react-router";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 function AdminMenu() {
-    const location = useLocation();
+    const navigation = useNavigation();
+    const route = useRoute();
 
     return (
-        <List>
-            <ListItemButton component={Link} to={`/`}>
-                Retour
-            </ListItemButton>
-
-            <ListItemButton
-                selected={location.pathname === "/settings/users"}
-                component={Link}
-                to={`/settings/users`}
+        <View style={styles.container}>
+            <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => navigation.navigate('GalleryChooser' as never)}
             >
-                Utilisateurs
-            </ListItemButton>
+                <Text style={styles.menuText}>Retour</Text>
+            </TouchableOpacity>
 
-            <ListItemButton
-                selected={location.pathname === "/settings/galleries"}
-                component={Link}
-                to={`/settings/galleries`}
+            <TouchableOpacity
+                style={[
+                    styles.menuItem,
+                    route.name === 'Users' && styles.selected
+                ]}
+                onPress={() => navigation.navigate('Users' as never)}
             >
-                Galeries
-            </ListItemButton>
-        </List>
+                <Text style={styles.menuText}>Utilisateurs</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[
+                    styles.menuItem,
+                    route.name === 'Galleries' && styles.selected
+                ]}
+                onPress={() => navigation.navigate('Galleries' as never)}
+            >
+                <Text style={styles.menuText}>Galeries</Text>
+            </TouchableOpacity>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 16,
+    },
+    menuItem: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    selected: {
+        backgroundColor: '#e3f2fd',
+    },
+    menuText: {
+        fontSize: 16,
+        color: '#333',
+    },
+});
 
 export default observer(AdminMenu);

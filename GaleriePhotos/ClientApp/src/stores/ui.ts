@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDirectoriesStore } from "./directories";
 
 export function createDirectoryUrl(
@@ -7,9 +7,11 @@ export function createDirectoryUrl(
     directoryId: number,
     order: "date-desc" | "date-asc"
 ) {
-    const urlSearchParams = new URLSearchParams();
-    urlSearchParams.set("order", order);
-    return `/g/${galleryId}/directory/${directoryId}?${urlSearchParams}`;
+    // React Navigation uses objects for navigation params instead of URLs
+    return {
+        screen: 'Directory',
+        params: { galleryId, directoryId, order }
+    };
 }
 
 export function createPhotoUrl(
@@ -18,41 +20,40 @@ export function createPhotoUrl(
     photoId: number,
     order: "date-desc" | "date-asc"
 ) {
-    const urlSearchParams = new URLSearchParams();
-    urlSearchParams.set("order", order);
-    return `/g/${galleryId}/directory/${directoryId}/images/${photoId}?${urlSearchParams}`;
+    return {
+        screen: 'Photo',
+        params: { galleryId, directoryId, photoId, order }
+    };
 }
 
 export function useUi() {
     const directoriesStore = useDirectoriesStore();
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const navigate = useNavigate();
-    const order =
-        params.get("order") === "date-desc" ? "date-desc" : "date-asc";
+    const navigation = useNavigation();
+    const route = useRoute();
+    const params = route.params as any || {};
+    const order = params.order === "date-desc" ? "date-desc" : "date-asc";
+    
     const navigateToDirectory = useCallback(
         (directoryId: number, newOrder?: "date-desc" | "date-asc") =>
-            navigate(
-                createDirectoryUrl(
-                    directoriesStore.galleryId,
-                    directoryId,
-                    newOrder ?? order
-                )
-            ),
-        [directoriesStore.galleryId, navigate, order]
+            navigation.navigate('Directory' as never, {
+                galleryId: directoriesStore.galleryId,
+                directoryId,
+                order: newOrder ?? order
+            } as never),
+        [directoriesStore.galleryId, navigation, order]
     );
+    
     const navigateToPhoto = useCallback(
         (directoryId: number, photoId: number) =>
-            navigate(
-                createPhotoUrl(
-                    directoriesStore.galleryId,
-                    directoryId,
-                    photoId,
-                    order
-                )
-            ),
-        [directoriesStore.galleryId, navigate, order]
+            navigation.navigate('Photo' as never, {
+                galleryId: directoriesStore.galleryId,
+                directoryId,
+                photoId,
+                order
+            } as never),
+        [directoriesStore.galleryId, navigation, order]
     );
+    
     return {
         order,
         navigateToDirectory,

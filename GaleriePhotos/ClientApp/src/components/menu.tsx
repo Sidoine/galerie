@@ -1,9 +1,8 @@
-import { List, ListItemButton, Collapse, ListItemText } from "@mui/material";
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { observer } from "mobx-react-lite";
-import { useLocation, Link } from "react-router";
-import { ExpandLess, ExpandMore, Settings } from "@mui/icons-material";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDirectoriesStore } from "../stores/directories";
-import { useState } from "react";
 import { useMembersStore } from "../stores/members";
 import { useMeStore } from "../stores/me";
 
@@ -11,88 +10,127 @@ function Menu() {
     const directoriesStore = useDirectoriesStore();
     const meStore = useMeStore();
     const membersStore = useMembersStore();
-    const location = useLocation();
+    const navigation = useNavigation();
+    const route = useRoute();
     const [settingsOpen, setSettingsOpen] = useState(false);
 
     return (
-        <List>
-            <ListItemButton
-                selected={
-                    location.pathname === "/" ||
-                    location.pathname.startsWith("/directory")
-                }
-                component={Link}
-                to={`/g/${directoriesStore.galleryId}`}
+        <View style={styles.container}>
+            <TouchableOpacity
+                style={[
+                    styles.menuItem,
+                    (route.name === 'RootDirectory' || route.name === 'Directory') && styles.selected
+                ]}
+                onPress={() => navigation.navigate('RootDirectory' as never)}
             >
-                Galerie
-            </ListItemButton>
-            <ListItemButton
-                component={Link}
-                to={`/g/${directoriesStore.galleryId}/face-names`}
-                selected={location.pathname.includes("/face-names")}
+                <Text style={styles.menuText}>Galerie</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+                style={[
+                    styles.menuItem,
+                    route.name === 'FaceNames' && styles.selected
+                ]}
+                onPress={() => navigation.navigate('FaceNames' as never)}
             >
-                Noms des visages
-            </ListItemButton>
+                <Text style={styles.menuText}>Noms des visages</Text>
+            </TouchableOpacity>
+            
             {membersStore.administrator && (
                 <>
-                    <ListItemButton
-                        onClick={() => setSettingsOpen(!settingsOpen)}
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => setSettingsOpen(!settingsOpen)}
                     >
-                        <Settings sx={{ mr: 1 }} />
-                        <ListItemText primary="Paramètres" />
-                        {settingsOpen ? <ExpandLess /> : <ExpandMore />}
-                    </ListItemButton>
-                    <Collapse in={settingsOpen} timeout="auto" unmountOnExit>
-                        <List component="div" disablePadding>
-                            <ListItemButton
-                                sx={{ pl: 4 }}
-                                component={Link}
-                                to={`/g/${directoriesStore.galleryId}/settings/gallery`}
-                                selected={location.pathname.includes(
-                                    "/settings/gallery"
-                                )}
+                        <Text style={styles.menuText}>⚙️ Paramètres</Text>
+                        <Text style={styles.expandIcon}>{settingsOpen ? '▼' : '▶'}</Text>
+                    </TouchableOpacity>
+                    
+                    {settingsOpen && (
+                        <View style={styles.submenu}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.submenuItem,
+                                    route.name === 'GallerySettings' && styles.selected
+                                ]}
+                                onPress={() => navigation.navigate('GallerySettings' as never)}
                             >
-                                Galerie
-                            </ListItemButton>
-
-                            <ListItemButton
-                                sx={{ pl: 4 }}
-                                component={Link}
-                                to={`/g/${directoriesStore.galleryId}/settings/visibility`}
-                                selected={location.pathname.includes(
-                                    "/settings/visibility"
-                                )}
+                                <Text style={styles.submenuText}>Galerie</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity
+                                style={[
+                                    styles.submenuItem,
+                                    route.name === 'DirectoryVisibilitySettings' && styles.selected
+                                ]}
+                                onPress={() => navigation.navigate('DirectoryVisibilitySettings' as never)}
                             >
-                                Visibilité du répertoire
-                            </ListItemButton>
-                            <ListItemButton
-                                sx={{ pl: 4 }}
-                                component={Link}
-                                to={`/g/${directoriesStore.galleryId}/settings/members`}
-                                selected={location.pathname.includes(
-                                    "/settings/members"
-                                )}
+                                <Text style={styles.submenuText}>Visibilité du répertoire</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity
+                                style={[
+                                    styles.submenuItem,
+                                    route.name === 'GalleryMembers' && styles.selected
+                                ]}
+                                onPress={() => navigation.navigate('GalleryMembers' as never)}
                             >
-                                Membres
-                            </ListItemButton>
-                        </List>
-                    </Collapse>
+                                <Text style={styles.submenuText}>Membres</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </>
             )}
 
             {meStore.administrator && (
-                <>
-                    <ListItemButton
-                        selected={location.pathname === "/settings/users"}
-                        component={Link}
-                        to={`/settings/users`}
-                    >
-                        Paramètres globaux
-                    </ListItemButton>
-                </>
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => navigation.navigate('Settings' as never)}
+                >
+                    <Text style={styles.menuText}>Paramètres globaux</Text>
+                </TouchableOpacity>
             )}
-        </List>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 16,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    submenu: {
+        marginLeft: 16,
+    },
+    submenuItem: {
+        padding: 12,
+        paddingLeft: 32,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    selected: {
+        backgroundColor: '#e3f2fd',
+    },
+    menuText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    submenuText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    expandIcon: {
+        fontSize: 12,
+        color: '#999',
+    },
+});
 
 export default observer(Menu);
