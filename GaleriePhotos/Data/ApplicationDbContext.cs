@@ -34,14 +34,6 @@ namespace GaleriePhotos.Data
             {
                 entity.HasKey(e => e.Id);
                 
-                // Configure the Vector property as a string for now - we'll convert to proper vector later
-                entity.Property(e => e.Embedding)
-                    .HasConversion(
-                        v => VectorToString(v),
-                        v => StringToVector(v)
-                    )
-                    .HasColumnType("text"); // Use text column for now
-                
                 entity.HasOne(e => e.Photo)
                     .WithMany()
                     .HasForeignKey(e => e.PhotoId)
@@ -63,16 +55,6 @@ namespace GaleriePhotos.Data
                 entity.Property(e => e.Name).IsRequired();
                 entity.HasIndex(e => e.Name).IsUnique();
             });
-        }
-
-        private static string VectorToString(Vector vector)
-        {
-            return string.Join(",", vector.Memory.Span.ToArray().Select(f => f.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-        }
-
-        private static Vector StringToVector(string value)
-        {
-            return new Vector(value.Split(',').Select(s => float.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToArray());
         }
     }
 }

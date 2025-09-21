@@ -39,6 +39,5 @@ namespace GaleriePhotos.ViewModels
     public class FaceNameSuggestionResponseViewModel
     {
         public string? Name { get; set; }
-        public float? Similarity { get; set; }
     }
 }
