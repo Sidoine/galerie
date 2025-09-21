@@ -5,9 +5,13 @@ import {
     Box,
     Switch,
     styled,
+    IconButton,
+    Menu,
+    MenuItem,
 } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { useCallback, ChangeEvent } from "react";
+import { useCallback, ChangeEvent, useState } from "react";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Directory } from "../services/views";
 import { useDirectoriesStore } from "../stores/directories";
 import { useDirectoryVisibilitiesStore } from "../stores/directory-visibilities";
@@ -28,6 +32,28 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
     const membersStore = useMembersStore();
 
     const visibilities = visibilitiesStore.visibilities;
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const menuOpen = Boolean(anchorEl);
+
+    const handleMenuClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    }, []);
+
+    const handleMenuClose = useCallback(() => {
+        setAnchorEl(null);
+    }, []);
+
+    const handleUseAsParentCover = useCallback(async () => {
+        handleMenuClose();
+        try {
+            await directoriesStore.setParentCover(directory.id);
+        } catch (error) {
+            console.error("Failed to set parent cover:", error);
+        }
+    }, [directory.id, handleMenuClose, directoriesStore]);
 
     const handleVisibilityToggle = useCallback(
         (visibilityValue: number) =>
@@ -116,8 +142,28 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                             ))}
                     </Stack>
                 }
+                actionIcon={
+                    membersStore.administrator && directory.coverPhotoId && (
+                        <IconButton
+                            color="inherit"
+                            onClick={handleMenuClick}
+                            size="small"
+                        >
+                            <MoreVertIcon />
+                        </IconButton>
+                    )
+                }
                 position="below"
             />
+            <Menu
+                anchorEl={anchorEl}
+                open={menuOpen}
+                onClose={handleMenuClose}
+            >
+                <MenuItem onClick={handleUseAsParentCover}>
+                    Utiliser cette couverture pour le répertoire parent
+                </MenuItem>
+            </Menu>
         </ImageListItem>
     );
 });

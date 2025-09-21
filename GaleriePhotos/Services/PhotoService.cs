@@ -264,6 +264,20 @@ namespace GaleriePhotos.Services
             return privateDirectory;
         }
 
+        public async Task<PhotoDirectory?> GetParentDirectory(PhotoDirectory directory)
+        {
+            if (string.IsNullOrEmpty(directory.Path))
+                return null;
+
+            var parentPath = Path.GetDirectoryName(directory.Path);
+            if (string.IsNullOrEmpty(parentPath))
+                return null;
+
+            return await applicationDbContext.PhotoDirectories
+                .Include(x => x.Gallery)
+                .FirstOrDefaultAsync(x => x.Path == parentPath && x.GalleryId == directory.GalleryId);
+        }
+
         public async Task MoveToPrivate(Photo photo)
         {
             if (IsPrivate(photo.Directory)) return;

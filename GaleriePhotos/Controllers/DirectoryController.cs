@@ -123,5 +123,26 @@ namespace Galerie.Server.Controllers
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }
+
+        [HttpPost("{id}/set-parent-cover")]
+        public async Task<ActionResult> SetParentCover(int id)
+        {
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
+            if (directory == null) return NotFound();
+            if (!User.IsGalleryAdministrator(directory.Gallery))
+            {
+                return Forbid();
+            }
+            
+            var parentDirectory = await photoService.GetParentDirectory(directory);
+            if (parentDirectory == null) return BadRequest("No parent directory found");
+
+            if (directory.CoverPhotoId == null)
+                return BadRequest("Directory has no cover photo");
+
+            parentDirectory.CoverPhotoId = directory.CoverPhotoId;
+            await applicationDbContext.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

@@ -31,6 +31,7 @@ class DirectoriesStore {
             patchPhoto: action,
             setAccess: action,
             rotatePhoto: action,
+            setParentCover: action,
             root: observable,
             isInError: observable,
             setRoot: action,
@@ -84,6 +85,12 @@ class DirectoriesStore {
             directory.visibility = patch.visibility;
         }
         await this.directoryService.patch(directory.id, patch);
+    }
+
+    async setParentCover(directoryId: number) {
+        await this.directoryService.setParentCover(directoryId);
+        this.infoLoader.invalidate();
+        this.subDirectoriesLoader.invalidate();
     }
 
     async patchPhoto(photo: Photo, patch: PhotoPatch) {

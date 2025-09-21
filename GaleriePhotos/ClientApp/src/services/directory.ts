@@ -24,5 +24,9 @@ export class DirectoryController {
     patch = (id: number, viewModel: views.DirectoryPatch) => {
         return this.client.fetch(`api/directories/${id}`, "PATCH", JSON.stringify(viewModel));
     }
+
+    setParentCover = (id: number) => {
+        return this.client.fetch(`api/directories/${id}/set-parent-cover`, "POST", undefined);
+    }
 }
 
