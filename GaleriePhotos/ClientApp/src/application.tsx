@@ -1,11 +1,18 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar } from 'expo-status-bar';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import { StatusBar } from "expo-status-bar";
 import { DirectoryPage } from "./components/directory-page";
 import { observer } from "mobx-react-lite";
 import BreadCrumbs from "./components/bread-crumbs";
-import { GalleryMembers, DirectoryVisibilitySettings, GallerySettings, Galleries } from "./components/migrated-placeholders";
+import {
+  GalleryMembers,
+  DirectoryVisibilitySettings,
+  GallerySettings,
+  Galleries,
+  ImageView,
+} from "./components";
 import { UsersStoreProvider } from "./stores/users";
 import { GalleriesStoreProvider } from "./stores/galleries";
 import { DirectoriesStoreProvider } from "./stores/directories";
@@ -20,130 +27,143 @@ import FaceNamePhotos from "./components/face-name-photos";
 import { MeStoreProvider } from "./stores/me";
 import { RootDirectoryPage } from "./components/root-directory-page";
 
-const Stack = createStackNavigator();
+import {
+  MainStackParamList,
+  GalleryStackParamList,
+  SettingsStackParamList,
+} from "./navigation-types";
+
+const MainStack = createBottomTabNavigator<MainStackParamList>();
+const GalleryStack = createStackNavigator<GalleryStackParamList>();
+const SettingsStack = createStackNavigator<SettingsStackParamList>();
 
 function GalleryRoot({ route }: { route: any }) {
-    const { galleryId } = route.params;
-    return (
-        <DirectoriesStoreProvider galleryId={Number(galleryId)}>
-            <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
-                <MeStoreProvider>
-                    <UsersStoreProvider>
-                        <MembersStoreProvider>
-                            <Stack.Navigator
-                                screenOptions={{
-                                    headerTitle: "Galerie photo"
-                                }}
-                            >
-                                <Stack.Screen
-                                    name="RootDirectory"
-                                    component={RootDirectoryPage}
-                                    options={{ title: "Galerie" }}
-                                />
-                                <Stack.Screen
-                                    name="Directory"
-                                    component={DirectoryPage}
-                                    options={{ 
-                                        headerTitle: () => <BreadCrumbs />
-                                    }}
-                                />
-                                <Stack.Screen
-                                    name="FaceNames"
-                                    component={FaceNames}
-                                    options={{ title: "Noms des visages" }}
-                                />
-                                <Stack.Screen
-                                    name="FaceNamePhotos"
-                                    component={FaceNamePhotos}
-                                    options={{ title: "Photos du visage" }}
-                                />
-                                <Stack.Screen
-                                    name="GalleryMembers"
-                                    component={GalleryMembers}
-                                    options={{ title: "Membres" }}
-                                />
-                                <Stack.Screen
-                                    name="DirectoryVisibilitySettings"
-                                    component={DirectoryVisibilitySettings}
-                                    options={{ title: "Visibilité" }}
-                                />
-                                <Stack.Screen
-                                    name="GallerySettings"
-                                    component={GallerySettings}
-                                    options={{ title: "Paramètres" }}
-                                />
-                            </Stack.Navigator>
-                        </MembersStoreProvider>
-                    </UsersStoreProvider>
-                </MeStoreProvider>
-            </DirectoryVisibilitiesStoreProvider>
-        </DirectoriesStoreProvider>
-    );
+  const { galleryId } = route.params as { galleryId: number };
+  return (
+    <DirectoriesStoreProvider galleryId={Number(galleryId)}>
+      <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
+        <MeStoreProvider>
+          <UsersStoreProvider>
+            <MembersStoreProvider>
+              <GalleryStack.Navigator
+                screenOptions={{
+                  headerTitle: "Galerie photo",
+                }}
+              >
+                <GalleryStack.Screen
+                  name="RootDirectory"
+                  component={RootDirectoryPage}
+                  options={{ title: "Galerie" }}
+                />
+                <GalleryStack.Screen
+                  name="Directory"
+                  component={DirectoryPage}
+                  options={{
+                    headerTitle: () => <BreadCrumbs />,
+                  }}
+                />
+                <GalleryStack.Screen
+                  name="FaceNames"
+                  component={FaceNames}
+                  options={{ title: "Noms des visages" }}
+                />
+                <GalleryStack.Screen
+                  name="FaceNamePhotos"
+                  component={FaceNamePhotos}
+                  options={{ title: "Photos du visage" }}
+                />
+                <GalleryStack.Screen
+                  name="GalleryMembers"
+                  component={GalleryMembers}
+                  options={{ title: "Membres" }}
+                />
+                <GalleryStack.Screen
+                  name="DirectoryVisibilitySettings"
+                  component={DirectoryVisibilitySettings}
+                  options={{ title: "Visibilité" }}
+                />
+                <GalleryStack.Screen
+                  name="GallerySettings"
+                  component={GallerySettings}
+                  options={{ title: "Paramètres" }}
+                />
+                <GalleryStack.Screen
+                  name="Photo"
+                  component={ImageView}
+                  options={{ headerShown: false }}
+                />
+              </GalleryStack.Navigator>
+            </MembersStoreProvider>
+          </UsersStoreProvider>
+        </MeStoreProvider>
+      </DirectoryVisibilitiesStoreProvider>
+    </DirectoriesStoreProvider>
+  );
 }
 
 function SettingsRoot() {
-    return (
-        <UsersStoreProvider>
-            <MeStoreProvider>
-                <Stack.Navigator
-                    screenOptions={{
-                        headerTitle: "Paramètres globaux"
-                    }}
-                >
-                    <Stack.Screen
-                        name="Users"
-                        component={Users}
-                        options={{ title: "Utilisateurs" }}
-                    />
-                    <Stack.Screen
-                        name="Galleries"
-                        component={Galleries}
-                        options={{ title: "Galeries" }}
-                    />
-                </Stack.Navigator>
-            </MeStoreProvider>
-        </UsersStoreProvider>
-    );
+  return (
+    <UsersStoreProvider>
+      <MeStoreProvider>
+        <SettingsStack.Navigator
+          screenOptions={{
+            headerTitle: "Paramètres globaux",
+          }}
+        >
+          <SettingsStack.Screen
+            name="Users"
+            component={Users}
+            options={{ title: "Utilisateurs" }}
+          />
+          <SettingsStack.Screen
+            name="Galleries"
+            component={Galleries}
+            options={{ title: "Galeries" }}
+          />
+        </SettingsStack.Navigator>
+      </MeStoreProvider>
+    </UsersStoreProvider>
+  );
 }
 
 const MainScreen = observer(function MainScreen() {
-    return (
-        <Stack.Navigator
-            initialRouteName="GalleryChooser"
-            screenOptions={{
-                headerShown: false
-            }}
-        >
-            <Stack.Screen
-                name="GalleryChooser"
-                component={GalleryChooser}
-                options={{ title: "Choisir une galerie" }}
-            />
-            <Stack.Screen
-                name="Settings"
-                component={SettingsRoot}
-                options={{ title: "Paramètres" }}
-            />
-            <Stack.Screen
-                name="Gallery"
-                component={GalleryRoot}
-                options={{ title: "Galerie" }}
-            />
-        </Stack.Navigator>
-    );
+  return (
+    <MainStack.Navigator
+      initialRouteName="GalleryChooser"
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <MainStack.Screen
+        name="GalleryChooser"
+        component={GalleryChooser}
+        options={{ title: "Choisir une galerie" }}
+      />
+      <MainStack.Screen
+        name="Settings"
+        component={SettingsRoot}
+        options={{ title: "Paramètres" }}
+      />
+      <MainStack.Screen
+        name="Gallery"
+        component={GalleryRoot}
+        options={{ title: "Galerie" }}
+      />
+    </MainStack.Navigator>
+  );
 });
 
 function Application() {
-    return (
-        <ApiClientProvider>
-            <GalleriesStoreProvider>
-                <NavigationContainer>
-                    <StatusBar style="auto" />
-                    <MainScreen />
-                </NavigationContainer>
-            </GalleriesStoreProvider>
-        </ApiClientProvider>
-    );
+  return (
+    <ApiClientProvider>
+      <GalleriesStoreProvider>
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <MainScreen />
+        </NavigationContainer>
+      </GalleriesStoreProvider>
+    </ApiClientProvider>
+  );
 }
 
 export default Application;

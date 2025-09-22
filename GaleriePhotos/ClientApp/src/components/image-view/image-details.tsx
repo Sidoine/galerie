@@ -1,82 +1,166 @@
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { observer } from "mobx-react-lite";
-import { Box, Drawer, IconButton, Stack, Typography } from "@mui/material";
-import { MapContainer, TileLayer } from "react-leaflet";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { PhotoFull } from "../../services/views";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import Icon from "../Icon";
+import { theme } from "../../theme";
 
+interface ImageDetailsProps {
+  image: PhotoFull;
+  open: boolean;
+  onClose: () => void;
+}
+
+// Remplacement du Drawer MUI par un panneau latéral overlay coulissant simple.
+// Pour l'instant, la carte (react-leaflet) est remplacée par un bloc affichant les coordonnées.
 export const ImageDetails = observer(function ImageDetails({
-    image,
-    open,
-    onClose,
-}: {
-    image: PhotoFull;
-    open: boolean;
-    onClose: () => void;
-}) {
-    return (
-        <Drawer
-            open={open}
-            anchor="right"
-            onClose={onClose}
-            sx={{ zIndex: 3000 }}
-            hideBackdrop
-            PaperProps={{
-                sx: {
-                    width: "360px",
-                    p: 2,
-                },
-            }}
-        >
-            <Stack direction="column" spacing={2}>
-                <Stack direction="row" alignItems="center">
-                    <IconButton onClick={onClose}>
-                        <CloseOutlinedIcon />
-                    </IconButton>
-                    <Typography variant="h6">Renseignements</Typography>
-                </Stack>
-                <Typography variant="caption" sx={{ mt: 2, mb: 1 }}>
-                    Détails
-                </Typography>
-                {image.dateTime && (
-                    <Stack direction="row" spacing={1}>
-                        <CalendarTodayIcon />
-                        <Typography>
-                            {new Date(image.dateTime).toLocaleDateString()}
-                        </Typography>
-                    </Stack>
-                )}
-                {image.camera && (
-                    <Stack direction="row" spacing={1}>
-                        <CameraAltIcon />
-                        <Typography>{image.camera}</Typography>
-                    </Stack>
-                )}
-                <Stack direction="row" spacing={1}>
-                    <ImageOutlinedIcon />
-                    <Typography>{image.name}</Typography>
-                </Stack>
-                {image.latitude && image.longitude && (
-                    <Box
-                        component={MapContainer}
-                        sx={{
-                            width: "100%",
-                            height: "20rem",
-                            ml: -2,
-                            mr: -2,
-                        }}
-                        center={[image.latitude, image.longitude]}
-                        zoom={13}
-                    >
-                        <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                        ></TileLayer>
-                    </Box>
-                )}
-            </Stack>
-        </Drawer>
-    );
+  image,
+  open,
+  onClose,
+}: ImageDetailsProps) {
+  if (!open) return null;
+  return (
+    <View style={styles.overlay} pointerEvents="box-none">
+      <View style={styles.panel}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeBtn}
+            accessibilityRole="button"
+          >
+            <Icon name="close" set="mci" size={22} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Renseignements</Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.sectionCaption}>Détails</Text>
+          {image.dateTime && (
+            <DetailRow
+              icon={<Icon name="calendar" set="mci" size={18} />}
+              text={new Date(image.dateTime).toLocaleDateString()}
+            />
+          )}
+          {image.camera && (
+            <DetailRow
+              icon={<Icon name="camera-outline" set="mci" size={18} />}
+              text={image.camera}
+            />
+          )}
+          <DetailRow
+            icon={<Icon name="image-outline" set="mci" size={18} />}
+            text={image.name}
+          />
+          {image.latitude && image.longitude && (
+            <View style={styles.geoBox}>
+              <Text style={styles.geoText}>
+                Lat: {image.latitude.toFixed(5)}
+              </Text>
+              <Text style={styles.geoText}>
+                Lon: {image.longitude.toFixed(5)}
+              </Text>
+              <Text style={styles.geoHint}>
+                Carte désactivée (remplacer par module RN Map)
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </View>
+  );
+});
+
+function DetailRow({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <View style={styles.detailRow}>
+      <View style={styles.detailIcon}>{icon}</View>
+      <Text style={styles.detailText}>{text}</Text>
+    </View>
+  );
+}
+
+const PANEL_WIDTH = 360;
+
+const styles = StyleSheet.create({
+  overlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: PANEL_WIDTH,
+    backgroundColor: theme.palette.background,
+    shadowColor: "#000",
+    shadowOpacity: 0.6,
+    shadowOffset: { width: -2, height: 0 },
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 3000,
+  },
+  panel: {
+    flex: 1,
+    paddingHorizontal: theme.spacing(4),
+    paddingTop: theme.spacing(3),
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  closeBtn: {
+    padding: 8,
+    marginRight: 8,
+  },
+  closeTxt: {
+    color: theme.palette.textPrimary,
+    fontSize: 18,
+  },
+  title: {
+    color: theme.palette.textPrimary,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  content: {
+    paddingBottom: 40,
+  },
+  sectionCaption: {
+    color: theme.palette.textSecondary,
+    fontSize: 12,
+    marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(1),
+    letterSpacing: 1,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: theme.spacing(1.5),
+  },
+  detailIcon: {
+    width: 26,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailText: {
+    color: theme.palette.textPrimary,
+    flexShrink: 1,
+  },
+  geoBox: {
+    marginTop: theme.spacing(3),
+    backgroundColor: theme.palette.surface,
+    padding: theme.spacing(3),
+    borderRadius: theme.radius.md,
+  },
+  geoText: {
+    color: theme.palette.textPrimary,
+    fontSize: 14,
+  },
+  geoHint: {
+    marginTop: theme.spacing(2),
+    fontSize: 11,
+    color: theme.palette.textMuted,
+  },
 });

@@ -1,61 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+// Ce fichier re-exportait des placeholders temporaires.
+// Il re-dirige maintenant vers les vrais composants migrés.
 
-// Simple placeholder component for remaining complex components
-const PlaceholderComponent = ({ name }: { name: string }) => (
-    <View style={styles.placeholder}>
-        <Text style={styles.text}>{name}</Text>
-        <Text style={styles.subtext}>Component migrated to React Native</Text>
-    </View>
-);
+export { DirectoryImagesView } from "./directory-images-view";
+export { default as SubdirectoriesView } from "./subdirectories-view";
+export { GalleryMembers } from "./gallery-members";
+export { default as DirectoryVisibilitySettings } from "./settings/directory-visibility-settings";
+export { default as GallerySettings } from "./settings/gallery-settings";
+export { default as Galleries } from "./settings/galleries";
+// UserAccountMenu: si un composant existe plus tard, l'ajouter ici.
 
-const styles = StyleSheet.create({
-    placeholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 32,
-        backgroundColor: '#f5f5f5',
-        margin: 16,
-        borderRadius: 8,
-        borderWidth: 2,
-        borderColor: '#e0e0e0',
-        borderStyle: 'dashed',
-    },
-    text: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#666',
-        textAlign: 'center',
-    },
-    subtext: {
-        fontSize: 12,
-        color: '#999',
-        marginTop: 8,
-        textAlign: 'center',
-    },
-});
-
-// Create placeholder components for remaining migration
-export const DirectoryImagesView = ({ directoryId }: { directoryId: number }) => 
-    <PlaceholderComponent name={`Directory Images (${directoryId})`} />;
-
-export const SubdirectoriesView = ({ id }: { id: number }) => 
-    <PlaceholderComponent name={`Subdirectories (${id})`} />;
-
-export const GalleryMembers = () => 
-    <PlaceholderComponent name="Gallery Members" />;
-
-export const DirectoryVisibilitySettings = () => 
-    <PlaceholderComponent name="Directory Visibility" />;
-
-export const GallerySettings = () => 
-    <PlaceholderComponent name="Gallery Settings" />;
-
-export const Galleries = () => 
-    <PlaceholderComponent name="Galleries" />;
-
-export const UserAccountMenu = () => 
-    <PlaceholderComponent name="User Account Menu" />;
-
-export default PlaceholderComponent;
+// Export par défaut retiré car l'ancien Placeholder n'est plus nécessaire.

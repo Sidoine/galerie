@@ -1,171 +1,183 @@
-import {
-    ImageListItem,
-    ImageListItemBar,
-    Stack,
-    Box,
-    Switch,
-    styled,
-    IconButton,
-    Menu,
-    MenuItem,
-} from "@mui/material";
+import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { useCallback, ChangeEvent, useState } from "react";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Switch,
+} from "react-native";
 import { Directory } from "../services/views";
+import { useNavigation } from "@react-navigation/native";
 import { useDirectoriesStore } from "../stores/directories";
 import { useDirectoryVisibilitiesStore } from "../stores/directory-visibilities";
 import { useMembersStore } from "../stores/members";
-import { Link as RouterLink } from "react-router-dom";
 import placeholder from "../assets/placeholder.png";
-
-const Image = styled("img")(({ theme }) => ({
-    objectFit: "cover",
-    width: "100%",
-    height: "100%",
-    borderRadius: theme.shape.borderRadius * 2,
-}));
+import { GalleryStackParamList } from "../navigation-types";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
-    const directoriesStore = useDirectoriesStore();
-    const visibilitiesStore = useDirectoryVisibilitiesStore();
-    const membersStore = useMembersStore();
+  const navigation =
+    useNavigation<StackNavigationProp<GalleryStackParamList>>();
+  const directoriesStore = useDirectoriesStore();
+  const visibilitiesStore = useDirectoryVisibilitiesStore();
+  const membersStore = useMembersStore();
+  const visibilities = visibilitiesStore.visibilities;
 
-    const visibilities = visibilitiesStore.visibilities;
+  const handleNavigate = useCallback(() => {
+    navigation.navigate("Directory", {
+      galleryId: directoriesStore.galleryId,
+      directoryId: directory.id,
+      order: "date-desc",
+    });
+  }, [navigation, directory.id]);
 
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const menuOpen = Boolean(anchorEl);
+  const handleUseAsParentCover = useCallback(async () => {
+    try {
+      await directoriesStore.setParentCover(directory.id);
+    } catch (error) {
+      console.error("Failed to set parent cover:", error);
+    }
+  }, [directory.id, directoriesStore]);
 
-    const handleMenuClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setAnchorEl(event.currentTarget);
-    }, []);
+  const toggleVisibility = useCallback(
+    (visibilityValue: number) => (value: boolean) => {
+      let newVisibility = directory.visibility & ~visibilityValue;
+      if (value) newVisibility |= visibilityValue;
+      directoriesStore.patchDirectory(directory, { visibility: newVisibility });
+    },
+    [directory, directoriesStore]
+  );
 
-    const handleMenuClose = useCallback(() => {
-        setAnchorEl(null);
-    }, []);
-
-    const handleUseAsParentCover = useCallback(async () => {
-        handleMenuClose();
-        try {
-            await directoriesStore.setParentCover(directory.id);
-        } catch (error) {
-            console.error("Failed to set parent cover:", error);
-        }
-    }, [directory.id, handleMenuClose, directoriesStore]);
-
-    const handleVisibilityToggle = useCallback(
-        (visibilityValue: number) =>
-            (e: ChangeEvent<HTMLInputElement>, checked: boolean) => {
-                let newVisibility = directory.visibility & ~visibilityValue;
-                if (checked) newVisibility |= visibilityValue;
-                directoriesStore.patchDirectory(directory, {
-                    visibility: newVisibility,
-                });
-                e.preventDefault();
-            },
-        [directoriesStore, directory]
-    );
-
-    return (
-        <ImageListItem sx={{ color: "inherit", textDecoration: "none" }}>
-            <RouterLink
-                to={`/g/${directoriesStore.galleryId}/directory/${directory.id}`}
-            >
-                {directory.coverPhotoId && (
-                    <Image
-                        src={directoriesStore.getThumbnail(
-                            directory.coverPhotoId
-                        )}
-                        alt={directory.name}
-                        loading="lazy"
-                        sx={{ height: 260, objectFit: "cover" }}
-                    />
-                )}
-                {!directory.coverPhotoId && (
-                    <Image
-                        src={placeholder}
-                        alt={directory.name}
-                        loading="lazy"
-                        sx={{ height: 260 }}
-                    />
-                )}
-            </RouterLink>
-            <ImageListItemBar
-                title={directory.name}
-                subtitle={
-                    <Stack direction="row" alignItems="center" flexWrap="wrap">
-                        {directory.numberOfPhotos > 0 && (
-                            <>
-                                {directory.numberOfPhotos} élément
-                                {directory.numberOfPhotos > 1 ? "s" : ""}{" "}
-                                {" · "}
-                            </>
-                        )}
-                        {directory.numberOfSubDirectories > 0 && (
-                            <>
-                                {directory.numberOfSubDirectories} album
-                                {directory.numberOfSubDirectories > 1
-                                    ? "s"
-                                    : ""}
-                                {" · "}
-                            </>
-                        )}
-                        {membersStore.administrator &&
-                            visibilities.map((visibility) => (
-                                <Box
-                                    key={visibility.id}
-                                    display="flex"
-                                    alignItems="center"
-                                >
-                                    <Switch
-                                        color="primary"
-                                        size="small"
-                                        checked={
-                                            (directory.visibility &
-                                                visibility.value) >
-                                            0
-                                        }
-                                        onChange={handleVisibilityToggle(
-                                            visibility.value
-                                        )}
-                                    />
-                                    <Box
-                                        component="span"
-                                        dangerouslySetInnerHTML={{
-                                            __html: visibility.icon,
-                                        }}
-                                        sx={{ ml: -1, mr: 0.5 }}
-                                    />
-                                </Box>
-                            ))}
-                    </Stack>
-                }
-                actionIcon={
-                    membersStore.administrator && directory.coverPhotoId && (
-                        <IconButton
-                            color="inherit"
-                            onClick={handleMenuClick}
-                            size="small"
-                        >
-                            <MoreVertIcon />
-                        </IconButton>
-                    )
-                }
-                position="below"
-            />
-            <Menu
-                anchorEl={anchorEl}
-                open={menuOpen}
-                onClose={handleMenuClose}
-            >
-                <MenuItem onClick={handleUseAsParentCover}>
-                    Utiliser cette couverture pour le répertoire parent
-                </MenuItem>
-            </Menu>
-        </ImageListItem>
-    );
+  return (
+    <TouchableOpacity style={styles.card} onPress={handleNavigate}>
+      <View style={styles.imageWrapper}>
+        {directory.coverPhotoId && (
+          <Image
+            source={{
+              uri: directoriesStore.getThumbnail(directory.coverPhotoId),
+            }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        )}
+        {!directory.coverPhotoId && (
+          <Image
+            source={placeholder as any}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        )}
+      </View>
+      <View style={styles.meta}>
+        <Text style={styles.title}>{directory.name}</Text>
+        <View style={styles.subtitleRow}>
+          {directory.numberOfPhotos > 0 && (
+            <Text style={styles.metaText}>
+              {directory.numberOfPhotos} élément
+              {directory.numberOfPhotos > 1 ? "s" : ""}
+            </Text>
+          )}
+          {directory.numberOfSubDirectories > 0 && (
+            <Text style={styles.metaText}>
+              {directory.numberOfSubDirectories} album
+              {directory.numberOfSubDirectories > 1 ? "s" : ""}
+            </Text>
+          )}
+        </View>
+        {membersStore.administrator && (
+          <View style={styles.visibilityRow}>
+            {visibilities.map((v) => (
+              <View key={v.id} style={styles.visibilityItem}>
+                <Switch
+                  value={(directory.visibility & v.value) > 0}
+                  onValueChange={toggleVisibility(v.value)}
+                />
+                <Text style={styles.visibilityIcon}>
+                  {/* Simplification: strip HTML icon, could map to unicode */}
+                  {v.name || ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+        {membersStore.administrator && directory.coverPhotoId && (
+          <TouchableOpacity
+            onPress={handleUseAsParentCover}
+            style={styles.actionButton}
+          >
+            <Text style={styles.actionButtonText}>
+              Utiliser comme couverture parente
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 });
 
 export default SubdirectoryCard;
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  imageWrapper: {
+    height: 160,
+    backgroundColor: "#eee",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  meta: {
+    padding: 10,
+    gap: 4,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  subtitleRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  metaText: {
+    fontSize: 12,
+    color: "#555",
+  },
+  visibilityRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  visibilityItem: {
+    alignItems: "center",
+  },
+  visibilityIcon: {
+    fontSize: 10,
+    color: "#333",
+  },
+  actionButton: {
+    marginTop: 8,
+    backgroundColor: "#1976d2",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  actionButtonText: {
+    color: "white",
+    fontSize: 12,
+    textAlign: "center",
+  },
+});

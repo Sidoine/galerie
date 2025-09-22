@@ -1,28 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
-import {
-    Box,
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography,
-    Paper,
-    Chip,
-} from "@mui/material";
-import { Add } from "@mui/icons-material";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { observer } from "mobx-react-lite";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import { useApiClient } from "folke-service-helpers";
 import { GalleryController } from "../../services/gallery";
 import { UserController } from "../../services/user";
@@ -30,303 +17,419 @@ import * as views from "../../services/views";
 import { DataProviderType } from "../../services/enums";
 
 const Galleries = observer(function Galleries() {
-    const apiClient = useApiClient();
-    const galleryController = useMemo(
-        () => new GalleryController(apiClient),
-        [apiClient]
-    );
-    const userController = useMemo(
-        () => new UserController(apiClient),
-        [apiClient]
-    );
+  const apiClient = useApiClient();
+  const galleryController = useMemo(
+    () => new GalleryController(apiClient),
+    [apiClient]
+  );
+  const userController = useMemo(
+    () => new UserController(apiClient),
+    [apiClient]
+  );
 
-    const [galleries, setGalleries] = useState<views.Gallery[]>([]);
-    const [users, setUsers] = useState<views.User[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
-    const [createForm, setCreateForm] = useState({
-        name: "",
-        rootDirectory: "",
-        thumbnailsDirectory: "",
-        userId: "",
-        dataProvider: DataProviderType.FileSystem,
-        seafileServerUrl: "",
+  const [galleries, setGalleries] = useState<views.Gallery[]>([]);
+  const [users, setUsers] = useState<views.User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    rootDirectory: "",
+    thumbnailsDirectory: "",
+    userId: "",
+    dataProvider: DataProviderType.FileSystem as DataProviderType,
+    seafileServerUrl: "",
+  });
+
+  const loadData = useMemo(
+    () => async () => {
+      setLoading(true);
+      try {
+        const [galleriesResult, usersResult] = await Promise.all([
+          galleryController.getAll(),
+          userController.getAll(),
+        ]);
+
+        if (galleriesResult.ok) {
+          setGalleries(galleriesResult.value);
+        }
+        if (usersResult.ok) {
+          setUsers(usersResult.value);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [galleryController, userController]
+  );
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const resetForm = () =>
+    setCreateForm({
+      name: "",
+      rootDirectory: "",
+      thumbnailsDirectory: "",
+      userId: "",
+      dataProvider: DataProviderType.FileSystem,
+      seafileServerUrl: "",
     });
 
-    const loadData = useMemo(
-        () => async () => {
-            setLoading(true);
-            try {
-                const [galleriesResult, usersResult] = await Promise.all([
-                    galleryController.getAll(),
-                    userController.getAll(),
-                ]);
-
-                if (galleriesResult.ok) {
-                    setGalleries(galleriesResult.value);
-                }
-                if (usersResult.ok) {
-                    setUsers(usersResult.value);
-                }
-            } catch (error) {
-                console.error("Error loading data:", error);
-            } finally {
-                setLoading(false);
-            }
-        },
-        [galleryController, userController]
-    );
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
-    const handleCreateGallery = async () => {
-        try {
-            const result = await galleryController.create({
-                name: createForm.name,
-                rootDirectory:
-                    createForm.dataProvider === DataProviderType.FileSystem
-                        ? createForm.rootDirectory
-                        : "",
-                thumbnailsDirectory:
-                    createForm.dataProvider === DataProviderType.FileSystem
-                        ? createForm.thumbnailsDirectory
-                        : "",
-                userId: createForm.userId,
-                dataProvider: createForm.dataProvider,
-                seafileServerUrl:
-                    createForm.dataProvider === DataProviderType.Seafile
-                        ? createForm.seafileServerUrl || null
-                        : null,
-                seafileApiKey: null,
-            });
-
-            if (result.ok) {
-                await loadData();
-                setCreateDialogOpen(false);
-                setCreateForm({
-                    name: "",
-                    rootDirectory: "",
-                    thumbnailsDirectory: "",
-                    userId: "",
-                    dataProvider: DataProviderType.FileSystem,
-                    seafileServerUrl: "",
-                });
-            }
-        } catch (error) {
-            console.error("Error creating gallery:", error);
-        }
-    };
-
-    if (loading) {
-        return <Typography>Chargement...</Typography>;
+  const handleCreateGallery = useCallback(async () => {
+    if (!createForm.name || !createForm.userId) return;
+    if (
+      createForm.dataProvider === DataProviderType.FileSystem &&
+      !createForm.rootDirectory
+    )
+      return;
+    if (
+      createForm.dataProvider === DataProviderType.Seafile &&
+      !createForm.seafileServerUrl
+    )
+      return;
+    setCreating(true);
+    setError(null);
+    try {
+      const result = await galleryController.create({
+        name: createForm.name,
+        rootDirectory:
+          createForm.dataProvider === DataProviderType.FileSystem
+            ? createForm.rootDirectory
+            : "",
+        thumbnailsDirectory:
+          createForm.dataProvider === DataProviderType.FileSystem
+            ? createForm.thumbnailsDirectory
+            : "",
+        userId: createForm.userId,
+        dataProvider: createForm.dataProvider,
+        seafileServerUrl:
+          createForm.dataProvider === DataProviderType.Seafile
+            ? createForm.seafileServerUrl || null
+            : null,
+        seafileApiKey: null,
+      });
+      if (result.ok) {
+        await loadData();
+        resetForm();
+        setCreateOpen(false);
+      } else {
+        setError(result.message || "Échec de la création");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue");
+    } finally {
+      setCreating(false);
     }
+  }, [createForm, galleryController, loadData]);
 
+  if (loading) {
     return (
-        <Box sx={{ p: 3 }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 3,
-                }}
-            >
-                <Typography variant="h4">Galeries</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => setCreateDialogOpen(true)}
-                >
-                    Nouvelle galerie
-                </Button>
-            </Box>
-
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Nom</TableCell>
-                            <TableCell>Répertoire racine</TableCell>
-                            <TableCell>Répertoire des miniatures</TableCell>
-                            <TableCell>Administrateurs</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {galleries.map((gallery) => (
-                            <TableRow key={gallery.id}>
-                                <TableCell>{gallery.name}</TableCell>
-                                <TableCell>{gallery.rootDirectory}</TableCell>
-                                <TableCell>
-                                    {gallery.thumbnailsDirectory || "—"}
-                                </TableCell>
-                                <TableCell>
-                                    {gallery.administratorNames.map((name) => (
-                                        <Chip
-                                            key={name}
-                                            label={name}
-                                            size="small"
-                                            sx={{ mr: 1 }}
-                                        />
-                                    ))}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-
-            <Dialog
-                open={createDialogOpen}
-                onClose={() => setCreateDialogOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>Créer une nouvelle galerie</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        label="Nom"
-                        fullWidth
-                        margin="normal"
-                        required
-                        value={createForm.name}
-                        onChange={(e) =>
-                            setCreateForm({
-                                ...createForm,
-                                name: e.target.value,
-                            })
-                        }
-                    />
-                    <FormControl fullWidth margin="normal">
-                        <InputLabel>Type de données</InputLabel>
-                        <Select
-                            label="Type de données"
-                            value={createForm.dataProvider}
-                            onChange={(e) =>
-                                setCreateForm({
-                                    ...createForm,
-                                    dataProvider: e.target
-                                        .value as DataProviderType,
-                                    // reset champs spécifiques quand on change
-                                    rootDirectory:
-                                        e.target.value ===
-                                        DataProviderType.FileSystem
-                                            ? createForm.rootDirectory
-                                            : "",
-                                    thumbnailsDirectory:
-                                        e.target.value ===
-                                        DataProviderType.FileSystem
-                                            ? createForm.thumbnailsDirectory
-                                            : "",
-                                    seafileServerUrl:
-                                        e.target.value ===
-                                        DataProviderType.Seafile
-                                            ? createForm.seafileServerUrl
-                                            : "",
-                                })
-                            }
-                        >
-                            <MenuItem value={DataProviderType.FileSystem}>
-                                Système de fichiers
-                            </MenuItem>
-                            <MenuItem value={DataProviderType.Seafile}>
-                                Seafile
-                            </MenuItem>
-                        </Select>
-                    </FormControl>
-                    {createForm.dataProvider ===
-                        DataProviderType.FileSystem && (
-                        <>
-                            <TextField
-                                label="Répertoire racine"
-                                fullWidth
-                                margin="normal"
-                                required
-                                value={createForm.rootDirectory}
-                                onChange={(e) =>
-                                    setCreateForm({
-                                        ...createForm,
-                                        rootDirectory: e.target.value,
-                                    })
-                                }
-                            />
-                            <TextField
-                                label="Répertoire des miniatures"
-                                fullWidth
-                                required
-                                margin="normal"
-                                value={createForm.thumbnailsDirectory}
-                                onChange={(e) =>
-                                    setCreateForm({
-                                        ...createForm,
-                                        thumbnailsDirectory: e.target.value,
-                                    })
-                                }
-                            />
-                        </>
-                    )}
-                    {createForm.dataProvider === DataProviderType.Seafile && (
-                        <TextField
-                            label="URL du serveur Seafile"
-                            fullWidth
-                            required
-                            margin="normal"
-                            value={createForm.seafileServerUrl}
-                            onChange={(e) =>
-                                setCreateForm({
-                                    ...createForm,
-                                    seafileServerUrl: e.target.value,
-                                })
-                            }
-                            placeholder="https://seafile.example.com"
-                        />
-                    )}
-                    <FormControl fullWidth margin="normal">
-                        <InputLabel>Administrateur initial</InputLabel>
-                        <Select
-                            required
-                            value={createForm.userId}
-                            label="Administrateur initial"
-                            onChange={(e) =>
-                                setCreateForm({
-                                    ...createForm,
-                                    userId: e.target.value,
-                                })
-                            }
-                        >
-                            {users.map((user) => (
-                                <MenuItem key={user.id} value={user.id}>
-                                    {user.name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCreateDialogOpen(false)}>
-                        Annuler
-                    </Button>
-                    <Button
-                        onClick={handleCreateGallery}
-                        variant="contained"
-                        disabled={
-                            !createForm.name ||
-                            !createForm.userId ||
-                            (createForm.dataProvider ===
-                                DataProviderType.FileSystem &&
-                                !createForm.rootDirectory) ||
-                            (createForm.dataProvider ===
-                                DataProviderType.Seafile &&
-                                !createForm.seafileServerUrl)
-                        }
-                    >
-                        Créer
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Box>
+      <View style={styles.center}>
+        <ActivityIndicator />
+        <Text style={styles.loadingText}>Chargement...</Text>
+      </View>
     );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Galeries</Text>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => setCreateOpen(true)}
+        >
+          <Text style={styles.primaryButtonText}>＋ Nouvelle</Text>
+        </TouchableOpacity>
+      </View>
+      {error && <Text style={styles.error}>{error}</Text>}
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {galleries.map((g) => (
+          <View key={g.id} style={styles.card}>
+            <Text style={styles.galleryName}>{g.name}</Text>
+            <Text style={styles.smallLabel}>
+              Racine: <Text style={styles.mono}>{g.rootDirectory}</Text>
+            </Text>
+            <Text style={styles.smallLabel}>
+              Miniatures:{" "}
+              <Text style={styles.mono}>{g.thumbnailsDirectory || "—"}</Text>
+            </Text>
+            <View style={styles.adminRow}>
+              {g.administratorNames.map((a) => (
+                <View key={a} style={styles.chip}>
+                  <Text style={styles.chipText}>{a}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+        {galleries.length === 0 && (
+          <Text style={styles.empty}>Aucune galerie</Text>
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={createOpen}
+        animationType="slide"
+        onRequestClose={() => setCreateOpen(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Créer une nouvelle galerie</Text>
+          <ScrollView>
+            <Text style={styles.inputLabel}>Nom *</Text>
+            <TextInput
+              style={styles.input}
+              value={createForm.name}
+              onChangeText={(v) => setCreateForm({ ...createForm, name: v })}
+              placeholder="Nom de la galerie"
+            />
+            <Text style={styles.inputLabel}>Type de données *</Text>
+            <View style={styles.selectorRow}>
+              {[DataProviderType.FileSystem, DataProviderType.Seafile].map(
+                (tp) => (
+                  <TouchableOpacity
+                    key={tp}
+                    style={[
+                      styles.selectorChip,
+                      tp === createForm.dataProvider &&
+                        styles.selectorChipActive,
+                    ]}
+                    onPress={() =>
+                      setCreateForm({
+                        ...createForm,
+                        dataProvider: tp,
+                        rootDirectory:
+                          tp === DataProviderType.FileSystem
+                            ? createForm.rootDirectory
+                            : "",
+                        thumbnailsDirectory:
+                          tp === DataProviderType.FileSystem
+                            ? createForm.thumbnailsDirectory
+                            : "",
+                        seafileServerUrl:
+                          tp === DataProviderType.Seafile
+                            ? createForm.seafileServerUrl
+                            : "",
+                      })
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.selectorChipText,
+                        tp === createForm.dataProvider &&
+                          styles.selectorChipTextActive,
+                      ]}
+                    >
+                      {tp === DataProviderType.FileSystem
+                        ? "Fichiers"
+                        : "Seafile"}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+            {createForm.dataProvider === DataProviderType.FileSystem && (
+              <>
+                <Text style={styles.inputLabel}>Répertoire racine *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={createForm.rootDirectory}
+                  onChangeText={(v) =>
+                    setCreateForm({ ...createForm, rootDirectory: v })
+                  }
+                  placeholder="/chemin/racine"
+                  autoCapitalize="none"
+                />
+                <Text style={styles.inputLabel}>Répertoire des miniatures</Text>
+                <TextInput
+                  style={styles.input}
+                  value={createForm.thumbnailsDirectory}
+                  onChangeText={(v) =>
+                    setCreateForm({ ...createForm, thumbnailsDirectory: v })
+                  }
+                  placeholder="/chemin/miniatures"
+                  autoCapitalize="none"
+                />
+              </>
+            )}
+            {createForm.dataProvider === DataProviderType.Seafile && (
+              <>
+                <Text style={styles.inputLabel}>URL serveur Seafile *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={createForm.seafileServerUrl}
+                  onChangeText={(v) =>
+                    setCreateForm({ ...createForm, seafileServerUrl: v })
+                  }
+                  placeholder="https://seafile.example.com"
+                  autoCapitalize="none"
+                />
+              </>
+            )}
+            <Text style={styles.inputLabel}>Administrateur initial *</Text>
+            <View style={styles.selectorRow}>
+              {users.map((u) => (
+                <TouchableOpacity
+                  key={u.id}
+                  style={[
+                    styles.selectorChipSmall,
+                    createForm.userId === u.id && styles.selectorChipActive,
+                  ]}
+                  onPress={() => setCreateForm({ ...createForm, userId: u.id })}
+                >
+                  <Text
+                    style={[
+                      styles.selectorChipTextSmall,
+                      createForm.userId === u.id &&
+                        styles.selectorChipTextActive,
+                    ]}
+                  >
+                    {u.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {error && <Text style={styles.error}>{error}</Text>}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => {
+                  setCreateOpen(false);
+                  resetForm();
+                }}
+              >
+                <Text style={styles.secondaryButtonText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  (creating ||
+                    !createForm.name ||
+                    !createForm.userId ||
+                    (createForm.dataProvider === DataProviderType.FileSystem &&
+                      !createForm.rootDirectory) ||
+                    (createForm.dataProvider === DataProviderType.Seafile &&
+                      !createForm.seafileServerUrl)) &&
+                    styles.disabledButton,
+                ]}
+                onPress={handleCreateGallery}
+                disabled={creating}
+              >
+                {creating ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Créer</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
 });
 
 export default Galleries;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  title: { fontSize: 24, fontWeight: "600" },
+  primaryButton: {
+    backgroundColor: "#1976d2",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  primaryButtonText: { color: "#fff", fontWeight: "600" },
+  secondaryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+    backgroundColor: "#eee",
+  },
+  secondaryButtonText: { color: "#333", fontWeight: "500" },
+  disabledButton: { opacity: 0.5 },
+  list: { flex: 1 },
+  card: {
+    backgroundColor: "#fafafa",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  galleryName: { fontSize: 18, fontWeight: "600", marginBottom: 4 },
+  smallLabel: { fontSize: 12, color: "#555" },
+  mono: { fontFamily: "monospace" },
+  adminRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
+  chip: {
+    backgroundColor: "#e0ecf9",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  chipText: { fontSize: 12, color: "#1e6091" },
+  empty: { textAlign: "center", marginTop: 40, color: "#777" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  loadingText: { marginTop: 8 },
+  modalContainer: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  modalTitle: { fontSize: 20, fontWeight: "600", marginBottom: 16 },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  selectorRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  selectorChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#eee",
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectorChipSmall: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#eee",
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectorChipActive: { backgroundColor: "#1976d2" },
+  selectorChipText: { color: "#333", fontSize: 14 },
+  selectorChipTextSmall: { color: "#333", fontSize: 13 },
+  selectorChipTextActive: { color: "#fff" },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 32,
+    gap: 12,
+  },
+  error: { color: "#d32f2f", marginTop: 12 },
+});

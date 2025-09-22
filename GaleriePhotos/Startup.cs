@@ -142,7 +142,7 @@ namespace GaleriePhotos
 
                 if (env.IsDevelopment())
                 {
-                    spa.UseProxyToSpaDevelopmentServer("http://localhost:5173/");
+                    spa.UseProxyToSpaDevelopmentServer("http://localhost:8081/");
                 }
             });
         }

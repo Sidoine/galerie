@@ -1,188 +1,178 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+} from "react-native";
 import { observer } from "mobx-react-lite";
-import { Box, useTheme, Stack } from "@mui/material";
-import { useParams } from "react-router-dom";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { ImageDetails } from "./image-details";
-import { useSwipeable } from "react-swipeable";
 import TopActions from "./top-actions";
+import { ImageDetails } from "./image-details";
 import ImageFaces from "./image-faces";
 import { useUi } from "../../stores/ui";
 import { useDirectoriesStore } from "../../stores/directories";
+import { useRoute } from "@react-navigation/native";
 
+interface RouteParams {
+  galleryId: number;
+  directoryId: number;
+  photoId: number;
+  order: "date-desc" | "date-asc";
+}
+
+// Composant plein écran (modal) affichant une photo avec navigation précédente/suivante.
 export default observer(function ImageView() {
-    const { id } = useParams();
-    const directoriesStore = useDirectoriesStore();
-    const photo = id ? directoriesStore.imageLoader.getValue(Number(id)) : null;
-    const { navigateToPhoto, navigateToDirectory } = useUi();
-    const theme = useTheme();
-    const handleNext = useCallback(() => {
-        if (photo && photo.nextId)
-            navigateToPhoto(photo.directoryId, photo.nextId);
-    }, [navigateToPhoto, photo]);
-    const handlePrevious = useCallback(() => {
-        if (photo && photo.previousId)
-            navigateToPhoto(photo.directoryId, photo.previousId);
-    }, [navigateToPhoto, photo]);
-    const handleClose = useCallback(() => {
-        if (photo) navigateToDirectory(photo.directoryId);
-    }, [navigateToDirectory, photo]);
-    const handleKeyPress = useCallback(
-        (e: KeyboardEvent) => {
-            if (e.code === "ArrowLeft") {
-                handlePrevious();
-            } else if (e.code === "ArrowRight") {
-                handleNext();
-            }
-        },
-        [handleNext, handlePrevious]
-    );
-    useEffect(() => {
-        window.addEventListener("keydown", handleKeyPress);
-        return () => window.removeEventListener("keydown", handleKeyPress);
-    }, [handleKeyPress]);
+  const route = useRoute();
+  const { directoryId, photoId } = route.params as RouteParams;
+  const directoriesStore = useDirectoriesStore();
+  const { navigateToPhoto, navigateToDirectory } = useUi();
 
-    const [details, setDetails] = useState(false);
-    const [showFaces, setShowFaces] = useState(false);
-    const handleDetailsClose = useCallback(() => {
-        setDetails(false);
-    }, []);
-    const handleDetailsToggle = useCallback(() => {
-        setDetails((prev) => !prev);
-    }, []);
-    const handleFacesToggle = useCallback(() => {
-        setShowFaces((prev) => !prev);
-    }, []);
+  const photo = directoriesStore.imageLoader.getValue(Number(photoId));
 
-    const imageRef = useRef<HTMLImageElement>(null);
+  const handleNext = useCallback(() => {
+    if (photo && photo.nextId) navigateToPhoto(photo.directoryId, photo.nextId);
+  }, [navigateToPhoto, photo]);
+  const handlePrevious = useCallback(() => {
+    if (photo && photo.previousId)
+      navigateToPhoto(photo.directoryId, photo.previousId);
+  }, [navigateToPhoto, photo]);
+  const handleClose = useCallback(() => {
+    if (photo) navigateToDirectory(photo.directoryId);
+  }, [navigateToDirectory, photo]);
 
-    const handlers = useSwipeable({
-        onSwipedLeft: handleNext,
-        onSwipedRight: handlePrevious,
-    });
+  const [details, setDetails] = useState(false);
+  const [showFaces, setShowFaces] = useState(false);
+  const handleDetailsToggle = useCallback(() => setDetails((p) => !p), []);
+  const handleFacesToggle = useCallback(() => setShowFaces((p) => !p), []);
+  const handleDetailsClose = useCallback(() => setDetails(false), []);
 
+  // Dimensions image rendue pour overlay faces
+  const [rendered, setRendered] = useState({ width: 0, height: 0 });
+  const [natural, setNatural] = useState({ width: 0, height: 0 });
+  const imgUri = directoriesStore.getImage(photoId);
+  const isVideo = photo?.video;
+
+  useEffect(() => {
+    if (imgUri && !isVideo) {
+      // Récupère dimensions natives
+      Image.getSize(
+        imgUri,
+        (w, h) => setNatural({ width: w, height: h }),
+        () => setNatural({ width: 0, height: 0 })
+      );
+    }
+  }, [imgUri, isVideo]);
+
+  // Gestes simples: zones tactiles invisibles gauche/droite
+  const screenWidth = Dimensions.get("window").width;
+
+  if (!photo) {
     return (
-        <Stack
-            sx={{
-                top: 0,
-                left: 0,
-                position: "fixed",
-                height: "100%",
-                width: "100%",
-                backgroundColor: "black",
-                textAlign: "center",
-                overflow: "hidden",
-                zIndex: 2000,
-            }}
-        >
-            {photo && (
-                <TopActions
-                    onClose={handleClose}
-                    onDetailsToggle={handleDetailsToggle}
-                    onFacesToggle={handleFacesToggle}
-                    showFaces={showFaces}
-                    photo={photo}
-                />
-            )}
-            {photo && (
-                <Stack
-                    alignItems="center"
-                    justifyContent="center"
-                    sx={{
-                        flex: "1 0",
-                        maxHeight: "100%",
-                        position: "relative",
-                    }}
-                    {...handlers}
-                >
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            left: 0,
-                            p: 2,
-                            top: 0,
-                            opacity: 0,
-                            "&:hover": {
-                                opacity: 1,
-                            },
-                            height: "100%",
-                            width: theme.spacing(15),
-                            color: theme.palette.common.white,
-                            display: "flex",
-                            alignItems: "center",
-                            background:
-                                "linear-gradient(to right, rgba(255,255,255,0.3), rgba(0,0,0,0))",
-                        }}
-                        onClick={handlePrevious}
-                    >
-                        <ArrowBackIcon />
-                    </Box>
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            right: 0,
-                            padding: theme.spacing(2),
-                            top: 0,
-                            opacity: 0,
-                            "&:hover": {
-                                opacity: 1,
-                            },
-                            height: "100%",
-                            width: theme.spacing(15),
-                            color: theme.palette.common.white,
-                            display: "flex",
-                            alignItems: "center",
-                            background:
-                                "linear-gradient(to left, rgba(255,255,255,0.3), rgba(0,0,0,0))",
-                        }}
-                        onClick={handleNext}
-                    >
-                        <ArrowForwardIcon />
-                    </Box>
-                    {photo.video && (
-                        <Box
-                            component="video"
-                            autoPlay
-                            controls
-                            src={directoriesStore.getImage(Number(id))}
-                            sx={{
-                                maxWidth: "100%",
-                                maxHeight: "100%",
-                                imageOrientation: "from-image",
-                            }}
-                        />
-                    )}
-                    {!photo.video && (
-                        <>
-                            <Box
-                                component="img"
-                                alt=""
-                                src={directoriesStore.getImage(Number(id))}
-                                sx={{
-                                    maxWidth: "100%",
-                                    maxHeight: "100%",
-                                    imageOrientation: "from-image",
-                                }}
-                                onClick={!showFaces ? handleNext : undefined}
-                                ref={imageRef}
-                            />
-                            <ImageFaces
-                                photoId={photo.id}
-                                imageRef={imageRef}
-                                visible={showFaces}
-                            />
-                        </>
-                    )}
-                </Stack>
-            )}
-            {photo && (
-                <ImageDetails
-                    image={photo}
-                    onClose={handleDetailsClose}
-                    open={details}
-                />
-            )}
-        </Stack>
+      <View style={styles.fullscreen}>
+        <Text style={{ color: "white" }}>Chargement...</Text>
+      </View>
     );
+  }
+
+  return (
+    <View style={styles.fullscreen}>
+      <TopActions
+        onClose={handleClose}
+        onDetailsToggle={handleDetailsToggle}
+        onFacesToggle={handleFacesToggle}
+        showFaces={showFaces}
+        photo={photo}
+      />
+      <View style={styles.mediaContainer}>
+        {/* Zone précédente */}
+        <TouchableOpacity
+          style={[styles.navZone, { left: 0 }]}
+          onPress={handlePrevious}
+          accessibilityLabel="Photo précédente"
+        />
+        {/* Zone suivante */}
+        <TouchableOpacity
+          style={[styles.navZone, { right: 0 }]}
+          onPress={handleNext}
+          accessibilityLabel="Photo suivante"
+        />
+        {isVideo && (
+          <View style={styles.videoPlaceholder}>
+            <Text style={{ color: "white" }}>
+              Lecture vidéo non implémentée
+            </Text>
+          </View>
+        )}
+        {!isVideo && (
+          <View
+            style={styles.imageWrapper}
+            onLayout={(e) =>
+              setRendered({
+                width: e.nativeEvent.layout.width,
+                height: e.nativeEvent.layout.height,
+              })
+            }
+          >
+            <Image
+              source={{ uri: imgUri }}
+              style={styles.image}
+              resizeMode="contain"
+              accessible
+            />
+            {showFaces && (
+              <ImageFaces
+                photoId={photo.id}
+                visible={showFaces}
+                renderedWidth={rendered.width}
+                renderedHeight={rendered.height}
+                naturalWidth={natural.width}
+                naturalHeight={natural.height}
+              />
+            )}
+          </View>
+        )}
+      </View>
+      <ImageDetails image={photo} open={details} onClose={handleDetailsClose} />
+    </View>
+  );
+});
+
+const styles = StyleSheet.create({
+  fullscreen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "black",
+    zIndex: 2000,
+  },
+  mediaContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageWrapper: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  navZone: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: 80,
+    zIndex: 10,
+  },
+  videoPlaceholder: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

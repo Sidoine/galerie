@@ -1,434 +1,595 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import {
-    Container,
-    Typography,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    IconButton,
-    TextField,
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Box,
-    Stack,
-    Alert,
-    CircularProgress,
-} from "@mui/material";
-import {
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    FormHelperText,
-} from "@mui/material";
-import { Edit, Delete, Add } from "@mui/icons-material";
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+  Alert as RNAlert,
+} from "react-native";
 import { useDirectoryVisibilitiesStore } from "../../stores/directory-visibilities";
+import Icon from "../Icon";
 import {
-    GalleryDirectoryVisibility,
-    GalleryDirectoryVisibilityCreate,
-    GalleryDirectoryVisibilityPatch,
+  GalleryDirectoryVisibility,
+  GalleryDirectoryVisibilityCreate,
+  GalleryDirectoryVisibilityPatch,
 } from "../../services/views";
+import { theme } from "../../theme";
 
 const DirectoryVisibilitySettings = observer(() => {
-    const store = useDirectoryVisibilitiesStore();
-    const [editDialog, setEditDialog] = useState<{
-        visibility?: GalleryDirectoryVisibility;
-        open: boolean;
-    }>({ open: false });
-    const [deleteDialog, setDeleteDialog] = useState<{
-        visibility?: GalleryDirectoryVisibility;
-        open: boolean;
-    }>({ open: false });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const store = useDirectoryVisibilitiesStore();
+  const [editDialog, setEditDialog] = useState<{
+    visibility?: GalleryDirectoryVisibility;
+    open: boolean;
+  }>({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    visibility?: GalleryDirectoryVisibility;
+    open: boolean;
+  }>({ open: false });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const visibilities = store.visibilities;
+  const visibilities = store.visibilities;
 
-    const handleCreate = useCallback(() => {
-        setEditDialog({ open: true });
-    }, []);
+  const handleCreate = useCallback(() => setEditDialog({ open: true }), []);
+  const handleEdit = useCallback(
+    (visibility: GalleryDirectoryVisibility) =>
+      setEditDialog({ visibility, open: true }),
+    []
+  );
+  const handleDelete = useCallback(
+    (visibility: GalleryDirectoryVisibility) =>
+      setDeleteDialog({ visibility, open: true }),
+    []
+  );
 
-    const handleEdit = useCallback((visibility: GalleryDirectoryVisibility) => {
-        setEditDialog({ visibility, open: true });
-    }, []);
-
-    const handleDelete = useCallback(
-        (visibility: GalleryDirectoryVisibility) => {
-            setDeleteDialog({ visibility, open: true });
-        },
-        []
-    );
-
-    const handleSubmit = useCallback(
-        async (
-            data:
-                | GalleryDirectoryVisibilityCreate
-                | GalleryDirectoryVisibilityPatch
-        ) => {
-            setLoading(true);
-            setError(null);
-            try {
-                if (editDialog.visibility) {
-                    await store.updateVisibility(
-                        editDialog.visibility.id,
-                        data as GalleryDirectoryVisibilityPatch
-                    );
-                } else {
-                    await store.createVisibility(
-                        data as GalleryDirectoryVisibilityCreate
-                    );
-                }
-                setEditDialog({ open: false });
-            } catch (err) {
-                setError(
-                    err instanceof Error ? err.message : "An error occurred"
-                );
-            } finally {
-                setLoading(false);
-            }
-        },
-        [store, editDialog.visibility]
-    );
-
-    const handleConfirmDelete = useCallback(async () => {
-        if (!deleteDialog.visibility) return;
-        setLoading(true);
-        setError(null);
-        try {
-            await store.deleteVisibility(deleteDialog.visibility.id);
-            setDeleteDialog({ open: false });
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
-        } finally {
-            setLoading(false);
+  const handleSubmit = useCallback(
+    async (
+      data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (editDialog.visibility) {
+          await store.updateVisibility(
+            editDialog.visibility.id,
+            data as GalleryDirectoryVisibilityPatch
+          );
+        } else {
+          await store.createVisibility(
+            data as GalleryDirectoryVisibilityCreate
+          );
         }
-    }, [store, deleteDialog.visibility]);
+        setEditDialog({ open: false });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erreur");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [store, editDialog.visibility]
+  );
 
-    if (!visibilities.length && !loading) {
-        store.visibilitiesLoader.getValue(store.galleryId);
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteDialog.visibility) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await store.deleteVisibility(deleteDialog.visibility.id);
+      setDeleteDialog({ open: false });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setLoading(false);
     }
+  }, [store, deleteDialog.visibility]);
 
-    return (
-        <Container maxWidth="lg">
-            <Stack spacing={3}>
-                <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                >
-                    <Typography variant="h4">
-                        Directory Visibility Settings
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={handleCreate}
-                        disabled={loading}
-                    >
-                        Add Visibility
-                    </Button>
-                </Box>
+  if (!visibilities.length && !loading) {
+    store.visibilitiesLoader.getValue(store.galleryId);
+  }
 
-                {error && (
-                    <Alert severity="error" onClose={() => setError(null)}>
-                        {error}
-                    </Alert>
-                )}
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Directory Visibility Settings</Text>
+        <TouchableOpacity
+          onPress={handleCreate}
+          accessibilityRole="button"
+          style={[styles.button, styles.primaryButton, styles.addButton]}
+          disabled={loading}
+        >
+          <Icon name="plus" set="mci" size={18} />
+          <Text style={[styles.buttonText, styles.addButtonText]}>Ajouter</Text>
+        </TouchableOpacity>
+      </View>
+      {error && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {visibilities.map((v) => (
+          <View key={v.id} style={styles.row}>
+            <View style={styles.rowMain}>
+              <Text style={styles.name}>{v.name}</Text>
+              <Text style={styles.iconPreview}>
+                {stripHtml(v.icon) || "(icon)"}
+              </Text>
+              <Text style={styles.value}>{v.value}</Text>
+            </View>
+            <View style={styles.actions}>
+              <TouchableOpacity
+                onPress={() => handleEdit(v)}
+                style={[styles.smallButton, styles.editButton]}
+                accessibilityLabel="Modifier"
+              >
+                <Icon name="pencil" set="mci" size={16} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDelete(v)}
+                style={[styles.smallButton, styles.deleteButton]}
+                accessibilityLabel="Supprimer"
+              >
+                <Icon name="trash-can-outline" set="mci" size={16} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+        {!visibilities.length && (
+          <View style={styles.empty}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.emptyText}>No visibility settings found</Text>
+            )}
+          </View>
+        )}
+      </ScrollView>
 
-                <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Icon</TableCell>
-                                <TableCell align="center">Value</TableCell>
-                                <TableCell align="center">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {visibilities.map((visibility) => (
-                                <TableRow key={visibility.id}>
-                                    <TableCell>{visibility.name}</TableCell>
-                                    <TableCell>
-                                        <Box
-                                            component="span"
-                                            dangerouslySetInnerHTML={{
-                                                __html: visibility.icon,
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        {visibility.value}
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() =>
-                                                handleEdit(visibility)
-                                            }
-                                            disabled={loading}
-                                        >
-                                            <Edit />
-                                        </IconButton>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() =>
-                                                handleDelete(visibility)
-                                            }
-                                            disabled={loading}
-                                        >
-                                            <Delete />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {visibilities.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={4} align="center">
-                                        {loading ? (
-                                            <CircularProgress />
-                                        ) : (
-                                            "No visibility settings found"
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Stack>
+      <EditVisibilityModal
+        open={editDialog.open}
+        visibility={editDialog.visibility}
+        visibilities={visibilities}
+        onClose={() => setEditDialog({ open: false })}
+        onSubmit={handleSubmit}
+        loading={loading}
+      />
 
-            <EditVisibilityDialog
-                open={editDialog.open}
-                visibility={editDialog.visibility}
-                visibilities={visibilities}
-                onClose={() => setEditDialog({ open: false })}
-                onSubmit={handleSubmit}
-                loading={loading}
-            />
-
-            <DeleteConfirmDialog
-                open={deleteDialog.open}
-                visibility={deleteDialog.visibility}
-                onClose={() => setDeleteDialog({ open: false })}
-                onConfirm={handleConfirmDelete}
-                loading={loading}
-            />
-        </Container>
-    );
+      <DeleteConfirmModal
+        open={deleteDialog.open}
+        visibility={deleteDialog.visibility}
+        onClose={() => setDeleteDialog({ open: false })}
+        onConfirm={handleConfirmDelete}
+        loading={loading}
+      />
+    </View>
+  );
 });
 
-interface EditVisibilityDialogProps {
-    open: boolean;
-    visibility?: GalleryDirectoryVisibility;
-    visibilities: GalleryDirectoryVisibility[];
-    onClose: () => void;
-    onSubmit: (
-        data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch
-    ) => void;
-    loading: boolean;
+function stripHtml(html: string) {
+  return html.replace(/<[^>]+>/g, "").trim();
 }
 
-const EditVisibilityDialog = ({
-    open,
-    visibility,
-    visibilities,
-    onClose,
-    onSubmit,
-    loading,
-}: EditVisibilityDialogProps) => {
-    const [name, setName] = useState("");
-    const [icon, setIcon] = useState("");
-    const [value, setValue] = useState(1);
-    const powerValues = React.useMemo(
-        () => [1, 2, 4, 8, 16, 32, 64, 128, 256],
-        []
-    );
+interface EditVisibilityModalProps {
+  open: boolean;
+  visibility?: GalleryDirectoryVisibility;
+  visibilities: GalleryDirectoryVisibility[];
+  onClose: () => void;
+  onSubmit: (
+    data: GalleryDirectoryVisibilityCreate | GalleryDirectoryVisibilityPatch
+  ) => void;
+  loading: boolean;
+}
 
-    React.useEffect(() => {
-        if (visibility) {
-            setName(visibility.name);
-            setIcon(visibility.icon);
-            setValue(visibility.value);
-        } else {
-            setName("");
-            setIcon("");
-            setValue(1);
-        }
-    }, [visibility, open]);
+const EditVisibilityModal = ({
+  open,
+  visibility,
+  visibilities,
+  onClose,
+  onSubmit,
+  loading,
+}: EditVisibilityModalProps) => {
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState("");
+  const [value, setValue] = useState(1);
+  const powerValues = useMemo(() => [1, 2, 4, 8, 16, 32, 64, 128, 256], []);
 
-    const usedValues = React.useMemo(
-        () =>
-            visibilities
-                .filter((v) => !visibility || v.id !== visibility.id)
-                .map((v) => v.value),
-        [visibilities, visibility]
-    );
+  React.useEffect(() => {
+    if (visibility) {
+      setName(visibility.name);
+      setIcon(visibility.icon);
+      setValue(visibility.value);
+    } else {
+      setName("");
+      setIcon("");
+      setValue(1);
+    }
+  }, [visibility, open]);
 
-    const valueAlreadyUsed = usedValues.includes(value);
+  const usedValues = useMemo(
+    () =>
+      visibilities
+        .filter((v) => !visibility || v.id !== visibility.id)
+        .map((v) => v.value),
+    [visibilities, visibility]
+  );
+  const valueAlreadyUsed = usedValues.includes(value);
 
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-        if (valueAlreadyUsed) return; // sécurité côté UI
-        if (visibility) {
-            onSubmit({ name, icon, value });
-        } else {
-            onSubmit({ name, icon, value });
-        }
-    };
+  const disabled = loading || !name || !icon || valueAlreadyUsed;
 
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle>
-                {visibility ? "Edit Visibility" : "Create Visibility"}
-            </DialogTitle>
-            <form onSubmit={handleSubmit}>
-                <DialogContent>
-                    <Stack spacing={2}>
-                        <TextField
-                            label="Name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                            fullWidth
-                            disabled={loading}
-                        />
-                        <TextField
-                            label="Icon"
-                            value={icon}
-                            onChange={(e) => setIcon(e.target.value)}
-                            required
-                            fullWidth
-                            multiline
-                            rows={3}
-                            disabled={loading}
-                            helperText="Enter the icon"
-                        />
-                        <FormControl
-                            fullWidth
-                            disabled={loading}
-                            required
-                            error={valueAlreadyUsed}
-                        >
-                            <InputLabel id="visibility-value-label">
-                                Value (Power of 2)
-                            </InputLabel>
-                            <Select
-                                labelId="visibility-value-label"
-                                label="Value (Power of 2)"
-                                value={value}
-                                onChange={(e) =>
-                                    setValue(Number(e.target.value))
-                                }
-                            >
-                                {powerValues.map((v) => {
-                                    const taken = usedValues.includes(v);
-                                    return (
-                                        <MenuItem
-                                            key={v}
-                                            value={v}
-                                            disabled={taken}
-                                        >
-                                            {v}
-                                        </MenuItem>
-                                    );
-                                })}
-                            </Select>
-                            <FormHelperText>
-                                {valueAlreadyUsed
-                                    ? "This value is already used by another visibility"
-                                    : "Must be a power of 2 (1 - 256) and unique"}
-                            </FormHelperText>
-                        </FormControl>
-                        {icon && (
-                            <Box>
-                                <Typography variant="caption">
-                                    Preview:
-                                </Typography>
-                                <Box
-                                    component="span"
-                                    dangerouslySetInnerHTML={{ __html: icon }}
-                                />
-                            </Box>
-                        )}
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={onClose} disabled={loading}>
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={
-                            loading ||
-                            !name ||
-                            !icon ||
-                            value < 1 ||
-                            valueAlreadyUsed
-                        }
+  const handleSubmit = useCallback(() => {
+    if (disabled) return;
+    onSubmit({ name, icon, value });
+  }, [disabled, onSubmit, name, icon, value]);
+
+  return (
+    <Modal
+      visible={open}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>
+            {visibility ? "Edit Visibility" : "Create Visibility"}
+          </Text>
+          <ScrollView style={{ maxHeight: 400 }}>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+                placeholder="Name"
+                editable={!loading}
+              />
+            </View>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Icon (HTML)</Text>
+              <TextInput
+                value={icon}
+                onChangeText={setIcon}
+                style={[styles.input, styles.multiline]}
+                placeholder="<span>★</span>"
+                multiline
+                numberOfLines={3}
+                editable={!loading}
+              />
+            </View>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Value (Power of 2)</Text>
+              <View style={styles.tagContainer}>
+                {powerValues.map((v) => {
+                  const taken = usedValues.includes(v);
+                  const selected = v === value;
+                  return (
+                    <TouchableOpacity
+                      key={v}
+                      style={[
+                        styles.tag,
+                        selected && styles.tagSelected,
+                        taken && styles.tagDisabled,
+                      ]}
+                      disabled={taken || loading}
+                      onPress={() => setValue(v)}
                     >
-                        {loading ? (
-                            <CircularProgress size={20} />
-                        ) : visibility ? (
-                            "Update"
-                        ) : (
-                            "Create"
-                        )}
-                    </Button>
-                </DialogActions>
-            </form>
-        </Dialog>
-    );
+                      <Text style={styles.tagText}>{v}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {valueAlreadyUsed && (
+                <Text style={styles.errorSmall}>Value already used</Text>
+              )}
+            </View>
+            {icon ? (
+              <View style={styles.previewBox}>
+                <Text style={styles.previewLabel}>Preview (raw text):</Text>
+                <Text style={styles.previewValue}>{stripHtml(icon)}</Text>
+              </View>
+            ) : null}
+          </ScrollView>
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[styles.button, styles.secondaryButton]}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              style={[
+                styles.button,
+                styles.primaryButton,
+                disabled && styles.buttonDisabled,
+              ]}
+              disabled={disabled}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {visibility ? "Update" : "Create"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 };
 
-interface DeleteConfirmDialogProps {
-    open: boolean;
-    visibility?: GalleryDirectoryVisibility;
-    onClose: () => void;
-    onConfirm: () => void;
-    loading: boolean;
+interface DeleteConfirmModalProps {
+  open: boolean;
+  visibility?: GalleryDirectoryVisibility;
+  onClose: () => void;
+  onConfirm: () => void;
+  loading: boolean;
 }
 
-const DeleteConfirmDialog = ({
-    open,
-    visibility,
-    onClose,
-    onConfirm,
-    loading,
-}: DeleteConfirmDialogProps) => {
-    return (
-        <Dialog open={open} onClose={onClose}>
-            <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogContent>
-                <Typography>
-                    Are you sure you want to delete the visibility "
-                    {visibility?.name}"? This action cannot be undone.
-                </Typography>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose} disabled={loading}>
-                    Cancel
-                </Button>
-                <Button
-                    onClick={onConfirm}
-                    color="error"
-                    variant="contained"
-                    disabled={loading}
-                >
-                    {loading ? <CircularProgress size={20} /> : "Delete"}
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
+const DeleteConfirmModal = ({
+  open,
+  visibility,
+  onClose,
+  onConfirm,
+  loading,
+}: DeleteConfirmModalProps) => {
+  const handleConfirm = useCallback(() => {
+    if (!loading) onConfirm();
+  }, [onConfirm, loading]);
+  return (
+    <Modal
+      visible={open}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.confirmCard}>
+          <Text style={styles.modalTitle}>Confirm Delete</Text>
+          <Text style={styles.confirmText}>
+            Delete visibility "{visibility?.name}" ?
+          </Text>
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[styles.button, styles.secondaryButton]}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleConfirm}
+              style={[styles.button, styles.deleteButton]}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Delete</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 };
 
 export default DirectoryVisibilitySettings;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: theme.spacing(4),
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  title: {
+    ...theme.typography.title,
+    color: theme.palette.textPrimary,
+  },
+  list: {
+    flex: 1,
+  },
+  row: {
+    backgroundColor: theme.palette.surfaceElevated,
+    padding: theme.spacing(3),
+    borderRadius: theme.radius.md,
+    marginBottom: theme.spacing(2),
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  name: {
+    color: theme.palette.textPrimary,
+    fontSize: 16,
+    flex: 1,
+  },
+  iconPreview: {
+    color: theme.palette.textSecondary,
+    width: 60,
+    textAlign: "center",
+  },
+  value: {
+    color: theme.palette.textPrimary,
+    width: 50,
+    textAlign: "right",
+  },
+  actions: {
+    flexDirection: "row",
+    marginLeft: 8,
+  },
+  smallButton: {
+    paddingHorizontal: theme.spacing(2.5),
+    paddingVertical: theme.spacing(1.5),
+    marginLeft: theme.spacing(1.5),
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.palette.surfaceAlt,
+  },
+  smallButtonText: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  editButton: {
+    backgroundColor: "#444",
+  },
+  deleteButton: {
+    backgroundColor: theme.palette.danger,
+  },
+  empty: {
+    padding: theme.spacing(10),
+    alignItems: "center",
+  },
+  emptyText: {
+    color: theme.palette.textMuted,
+  },
+  button: {
+    paddingHorizontal: theme.spacing(4),
+    paddingVertical: theme.spacing(2.5),
+    borderRadius: theme.radius.md,
+  },
+  primaryButton: {
+    backgroundColor: theme.palette.primary,
+  },
+  secondaryButton: {
+    backgroundColor: "#555",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: theme.palette.textPrimary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  addButtonText: {
+    marginLeft: 6,
+  },
+  errorBox: {
+    backgroundColor: "#5a0000",
+    padding: theme.spacing(2),
+    borderRadius: theme.radius.sm,
+    marginBottom: theme.spacing(2),
+  },
+  errorText: {
+    color: "#fff",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    padding: theme.spacing(5),
+  },
+  modalCard: {
+    backgroundColor: theme.palette.surface,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing(4),
+  },
+  confirmCard: {
+    backgroundColor: theme.palette.surface,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing(4),
+  },
+  modalTitle: {
+    color: theme.palette.textPrimary,
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: theme.spacing(3),
+  },
+  formGroup: {
+    marginBottom: theme.spacing(3),
+  },
+  label: {
+    color: theme.palette.textSecondary,
+    marginBottom: theme.spacing(1),
+    fontSize: 13,
+  },
+  input: {
+    backgroundColor: theme.palette.surfaceAlt,
+    color: theme.palette.textPrimary,
+    paddingHorizontal: theme.spacing(2.5),
+    paddingVertical: theme.spacing(2),
+    borderRadius: theme.radius.sm,
+  },
+  multiline: {
+    minHeight: 70,
+    textAlignVertical: "top",
+  },
+  tagContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  tag: {
+    paddingHorizontal: theme.spacing(2.5),
+    paddingVertical: theme.spacing(1.5),
+    borderRadius: theme.radius.sm,
+    backgroundColor: "#444",
+    marginRight: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+  tagSelected: {
+    backgroundColor: theme.palette.primary,
+  },
+  tagDisabled: {
+    backgroundColor: "#222",
+    opacity: 0.4,
+  },
+  tagText: {
+    color: "#fff",
+    fontSize: 12,
+  },
+  previewBox: {
+    backgroundColor: theme.palette.surfaceAlt,
+    padding: theme.spacing(2.5),
+    borderRadius: theme.radius.md,
+  },
+  previewLabel: {
+    color: "#bbb",
+    marginBottom: 4,
+    fontSize: 12,
+  },
+  previewValue: {
+    color: "#fff",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: theme.spacing(4),
+    gap: 12,
+  },
+  confirmText: {
+    color: "#ddd",
+    fontSize: 14,
+  },
+  errorSmall: {
+    color: "#ff8080",
+    fontSize: 11,
+    marginTop: 4,
+  },
+});
