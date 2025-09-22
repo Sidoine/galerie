@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Pgvector;
 
 namespace GaleriePhotos.Models
@@ -12,6 +13,7 @@ namespace GaleriePhotos.Models
         public int PhotoId { get; set; }
         
         [Required]
+        [Column(TypeName = "vector(512)")]
         public required Vector Embedding { get; set; }
         
         [Required]

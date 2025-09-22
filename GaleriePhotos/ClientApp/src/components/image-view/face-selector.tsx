@@ -28,23 +28,20 @@ export function FaceSelector({
   onNameAssigned?: (name: string) => void;
   dense?: boolean;
 }) {
-  const apiClient = useMyApiClient();
-  const directoriesStore = useDirectoriesStore();
-  const faceController = useMemo(
-    () => new FaceController(apiClient),
-    [apiClient]
-  );
-  const [names, setNames] = useState<string[]>([]);
-  const [loadingNames, setLoadingNames] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState<string>(face.name ?? "");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [suggestionLoading, setSuggestionLoading] = useState(false);
-  const [suggestedName, setSuggestedName] = useState<string | null>(null);
-  const [suggestedSimilarity, setSuggestedSimilarity] = useState<number | null>(
-    null
-  );
+    const apiClient = useApiClient();
+    const directoriesStore = useDirectoriesStore();
+    const faceController = useMemo(
+        () => new FaceController(apiClient),
+        [apiClient]
+    );
+    const [names, setNames] = useState<string[]>([]);
+    const [loadingNames, setLoadingNames] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [value, setValue] = useState<string>(face.name ?? "");
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [suggestionLoading, setSuggestionLoading] = useState(false);
+    const [suggestedName, setSuggestedName] = useState<string | null>(null);
 
   // Charger la liste des noms quand on passe en édition
   useEffect(() => {
@@ -66,25 +63,23 @@ export function FaceSelector({
 
   const displayLabel = face.name || "Visage inconnu";
 
-  const fetchSuggestion = useCallback(async () => {
-    if (face.name) return; // déjà nommé
-    setSuggestionLoading(true);
-    setSuggestedName(null);
-    setSuggestedSimilarity(null);
-    try {
-      const resp = await faceController.suggestName(
-        directoriesStore.galleryId,
-        face.id,
-        { threshold: 0.7 }
-      );
-      if (resp.ok) {
-        setSuggestedName(resp.value.name);
-        setSuggestedSimilarity(resp.value.similarity);
-      }
-    } finally {
-      setSuggestionLoading(false);
-    }
-  }, [directoriesStore.galleryId, face.id, face.name, faceController]);
+    const fetchSuggestion = useCallback(async () => {
+        if (face.name) return; // déjà nommé
+        setSuggestionLoading(true);
+        setSuggestedName(null);
+        try {
+            const resp = await faceController.suggestName(
+                directoriesStore.galleryId,
+                face.id,
+                { threshold: 0.8 }
+            );
+            if (resp.ok) {
+                setSuggestedName(resp.value.name);
+            }
+        } finally {
+            setSuggestionLoading(false);
+        }
+    }, [directoriesStore.galleryId, face.id, face.name, faceController]);
 
   const handleEnterEdit = useCallback(() => {
     setError(null);
@@ -96,13 +91,12 @@ export function FaceSelector({
     }
   }, [face.name, fetchSuggestion]);
 
-  const handleCancel = useCallback(() => {
-    setEditing(false);
-    setValue(face.name ?? "");
-    setError(null);
-    setSuggestedName(null);
-    setSuggestedSimilarity(null);
-  }, [face.name]);
+    const handleCancel = useCallback(() => {
+        setEditing(false);
+        setValue(face.name ?? "");
+        setError(null);
+        setSuggestedName(null);
+    }, [face.name]);
 
   const canSubmit = value.trim().length > 0 && value.trim() !== face.name;
 

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Pgvector;
 using SixLabors.ImageSharp.Processing;
+using Pgvector.EntityFrameworkCore;
 
 namespace GaleriePhotos.Services
 {
@@ -233,7 +234,7 @@ namespace GaleriePhotos.Services
         /// <param name="galleryId">Gallery ID</param>
         /// <param name="faceId">Face ID</param>
         /// <param name="threshold">Similarity threshold (0..1)</param>
-        public async Task<(string Name, float Similarity)?> SuggestNameForFaceAsync(int galleryId, int faceId, float threshold = 0.7f)
+        public async Task<FaceName?> SuggestNameForFaceAsync(int galleryId, int faceId, float threshold = 5f)
         {
             // Load target face with photo to ensure gallery match
             var targetFace = await applicationDbContext.Faces
@@ -255,44 +256,13 @@ namespace GaleriePhotos.Services
 
             // Get all named faces in this gallery
             var namedFaces = await applicationDbContext.Faces
-                .Include(f => f.Photo)
                 .Include(f => f.FaceName)
-                .Where(f => f.FaceNameId != null && f.Photo.Directory.GalleryId == galleryId)
-                .ToListAsync();
+                .Where(f => f.FaceNameId != null && f.Photo.Directory.GalleryId == galleryId && f.Embedding.L2Distance(targetFace.Embedding) < threshold)
+                .OrderBy(x => x.Embedding.L2Distance(targetFace.Embedding))
+                .Select(x => x.FaceName)
+                .FirstOrDefaultAsync();
 
-            if (!namedFaces.Any())
-            {
-                return null; // No knowledge base
-            }
-
-            // Group by name and compute average embedding per name
-            string? bestName = null;
-            float bestSimilarity = -1f;
-            foreach (var group in namedFaces.GroupBy(f => f.FaceName!.Name))
-            {
-                try
-                {
-                    var avg = CalculateAverageEmbedding(group.Select(g => g.Embedding));
-                    var sim = CalculateCosineSimilarity(targetFace.Embedding, avg);
-                    if (sim > bestSimilarity)
-                    {
-                        bestSimilarity = sim;
-                        bestName = group.Key;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Error computing similarity for name group {Name}", group.Key);
-                }
-            }
-
-            if (bestName == null || bestSimilarity < threshold)
-            {
-                logger.LogDebug("SuggestName: no name above threshold {Threshold} (best={BestSimilarity})", threshold, bestSimilarity);
-                return null;
-            }
-
-            return (bestName, bestSimilarity);
+            return namedFaces;
         }
 
         private Vector CalculateAverageEmbedding(IEnumerable<Vector> embeddings)
