@@ -1,10 +1,17 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace GaleriePhotos.Models
 {
+    [Index(nameof(PublicId), IsUnique = true)]
     public class Photo
     {
         public int Id { get; set; }
+        
+        [Required]
+        public Guid PublicId { get; set; } = Guid.NewGuid();
+        
         public string FileName { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
@@ -16,6 +23,7 @@ namespace GaleriePhotos.Models
         public Photo(string fileName)
         {
             FileName = fileName;
+            PublicId = Guid.NewGuid();
         }
 
         // Navigation properties

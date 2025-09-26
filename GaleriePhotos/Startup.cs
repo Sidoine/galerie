@@ -1,16 +1,19 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
+using GaleriePhotos.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using GaleriePhotos.Services;
 using System;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace GaleriePhotos
 {
@@ -47,7 +50,7 @@ namespace GaleriePhotos
                 options.UseNpgsql(connectionString, x => x.UseVector());
             });
 
-            services.AddDefaultIdentity<ApplicationUser>(options =>
+            services.AddIdentityApiEndpoints<ApplicationUser>(options =>
             {
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
@@ -58,7 +61,6 @@ namespace GaleriePhotos
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            
             services.AddAuthentication();
 
             services.AddControllersWithViews();
@@ -94,11 +96,12 @@ namespace GaleriePhotos
             var smtpHost = smtpSection.GetValue<string>("Host");
             if (!string.IsNullOrWhiteSpace(smtpHost))
             {
-                services.AddScoped<IEmailSender, SmtpEmailSender>();
+                // services.AddScoped<IEmailSender, SmtpEmailSender>();
+                services.AddSingleton<IEmailSender<ApplicationUser>, SmtpEmailSender>();
             }
             else
             {
-                services.AddScoped<IEmailSender, SendGridEmailSender>();
+                services.AddSingleton<IEmailSender<ApplicationUser>, SendGridEmailSender>();
             }
         }
 
@@ -126,13 +129,14 @@ namespace GaleriePhotos
             
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
-
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
+                endpoints.MapIdentityApi<ApplicationUser>().AllowAnonymous();
             });
 
             app.UseSpa(spa => 

@@ -74,7 +74,7 @@ namespace GaleriePhotos
 
                 try
                 {
-                    services.GetRequiredService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
+                    services.GetRequiredService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/services", 0);
                     Console.WriteLine("TypeScript services generated successfully.");
                 }
                 catch (Exception ex)
