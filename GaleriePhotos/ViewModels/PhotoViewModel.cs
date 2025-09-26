@@ -6,6 +6,8 @@ namespace Galerie.Server.ViewModels
     public class PhotoViewModel
     {
         public int Id { get; set; }
+
+        public string PublicId { get; set; }
         
         public string Name { get; set; }
 
@@ -14,6 +16,6 @@ namespace Galerie.Server.ViewModels
         public int DirectoryId { get; set; }
 
         public PhotoViewModel(Photo photo) =>
-            (Id, Name, Video, DirectoryId) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId);
+            (Id, Name, Video, DirectoryId, PublicId) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId, photo.PublicId.ToString());
     }
 }

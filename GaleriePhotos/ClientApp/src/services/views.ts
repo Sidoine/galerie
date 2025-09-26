@@ -71,6 +71,8 @@ export interface FaceName {
 export interface Photo {
     id: number;
 
+    publicId: string;
+
     name: string;
 
     video: boolean;
@@ -209,7 +211,7 @@ export interface Directory {
 
     name: string;
 
-    coverPhotoId: number | null;
+    coverPhotoId: string | null;
 
     numberOfPhotos: number;
 
@@ -225,7 +227,7 @@ export interface DirectoryFull {
 
     name: string;
 
-    coverPhotoId: number | null;
+    coverPhotoId: string | null;
 
     numberOfPhotos: number;
 
@@ -240,6 +242,8 @@ export interface DirectoryPatch {
 
 export interface PhotoFull {
     id: number;
+
+    publicId: string;
 
     name: string;
 

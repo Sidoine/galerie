@@ -95,10 +95,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
                   value={(directory.visibility & v.value) > 0}
                   onValueChange={toggleVisibility(v.value)}
                 />
-                <Text style={styles.visibilityIcon}>
-                  {/* Simplification: strip HTML icon, could map to unicode */}
-                  {v.name || ""}
-                </Text>
+                <Text style={styles.visibilityIcon}>{v.name || ""}</Text>
               </View>
             ))}
           </View>

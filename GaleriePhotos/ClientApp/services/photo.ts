@@ -9,12 +9,12 @@ export class PhotoController {
         return this.client.fetchJson<views.PhotoFull>(`api/photos/${id}`, "GET", undefined);
     }
 
-    getImage = (id: number) => {
-        return this.client.fetch(`api/photos/${id}/image`, "GET", undefined);
+    getImage = (publicId: string) => {
+        return this.client.fetch(`api/photos/${publicId}/image`, "GET", undefined);
     }
 
-    getThumbnail = (id: number) => {
-        return this.client.fetch(`api/photos/${id}/thumbnail`, "GET", undefined);
+    getThumbnail = (publicId: string) => {
+        return this.client.fetch(`api/photos/${publicId}/thumbnail`, "GET", undefined);
     }
 
     patch = (id: number, viewModel: views.PhotoPatch) => {

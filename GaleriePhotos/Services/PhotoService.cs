@@ -208,6 +208,11 @@ namespace GaleriePhotos.Services
             return await applicationDbContext.Photos.Include(x => x.Directory).ThenInclude(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<Photo?> GetPhoto(Guid publicId)
+        {
+            return await applicationDbContext.Photos.Include(x => x.Directory).ThenInclude(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.PublicId == publicId);
+        }
+
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);

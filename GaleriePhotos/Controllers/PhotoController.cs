@@ -33,27 +33,25 @@ namespace Galerie.Server.Controllers
             this.dataService = dataService;
         }
 
-        [HttpGet("{id}/image")]
-        [Authorize(Policies.Images)]
-        public async Task<IActionResult> GetImage(int id)
+        [HttpGet("{publicId}/image")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetImage(Guid publicId)
         {
-            var photo = await photoService.GetPhoto(id);
+            var photo = await photoService.GetPhoto(publicId);
             if (photo == null) return NotFound();
-            if (!photoService.IsDirectoryVisible(User, photo.Directory)) return Forbid();
             var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
             var bytes = await dataProvider.OpenFileRead(photo);
             if (bytes == null) return NotFound();
             return File(bytes, photoService.GetMimeType(photo), photo.FileName);
         }
 
-        [HttpGet("{id}/thumbnail")]
-        [Authorize(Policies.Images)]
-        public async Task<IActionResult> GetThumbnail(int id)
+        [HttpGet("{publicId}/thumbnail")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetThumbnail(Guid publicId)
         {
-            var photo = await photoService.GetPhoto(id);
+            var photo = await photoService.GetPhoto(publicId);
             if (photo == null) return NotFound();
 
-            if (!photoService.IsDirectoryVisible(User, photo.Directory)) return Forbid();
             var bytes = await photoService.GetThumbnail(photo);
             if (bytes == null) return NotFound();
             return File(bytes, "image/jpeg", photo.FileName);

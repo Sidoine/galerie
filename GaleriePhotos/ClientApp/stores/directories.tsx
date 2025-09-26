@@ -41,7 +41,7 @@ class DirectoriesStore {
     this.loadRoot();
   }
 
-  photoReloadSuffix = new Map<number, number>();
+  photoReloadSuffix = new Map<string, number>();
 
   public async loadRoot() {
     this.isInError = false;
@@ -57,19 +57,18 @@ class DirectoriesStore {
     this.root = root;
   }
 
-  getImage(id: number) {
-    const result = `${getBackendUrl()}/api/photos/${id}/image`;
-    if (this.photoReloadSuffix.has(id)) {
-      return `${result}?reload=${this.photoReloadSuffix.get(id)}`;
+  getImage(publicId: string) {
+    const result = `${getBackendUrl()}/api/photos/${publicId}/image`;
+    if (this.photoReloadSuffix.has(publicId)) {
+      return `${result}?reload=${this.photoReloadSuffix.get(publicId)}`;
     }
     return result;
   }
 
-  getThumbnail(id: number) {
-    const result = `${getBackendUrl()}/api/photos/${id}/thumbnail`;
-    console.log("Getting thumbnail for", id, "->", result);
-    if (this.photoReloadSuffix.has(id)) {
-      return `${result}?reload=${this.photoReloadSuffix.get(id)}`;
+  getThumbnail(publicId: string) {
+    const result = `${getBackendUrl()}/api/photos/${publicId}/thumbnail`;
+    if (this.photoReloadSuffix.has(publicId)) {
+      return `${result}?reload=${this.photoReloadSuffix.get(publicId)}`;
     }
     return result;
   }
@@ -106,7 +105,7 @@ class DirectoriesStore {
 
   async rotatePhoto(photo: Photo, angle: number) {
     await this.photoService.rotate(photo.id, { angle });
-    this.photoReloadSuffix.set(photo.id, Date.now());
+    this.photoReloadSuffix.set(photo.publicId, Date.now());
     this.imageLoader.invalidate();
   }
 }

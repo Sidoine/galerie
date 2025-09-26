@@ -13,7 +13,7 @@ const RootDirectoryPage = observer(function RootDirectoryPage() {
   if (!root) {
     if (directoriesStore.isInError) {
       router.push({
-        pathname: `/(app)/gallery/[galleryId]/settings`,
+        pathname: `/(app)/gallery/[galleryId]/(settings)`,
         params: { galleryId: directoriesStore.galleryId },
       });
     }

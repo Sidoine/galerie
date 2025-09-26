@@ -1,11 +1,41 @@
 import { Drawer } from "expo-router/drawer";
 import { DirectoriesStoreProvider } from "@/stores/directories";
 import { useLocalSearchParams } from "expo-router";
-import { MembersStoreProvider } from "@/stores/members";
+import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
 import { Text } from "react-native";
 import { UsersStoreProvider } from "@/stores/users";
+
+function LayoutContent() {
+  const membersStore = useMembersStore();
+  return (
+    <Drawer>
+      <Drawer.Screen name="index" options={{ title: "Gallerie" }} />
+      <Drawer.Screen
+        name="face-names"
+        options={{ title: "Noms des visages" }}
+      />
+      <Drawer.Protected guard={membersStore.administrator}>
+        <Drawer.Screen name="settings" options={{ title: "Paramètres" }} />
+      </Drawer.Protected>
+      <Drawer.Screen
+        name="directory"
+        options={{
+          title: "Album",
+          drawerItemStyle: { display: "none" },
+        }}
+      />
+      <Drawer.Screen
+        name="photos"
+        options={{
+          title: "Photo",
+          drawerItemStyle: { display: "none" },
+        }}
+      />
+    </Drawer>
+  );
+}
 
 export default function Layout() {
   const { galleryId } = useLocalSearchParams<{ galleryId: string }>();
@@ -16,31 +46,7 @@ export default function Layout() {
         <DirectoriesStoreProvider galleryId={Number(galleryId)}>
           <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
             <MembersStoreProvider>
-              <Drawer>
-                <Drawer.Screen name="index" options={{ title: "Gallerie" }} />
-                <Drawer.Screen
-                  name="face-names"
-                  options={{ title: "Noms des visages" }}
-                />
-                <Drawer.Screen
-                  name="settings"
-                  options={{ title: "Paramètres" }}
-                />
-                <Drawer.Screen
-                  name="directory"
-                  options={{
-                    title: "Album",
-                    drawerItemStyle: { display: "none" },
-                  }}
-                />
-                <Drawer.Screen
-                  name="photos"
-                  options={{
-                    title: "Photo",
-                    drawerItemStyle: { display: "none" },
-                  }}
-                />
-              </Drawer>
+              <LayoutContent />
             </MembersStoreProvider>
           </DirectoryVisibilitiesStoreProvider>
         </DirectoriesStoreProvider>

@@ -8,7 +8,7 @@ import { MyApiClientProvider } from "@/stores/api-client";
 
 function RootLayoutContent() {
   const authenticationStore = useAuthenticationStore();
-  const isAuthenticated = !!authenticationStore.token;
+  const isAuthenticated = authenticationStore.authenticated;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

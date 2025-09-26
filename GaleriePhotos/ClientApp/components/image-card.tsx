@@ -36,7 +36,7 @@ const ImageCard = observer(function ImageCard({
     });
   };
 
-  const thumbnailUri = directoriesStore.getThumbnail(item.id);
+  const thumbnailUri = directoriesStore.getThumbnail(item.publicId);
 
   return (
     <TouchableOpacity

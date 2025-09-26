@@ -81,7 +81,9 @@ export default observer(function ImageView() {
   // Dimensions image rendue pour overlay faces
   const [rendered, setRendered] = useState({ width: 0, height: 0 });
   const [natural, setNatural] = useState({ width: 0, height: 0 });
-  const imgUri = directoriesStore.getImage(Number(photoId));
+  const imgUri = photo?.publicId
+    ? directoriesStore.getImage(photo?.publicId)
+    : undefined;
   const isVideo = photo?.video;
 
   useEffect(() => {
@@ -129,7 +131,7 @@ export default observer(function ImageView() {
               />
             </>
           )}
-          {isVideo && (
+          {isVideo && imgUri && (
             <VideoPlayer
               uri={imgUri}
               style={styles.videoContainer}

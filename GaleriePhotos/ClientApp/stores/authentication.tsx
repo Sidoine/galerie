@@ -10,11 +10,30 @@ import { UserStore } from "folke-service-helpers";
 import { getBackendUrl } from "./config";
 
 export interface AuthenticationProps extends UserStore {
-  token: string | null;
-  setToken: (token: string | null) => Promise<void>;
+  authenticated: boolean;
   authenticate: (username: string, password: string) => Promise<boolean>;
   register: (username: string, password: string) => Promise<boolean>;
 }
+
+interface BearerToken {
+  tokenType: "Bearer";
+  accessToken: string;
+  expiresIn: number;
+  refreshToken: string;
+}
+
+interface StoredCookie {
+  tokenType: "cookie";
+}
+
+interface StoredBearerToken {
+  tokenType: "Bearer";
+  accessToken: string;
+  expiresAt: number;
+  refreshToken: string;
+}
+
+type StoredToken = StoredCookie | StoredBearerToken;
 
 const AuthenticationContext = createContext<AuthenticationProps | null>(null);
 
@@ -23,26 +42,70 @@ export const AuthenticationStoreProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [token, setTokenState] = useState<string | null>(null);
-  const setToken = async (newToken: string | null) => {
+  const [token, setTokenState] = useState<StoredToken | null>(null);
+  const setToken = async (newToken: BearerToken | null) => {
     if (newToken) {
-      await SecureStore.setItemAsync("authToken", newToken);
+      await SecureStore.setItemAsync("authToken", JSON.stringify(newToken));
+      setTokenState({
+        tokenType: "Bearer",
+        accessToken: newToken.accessToken,
+        expiresAt: Date.now() + newToken.expiresIn * 1000,
+        refreshToken: newToken.refreshToken,
+      });
     } else {
       await SecureStore.deleteItemAsync("authToken");
+      setTokenState(null);
     }
-    setTokenState(newToken);
   };
+
+  useEffect(() => {
+    if (token && token.tokenType === "Bearer") {
+      const timeout = token.expiresAt - Date.now();
+      const id = setTimeout(() => {
+        refreshToken();
+      }, Math.max(0, timeout));
+      return () => clearTimeout(id);
+    }
+  }, [token]);
+
+  const refreshToken = useCallback(async () => {
+    if (token && token.tokenType === "Bearer") {
+      const response = await fetch(`${getBackendUrl()}/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken: token.refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setToken(data);
+      }
+    }
+  }, [token, setToken]);
 
   useEffect(() => {
     (async () => {
       if (!(await SecureStore.isAvailableAsync())) {
-        setTokenState("cookie");
+        setTokenState({ tokenType: "cookie" });
         return;
       }
 
       const storedToken = await SecureStore.getItemAsync("authToken");
       if (storedToken) {
-        setTokenState(storedToken);
+        try {
+          const parsedStoredToken: StoredToken = JSON.parse(storedToken);
+          if (parsedStoredToken.tokenType === "Bearer") {
+            if (parsedStoredToken.expiresAt > Date.now()) {
+              setTokenState(parsedStoredToken);
+            } else {
+              await refreshToken();
+            }
+          } else if (parsedStoredToken.tokenType === "cookie") {
+            setTokenState(parsedStoredToken);
+          }
+        } catch {}
       }
     })();
   }, []);
@@ -61,8 +124,8 @@ export const AuthenticationStoreProvider = ({
 
       if (response.ok) {
         const text = await response.text();
-        const data = JSON.parse(text);
-        setToken(data.accessToken);
+        const data = JSON.parse(text) as BearerToken;
+        setToken(data);
         console.log("Authenticated, token set", data.accessToken);
         return true;
       }
@@ -88,13 +151,15 @@ export const AuthenticationStoreProvider = ({
   return (
     <AuthenticationContext.Provider
       value={{
-        token,
-        setToken,
+        authenticated: !!token,
         authenticate,
         register,
-        identifier: token && token !== "cookie" ? token : null,
+        identifier:
+          token && token.tokenType === "Bearer" ? token.accessToken : null,
         authorizationHeader:
-          token && token !== "cookie" ? `Bearer ${token}` : null,
+          token && token.tokenType === "Bearer"
+            ? `Bearer ${token.accessToken}`
+            : null,
       }}
     >
       {children}

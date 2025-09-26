@@ -6,7 +6,8 @@ namespace Galerie.Server.ViewModels
 {
     public class PhotoFullViewModel
     {
-        public int Id { get; set; }
+        public int Id { get; set; } // Conservé pour compat rétro éventuelle
+        public Guid PublicId { get; set; }
         public string Name { get; set; }
         public int? NextId { get; set; }
         public int? PreviousId { get; set; }
@@ -20,6 +21,7 @@ namespace Galerie.Server.ViewModels
         public int DirectoryId { get; set; }
 
         public PhotoFullViewModel(Photo photo, Photo? previous, Photo? next, bool @private) =>
-            (Id, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Video, Private, FaceDetectionStatus, DirectoryId) = (photo.Id, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, PhotoService.IsVideo(photo), @private, photo.FaceDetectionStatus, photo.DirectoryId);
+            (Id, PublicId, Name, NextId, PreviousId, DateTime, Latitude, Longitude, Camera, Video, Private, FaceDetectionStatus, DirectoryId) =
+            (photo.Id, photo.PublicId, photo.FileName, next?.Id, previous?.Id, photo.DateTime, photo.Latitude, photo.Longitude, photo.Camera, PhotoService.IsVideo(photo), @private, photo.FaceDetectionStatus, photo.DirectoryId);
     }
 }
