@@ -4,13 +4,25 @@ import { useLocalSearchParams } from "expo-router";
 import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
-import { Text } from "react-native";
+import { Text, useWindowDimensions } from "react-native";
 import { UsersStoreProvider } from "@/stores/users";
 
 function LayoutContent() {
   const membersStore = useMembersStore();
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 768; // Écran considéré comme large à partir de 768px
+
   return (
-    <Drawer>
+    <Drawer
+      screenOptions={{
+        drawerType: isLargeScreen ? "permanent" : "front",
+        drawerStyle: {
+          width: 280,
+        },
+        // Sur grand écran, masquer le bouton hamburger car le drawer est permanent
+        headerLeft: isLargeScreen ? () => null : undefined,
+      }}
+    >
       <Drawer.Screen name="index" options={{ title: "Gallerie" }} />
       <Drawer.Screen
         name="face-names"

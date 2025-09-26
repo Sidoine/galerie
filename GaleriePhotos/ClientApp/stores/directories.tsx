@@ -19,8 +19,8 @@ class DirectoriesStore {
   constructor(
     public subDirectoriesLoader: MapLoader<Directory[], [number]>,
     public contentLoader: MapLoader<Photo[], [number]>,
-    public imageLoader: ValueLoader<PhotoFull, [number]>,
-    public infoLoader: ValueLoader<DirectoryFull, [number]>,
+    public imageLoader: MapLoader<PhotoFull, [number]>,
+    public infoLoader: MapLoader<DirectoryFull, [number]>,
     private directoryService: DirectoryController,
     private photoService: PhotoController,
     public galleryId: number
@@ -74,7 +74,7 @@ class DirectoriesStore {
   }
 
   async patchDirectoryAndClearCache(id: number, patch: DirectoryPatch) {
-    this.infoLoader.invalidate();
+    this.infoLoader.cache.clear();
     this.subDirectoriesLoader.cache.clear();
     await this.directoryService.patch(id, patch);
   }
@@ -88,7 +88,7 @@ class DirectoriesStore {
 
   async setParentCover(directoryId: number) {
     await this.directoryService.setParentCover(directoryId);
-    this.infoLoader.invalidate();
+    this.infoLoader.cache.clear();
     this.subDirectoriesLoader.cache.clear();
   }
 
@@ -106,7 +106,7 @@ class DirectoriesStore {
   async rotatePhoto(photo: Photo, angle: number) {
     await this.photoService.rotate(photo.id, { angle });
     this.photoReloadSuffix.set(photo.publicId, Date.now());
-    this.imageLoader.invalidate();
+    this.imageLoader.cache.clear();
   }
 }
 
@@ -125,8 +125,8 @@ export function DirectoriesStoreProvider({
     const photoService = new PhotoController(apiClient);
     const directoriesLoader = new MapLoader(directoryService.getSubdirectories);
     const directoryContentLoader = new MapLoader(directoryService.getPhotos);
-    const imageLoader = new ValueLoader(photoService.get);
-    const directoryInfoLoader = new ValueLoader(directoryService.get);
+    const imageLoader = new MapLoader(photoService.get);
+    const directoryInfoLoader = new MapLoader(directoryService.get);
     return new DirectoriesStore(
       directoriesLoader,
       directoryContentLoader,

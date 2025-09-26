@@ -6,7 +6,9 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
+  FlatList,
+  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { useUi } from "@/stores/ui";
 import { useDirectoriesStore } from "@/stores/directories";
@@ -25,6 +27,16 @@ export const DirectoryImagesView = observer(function DirectoryImagesView({
   const values = directoryContent || [];
   const sortedValues =
     order === "date-desc" ? values.slice().reverse() : values;
+
+  // Calculer le nombre de colonnes basé sur la largeur de l'écran
+  const screenWidth = useWindowDimensions().width;
+  const imageSize = 110;
+  const padding = 12;
+  const gap = 8;
+  const numColumns = Math.floor(
+    (screenWidth - 2 * padding + gap) / (imageSize + gap)
+  );
+
   const handleSortDateDesc = useCallback(
     () => navigateToDirectory(directoryId, "date-desc"),
     [directoryId, navigateToDirectory]
@@ -32,6 +44,15 @@ export const DirectoryImagesView = observer(function DirectoryImagesView({
   const handleSortDateAsc = useCallback(
     () => navigateToDirectory(directoryId, "date-asc"),
     [directoryId, navigateToDirectory]
+  );
+
+  const renderImageItem = useCallback(
+    ({ item }: { item: any }) => (
+      <View style={styles.imageItem}>
+        <ImageCard value={item} size={110} />
+      </View>
+    ),
+    []
   );
 
   if (values.length === 0) return null;
@@ -56,15 +77,16 @@ export const DirectoryImagesView = observer(function DirectoryImagesView({
           </View>
         )}
       </View>
-      <ScrollView contentContainerStyle={styles.list}>
-        <View style={styles.imageGrid}>
-          {sortedValues.map((x) => (
-            <View key={x.id} style={styles.imageItem}>
-              <ImageCard value={x} size={110} />
-            </View>
-          ))}
-        </View>
-      </ScrollView>
+      <FlatList
+        key={numColumns}
+        data={sortedValues}
+        renderItem={renderImageItem}
+        numColumns={numColumns}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.list}
+        columnWrapperStyle={numColumns > 1 ? styles.row : undefined}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 });
@@ -126,12 +148,13 @@ const styles = StyleSheet.create({
   list: {
     paddingBottom: 40,
   },
-  imageGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  row: {
+    justifyContent: "space-around",
+    paddingHorizontal: 4,
   },
   imageItem: {
     marginBottom: 8,
+    flex: 1,
+    alignItems: "center",
   },
 });
