@@ -21,7 +21,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.galeriephotos"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,6 +39,12 @@
           "configureAndroidBackup": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e35e2665-af6b-491b-821e-fa5da49af320"
+      }
+    }
   }
 }
