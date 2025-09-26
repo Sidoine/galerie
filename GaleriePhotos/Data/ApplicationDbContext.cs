@@ -28,24 +28,37 @@ namespace GaleriePhotos.Data
             
             // Configure pgvector extension
             modelBuilder.HasPostgresExtension("vector");
+
+            modelBuilder.Entity<Photo>(entity =>
+            {
+                entity.HasIndex(e => new { e.DirectoryId, e.FileName }).IsUnique();
+                entity.HasIndex(x => x.DirectoryId);
+            });
+
+            modelBuilder.Entity<PhotoDirectory>(entity =>
+            {
+                entity.HasIndex(e => new { e.GalleryId, e.Path }).IsUnique();
+                entity.HasIndex(x => x.GalleryId);
+            });
             
             // Configure Face entity
             modelBuilder.Entity<Face>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                
+
                 entity.HasOne(e => e.Photo)
                     .WithMany()
                     .HasForeignKey(e => e.PhotoId)
                     .OnDelete(DeleteBehavior.Cascade);
-                    
+
                 entity.HasOne(e => e.FaceName)
                     .WithMany(fn => fn.Faces)
                     .HasForeignKey(e => e.FaceNameId)
                     .OnDelete(DeleteBehavior.SetNull);
-                    
+
                 entity.HasIndex(e => e.PhotoId);
                 entity.HasIndex(e => e.FaceNameId);
+                entity.HasIndex(x => x.Embedding).HasMethod("ivfflat").HasOperators("vector_l2_ops");
             });
             
             // Configure FaceName entity

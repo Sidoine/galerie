@@ -52,25 +52,27 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
   );
 
   return (
-    <TouchableOpacity style={styles.card} onPress={handleNavigate}>
-      <View style={styles.imageWrapper}>
-        {directory.coverPhotoId && (
-          <Image
-            source={{
-              uri: directoriesStore.getThumbnail(directory.coverPhotoId),
-            }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        )}
-        {!directory.coverPhotoId && (
-          <Image
-            source={placeholder as any}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        )}
-      </View>
+    <View style={styles.card}>
+      <TouchableOpacity onPress={handleNavigate}>
+        <View style={styles.imageWrapper}>
+          {directory.coverPhotoId && (
+            <Image
+              source={{
+                uri: directoriesStore.getThumbnail(directory.coverPhotoId),
+              }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          )}
+          {!directory.coverPhotoId && (
+            <Image
+              source={placeholder as any}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          )}
+        </View>
+      </TouchableOpacity>
       <View style={styles.meta}>
         <Text style={styles.title}>{directory.name}</Text>
         <View style={styles.subtitleRow}>
@@ -111,7 +113,7 @@ const SubdirectoryCard = observer(({ directory }: { directory: Directory }) => {
           </TouchableOpacity>
         )}
       </View>
-    </TouchableOpacity>
+    </View>
   );
 });
 
