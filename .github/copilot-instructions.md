@@ -22,10 +22,10 @@ Galerie Photos is a video/photo gallery application that serves media files from
 
 ### Frontend (TypeScript React)
 
-- **Build Tool**: Vite 6.x with TypeScript support
-- **UI Framework**: Material-UI (MUI) 7.x
+- **Build Tool**: Expo with TypeScript support
+- **UI Framework**: React Native
 - **State Management**: MobX 6.x
-- **Routing**: React Router 7.x
+- **Routing**: React Navigation
 - **Maps**: Leaflet with react-leaflet for photo geolocation
 - **Package Manager**: Yarn 4.5.3 with Corepack
 
@@ -146,14 +146,16 @@ dotnet run --project GaleriePhotos -- --generate-services
 ```
 
 This command:
+
 - Builds the application and creates a temporary host
 - Uses Folke.CsTsService to scan controllers and generate TypeScript client code
 - Updates files in `GaleriePhotos/ClientApp/src/services/`
 - Exits without starting the web server
 
 The TypeScript services are auto-generated from C# controllers and should not be modified manually. The generated files include:
+
 - `directory.ts` - Directory/album management API calls
-- `photo.ts` - Photo management and metadata API calls  
+- `photo.ts` - Photo management and metadata API calls
 - `user.ts` - User management and authentication API calls
 - `views.ts` - TypeScript interfaces matching C# ViewModels
 - `enums.ts` - TypeScript enums from C# enums

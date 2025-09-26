@@ -1,5 +1,7 @@
 ﻿namespace GaleriePhotos.Services
 {
+    using GaleriePhotos.Models;
+    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.Extensions.Options;
     using SendGrid;
@@ -9,7 +11,7 @@
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class SendGridEmailSender : IEmailSender
+    public class SendGridEmailSender : IEmailSender<ApplicationUser>
     {
         public SendGridEmailSender(IOptions<SendGridOptions> optionsAccessor)
         {
@@ -41,6 +43,21 @@
             msg.SetClickTracking(false, false);
 
             return client.SendEmailAsync(msg);
+        }
+
+        public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
+        {
+            throw new NotImplementedException();
         }
     }
 }

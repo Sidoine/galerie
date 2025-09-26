@@ -126,6 +126,11 @@ namespace GaleriePhotos.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Embedding");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Embedding"), "ivfflat");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Embedding"), new[] { "vector_l2_ops" });
+
                     b.HasIndex("FaceNameId");
 
                     b.HasIndex("PhotoId");
@@ -287,11 +292,20 @@ namespace GaleriePhotos.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("double precision");
 
+                    b.Property<Guid>("PublicId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DirectoryId");
 
                     b.HasIndex("GalleryId");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("DirectoryId", "FileName")
+                        .IsUnique();
 
                     b.ToTable("Photos");
                 });
@@ -323,6 +337,9 @@ namespace GaleriePhotos.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GalleryId");
+
+                    b.HasIndex("GalleryId", "Path")
+                        .IsUnique();
 
                     b.ToTable("PhotoDirectories");
                 });
@@ -406,12 +423,10 @@ namespace GaleriePhotos.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProviderKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("text");
@@ -448,12 +463,10 @@ namespace GaleriePhotos.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Value")
                         .HasColumnType("text");
