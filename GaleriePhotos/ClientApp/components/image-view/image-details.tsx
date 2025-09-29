@@ -10,6 +10,7 @@ import { observer } from "mobx-react-lite";
 import { PhotoFull } from "@/services/views";
 import Icon from "../Icon";
 import { theme } from "@/stores/theme";
+import { AdaptiveMap } from "./adaptive-map";
 
 interface ImageDetailsProps {
   image: PhotoFull;
@@ -64,9 +65,13 @@ export const ImageDetails = observer(function ImageDetails({
               <Text style={styles.geoText}>
                 Lon: {image.longitude.toFixed(5)}
               </Text>
-              <Text style={styles.geoHint}>
-                Carte désactivée (remplacer par module RN Map)
-              </Text>
+              <AdaptiveMap
+                latitude={image.latitude}
+                longitude={image.longitude}
+                title="Photo prise ici"
+                description={image.name}
+                style={styles.map}
+              />
             </View>
           )}
         </ScrollView>
@@ -158,5 +163,10 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing(2),
     fontSize: 11,
     color: theme.palette.textMuted,
+  },
+  map: {
+    height: 200,
+    marginTop: theme.spacing(2),
+    borderRadius: theme.radius.md,
   },
 });
