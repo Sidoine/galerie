@@ -12,7 +12,7 @@ namespace GaleriePhotos.ViewModels
         public int NumberOfPhotos { get; set; }
         public int NumberOfSubDirectories { get; set; }
 
-        public DirectoryViewModel(PhotoDirectory photoDirectory, Photo? coverPhoto, int numberOfPhotos, int numberOfSubDirectories) =>
-            (Id, Visibility, Name, CoverPhotoId, NumberOfPhotos, NumberOfSubDirectories) = (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path), coverPhoto?.PublicId.ToString(), numberOfPhotos, numberOfSubDirectories);
+        public DirectoryViewModel(PhotoDirectory photoDirectory, int numberOfPhotos, int numberOfSubDirectories) =>
+            (Id, Visibility, Name, CoverPhotoId, NumberOfPhotos, NumberOfSubDirectories) = (photoDirectory.Id, photoDirectory.Visibility, Path.GetFileName(photoDirectory.Path), photoDirectory.CoverPhoto?.PublicId.ToString(), numberOfPhotos, numberOfSubDirectories);
     }
 }

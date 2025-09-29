@@ -39,6 +39,10 @@ namespace GaleriePhotos.Data
             {
                 entity.HasIndex(e => new { e.GalleryId, e.Path }).IsUnique();
                 entity.HasIndex(x => x.GalleryId);
+                entity.HasOne(e => e.CoverPhoto)
+                    .WithMany()
+                    .HasForeignKey(e => e.CoverPhotoId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
             
             // Configure Face entity
