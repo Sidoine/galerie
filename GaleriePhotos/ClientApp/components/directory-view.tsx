@@ -55,13 +55,14 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
     if (directories && directories.length > 0) {
       result.push({
         title: "Albums",
-        data: splitInRows(directories, cols) || [],
+        data: splitInRows(directories, Math.max(1, Math.floor(cols / 2))) || [],
         renderItem: ({ item }) => (
           <View style={styles.container}>
             {item.map((subDir) => (
               <SubdirectoryCard
                 key={subDir.id}
                 directory={subDir as Directory}
+                size={columnWidth * 2 + gap}
               />
             ))}
           </View>
