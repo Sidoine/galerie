@@ -32,9 +32,13 @@ interface Section {
 }
 
 export const DirectoryView = observer(({ id }: { id: number }) => {
-  const { width } = useWindowDimensions();
+  let { width } = useWindowDimensions();
   const columnWidth = 184; // approximate desired width
   const gap = 4;
+  if (width > 768) {
+    // The left drawer takes 279px
+    width -= 279;
+  }
   const cols = Math.max(1, Math.floor((width - gap) / (columnWidth + gap)));
 
   const directoriesStore = useDirectoriesStore();

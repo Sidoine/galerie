@@ -13,6 +13,7 @@ export interface AuthenticationProps extends UserStore {
   authenticated: boolean;
   authenticate: (username: string, password: string) => Promise<boolean>;
   register: (username: string, password: string) => Promise<boolean>;
+  clearCredentials: () => void;
 }
 
 interface BearerToken {
@@ -88,7 +89,10 @@ export const AuthenticationStoreProvider = ({
   useEffect(() => {
     (async () => {
       if (!(await SecureStore.isAvailableAsync())) {
-        setTokenState({ tokenType: "cookie" });
+        const state = localStorage.getItem("authToken");
+        if (state) {
+          setTokenState(JSON.parse(state));
+        }
         return;
       }
 
@@ -114,19 +118,33 @@ export const AuthenticationStoreProvider = ({
     async (email: string, password: string): Promise<boolean> => {
       // Remplacez cette URL par l'endpoint réel de votre API
       console.log(`${getBackendUrl()}/login`);
-      const response = await fetch(`${getBackendUrl()}/login`, {
+      const useCookies = !(await SecureStore.isAvailableAsync());
+      let url = `${getBackendUrl()}/login`;
+      if (useCookies) {
+        url += "?useCookies=true";
+      }
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password, useCookies: false }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
-        const text = await response.text();
-        const data = JSON.parse(text) as BearerToken;
-        setToken(data);
-        console.log("Authenticated, token set", data.accessToken);
+        if (useCookies) {
+          setTokenState({ tokenType: "cookie" });
+          localStorage.setItem(
+            "authToken",
+            JSON.stringify({ tokenType: "cookie" })
+          );
+          console.log("Authenticated with cookies");
+        } else {
+          const text = await response.text();
+          const data = JSON.parse(text) as BearerToken;
+          setToken(data);
+          console.log("Authenticated, token set", data.accessToken);
+        }
         return true;
       }
       return false;
@@ -148,10 +166,15 @@ export const AuthenticationStoreProvider = ({
     []
   );
 
+  const clearCredentials = useCallback(() => {
+    setTokenState(null);
+  }, []);
+
   return (
     <AuthenticationContext.Provider
       value={{
         authenticated: !!token,
+        clearCredentials,
         authenticate,
         register,
         identifier:
