@@ -15,6 +15,10 @@ class GalleriesStore {
     });
   }
 
+  get(id: number) {
+    return this.memberships?.find((m) => m.galleryId === id) || null;
+  }
+
   async load() {
     if (this.loading || this.memberships) return;
     this.loading = true;
