@@ -10,7 +10,7 @@ import { observer } from "mobx-react-lite";
 import { PhotoFull } from "@/services/views";
 import Icon from "../Icon";
 import { theme } from "@/stores/theme";
-import { AdaptiveMap } from "./adaptive-map";
+import AdaptiveMap from "./adaptive-map";
 
 interface ImageDetailsProps {
   image: PhotoFull;

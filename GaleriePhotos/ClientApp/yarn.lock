@@ -2621,6 +2621,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-leaflet@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@types/react-leaflet@npm:3.0.0"
+  dependencies:
+    react-leaflet: "npm:*"
+  checksum: 10c0/ea90ed346c2bb21950c8144a3319505bfceb8f98f49e624d1a821d578405c5a63da6224c46f7c948cf4031ebe0100f3aa8ed5204023ef0861705af32c99b126b
+  languageName: node
+  linkType: hard
+
 "@types/react@npm:~19.1.0":
   version: 19.1.13
   resolution: "@types/react@npm:19.1.13"
@@ -4458,6 +4467,7 @@ __metadata:
     "@react-navigation/stack": "npm:^7.4.8"
     "@types/leaflet": "npm:^1.9.20"
     "@types/react": "npm:~19.1.0"
+    "@types/react-leaflet": "npm:^3.0.0"
     expo: "npm:~54.0.10"
     expo-constants: "npm:~18.0.9"
     expo-dev-client: "npm:^6.0.12"
@@ -6664,7 +6674,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-leaflet@npm:^5.0.0":
+"react-leaflet@npm:*, react-leaflet@npm:^5.0.0":
   version: 5.0.0
   resolution: "react-leaflet@npm:5.0.0"
   dependencies:
