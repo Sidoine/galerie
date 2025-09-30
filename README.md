@@ -4,7 +4,7 @@ A modern, feature-rich photo and video gallery web application with advanced AI-
 
 ## Purpose
 
-Galerie Photos is designed to help individuals and organizations efficiently organize, manage, and share their photo and video collections. The application automatically scans file system directories to create organized galleries, extracts metadata from media files, and provides powerful features like face detection and recognition to make finding and organizing photos effortless.
+Galerie Photos is designed to help individuals and organizations organize, manage, and share their photo and video collections. The application automatically scans file system directories to create organized galleries, extracts metadata from media files, and provides features like face detection and recognition to help with finding and organizing photos.
 
 ## Key Features
 
