@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Text, ViewStyle } from "react-native";
+import { StyleSheet, ViewStyle } from "react-native";
 import { theme } from "@/stores/theme";
 import MapView, { Marker } from "react-native-maps";
 

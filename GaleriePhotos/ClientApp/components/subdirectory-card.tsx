@@ -13,7 +13,6 @@ import { useDirectoriesStore } from "@/stores/directories";
 import { useDirectoryVisibilitiesStore } from "@/stores/directory-visibilities";
 import { useMembersStore } from "@/stores/members";
 import placeholder from "@/assets/placeholder.png";
-import { StackNavigationProp } from "@react-navigation/stack";
 import { useRouter } from "expo-router";
 
 const SubdirectoryCard = observer(
@@ -26,14 +25,14 @@ const SubdirectoryCard = observer(
 
     const handleNavigate = useCallback(() => {
       router.push({
-        pathname: "/gallery/[galleryId]/directory/[directoryId]",
+        pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
         params: {
           galleryId: directoriesStore.galleryId,
           directoryId: directory.id,
           order: "date-desc",
         },
       });
-    }, [router, directory.id]);
+    }, [router, directoriesStore.galleryId, directory.id]);
 
     const handleUseAsParentCover = useCallback(async () => {
       try {
@@ -69,7 +68,7 @@ const SubdirectoryCard = observer(
             )}
             {!directory.coverPhotoId && (
               <Image
-                source={placeholder as any}
+                source={{ uri: placeholder }}
                 style={styles.image}
                 resizeMode="cover"
               />

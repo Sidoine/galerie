@@ -6,12 +6,13 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
 function BreadCrumbs({ directoryId }: { directoryId?: number }) {
-  if (!directoryId) return <Text>Galerie photo</Text>;
   const directory = useDirectoriesStore();
+  const galleriesStore = useGalleriesStore();
+  if (!directoryId) return <Text>Galerie photo</Text>;
   const currentDirectory = directory.infoLoader.getValue(Number(directoryId));
   if (!currentDirectory) return <></>;
   const parent = currentDirectory.parent;
-  const gallery = useGalleriesStore().get(directory.galleryId);
+  const gallery = galleriesStore.get(directory.galleryId);
   return (
     <View style={styles.container}>
       {parent && (

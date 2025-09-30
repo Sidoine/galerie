@@ -10,11 +10,12 @@ namespace GaleriePhotos.Services
     /// </summary>
     public class DataService : IDisposable
     {
-        private readonly ConcurrentDictionary<Gallery, SeafileDataProvider> _seafileProviders;
+        // Use a tuple key to avoid holding strong references to Gallery objects
+        private readonly ConcurrentDictionary<(int GalleryId, string? ServerUrl, string? ApiKey), SeafileDataProvider> _seafileProviders;
 
         public DataService()
         {
-            _seafileProviders = new ConcurrentDictionary<Gallery, SeafileDataProvider>();
+            _seafileProviders = new ConcurrentDictionary<(int, string?, string?), SeafileDataProvider>();
         }
 
         /// <summary>
@@ -34,11 +35,12 @@ namespace GaleriePhotos.Services
 
         /// <summary>
         /// Gets or creates a Seafile data provider for the specified gallery.
-        /// Providers are cached by server URL and API key combination.
+        /// Providers are cached by gallery Id, server URL, and API key.
         /// </summary>
         private SeafileDataProvider GetSeafileProvider(Gallery gallery)
         {
-            return _seafileProviders.GetOrAdd(gallery, _ => new SeafileDataProvider(gallery));
+            var key = (gallery.Id, gallery.SeafileServerUrl, gallery.SeafileApiKey);
+            return _seafileProviders.GetOrAdd(key, _ => new SeafileDataProvider(gallery));
         }
 
         public void Dispose()

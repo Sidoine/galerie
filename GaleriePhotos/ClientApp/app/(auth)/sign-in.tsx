@@ -16,12 +16,10 @@ export default function SignIn() {
   const authenticationStore = useAuthenticationStore();
 
   const handleLogin = async () => {
-    console.log("Signing in with", email, password);
     const signInResponse = await authenticationStore.authenticate(
       email,
       password
     );
-    console.log("authenticate", signInResponse);
     if (!signInResponse) {
       Alert.alert("Error", "Failed to sign in");
       return;

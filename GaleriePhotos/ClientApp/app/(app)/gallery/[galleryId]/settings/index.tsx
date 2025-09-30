@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import {
   View,
@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Modal,
 } from "react-native";
 import { useDirectoriesStore } from "@/stores/directories";
 import { GalleryController } from "@/services/gallery";

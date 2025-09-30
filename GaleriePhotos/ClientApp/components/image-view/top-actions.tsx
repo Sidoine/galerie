@@ -78,13 +78,6 @@ export default function TopActions({
         </TouchableOpacity>
       </View>
       <View style={styles.rightGroup}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onDetailsToggle}
-          style={styles.iconButton}
-        >
-          <Icon name="information-outline" set="mci" size={22} />
-        </TouchableOpacity>
         {photo.faceDetectionStatus === FaceDetectionStatus.Completed && (
           <TouchableOpacity
             accessibilityRole="button"
@@ -98,6 +91,13 @@ export default function TopActions({
             )}
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={onDetailsToggle}
+          style={styles.iconButton}
+        >
+          <Icon name="information-outline" set="mci" size={22} />
+        </TouchableOpacity>
         {membersStore.administrator && (
           <TouchableOpacity
             accessibilityRole="button"

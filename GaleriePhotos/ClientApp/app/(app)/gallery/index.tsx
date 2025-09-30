@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,29 +8,55 @@ import {
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useGalleriesStore } from "../../../stores/galleries";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+
+function GalleryItem({
+  galleryId,
+  galleryName,
+}: {
+  galleryId: number;
+  galleryName: string;
+}) {
+  const router = useRouter();
+  const handleClick = useCallback(() => {
+    router.navigate({
+      pathname: `/(app)/gallery/[galleryId]`,
+      params: { galleryId },
+    });
+  }, [galleryId, router]);
+  return (
+    <TouchableOpacity style={styles.galleryButton} onPress={handleClick}>
+      <Text style={styles.galleryText}>{galleryName}</Text>
+    </TouchableOpacity>
+  );
+}
 
 const GalleryChooser = observer(function GalleryChooser() {
   const router = useRouter();
   const galleriesStore = useGalleriesStore();
+  const { galleryId } = useLocalSearchParams<{ galleryId?: string }>();
 
   useEffect(() => {
     if (!galleriesStore.memberships && !galleriesStore.loading) {
       galleriesStore.load();
     }
-  }, [galleriesStore]);
+  }, [galleriesStore, galleriesStore.loading, galleriesStore.memberships]);
 
   const memberships = galleriesStore.memberships;
 
   useEffect(() => {
-    if (memberships && memberships.length === 1) {
-      const galleryId = memberships[0].galleryId;
+    if (
+      memberships &&
+      memberships.length === 1 &&
+      galleryId !== String(memberships[0].galleryId)
+    ) {
+      const targetGalleryId = memberships[0].galleryId;
       router.navigate({
         pathname: `/(app)/gallery/[galleryId]`,
-        params: { galleryId },
+        params: { galleryId: targetGalleryId },
       });
     }
-  }, [memberships]);
+  }, [galleryId, memberships, router]);
 
   if (!memberships) {
     return (
@@ -44,18 +70,11 @@ const GalleryChooser = observer(function GalleryChooser() {
   return (
     <View style={styles.container}>
       {memberships.map((m) => (
-        <TouchableOpacity
+        <GalleryItem
           key={m.galleryId}
-          style={styles.galleryButton}
-          onPress={() => {
-            router.navigate({
-              pathname: `/gallery/[galleryId]`,
-              params: { galleryId: m.galleryId },
-            });
-          }}
-        >
-          <Text style={styles.galleryText}>{m.galleryName}</Text>
-        </TouchableOpacity>
+          galleryId={m.galleryId}
+          galleryName={m.galleryName}
+        />
       ))}
       {memberships.length === 0 && (
         <Text style={styles.noGalleryText}>

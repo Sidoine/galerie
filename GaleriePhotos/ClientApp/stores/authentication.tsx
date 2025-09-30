@@ -44,7 +44,7 @@ export const AuthenticationStoreProvider = ({
   children: React.ReactNode;
 }) => {
   const [token, setTokenState] = useState<StoredToken | null>(null);
-  const setToken = async (newToken: BearerToken | null) => {
+  const setToken = useCallback(async (newToken: BearerToken | null) => {
     if (newToken) {
       await SecureStore.setItemAsync("authToken", JSON.stringify(newToken));
       setTokenState({
@@ -57,17 +57,7 @@ export const AuthenticationStoreProvider = ({
       await SecureStore.deleteItemAsync("authToken");
       setTokenState(null);
     }
-  };
-
-  useEffect(() => {
-    if (token && token.tokenType === "Bearer") {
-      const timeout = token.expiresAt - Date.now();
-      const id = setTimeout(() => {
-        refreshToken();
-      }, Math.max(0, timeout));
-      return () => clearTimeout(id);
-    }
-  }, [token]);
+  }, []);
 
   const refreshToken = useCallback(async () => {
     if (token && token.tokenType === "Bearer") {
@@ -87,7 +77,18 @@ export const AuthenticationStoreProvider = ({
   }, [token, setToken]);
 
   useEffect(() => {
+    if (token && token.tokenType === "Bearer") {
+      const timeout = token.expiresAt - Date.now();
+      const id = setTimeout(() => {
+        refreshToken();
+      }, Math.max(0, timeout));
+      return () => clearTimeout(id);
+    }
+  }, [refreshToken, token]);
+
+  useEffect(() => {
     (async () => {
+      if (token) return;
       if (!(await SecureStore.isAvailableAsync())) {
         const state = localStorage.getItem("authToken");
         if (state) {
@@ -109,15 +110,15 @@ export const AuthenticationStoreProvider = ({
           } else if (parsedStoredToken.tokenType === "cookie") {
             setTokenState(parsedStoredToken);
           }
-        } catch {}
+        } catch {
+          await SecureStore.deleteItemAsync("authToken");
+        }
       }
     })();
-  }, []);
+  }, [refreshToken, token]);
 
   const authenticate = useCallback(
     async (email: string, password: string): Promise<boolean> => {
-      // Remplacez cette URL par l'endpoint réel de votre API
-      console.log(`${getBackendUrl()}/login`);
       const useCookies = !(await SecureStore.isAvailableAsync());
       let url = `${getBackendUrl()}/login`;
       if (useCookies) {
@@ -138,12 +139,10 @@ export const AuthenticationStoreProvider = ({
             "authToken",
             JSON.stringify({ tokenType: "cookie" })
           );
-          console.log("Authenticated with cookies");
         } else {
           const text = await response.text();
           const data = JSON.parse(text) as BearerToken;
           setToken(data);
-          console.log("Authenticated, token set", data.accessToken);
         }
         return true;
       }

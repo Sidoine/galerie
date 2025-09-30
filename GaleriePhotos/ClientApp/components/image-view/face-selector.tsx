@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  FlatList,
 } from "react-native";
 import { FaceController } from "@/services/face";
 import Icon from "../Icon";
@@ -42,6 +43,17 @@ export function FaceSelector({
   const [error, setError] = useState<string | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Filtrer les noms en fonction de la valeur saisie
+  const filteredNames = useMemo(() => {
+    if (!value.trim() || !names.length) return [];
+    const searchText = value.trim().toLowerCase();
+    return names
+      .filter((name) => name.toLowerCase().includes(searchText))
+      .filter((name) => name !== value) // Exclure la valeur exacte
+      .slice(0, 5); // Limiter à 5 suggestions
+  }, [value, names]);
 
   // Charger la liste des noms quand on passe en édition
   useEffect(() => {
@@ -85,6 +97,7 @@ export function FaceSelector({
     setError(null);
     setValue(face.name ?? "");
     setEditing(true);
+    setShowSuggestions(false);
     // lancer suggestion si pas de nom
     if (!face.name) {
       fetchSuggestion();
@@ -96,6 +109,7 @@ export function FaceSelector({
     setValue(face.name ?? "");
     setError(null);
     setSuggestedName(null);
+    setShowSuggestions(false);
   }, [face.name]);
 
   const canSubmit = value.trim().length > 0 && value.trim() !== face.name;
@@ -103,8 +117,19 @@ export function FaceSelector({
   const acceptSuggestion = useCallback(() => {
     if (suggestedName) {
       setValue(suggestedName);
+      setShowSuggestions(false);
     }
   }, [suggestedName]);
+
+  const handleSelectName = useCallback((selectedName: string) => {
+    setValue(selectedName);
+    setShowSuggestions(false);
+  }, []);
+
+  const handleTextChange = useCallback((text: string) => {
+    setValue(text);
+    setShowSuggestions(text.trim().length > 0);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) {
@@ -113,6 +138,7 @@ export function FaceSelector({
     }
     setSubmitting(true);
     setError(null);
+    setShowSuggestions(false);
     try {
       await faceController.assignName(directoriesStore.galleryId, face.id, {
         name: value.trim(),
@@ -136,22 +162,24 @@ export function FaceSelector({
 
   if (!editing) {
     return (
-      <View style={styles.inlineRow}>
-        <TouchableOpacity onPress={handleEnterEdit}>
-          <Text
-            style={[
-              styles.label,
-              dense && styles.labelDense,
-              !face.name && styles.unknown,
-            ]}
-          >
-            {displayLabel}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleEnterEdit} style={styles.iconButton}>
+      <TouchableOpacity
+        onPress={handleEnterEdit}
+        style={styles.inlineRow}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.label,
+            dense && styles.labelDense,
+            !face.name && styles.unknown,
+          ]}
+        >
+          {displayLabel}
+        </Text>
+        <View style={styles.iconButton}>
           <Icon name="pencil" set="mci" size={16} />
-        </TouchableOpacity>
-      </View>
+        </View>
+      </TouchableOpacity>
     );
   }
 
@@ -162,10 +190,32 @@ export function FaceSelector({
           style={styles.input}
           value={value}
           placeholder="Nom"
-          onChangeText={setValue}
+          onChangeText={handleTextChange}
           onSubmitEditing={handleSubmit}
+          onFocus={() => setShowSuggestions(value.trim().length > 0)}
           autoFocus
         />
+
+        {/* Liste d'autocomplétion */}
+        {showSuggestions && filteredNames.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            <FlatList
+              data={filteredNames}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.suggestionItem}
+                  onPress={() => handleSelectName(item)}
+                >
+                  <Text style={styles.suggestionText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              style={styles.suggestionsList}
+              keyboardShouldPersistTaps="handled"
+            />
+          </View>
+        )}
+
         {!!error && <Text style={styles.error}>{error}</Text>}
         {!error && suggestionLoading && (
           <Text style={styles.helper}>Recherche suggestion...</Text>
@@ -221,7 +271,14 @@ export function FaceSelector({
 export default FaceSelector;
 
 const styles = StyleSheet.create({
-  inlineRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  inlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    minHeight: 24,
+  },
   label: { fontSize: 12, color: "#00a0c6", textDecorationLine: "underline" },
   labelDense: { fontSize: 10 },
   unknown: { color: "#888" },
@@ -251,4 +308,29 @@ const styles = StyleSheet.create({
   helper: { color: "#666", fontSize: 11, marginTop: 2 },
   suggestion: { color: "#ffca28", fontSize: 11, marginTop: 2 },
   disabledBtn: { opacity: 0.4 },
+  suggestionsContainer: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: "white",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginTop: 2,
+  },
+  suggestionsList: {
+    maxHeight: 150,
+  },
+  suggestionItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: "#333",
+  },
 });

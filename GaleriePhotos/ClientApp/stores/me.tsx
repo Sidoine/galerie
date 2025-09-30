@@ -1,4 +1,4 @@
-import { SingletonLoader, useApiClient } from "folke-service-helpers";
+import { useApiClient } from "folke-service-helpers";
 import { action, computed, makeObservable, observable } from "mobx";
 import { User } from "../services/views";
 import { createContext, useContext, useMemo } from "react";
@@ -41,7 +41,7 @@ export function MeStoreProvider({ children }: { children: React.ReactNode }) {
   const store = useMemo(() => {
     const meService = new MeController(apiClient);
     return new MeStore(meService, authentication);
-  }, [apiClient]);
+  }, [apiClient, authentication]);
   return (
     <MeStoreContext.Provider value={store}>{children}</MeStoreContext.Provider>
   );

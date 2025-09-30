@@ -2,8 +2,9 @@ import {
   SimpleApiClient,
   UserStore,
   ApiClientContext,
+  Data,
 } from "folke-service-helpers";
-import { createContext, useContext, useMemo } from "react";
+import { useMemo } from "react";
 import { useAuthenticationStore } from "./authentication";
 import { getBackendUrl } from "./config";
 
@@ -12,7 +13,7 @@ class MyApiClient extends SimpleApiClient {
     super(userStore, undefined);
   }
 
-  override fetch(url: string, method: string, data: any) {
+  override fetch(url: string, method: string, data: Data | undefined) {
     if (!url.startsWith("/")) url = `/${url}`;
     const uri = getBackendUrl();
     return super.fetch(`${uri}${url}`, method, data);

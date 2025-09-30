@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Face } from "@/services/views";
 import { FaceController } from "@/services/face";
@@ -81,7 +81,7 @@ export default function ImageFaces({
   if (!faces) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {faces.map((f) => {
         const left = f.x * scaleX;
         const top = f.y * scaleY;
@@ -91,6 +91,7 @@ export default function ImageFaces({
           <View
             key={f.id}
             style={[styles.faceBox, { left, top, width, height }]}
+            pointerEvents="box-none"
           >
             <View style={styles.faceHeader} pointerEvents="auto">
               <FaceSelector

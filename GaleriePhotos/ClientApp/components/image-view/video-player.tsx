@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { VideoView, useVideoPlayer, VideoSource } from "expo-video";
 import { Ionicons } from "@expo/vector-icons";
 
 interface VideoPlayerProps {
   uri: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   onNext?: () => void;
   onPrevious?: () => void;
 }

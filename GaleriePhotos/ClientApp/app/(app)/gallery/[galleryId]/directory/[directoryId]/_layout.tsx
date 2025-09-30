@@ -1,8 +1,6 @@
 import BreadCrumbs from "@/components/bread-crumbs";
-import { useDirectoriesStore } from "@/stores/directories";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { Text } from "react-native";
 
 const Header = observer(function Header() {
   const { directoryId } = useLocalSearchParams<{ directoryId: string }>();
