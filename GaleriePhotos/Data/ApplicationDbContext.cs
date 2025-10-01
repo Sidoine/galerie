@@ -87,6 +87,8 @@ namespace GaleriePhotos.Data
                 entity.Property(e => e.Name).IsRequired();
                 entity.HasIndex(e => e.GalleryId);
                 entity.HasIndex(e => new { e.GalleryId, e.Name }).IsUnique();
+                entity.HasIndex(e => e.OsmPlaceId);
+                entity.HasIndex(e => new { e.OsmType, e.OsmId });
                 
                 entity.HasOne(e => e.Gallery)
                     .WithMany()

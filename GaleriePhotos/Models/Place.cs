@@ -20,6 +20,11 @@ namespace GaleriePhotos.Models
         public int GalleryId { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        // OpenStreetMap identifier
+        public long? OsmPlaceId { get; set; }
+        public string? OsmType { get; set; }
+        public long? OsmId { get; set; }
 
         public Place(string name, double latitude, double longitude)
         {

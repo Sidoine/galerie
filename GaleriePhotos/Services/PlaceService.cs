@@ -13,6 +13,16 @@ using System.Threading.Tasks;
 
 namespace GaleriePhotos.Services
 {
+    public class OpenStreetMapPlaceData
+    {
+        public string Name { get; set; } = string.Empty;
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public long? PlaceId { get; set; }
+        public string? OsmType { get; set; }
+        public long? OsmId { get; set; }
+    }
+
     public class PlaceService
     {
         private readonly ApplicationDbContext context;
@@ -30,11 +40,18 @@ namespace GaleriePhotos.Services
         {
             try
             {
-                // First, check if we already have a place within ~1km radius
+                // Get place data from OpenStreetMap first
+                var osmPlaceData = await GetPlaceDataFromOpenStreetMapAsync(latitude, longitude);
+                if (osmPlaceData == null)
+                {
+                    return null;
+                }
+
+                // Check if we already have this place using OpenStreetMap identifiers
                 var existingPlace = await context.Places
                     .Where(p => p.GalleryId == galleryId)
-                    .Where(p => Math.Abs(p.Latitude - latitude) < 0.009 && Math.Abs(p.Longitude - longitude) < 0.009) // Roughly 1km
-                    .OrderBy(p => Math.Pow(p.Latitude - latitude, 2) + Math.Pow(p.Longitude - longitude, 2))
+                    .Where(p => p.OsmPlaceId == osmPlaceData.PlaceId || 
+                               (p.OsmType == osmPlaceData.OsmType && p.OsmId == osmPlaceData.OsmId))
                     .FirstOrDefaultAsync();
 
                 if (existingPlace != null)
@@ -42,30 +59,27 @@ namespace GaleriePhotos.Services
                     return existingPlace;
                 }
 
-                // Query OpenStreetMap Nominatim API for reverse geocoding
-                var placeName = await GetPlaceNameFromOpenStreetMapAsync(latitude, longitude);
-                if (string.IsNullOrEmpty(placeName))
-                {
-                    return null;
-                }
-
-                // Create new place
+                // Create new place using OpenStreetMap data
                 var gallery = await context.Galleries.FindAsync(galleryId);
                 if (gallery == null)
                 {
                     return null;
                 }
 
-                var place = new Place(placeName, latitude, longitude)
+                var place = new Place(osmPlaceData.Name, osmPlaceData.Latitude, osmPlaceData.Longitude)
                 {
                     GalleryId = galleryId,
-                    Gallery = gallery
+                    Gallery = gallery,
+                    OsmPlaceId = osmPlaceData.PlaceId,
+                    OsmType = osmPlaceData.OsmType,
+                    OsmId = osmPlaceData.OsmId
                 };
 
                 context.Places.Add(place);
                 await context.SaveChangesAsync();
 
-                logger.LogInformation("Created new place: {PlaceName} at {Latitude}, {Longitude}", placeName, latitude, longitude);
+                logger.LogInformation("Created new place: {PlaceName} at {Latitude}, {Longitude} with OSM ID {OsmPlaceId}", 
+                    osmPlaceData.Name, osmPlaceData.Latitude, osmPlaceData.Longitude, osmPlaceData.PlaceId);
                 return place;
             }
             catch (Exception ex)
@@ -75,7 +89,7 @@ namespace GaleriePhotos.Services
             }
         }
 
-        private async Task<string?> GetPlaceNameFromOpenStreetMapAsync(double latitude, double longitude)
+        private async Task<OpenStreetMapPlaceData?> GetPlaceDataFromOpenStreetMapAsync(double latitude, double longitude)
         {
             try
             {
@@ -90,36 +104,85 @@ namespace GaleriePhotos.Services
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var json = JsonDocument.Parse(jsonString);
 
+                var placeData = new OpenStreetMapPlaceData();
+
+                // Get the coordinates from OpenStreetMap response
+                if (json.RootElement.TryGetProperty("lat", out var latElement) &&
+                    json.RootElement.TryGetProperty("lon", out var lonElement))
+                {
+                    if (double.TryParse(latElement.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var osmLat) &&
+                        double.TryParse(lonElement.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var osmLon))
+                    {
+                        placeData.Latitude = osmLat;
+                        placeData.Longitude = osmLon;
+                    }
+                    else
+                    {
+                        // Fallback to original coordinates if parsing fails
+                        placeData.Latitude = latitude;
+                        placeData.Longitude = longitude;
+                    }
+                }
+                else
+                {
+                    // Fallback to original coordinates if not found in response
+                    placeData.Latitude = latitude;
+                    placeData.Longitude = longitude;
+                }
+
+                // Get OpenStreetMap identifiers
+                if (json.RootElement.TryGetProperty("place_id", out var placeIdElement))
+                {
+                    if (long.TryParse(placeIdElement.GetString(), out var placeId))
+                    {
+                        placeData.PlaceId = placeId;
+                    }
+                }
+
+                if (json.RootElement.TryGetProperty("osm_type", out var osmTypeElement))
+                {
+                    placeData.OsmType = osmTypeElement.GetString();
+                }
+
+                if (json.RootElement.TryGetProperty("osm_id", out var osmIdElement))
+                {
+                    if (long.TryParse(osmIdElement.GetString(), out var osmId))
+                    {
+                        placeData.OsmId = osmId;
+                    }
+                }
+
+                // Get place name
                 if (json.RootElement.TryGetProperty("address", out var address))
                 {
                     // Try to get city, town, village, or hamlet
                     if (address.TryGetProperty("city", out var city))
-                        return city.GetString();
-                    if (address.TryGetProperty("town", out var town))
-                        return town.GetString();
-                    if (address.TryGetProperty("village", out var village))
-                        return village.GetString();
-                    if (address.TryGetProperty("hamlet", out var hamlet))
-                        return hamlet.GetString();
-                    if (address.TryGetProperty("municipality", out var municipality))
-                        return municipality.GetString();
-                    if (address.TryGetProperty("county", out var county))
-                        return county.GetString();
+                        placeData.Name = city.GetString() ?? string.Empty;
+                    else if (address.TryGetProperty("town", out var town))
+                        placeData.Name = town.GetString() ?? string.Empty;
+                    else if (address.TryGetProperty("village", out var village))
+                        placeData.Name = village.GetString() ?? string.Empty;
+                    else if (address.TryGetProperty("hamlet", out var hamlet))
+                        placeData.Name = hamlet.GetString() ?? string.Empty;
+                    else if (address.TryGetProperty("municipality", out var municipality))
+                        placeData.Name = municipality.GetString() ?? string.Empty;
+                    else if (address.TryGetProperty("county", out var county))
+                        placeData.Name = county.GetString() ?? string.Empty;
                 }
 
                 // Fallback to display_name if no specific place found
-                if (json.RootElement.TryGetProperty("display_name", out var displayName))
+                if (string.IsNullOrEmpty(placeData.Name) && json.RootElement.TryGetProperty("display_name", out var displayName))
                 {
                     var fullName = displayName.GetString();
                     if (!string.IsNullOrEmpty(fullName))
                     {
                         // Take first part of display name (usually the most specific location)
                         var parts = fullName.Split(',');
-                        return parts[0].Trim();
+                        placeData.Name = parts[0].Trim();
                     }
                 }
 
-                return null;
+                return string.IsNullOrEmpty(placeData.Name) ? null : placeData;
             }
             catch (Exception ex)
             {
