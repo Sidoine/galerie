@@ -83,7 +83,7 @@ export function PlacesStoreProvider({
 }) {
   const apiClient = useApiClient();
   const placesStore = useMemo(
-    () => new PlacesStore(new PlaceController(apiClient.client)),
+    () => new PlacesStore(new PlaceController(apiClient)),
     [apiClient]
   );
 

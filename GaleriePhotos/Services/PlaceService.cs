@@ -133,10 +133,7 @@ namespace GaleriePhotos.Services
                 // Get OpenStreetMap identifiers
                 if (json.RootElement.TryGetProperty("place_id", out var placeIdElement))
                 {
-                    if (long.TryParse(placeIdElement.GetString(), out var placeId))
-                    {
-                        placeData.PlaceId = placeId;
-                    }
+                    placeData.PlaceId = placeIdElement.GetInt64();
                 }
 
                 if (json.RootElement.TryGetProperty("osm_type", out var osmTypeElement))
@@ -146,10 +143,7 @@ namespace GaleriePhotos.Services
 
                 if (json.RootElement.TryGetProperty("osm_id", out var osmIdElement))
                 {
-                    if (long.TryParse(osmIdElement.GetString(), out var osmId))
-                    {
-                        placeData.OsmId = osmId;
-                    }
+                    placeData.OsmId = osmIdElement.GetInt64();
                 }
 
                 // Get place name

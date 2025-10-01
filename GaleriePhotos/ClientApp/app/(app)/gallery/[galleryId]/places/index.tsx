@@ -1,13 +1,8 @@
 import React from "react";
-import { useLocalSearchParams } from "expo-router";
 import { PlacesMapView } from "@/components/places-map-view";
+import { useDirectoriesStore } from "@/stores/directories";
 
 export default function PlacesMapScreen() {
-  const { galleryId } = useLocalSearchParams<{ galleryId: string }>();
-  
-  if (!galleryId) {
-    return null;
-  }
-
-  return <PlacesMapView galleryId={parseInt(galleryId, 10)} />;
+  const { galleryId } = useDirectoriesStore();
+  return <PlacesMapView galleryId={galleryId} />;
 }

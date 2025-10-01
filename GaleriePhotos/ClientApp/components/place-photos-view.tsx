@@ -56,7 +56,7 @@ export const PlacePhotosView = observer(({ placeId }: PlacePhotosViewProps) => {
       <View style={styles.headerContainer}>
         <Text style={styles.placeName}>{place.name}</Text>
         <Text style={styles.placeInfo}>
-          {place.photoCount} photo{place.photoCount !== 1 ? 's' : ''} •{' '}
+          {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""} •{" "}
           {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}
         </Text>
         <Text style={styles.placeDate}>
@@ -92,10 +92,13 @@ const PhotoGroupCard = ({ group, onPress, width }: PhotoGroupCardProps) => {
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     if (start.toDateString() === end.toDateString()) {
       return start.toLocaleDateString();
-    } else if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+    } else if (
+      start.getFullYear() === end.getFullYear() &&
+      start.getMonth() === end.getMonth()
+    ) {
       return `${start.toLocaleDateString()} - ${end.getDate()}`;
     } else {
       return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
@@ -103,14 +106,11 @@ const PhotoGroupCard = ({ group, onPress, width }: PhotoGroupCardProps) => {
   };
 
   return (
-    <TouchableOpacity
-      style={[styles.groupCard, { width }]}
-      onPress={onPress}
-    >
+    <TouchableOpacity style={[styles.groupCard, { width }]} onPress={onPress}>
       <View style={styles.groupHeader}>
         <Text style={styles.groupTitle}>{group.title}</Text>
         <Text style={styles.groupCount}>
-          {group.photoCount} photo{group.photoCount !== 1 ? 's' : ''}
+          {group.photoCount} photo{group.photoCount !== 1 ? "s" : ""}
         </Text>
       </View>
       <Text style={styles.groupDateRange}>
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.palette.background,
   },
   loadingText: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 16,
   },
   emptyContainer: {
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 18,
     textAlign: "center",
   },
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   placeName: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   groupsTitle: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 20,
     fontWeight: "600",
     marginBottom: 16,
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   groupTitle: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 4,

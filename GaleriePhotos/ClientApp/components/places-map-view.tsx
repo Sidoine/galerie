@@ -1,11 +1,16 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { observer } from "mobx-react-lite";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { usePlacesStore } from "@/stores/places";
 import { useUi } from "@/stores/ui";
 import { theme } from "@/stores/theme";
-import { Place } from "@/services/views";
 import "leaflet/dist/leaflet.css";
 
 export interface PlacesMapViewProps {
@@ -34,15 +39,16 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>No places found for this gallery</Text>
         <Text style={styles.emptySubtext}>
-          Places are automatically created when photos with GPS coordinates are processed
+          Places are automatically created when photos with GPS coordinates are
+          processed
         </Text>
       </View>
     );
   }
 
   // Calculate map bounds to show all places
-  const latitudes = places.map(p => p.latitude);
-  const longitudes = places.map(p => p.longitude);
+  const latitudes = places.map((p) => p.latitude);
+  const longitudes = places.map((p) => p.longitude);
   const centerLat = (Math.min(...latitudes) + Math.max(...latitudes)) / 2;
   const centerLng = (Math.min(...longitudes) + Math.max(...longitudes)) / 2;
 
@@ -65,7 +71,7 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
                 <View>
                   <Text style={styles.popupTitle}>{place.name}</Text>
                   <Text style={styles.popupText}>
-                    {place.photoCount} photo{place.photoCount !== 1 ? 's' : ''}
+                    {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""}
                   </Text>
                   <TouchableOpacity
                     style={styles.popupButton}
@@ -79,7 +85,7 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
           ))}
         </MapContainer>
       </View>
-      
+
       <ScrollView style={styles.placesListContainer}>
         <Text style={styles.placesListTitle}>Places in this Gallery</Text>
         {places.map((place) => (
@@ -91,7 +97,7 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
             <View style={styles.placeInfo}>
               <Text style={styles.placeName}>{place.name}</Text>
               <Text style={styles.placePhotoCount}>
-                {place.photoCount} photo{place.photoCount !== 1 ? 's' : ''}
+                {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""}
               </Text>
             </View>
             <View style={styles.placeCoordinates}>
@@ -118,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.palette.background,
   },
   loadingText: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 16,
   },
   emptyContainer: {
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 18,
     marginBottom: 10,
     textAlign: "center",
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   placesListTitle: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
@@ -168,7 +174,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   placeName: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,
