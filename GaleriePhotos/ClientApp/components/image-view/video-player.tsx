@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -29,8 +29,6 @@ export default function VideoPlayer({
   });
 
   const [showControls, setShowControls] = useState(true);
-  const [duration, setDuration] = useState(0);
-  const [position, setPosition] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -42,8 +40,6 @@ export default function VideoPlayer({
     if (!player) return;
 
     const interval = setInterval(() => {
-      setPosition(player.currentTime * 1000); // Convertir en millisecondes
-      setDuration(player.duration * 1000); // Convertir en millisecondes
       setIsPlaying(player.playing);
 
       if (player.status === "loading") {
@@ -72,26 +68,9 @@ export default function VideoPlayer({
     }
   }, [showControls, isPlaying]);
 
-  const togglePlayback = () => {
-    if (player) {
-      if (isPlaying) {
-        player.pause();
-      } else {
-        player.play();
-      }
-    }
-  };
-
-  const handleVideoPress = () => {
+  const handleVideoPress = useCallback(() => {
     setShowControls(true);
-  };
-
-  const formatTime = (milliseconds: number) => {
-    const seconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
+  }, []);
 
   return (
     <View style={[styles.container, style]}>
@@ -138,40 +117,6 @@ export default function VideoPlayer({
             onPress={onNext}
             accessibilityLabel="Vidéo suivante"
           />
-        )}
-
-        {/* Contrôles personnalisés */}
-        {showControls && !isLoading && (
-          <View style={styles.controlsOverlay}>
-            {/* Bouton play/pause central */}
-            <TouchableOpacity
-              style={styles.playPauseButton}
-              onPress={togglePlayback}
-            >
-              <Ionicons
-                name={isPlaying ? "pause" : "play"}
-                size={60}
-                color="white"
-              />
-            </TouchableOpacity>
-
-            {/* Barre de progression en bas */}
-            <View style={styles.progressContainer}>
-              <Text style={styles.timeText}>{formatTime(position)}</Text>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width:
-                        duration > 0 ? `${(position / duration) * 100}%` : "0%",
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.timeText}>{formatTime(duration)}</Text>
-            </View>
-          </View>
         )}
       </TouchableOpacity>
     </View>
@@ -247,7 +192,7 @@ const styles = StyleSheet.create({
   navZone: {
     position: "absolute",
     top: 0,
-    bottom: 0,
+    bottom: 64,
     width: 80,
     zIndex: 20,
   },
