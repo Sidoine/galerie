@@ -16,6 +16,7 @@ namespace GaleriePhotos.Data
         public DbSet<GalleryDirectoryVisibility> GalleryDirectoryVisibilities { get; set; } = null!;
         public DbSet<Face> Faces { get; set; } = null!;
         public DbSet<FaceName> FaceNames { get; set; } = null!;
+        public DbSet<Place> Places { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)
@@ -33,6 +34,12 @@ namespace GaleriePhotos.Data
             {
                 entity.HasIndex(e => new { e.DirectoryId, e.FileName }).IsUnique();
                 entity.HasIndex(x => x.DirectoryId);
+                entity.HasIndex(x => x.PlaceId);
+                
+                entity.HasOne(e => e.Place)
+                    .WithMany()
+                    .HasForeignKey(e => e.PlaceId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<PhotoDirectory>(entity =>
@@ -71,6 +78,20 @@ namespace GaleriePhotos.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired();
                 entity.HasIndex(e => e.Name).IsUnique();
+            });
+            
+            // Configure Place entity
+            modelBuilder.Entity<Place>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired();
+                entity.HasIndex(e => e.GalleryId);
+                entity.HasIndex(e => new { e.GalleryId, e.Name }).IsUnique();
+                
+                entity.HasOne(e => e.Gallery)
+                    .WithMany()
+                    .HasForeignKey(e => e.GalleryId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

@@ -279,3 +279,37 @@ export interface PhotoAccess {
 export interface PhotoRotate {
     angle: number;
 }
+
+export interface Place {
+    id: number;
+
+    name: string;
+
+    latitude: number;
+
+    longitude: number;
+
+    galleryId: number;
+
+    createdAt: string;
+
+    photoCount: number;
+}
+
+export interface PhotoGroup {
+    title: string;
+
+    startDate: string;
+
+    endDate: string;
+
+    photoCount: number;
+
+    photoIds: number[];
+}
+
+export interface PlacePhotos {
+    place: Place;
+
+    photoGroups: PhotoGroup[];
+}

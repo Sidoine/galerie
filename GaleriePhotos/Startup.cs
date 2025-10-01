@@ -80,6 +80,9 @@ namespace GaleriePhotos
             services.AddScoped<FaceDetectionService>();
             services.AddHostedService<FaceDetectionBackgroundService>();
             services.AddScoped<GalleryService>();
+            services.AddScoped<PlaceService>();
+            services.AddHttpClient<PlaceService>();
+            services.AddHostedService<PlaceLocationBackgroundService>();
 
             services.AddAuthorization(options =>
             {
