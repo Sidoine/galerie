@@ -9,7 +9,6 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
-  Alert as RNAlert,
 } from "react-native";
 import { useDirectoryVisibilitiesStore } from "@/stores/directory-visibilities";
 import Icon from "@/components/Icon";

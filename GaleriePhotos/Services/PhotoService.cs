@@ -50,6 +50,7 @@ namespace GaleriePhotos.Services
         {
             var root = applicationDbContext.PhotoDirectories
                 .Include(pd => pd.Gallery)
+                .Include(x => x.CoverPhoto)
                 .FirstOrDefault(x => (x.Path == "" || x.PhotoDirectoryType == PhotoDirectoryType.Root) && x.GalleryId == gallery.Id);
             if (root == null)
             {
@@ -217,7 +218,7 @@ namespace GaleriePhotos.Services
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
             string[] directoryPaths = await GetSubDirectoryPaths(photoDirectory);
-            var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Where(x => directoryPaths.Contains(x.Path) && x.GalleryId == photoDirectory.GalleryId).ToListAsync();
+            var directories = await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Include(x => x.CoverPhoto).Where(x => directoryPaths.Contains(x.Path) && x.GalleryId == photoDirectory.GalleryId).ToListAsync();
             foreach (var path in directoryPaths)
             {
                 if (!directories.Any(x => x.Path == path))
@@ -232,9 +233,10 @@ namespace GaleriePhotos.Services
             logger.LogInformation($"Récupération des sous-dossiers de {photoDirectory.Path} ({photoDirectory.Id}) ({numberOfPhotosInDirectory} photos, {directories.Count} sous-dossiers). Couverture : {photoDirectory.CoverPhotoId}.");
             if (photoDirectory.CoverPhotoId == null && await GetNumberOfPhotos(photoDirectory) == 0 && directories.Count > 0)
             {
-                var newCoverPhotoId = directories.FirstOrDefault(x => x.CoverPhotoId.HasValue)?.CoverPhotoId;
-                logger.LogInformation($"Mise-à-jour de la photo de couverture de {photoDirectory.Path} en {newCoverPhotoId}");
-                photoDirectory.CoverPhotoId = newCoverPhotoId;
+                var newCoverPhoto = directories.FirstOrDefault(x => x.CoverPhoto != null)?.CoverPhoto;
+                logger.LogInformation($"Mise-à-jour de la photo de couverture de {photoDirectory.Path} en {newCoverPhoto?.Id}");
+                photoDirectory.CoverPhotoId = newCoverPhoto?.Id;
+                photoDirectory.CoverPhoto = newCoverPhoto;
                 applicationDbContext.Update(photoDirectory);
             }
 

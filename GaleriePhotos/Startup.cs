@@ -61,8 +61,6 @@ namespace GaleriePhotos
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            services.AddAuthentication();
-
             services.AddControllersWithViews();
             services.AddRazorPages();
 
@@ -86,10 +84,10 @@ namespace GaleriePhotos
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
-                options.AddPolicy(Policies.Images, policy => policy.RequireAuthenticatedUser().AddAuthenticationSchemes("Identity.Application"));
-                options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .Build();
+                // options.AddPolicy(Policies.Images, policy => policy.RequireAuthenticatedUser().AddAuthenticationSchemes("Identity.Application"));
+                //options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                //    .RequireAuthenticatedUser()
+                //    .Build();
             });
             // Choix dynamique entre SMTP et SendGrid
             var smtpSection = Configuration.GetSection("Smtp");
@@ -136,7 +134,7 @@ namespace GaleriePhotos
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
-                endpoints.MapIdentityApi<ApplicationUser>().AllowAnonymous();
+                endpoints.MapIdentityApi<ApplicationUser>();
             });
 
             app.UseSpa(spa => 

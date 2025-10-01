@@ -16,12 +16,10 @@ export default function SignIn() {
   const authenticationStore = useAuthenticationStore();
 
   const handleLogin = async () => {
-    console.log("Signing in with", email, password);
     const signInResponse = await authenticationStore.authenticate(
       email,
       password
     );
-    console.log("authenticate", signInResponse);
     if (!signInResponse) {
       Alert.alert("Error", "Failed to sign in");
       return;
@@ -29,7 +27,10 @@ export default function SignIn() {
   };
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic">
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ flex: 1, padding: 8 }}
+    >
       <Text style={{ fontSize: 32, fontWeight: "bold", margin: 10 }}>
         Sign In
       </Text>
@@ -49,9 +50,8 @@ export default function SignIn() {
         secureTextEntry
       />
       <Button title="Sign in" onPress={handleLogin} />
-      <Text>Snia</Text>
       <Link href="/(auth)/sign-up" asChild>
-        <Button title="Sign up" />
+        <Text style={{ textAlign: "center" }}>Sign up</Text>
       </Link>
     </ScrollView>
   );

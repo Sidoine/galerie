@@ -1,13 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Dimensions,
-} from "react-native";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
+  HandlerStateChangeEvent,
+  PanGestureHandler,
+  PanGestureHandlerEventPayload,
+  State,
+} from "react-native-gesture-handler";
 import { observer } from "mobx-react-lite";
 import TopActions from "@/components/image-view/top-actions";
 import { ImageDetails } from "@/components/image-view/image-details";
@@ -15,14 +13,7 @@ import ImageFaces from "@/components/image-view/image-faces";
 import VideoPlayer from "@/components/image-view/video-player";
 import { useUi } from "@/stores/ui";
 import { useDirectoriesStore } from "@/stores/directories";
-import { useLocalSearchParams, useRouter } from "expo-router";
-
-interface RouteParams {
-  galleryId: number;
-  directoryId: number;
-  photoId: number;
-  order: "date-desc" | "date-asc";
-}
+import { useLocalSearchParams } from "expo-router";
 
 // Composant plein écran (modal) affichant une photo avec navigation précédente/suivante.
 export default observer(function ImageView() {
@@ -48,7 +39,7 @@ export default observer(function ImageView() {
 
   // Gestion des gestes de swipe
   const handlePanGesture = useCallback(
-    (event: any) => {
+    (event: HandlerStateChangeEvent<PanGestureHandlerEventPayload>) => {
       if (event.nativeEvent.state === State.END) {
         const { translationX, velocityX } = event.nativeEvent;
 

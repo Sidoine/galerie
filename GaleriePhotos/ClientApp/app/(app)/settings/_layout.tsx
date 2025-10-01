@@ -1,5 +1,4 @@
 import { UsersStoreProvider } from "@/stores/users";
-import { Stack } from "expo-router";
 import Drawer from "expo-router/drawer";
 import React from "react";
 

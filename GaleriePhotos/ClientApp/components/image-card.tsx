@@ -26,7 +26,7 @@ const ImageCard = observer(function ImageCard({
 
   const handlePress = () => {
     navigation.navigate({
-      pathname: "/gallery/[galleryId]/photos/[photoId]",
+      pathname: "/(app)/gallery/[galleryId]/photos/[photoId]",
       params: {
         galleryId: directoriesStore.galleryId,
         directoryId: item.directoryId,

@@ -12,18 +12,31 @@ class GalleriesStore {
       memberships: observable.ref,
       loading: observable,
       setResult: action,
+      load: action,
+      setLoading: action,
     });
+  }
+
+  get(id: number) {
+    return this.memberships?.find((m) => m.galleryId === id) || null;
+  }
+
+  setLoading(loading: boolean) {
+    this.loading = loading;
   }
 
   async load() {
     if (this.loading || this.memberships) return;
-    this.loading = true;
+    this.setLoading(true);
     try {
       const result = await this.meService.getMyGalleries();
       if (result.ok) this.setResult(result.value);
       else this.setResult([]);
+    } catch (error) {
+      console.error("GalleriesStore: Error loading galleries:", error);
+      this.setResult([]);
     } finally {
-      action(() => (this.loading = false));
+      this.setLoading(false);
     }
   }
 

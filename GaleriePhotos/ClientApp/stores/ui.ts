@@ -38,7 +38,7 @@ export function useUi() {
   const navigateToDirectory = useCallback(
     (directoryId: number, newOrder?: "date-desc" | "date-asc") => {
       navigation.replace({
-        pathname: "/gallery/[galleryId]/directory/[directoryId]",
+        pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
         params: {
           galleryId: directoriesStore.galleryId,
           directoryId,
@@ -52,7 +52,7 @@ export function useUi() {
   const navigateToPhoto = useCallback(
     (directoryId: number, photoId: number) => {
       navigation.navigate({
-        pathname: "/gallery/[galleryId]/photos/[photoId]",
+        pathname: "/(app)/gallery/[galleryId]/photos/[photoId]",
         params: {
           galleryId: directoriesStore.galleryId,
           directoryId,

@@ -12,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GaleriePhotos.Controllers
 {
-    [Authorize(Policy = Policies.Images)]
     [Route("api/gallery")]
     public class FaceController : Controller
     {

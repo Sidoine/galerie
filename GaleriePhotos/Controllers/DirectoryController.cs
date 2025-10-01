@@ -46,8 +46,7 @@ namespace Galerie.Server.Controllers
             if (gallery == null || !dataService.GetDataProvider(gallery).IsSetup) return NotFound();
 
             var galleryRootDirectory = await photoService.GetRootDirectory(gallery);
-            var coverPhoto = galleryRootDirectory.CoverPhotoId != null ? await photoService.GetPhoto(galleryRootDirectory.CoverPhotoId.Value) : null;
-            return Ok(new DirectoryViewModel(galleryRootDirectory, coverPhoto, await photoService.GetNumberOfPhotos(galleryRootDirectory), await photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
+            return Ok(new DirectoryViewModel(galleryRootDirectory, await photoService.GetNumberOfPhotos(galleryRootDirectory), await photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
         }
 
         [HttpGet("{id}")]
@@ -63,9 +62,8 @@ namespace Galerie.Server.Controllers
             }
 
             var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
-            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
-            var coverPhoto = directory.CoverPhotoId != null ? await photoService.GetPhoto(directory.CoverPhotoId.Value) : null;
-            return Ok(new DirectoryFullViewModel(directory, coverPhoto, parentDirectory, await photoService.GetNumberOfPhotos(directory), await photoService.GetNumberOfSubDirectories(directory)));
+            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Include(x => x.CoverPhoto).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
+            return Ok(new DirectoryFullViewModel(directory, parentDirectory, await photoService.GetNumberOfPhotos(directory), await photoService.GetNumberOfSubDirectories(directory)));
         }
 
         // GET: api/values
@@ -84,8 +82,7 @@ namespace Galerie.Server.Controllers
             if (subDirectories == null) return NotFound();
        
             var visible = subDirectories.Where(x => photoService.IsDirectoryVisible(User, x));
-            var coverPhoto = directory.CoverPhotoId != null ? await photoService.GetPhoto(directory.CoverPhotoId.Value) : null;
-            var tasks = visible.Select(async x => new DirectoryViewModel(x, coverPhoto, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x)));
+            var tasks = visible.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x)));
             var results = await Task.WhenAll(tasks);
             return Ok(results);
         }

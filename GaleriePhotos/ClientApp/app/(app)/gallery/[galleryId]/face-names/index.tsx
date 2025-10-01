@@ -73,7 +73,7 @@ const FaceNames = observer(function FaceNames() {
       style={styles.faceNameItem}
       onPress={() =>
         router.navigate({
-          pathname: "/gallery/[galleryId]/face-names/[faceNameId]",
+          pathname: "/(app)/gallery/[galleryId]/face-names/[faceNameId]",
           params: {
             faceNameId: item.id,
             galleryId,

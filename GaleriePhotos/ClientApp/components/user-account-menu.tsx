@@ -2,12 +2,10 @@ import React, { useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { useMeStore } from "@/stores/me";
-import { useUsersStore } from "@/stores/users";
 
 // Version React Native du menu utilisateur
 const UserAccountMenu = observer(function UserAccountMenu() {
   const meStore = useMeStore();
-  const usersStore = useUsersStore();
   const user = meStore.me;
   const [open, setOpen] = useState(false);
   const initial = user?.name?.[0]?.toUpperCase() || "U";

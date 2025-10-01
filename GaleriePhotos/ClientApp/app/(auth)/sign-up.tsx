@@ -23,7 +23,10 @@ export default function SignUp() {
   };
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic">
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ flex: 1, padding: 8 }}
+    >
       <Text style={{ fontSize: 32, fontWeight: "bold", margin: 10 }}>
         Sign Up
       </Text>

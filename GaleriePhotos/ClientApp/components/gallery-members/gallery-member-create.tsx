@@ -3,7 +3,14 @@ import { useMembersStore } from "@/stores/members";
 import { useCallback, useMemo, useState } from "react";
 import { useUsersStore } from "@/stores/users";
 import { User } from "@/services/views";
-import { View, Text, TouchableOpacity, Switch, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Switch,
+  StyleSheet,
+  GestureResponderEvent,
+} from "react-native";
 
 function GalleryMemberCreate() {
   const membersStore = useMembersStore();
@@ -13,7 +20,7 @@ function GalleryMemberCreate() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const canSubmit = selectedUser && !submitting;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent | GestureResponderEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
     setSubmitting(true);
@@ -58,7 +65,7 @@ function GalleryMemberCreate() {
         </View>
         <TouchableOpacity
           disabled={!canSubmit}
-          onPress={handleSubmit as any}
+          onPress={handleSubmit}
           style={[
             styles.submitButton,
             !canSubmit && styles.submitButtonDisabled,

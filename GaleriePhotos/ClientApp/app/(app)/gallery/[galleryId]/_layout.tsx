@@ -35,6 +35,7 @@ function LayoutContent() {
         name="directory"
         options={{
           title: "Album",
+          headerShown: false,
           drawerItemStyle: { display: "none" },
         }}
       />

@@ -16,7 +16,10 @@ function RootLayoutContent() {
         <Stack.Screen name="(app)" />
       </Stack.Protected>
       <Stack.Protected guard={!isAuthenticated}>
-        <Stack.Screen name="(auth)" />
+        <Stack.Screen
+          name="(auth)"
+          options={{ presentation: "modal", gestureEnabled: false }}
+        />
       </Stack.Protected>
     </Stack>
   );

@@ -19,5 +19,6 @@
 
         // Navigation properties
         public required Gallery Gallery { get; set; }
+        public Photo? CoverPhoto { get; set; }
     }
 }

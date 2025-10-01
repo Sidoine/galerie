@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, View, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useDirectoriesStore } from "@/stores/directories";
 import { DirectoryView } from "@/components/directory-view";
