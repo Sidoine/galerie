@@ -50,7 +50,7 @@ namespace GaleriePhotos
                     try
                     {
 
-                        services.GetRequiredService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/src/services", 0);
+                        services.GetRequiredService<ApplicationPartManager>().CreateTypeScriptServices("ClientApp/services", 0);
                     }
                     catch (Exception ex)
                     {

@@ -5,6 +5,7 @@ import {
   useAuthenticationStore,
 } from "@/stores/authentication";
 import { MyApiClientProvider } from "@/stores/api-client";
+import "@/stores/leaflet"; // Import Leaflet configuration
 
 function RootLayoutContent() {
   const authenticationStore = useAuthenticationStore();
