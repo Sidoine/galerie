@@ -5,16 +5,19 @@ import { createContext, useContext, useMemo } from "react";
 import { useApiClient } from "folke-service-helpers";
 
 class PlacesStore {
-  places: { [galleryId: number]: Place[] } = {};
+  countries: { [galleryId: number]: Place[] } = {};
+  cities: { [countryId: number]: Place[] } = {};
   placePhotos: { [placeId: number]: PlacePhotos } = {};
   loading = false;
 
   constructor(private placeService: PlaceController) {
     makeObservable(this, {
-      places: observable,
+      countries: observable,
+      cities: observable,
       placePhotos: observable,
       loading: observable,
-      setPlaces: action,
+      setCountries: action,
+      setCities: action,
       setPlacePhotos: action,
       setLoading: action,
     });
@@ -24,19 +27,37 @@ class PlacesStore {
     this.loading = loading;
   }
 
-  async loadPlacesByGallery(galleryId: number) {
-    if (this.loading || this.places[galleryId]) return;
+  async loadCountriesByGallery(galleryId: number) {
+    if (this.loading || this.countries[galleryId]) return;
     this.setLoading(true);
     try {
-      const result = await this.placeService.getPlacesByGallery(galleryId);
+      const result = await this.placeService.getCountriesByGallery(galleryId);
       if (result.ok) {
-        this.setPlaces(galleryId, result.value);
+        this.setCountries(galleryId, result.value);
       } else {
-        this.setPlaces(galleryId, []);
+        this.setCountries(galleryId, []);
       }
     } catch (error) {
-      console.error("PlacesStore: Error loading places for gallery:", error);
-      this.setPlaces(galleryId, []);
+      console.error("PlacesStore: Error loading countries for gallery:", error);
+      this.setCountries(galleryId, []);
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  async loadCitiesByCountry(galleryId: number, countryId: number) {
+    if (this.loading || this.cities[countryId]) return;
+    this.setLoading(true);
+    try {
+      const result = await this.placeService.getCitiesByCountry(galleryId, countryId);
+      if (result.ok) {
+        this.setCities(countryId, result.value);
+      } else {
+        this.setCities(countryId, []);
+      }
+    } catch (error) {
+      console.error("PlacesStore: Error loading cities for country:", error);
+      this.setCities(countryId, []);
     } finally {
       this.setLoading(false);
     }
@@ -57,16 +78,24 @@ class PlacesStore {
     }
   }
 
-  setPlaces(galleryId: number, places: Place[]) {
-    this.places[galleryId] = places;
+  setCountries(galleryId: number, countries: Place[]) {
+    this.countries[galleryId] = countries;
+  }
+
+  setCities(countryId: number, cities: Place[]) {
+    this.cities[countryId] = cities;
   }
 
   setPlacePhotos(placeId: number, placePhotos: PlacePhotos) {
     this.placePhotos[placeId] = placePhotos;
   }
 
-  getPlacesByGallery(galleryId: number): Place[] {
-    return this.places[galleryId] || [];
+  getCountriesByGallery(galleryId: number): Place[] {
+    return this.countries[galleryId] || [];
+  }
+
+  getCitiesByCountry(countryId: number): Place[] {
+    return this.cities[countryId] || [];
   }
 
   getPlacePhotos(placeId: number): PlacePhotos | null {

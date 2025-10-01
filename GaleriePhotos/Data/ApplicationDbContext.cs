@@ -89,11 +89,19 @@ namespace GaleriePhotos.Data
                 entity.HasIndex(e => new { e.GalleryId, e.Name }).IsUnique();
                 entity.HasIndex(e => e.OsmPlaceId);
                 entity.HasIndex(e => new { e.OsmType, e.OsmId });
+                entity.HasIndex(e => e.ParentId);
+                entity.HasIndex(e => e.Type);
                 
                 entity.HasOne(e => e.Gallery)
                     .WithMany()
                     .HasForeignKey(e => e.GalleryId)
                     .OnDelete(DeleteBehavior.Cascade);
+                    
+                // Self-referencing relationship for parent-child hierarchy
+                entity.HasOne(e => e.Parent)
+                    .WithMany(e => e.Children)
+                    .HasForeignKey(e => e.ParentId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

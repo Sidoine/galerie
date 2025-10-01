@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using GaleriePhotos.Models;
 
 namespace GaleriePhotos.ViewModels
 {
@@ -13,6 +14,10 @@ namespace GaleriePhotos.ViewModels
         public int GalleryId { get; set; }
         public DateTime CreatedAt { get; set; }
         public int PhotoCount { get; set; }
+        public PlaceType Type { get; set; }
+        public int? ParentId { get; set; }
+        public string? ParentName { get; set; }
+        public List<PlaceViewModel> Children { get; set; } = new List<PlaceViewModel>();
     }
 
     public class PlaceCreateViewModel

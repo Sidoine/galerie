@@ -16,3 +16,15 @@ export enum FaceDetectionStatus {
 
     Skipped = 4
 }
+
+export enum PlaceType {
+    Country = 1,
+
+    City = 2,
+
+    Town = 3,
+
+    Village = 4,
+
+    Hamlet = 5
+}

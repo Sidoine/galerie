@@ -23,6 +23,36 @@ namespace Galerie.Server.Controllers
             this.logger = logger;
         }
 
+        [HttpGet("gallery/{galleryId}/countries")]
+        public async Task<ActionResult<List<PlaceViewModel>>> GetCountriesByGallery(int galleryId)
+        {
+            try
+            {
+                var countries = await placeService.GetCountriesByGalleryAsync(galleryId);
+                return Ok(countries);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting countries for gallery {GalleryId}", galleryId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpGet("gallery/{galleryId}/countries/{countryId}/cities")]
+        public async Task<ActionResult<List<PlaceViewModel>>> GetCitiesByCountry(int galleryId, int countryId)
+        {
+            try
+            {
+                var cities = await placeService.GetCitiesByCountryAsync(countryId, galleryId);
+                return Ok(cities);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting cities for country {CountryId} in gallery {GalleryId}", countryId, galleryId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
         [HttpGet("gallery/{galleryId}")]
         public async Task<ActionResult<List<PlaceViewModel>>> GetPlacesByGallery(int galleryId)
         {

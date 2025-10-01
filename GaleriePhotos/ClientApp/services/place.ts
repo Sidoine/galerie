@@ -9,6 +9,14 @@ export class PlaceController {
         return this.client.fetch(`api/places/${placeId}/photos/${photoId}`, "POST", undefined);
     }
 
+    getCitiesByCountry = (galleryId: number, countryId: number) => {
+        return this.client.fetchJson<views.Place[]>(`api/places/gallery/${galleryId}/countries/${countryId}/cities`, "GET", undefined);
+    }
+
+    getCountriesByGallery = (galleryId: number) => {
+        return this.client.fetchJson<views.Place[]>(`api/places/gallery/${galleryId}/countries`, "GET", undefined);
+    }
+
     getPlacePhotos = (id: number) => {
         return this.client.fetchJson<views.PlacePhotos>(`api/places/${id}/photos`, "GET", undefined);
     }

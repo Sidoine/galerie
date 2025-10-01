@@ -21,6 +21,16 @@ namespace GaleriePhotos.Services
         public long? PlaceId { get; set; }
         public string? OsmType { get; set; }
         public long? OsmId { get; set; }
+        public PlaceType Type { get; set; } = PlaceType.City;
+        
+        // Parent place data (e.g., country)
+        public string? ParentName { get; set; }
+        public double? ParentLatitude { get; set; }
+        public double? ParentLongitude { get; set; }
+        public long? ParentPlaceId { get; set; }
+        public string? ParentOsmType { get; set; }
+        public long? ParentOsmId { get; set; }
+        public PlaceType? ParentType { get; set; }
     }
 
     public class PlaceService
@@ -66,13 +76,51 @@ namespace GaleriePhotos.Services
                     return null;
                 }
 
+                // Create parent place if needed and available
+                Place? parentPlace = null;
+                if (osmPlaceData.ParentName != null && osmPlaceData.ParentLatitude.HasValue && osmPlaceData.ParentLongitude.HasValue)
+                {
+                    // Check if parent place already exists
+                    var existingParent = await context.Places
+                        .Where(p => p.GalleryId == galleryId)
+                        .Where(p => p.OsmPlaceId == osmPlaceData.ParentPlaceId || 
+                                   (p.OsmType == osmPlaceData.ParentOsmType && p.OsmId == osmPlaceData.ParentOsmId))
+                        .FirstOrDefaultAsync();
+
+                    if (existingParent != null)
+                    {
+                        parentPlace = existingParent;
+                    }
+                    else
+                    {
+                        // Create new parent place
+                        parentPlace = new Place(osmPlaceData.ParentName, osmPlaceData.ParentLatitude.Value, osmPlaceData.ParentLongitude.Value)
+                        {
+                            GalleryId = galleryId,
+                            Gallery = gallery,
+                            OsmPlaceId = osmPlaceData.ParentPlaceId,
+                            OsmType = osmPlaceData.ParentOsmType,
+                            OsmId = osmPlaceData.ParentOsmId,
+                            Type = osmPlaceData.ParentType ?? PlaceType.Country
+                        };
+
+                        context.Places.Add(parentPlace);
+                        await context.SaveChangesAsync(); // Save parent first to get ID
+
+                        logger.LogInformation("Created new parent place: {PlaceName} at {Latitude}, {Longitude} with OSM ID {OsmPlaceId}", 
+                            osmPlaceData.ParentName, osmPlaceData.ParentLatitude, osmPlaceData.ParentLongitude, osmPlaceData.ParentPlaceId);
+                    }
+                }
+
                 var place = new Place(osmPlaceData.Name, osmPlaceData.Latitude, osmPlaceData.Longitude)
                 {
                     GalleryId = galleryId,
                     Gallery = gallery,
                     OsmPlaceId = osmPlaceData.PlaceId,
                     OsmType = osmPlaceData.OsmType,
-                    OsmId = osmPlaceData.OsmId
+                    OsmId = osmPlaceData.OsmId,
+                    Type = osmPlaceData.Type,
+                    ParentId = parentPlace?.Id
                 };
 
                 context.Places.Add(place);
@@ -146,22 +194,58 @@ namespace GaleriePhotos.Services
                     placeData.OsmId = osmIdElement.GetInt64();
                 }
 
-                // Get place name
+                // Get place name and determine type
                 if (json.RootElement.TryGetProperty("address", out var address))
                 {
-                    // Try to get city, town, village, or hamlet
+                    // Try to get city, town, village, or hamlet and set type accordingly
                     if (address.TryGetProperty("city", out var city))
+                    {
                         placeData.Name = city.GetString() ?? string.Empty;
+                        placeData.Type = PlaceType.City;
+                    }
                     else if (address.TryGetProperty("town", out var town))
+                    {
                         placeData.Name = town.GetString() ?? string.Empty;
+                        placeData.Type = PlaceType.Town;
+                    }
                     else if (address.TryGetProperty("village", out var village))
+                    {
                         placeData.Name = village.GetString() ?? string.Empty;
+                        placeData.Type = PlaceType.Village;
+                    }
                     else if (address.TryGetProperty("hamlet", out var hamlet))
+                    {
                         placeData.Name = hamlet.GetString() ?? string.Empty;
+                        placeData.Type = PlaceType.Hamlet;
+                    }
                     else if (address.TryGetProperty("municipality", out var municipality))
+                    {
                         placeData.Name = municipality.GetString() ?? string.Empty;
+                        placeData.Type = PlaceType.City;
+                    }
                     else if (address.TryGetProperty("county", out var county))
+                    {
                         placeData.Name = county.GetString() ?? string.Empty;
+                        placeData.Type = PlaceType.City;
+                    }
+
+                    // Extract country information as parent
+                    if (address.TryGetProperty("country", out var country))
+                    {
+                        placeData.ParentName = country.GetString();
+                        placeData.ParentType = PlaceType.Country;
+                        
+                        // Try to get country code for more accurate lookups
+                        if (address.TryGetProperty("country_code", out var countryCode))
+                        {
+                            var countryCodeStr = countryCode.GetString()?.ToUpper();
+                            if (!string.IsNullOrEmpty(countryCodeStr))
+                            {
+                                // For countries, we'll need to make a separate API call to get country coordinates
+                                await PopulateCountryDataAsync(placeData, countryCodeStr);
+                            }
+                        }
+                    }
                 }
 
                 // Fallback to display_name if no specific place found
@@ -185,6 +269,109 @@ namespace GaleriePhotos.Services
             }
         }
 
+        private async Task PopulateCountryDataAsync(OpenStreetMapPlaceData placeData, string countryCode)
+        {
+            try
+            {
+                // Query for country data using country code
+                var url = $"https://nominatim.openstreetmap.org/search?format=json&country={countryCode}&limit=1&addressdetails=1";
+                
+                httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "GaleriePhotos/1.0 (https://github.com/Sidoine/galerie)");
+
+                var response = await httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var json = JsonDocument.Parse(jsonString);
+
+                if (json.RootElement.ValueKind == JsonValueKind.Array && json.RootElement.GetArrayLength() > 0)
+                {
+                    var countryData = json.RootElement[0];
+
+                    // Get country coordinates
+                    if (countryData.TryGetProperty("lat", out var latElement) &&
+                        countryData.TryGetProperty("lon", out var lonElement))
+                    {
+                        if (double.TryParse(latElement.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var countryLat) &&
+                            double.TryParse(lonElement.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var countryLon))
+                        {
+                            placeData.ParentLatitude = countryLat;
+                            placeData.ParentLongitude = countryLon;
+                        }
+                    }
+
+                    // Get country OpenStreetMap identifiers
+                    if (countryData.TryGetProperty("place_id", out var placeIdElement))
+                    {
+                        placeData.ParentPlaceId = placeIdElement.GetInt64();
+                    }
+
+                    if (countryData.TryGetProperty("osm_type", out var osmTypeElement))
+                    {
+                        placeData.ParentOsmType = osmTypeElement.GetString();
+                    }
+
+                    if (countryData.TryGetProperty("osm_id", out var osmIdElement))
+                    {
+                        placeData.ParentOsmId = osmIdElement.GetInt64();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Error getting country data for {CountryCode}", countryCode);
+                // Don't fail the main place creation if country lookup fails
+            }
+        }
+
+        public async Task<List<PlaceViewModel>> GetCountriesByGalleryAsync(int galleryId)
+        {
+            var countries = await context.Places
+                .Where(p => p.GalleryId == galleryId && p.Type == PlaceType.Country)
+                .Select(p => new PlaceViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    GalleryId = p.GalleryId,
+                    CreatedAt = p.CreatedAt,
+                    Type = p.Type,
+                    ParentId = p.ParentId,
+                    // Count all photos in cities within this country
+                    PhotoCount = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
+                                context.Photos.Count(ph => ph.PlaceId == p.Id)
+                })
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            return countries;
+        }
+
+        public async Task<List<PlaceViewModel>> GetCitiesByCountryAsync(int countryId, int galleryId)
+        {
+            var cities = await context.Places
+                .Where(p => p.GalleryId == galleryId && p.ParentId == countryId)
+                .Select(p => new PlaceViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    GalleryId = p.GalleryId,
+                    CreatedAt = p.CreatedAt,
+                    Type = p.Type,
+                    ParentId = p.ParentId,
+                    ParentName = p.Parent != null ? p.Parent.Name : null,
+                    PhotoCount = context.Photos.Count(ph => ph.PlaceId == p.Id)
+                })
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            return cities;
+        }
+
         public async Task<List<PlaceViewModel>> GetPlacesByGalleryAsync(int galleryId)
         {
             var places = await context.Places
@@ -197,6 +384,9 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     GalleryId = p.GalleryId,
                     CreatedAt = p.CreatedAt,
+                    Type = p.Type,
+                    ParentId = p.ParentId,
+                    ParentName = p.Parent != null ? p.Parent.Name : null,
                     PhotoCount = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
                 .OrderBy(p => p.Name)

@@ -294,6 +294,14 @@ export interface Place {
     createdAt: string;
 
     photoCount: number;
+
+    type: enums.PlaceType;
+
+    parentId: number | null;
+
+    parentName: string | null;
+
+    children: Place[];
 }
 
 export interface PhotoGroup {
