@@ -22,9 +22,11 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
   const placesStore = usePlacesStore();
   const { navigateToPlacePhotos } = useUi();
   const [selectedCountry, setSelectedCountry] = useState<Place | null>(null);
-  
+
   const countries = placesStore.getCountriesByGallery(galleryId);
-  const cities = selectedCountry ? placesStore.getCitiesByCountry(selectedCountry.id) : [];
+  const cities = selectedCountry
+    ? placesStore.getCitiesByCountry(selectedCountry.id)
+    : [];
 
   useEffect(() => {
     placesStore.loadCountriesByGallery(galleryId);
@@ -61,7 +63,8 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>No places found for this gallery</Text>
         <Text style={styles.emptySubtext}>
-          Places are automatically created when photos with GPS coordinates are processed
+          Places are automatically created when photos with GPS coordinates are
+          processed
         </Text>
       </View>
     );
@@ -69,27 +72,34 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
 
   // Determine what to show on the map
   const placesToShow = selectedCountry ? cities : countries;
-  const mapTitle = selectedCountry ? `Cities in ${selectedCountry.name}` : "Countries";
+  const mapTitle = selectedCountry
+    ? `Cities in ${selectedCountry.name}`
+    : "Countries";
 
   if (placesToShow.length === 0 && selectedCountry) {
     return (
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackToCountries}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBackToCountries}
+          >
             <Text style={styles.backButtonText}>← Back to Countries</Text>
           </TouchableOpacity>
           <Text style={styles.mapTitle}>{mapTitle}</Text>
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No cities found in {selectedCountry.name}</Text>
+          <Text style={styles.emptyText}>
+            No cities found in {selectedCountry.name}
+          </Text>
         </View>
       </View>
     );
   }
 
   // Calculate map bounds to show all places
-  const latitudes = placesToShow.map(p => p.latitude);
-  const longitudes = placesToShow.map(p => p.longitude);
+  const latitudes = placesToShow.map((p) => p.latitude);
+  const longitudes = placesToShow.map((p) => p.longitude);
   const centerLat = (Math.min(...latitudes) + Math.max(...latitudes)) / 2;
   const centerLng = (Math.min(...longitudes) + Math.max(...longitudes)) / 2;
 
@@ -97,17 +107,20 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
     <View style={styles.container}>
       {selectedCountry && (
         <View style={styles.headerContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackToCountries}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBackToCountries}
+          >
             <Text style={styles.backButtonText}>← Back to Countries</Text>
           </TouchableOpacity>
         </View>
       )}
-      
+
       <Text style={styles.mapTitle}>{mapTitle}</Text>
-      
+
       <View style={styles.mapContainer}>
         <MapContainer
-          key={selectedCountry?.id || 'countries'} // Force re-render when switching views
+          key={selectedCountry?.id || "countries"} // Force re-render when switching views
           center={[centerLat, centerLng]}
           zoom={selectedCountry ? 6 : 2} // Zoom in more for cities, out for countries
           style={{ height: "100%", width: "100%" }}
@@ -123,7 +136,7 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
                 <View>
                   <Text style={styles.popupTitle}>{place.name}</Text>
                   <Text style={styles.popupText}>
-                    {place.photoCount} photo{place.photoCount !== 1 ? 's' : ''}
+                    {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""}
                   </Text>
                   {selectedCountry ? (
                     // For cities, show "View Photos" button
@@ -148,19 +161,23 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
           ))}
         </MapContainer>
       </View>
-      
+
       <ScrollView style={styles.placesListContainer}>
         <Text style={styles.placesListTitle}>{mapTitle}</Text>
         {placesToShow.map((place) => (
           <TouchableOpacity
             key={place.id}
             style={styles.placeItem}
-            onPress={() => selectedCountry ? navigateToPlacePhotos(place.id) : handleCountryClick(place)}
+            onPress={() =>
+              selectedCountry
+                ? navigateToPlacePhotos(place.id)
+                : handleCountryClick(place)
+            }
           >
             <View style={styles.placeInfo}>
               <Text style={styles.placeName}>{place.name}</Text>
               <Text style={styles.placePhotoCount}>
-                {place.photoCount} photo{place.photoCount !== 1 ? 's' : ''}
+                {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""}
               </Text>
               {selectedCountry && place.parentName && (
                 <Text style={styles.placeParent}>in {place.parentName}</Text>
@@ -193,7 +210,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.palette.background,
   },
   loadingText: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 16,
   },
   emptyContainer: {
@@ -204,7 +221,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 18,
     marginBottom: 10,
     textAlign: "center",
@@ -235,7 +252,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   mapTitle: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
@@ -252,7 +269,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   placesListTitle: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
@@ -270,7 +287,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   placeName: {
-    color: theme.palette.text,
+    color: theme.palette.textPrimary,
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,

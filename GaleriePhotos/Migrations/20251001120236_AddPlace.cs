@@ -31,7 +31,9 @@ namespace GaleriePhotos.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     OsmPlaceId = table.Column<long>(type: "bigint", nullable: true),
                     OsmType = table.Column<string>(type: "text", nullable: true),
-                    OsmId = table.Column<long>(type: "bigint", nullable: true)
+                    OsmId = table.Column<long>(type: "bigint", nullable: true),
+                    ParentId = table.Column<int>(type: "integer", nullable: true),
+                    Type = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -42,6 +44,12 @@ namespace GaleriePhotos.Migrations
                         principalTable: "Galleries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Places_Places_ParentId",
+                        column: x => x.ParentId,
+                        principalTable: "Places",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -69,6 +77,16 @@ namespace GaleriePhotos.Migrations
                 name: "IX_Places_OsmType_OsmId",
                 table: "Places",
                 columns: new[] { "OsmType", "OsmId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Places_ParentId",
+                table: "Places",
+                column: "ParentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Places_Type",
+                table: "Places",
+                column: "Type");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Photos_Places_PlaceId",

@@ -13,7 +13,7 @@ using Pgvector;
 namespace GaleriePhotos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251001110412_AddPlace")]
+    [Migration("20251001120236_AddPlace")]
     partial class AddPlace
     {
         /// <inheritdoc />
@@ -387,11 +387,21 @@ namespace GaleriePhotos.Migrations
                     b.Property<string>("OsmType")
                         .HasColumnType("text");
 
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("GalleryId");
 
                     b.HasIndex("OsmPlaceId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("Type");
 
                     b.HasIndex("GalleryId", "Name")
                         .IsUnique();
@@ -640,7 +650,14 @@ namespace GaleriePhotos.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GaleriePhotos.Models.Place", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Gallery");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -711,6 +728,11 @@ namespace GaleriePhotos.Migrations
                     b.Navigation("PhotoDirectories");
 
                     b.Navigation("Photos");
+                });
+
+            modelBuilder.Entity("GaleriePhotos.Models.Place", b =>
+                {
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }
