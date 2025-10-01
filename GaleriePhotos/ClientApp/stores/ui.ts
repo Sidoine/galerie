@@ -64,9 +64,55 @@ export function useUi() {
     [directoriesStore.galleryId, navigation, order]
   );
 
+  const navigateToPlacesMap = useCallback(
+    (galleryId: number) => {
+      navigation.navigate({
+        pathname: "/(app)/gallery/[galleryId]/places",
+        params: {
+          galleryId,
+        },
+      });
+    },
+    [navigation]
+  );
+
+  const navigateToPlacePhotos = useCallback(
+    (placeId: number) => {
+      navigation.navigate({
+        pathname: "/(app)/gallery/[galleryId]/places/[placeId]",
+        params: {
+          galleryId: directoriesStore.galleryId,
+          placeId,
+        },
+      });
+    },
+    [directoriesStore.galleryId, navigation]
+  );
+
+  const navigateToPhotoGroup = useCallback(
+    (photoIds: number[]) => {
+      // For now, navigate to the first photo in the group
+      // In a real implementation, you might want to create a special photo group view
+      if (photoIds.length > 0) {
+        navigation.navigate({
+          pathname: "/(app)/gallery/[galleryId]/photos/[photoId]",
+          params: {
+            galleryId: directoriesStore.galleryId,
+            photoId: photoIds[0],
+            order,
+          },
+        });
+      }
+    },
+    [directoriesStore.galleryId, navigation, order]
+  );
+
   return {
     order,
     navigateToDirectory,
     navigateToPhoto,
+    navigateToPlacesMap,
+    navigateToPlacePhotos,
+    navigateToPhotoGroup,
   } as const;
 }

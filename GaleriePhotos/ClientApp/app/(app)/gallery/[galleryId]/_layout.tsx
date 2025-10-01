@@ -25,6 +25,10 @@ function LayoutContent() {
     >
       <Drawer.Screen name="index" options={{ title: "Gallerie" }} />
       <Drawer.Screen
+        name="places"
+        options={{ title: "Carte des lieux" }}
+      />
+      <Drawer.Screen
         name="face-names"
         options={{ title: "Noms des visages" }}
       />
