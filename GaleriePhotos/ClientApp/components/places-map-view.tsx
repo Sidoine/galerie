@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,34 +9,28 @@ import {
 import { observer } from "mobx-react-lite";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { usePlacesStore } from "@/stores/places";
-import { useUi } from "@/stores/ui";
 import { theme } from "@/stores/theme";
 import { Place } from "@/services/views";
 import "leaflet/dist/leaflet.css";
+import { useRouter } from "expo-router";
 
-export interface PlacesMapViewProps {
-  galleryId: number;
-}
-
-export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
+export const PlacesMapView = observer(() => {
   const placesStore = usePlacesStore();
-  const { navigateToPlacePhotos } = useUi();
   const [selectedCountry, setSelectedCountry] = useState<Place | null>(null);
-
-  const countries = placesStore.getCountriesByGallery(galleryId);
+  const router = useRouter();
+  const navigateToPlacePhotos = useCallback(
+    (placeId: number) => {
+      router.push({
+        pathname: "/(app)/gallery/[galleryId]/places/[placeId]",
+        params: { placeId: placeId, galleryId: placesStore.galleryId },
+      });
+    },
+    [placesStore.galleryId, router]
+  );
+  const countries = placesStore.countries;
   const cities = selectedCountry
     ? placesStore.getCitiesByCountry(selectedCountry.id)
     : [];
-
-  useEffect(() => {
-    placesStore.loadCountriesByGallery(galleryId);
-  }, [galleryId, placesStore]);
-
-  useEffect(() => {
-    if (selectedCountry) {
-      placesStore.loadCitiesByCountry(galleryId, selectedCountry.id);
-    }
-  }, [selectedCountry, galleryId, placesStore]);
 
   const handleCountryClick = (country: Place) => {
     if (selectedCountry?.id === country.id) {
@@ -49,8 +43,9 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
   const handleBackToCountries = () => {
     setSelectedCountry(null);
   };
+  const placesToShow = selectedCountry ? cities : countries;
 
-  if (placesStore.loading && countries.length === 0) {
+  if (countries === null || placesToShow === null) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading places...</Text>
@@ -71,12 +66,11 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
   }
 
   // Determine what to show on the map
-  const placesToShow = selectedCountry ? cities : countries;
   const mapTitle = selectedCountry
     ? `Cities in ${selectedCountry.name}`
     : "Countries";
 
-  if (placesToShow.length === 0 && selectedCountry) {
+  if (placesToShow !== null && placesToShow.length === 0 && selectedCountry) {
     return (
       <View style={styles.container}>
         <View style={styles.headerContainer}>
@@ -136,7 +130,8 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
                 <View>
                   <Text style={styles.popupTitle}>{place.name}</Text>
                   <Text style={styles.popupText}>
-                    {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""}
+                    {place.numberOfPhotos} photo
+                    {place.numberOfPhotos !== 1 ? "s" : ""}
                   </Text>
                   {selectedCountry ? (
                     // For cities, show "View Photos" button
@@ -177,11 +172,9 @@ export const PlacesMapView = observer(({ galleryId }: PlacesMapViewProps) => {
             <View style={styles.placeInfo}>
               <Text style={styles.placeName}>{place.name}</Text>
               <Text style={styles.placePhotoCount}>
-                {place.photoCount} photo{place.photoCount !== 1 ? "s" : ""}
+                {place.numberOfPhotos} photo
+                {place.numberOfPhotos !== 1 ? "s" : ""}
               </Text>
-              {selectedCountry && place.parentName && (
-                <Text style={styles.placeParent}>in {place.parentName}</Text>
-              )}
             </View>
             <View style={styles.placeCoordinates}>
               <Text style={styles.coordinateText}>

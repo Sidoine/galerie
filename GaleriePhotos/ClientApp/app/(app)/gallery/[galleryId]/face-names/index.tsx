@@ -13,37 +13,14 @@ import { FaceName } from "../../../../../services/views";
 import { useApiClient } from "folke-service-helpers";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useRouter } from "expo-router";
+import { useFaceNamesStore } from "@/stores/face-names";
 
 const FaceNames = observer(function FaceNames() {
   const { galleryId } = useDirectoriesStore();
-  const apiClient = useApiClient();
-  const [names, setNames] = useState<FaceName[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const faceNamesStore = useFaceNamesStore();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!galleryId) return;
-    const controller = new FaceController(apiClient);
-    setLoading(true);
-    controller
-      .getNames(Number(galleryId))
-      .then((resp) => {
-        if (!resp.ok) {
-          setError(resp.message || "Erreur inconnue");
-          return;
-        }
-        setNames(resp.value);
-      })
-      .catch((error) => {
-        setError(error.message);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [galleryId, apiClient]);
-
-  if (loading) {
+  if (faceNamesStore.names === null) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" />
@@ -52,13 +29,7 @@ const FaceNames = observer(function FaceNames() {
     );
   }
 
-  if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Erreur: {error}</Text>
-      </View>
-    );
-  }
+  const names = faceNamesStore.names;
 
   if (!names || names.length === 0) {
     return (

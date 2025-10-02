@@ -158,9 +158,7 @@ namespace GaleriePhotos.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GalleryId");
-
-                    b.HasIndex("Name")
+                    b.HasIndex("GalleryId", "Name")
                         .IsUnique();
 
                     b.ToTable("FaceNames");
@@ -300,6 +298,8 @@ namespace GaleriePhotos.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DateTime");
+
                     b.HasIndex("DirectoryId");
 
                     b.HasIndex("GalleryId");
@@ -308,6 +308,8 @@ namespace GaleriePhotos.Migrations
 
                     b.HasIndex("PublicId")
                         .IsUnique();
+
+                    b.HasIndex("DateTime", "PlaceId");
 
                     b.HasIndex("DirectoryId", "FileName")
                         .IsUnique();

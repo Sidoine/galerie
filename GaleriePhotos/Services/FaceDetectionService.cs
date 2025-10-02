@@ -203,7 +203,7 @@ namespace GaleriePhotos.Services
 
                 // Find or create the FaceName
                 var faceName = await applicationDbContext.FaceNames
-                    .FirstOrDefaultAsync(fn => fn.Name == name);
+                    .FirstOrDefaultAsync(fn => fn.Name == name && fn.GalleryId == gallery.Id);
                 
                 if (faceName == null)
                 {

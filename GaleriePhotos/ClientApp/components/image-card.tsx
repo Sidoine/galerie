@@ -1,59 +1,42 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
-import { useDirectoriesStore } from "@/stores/directories";
-import { useUi } from "@/stores/ui";
-import { useRouter } from "expo-router";
+import { usePhotosStore } from "@/stores/photos";
+import { usePhotoContainer } from "@/stores/photo-container";
+import { Link } from "expo-router";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 interface ImageCardProps {
-  photo?: Photo;
-  value?: Photo; // for backward compatibility
+  photo: Photo;
   size?: number;
 }
 
 const ImageCard = observer(function ImageCard({
   photo,
-  value,
   size = 100,
 }: ImageCardProps) {
-  const navigation = useRouter();
-  const directoriesStore = useDirectoriesStore();
-  const { order } = useUi();
+  const photosStore = usePhotosStore();
+  const { getPhotoLink } = usePhotoContainer();
 
-  const item = photo || value;
-  if (!item) return null;
-
-  const handlePress = () => {
-    navigation.navigate({
-      pathname: "/(app)/gallery/[galleryId]/photos/[photoId]",
-      params: {
-        galleryId: directoriesStore.galleryId,
-        directoryId: item.directoryId,
-        photoId: item.id,
-        order,
-      },
-    });
-  };
-
-  const thumbnailUri = directoriesStore.getThumbnail(item.publicId);
+  const thumbnailUri = photosStore.getThumbnail(photo.publicId);
 
   return (
-    <TouchableOpacity
+    <Link
+      href={getPhotoLink(photo.id)}
       style={[styles.container, { width: size, height: size }]}
-      onPress={handlePress}
     >
       <Image
         source={{ uri: thumbnailUri }}
         style={styles.image}
         resizeMode="cover"
       />
-      {item.video && (
+      {photo.video && (
         <View style={styles.playIcon}>
           <Text style={styles.playText}>▶</Text>
         </View>
       )}
-    </TouchableOpacity>
+    </Link>
   );
 });
 

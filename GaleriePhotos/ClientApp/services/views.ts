@@ -66,6 +66,8 @@ export interface FaceName {
     id: number;
 
     name: string;
+
+    numberOfPhotos: number;
 }
 
 export interface Photo {
@@ -78,6 +80,8 @@ export interface Photo {
     video: boolean;
 
     directoryId: number;
+
+    dateTime: string;
 }
 
 export interface FaceNameSuggestionRequest {
@@ -251,7 +255,7 @@ export interface PhotoFull {
 
     previousId: number | null;
 
-    dateTime: string | null;
+    dateTime: string;
 
     latitude: number | null;
 
@@ -289,35 +293,25 @@ export interface Place {
 
     longitude: number;
 
-    galleryId: number;
-
-    createdAt: string;
-
-    photoCount: number;
+    numberOfPhotos: number;
 
     type: enums.PlaceType;
 
     parentId: number | null;
-
-    parentName: string | null;
-
-    children: Place[];
 }
 
-export interface PhotoGroup {
-    title: string;
+export interface Year {
+    id: number;
 
-    startDate: string;
+    name: string;
 
-    endDate: string;
-
-    photoCount: number;
-
-    photoIds: number[];
+    numberOfPhotos: number;
 }
 
-export interface PlacePhotos {
-    place: Place;
+export interface Month {
+    id: number;
 
-    photoGroups: PhotoGroup[];
+    name: string;
+
+    numberOfPhotos: number;
 }

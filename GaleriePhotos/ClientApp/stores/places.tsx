@@ -1,105 +1,65 @@
-import { action, makeObservable, observable } from "mobx";
-import { Place, PlacePhotos } from "../services/views";
+import { computed, makeObservable } from "mobx";
+import { Month, Photo, Place, Year } from "../services/views";
 import { PlaceController } from "../services/place";
 import { createContext, useContext, useMemo } from "react";
-import { useApiClient } from "folke-service-helpers";
+import { MapLoader, useApiClient, ValueLoader } from "folke-service-helpers";
 
 class PlacesStore {
-  countries: { [galleryId: number]: Place[] } = {};
-  cities: { [countryId: number]: Place[] } = {};
-  placePhotos: { [placeId: number]: PlacePhotos } = {};
-  loading = false;
-
-  constructor(private placeService: PlaceController) {
+  constructor(
+    public galleryId: number,
+    private countriesLoader: ValueLoader<Place[], [number]>,
+    private placeLoader: MapLoader<Place, [number]>,
+    private citiesLoader: MapLoader<Place[], [number, number]>,
+    private placePhotosLoader: MapLoader<
+      Photo[],
+      [placeId: number, year?: number | null, month?: number | null]
+    >,
+    private placeYearsLoader: MapLoader<Year[], [number]>,
+    private placeMonthsLoader: MapLoader<Month[], [number, number]>,
+    private placePhotoCountLoader: MapLoader<
+      number,
+      [placeId: number, year?: number | null, month?: number | null]
+    >
+  ) {
     makeObservable(this, {
-      countries: observable,
-      cities: observable,
-      placePhotos: observable,
-      loading: observable,
-      setCountries: action,
-      setCities: action,
-      setPlacePhotos: action,
-      setLoading: action,
+      countries: computed,
     });
   }
 
-  setLoading(loading: boolean) {
-    this.loading = loading;
+  get countries() {
+    return this.countriesLoader.getValue(this.galleryId);
   }
 
-  async loadCountriesByGallery(galleryId: number) {
-    if (this.loading || this.countries[galleryId]) return;
-    this.setLoading(true);
-    try {
-      const result = await this.placeService.getCountriesByGallery(galleryId);
-      if (result.ok) {
-        this.setCountries(galleryId, result.value);
-      } else {
-        this.setCountries(galleryId, []);
-      }
-    } catch (error) {
-      console.error("PlacesStore: Error loading countries for gallery:", error);
-      this.setCountries(galleryId, []);
-    } finally {
-      this.setLoading(false);
-    }
+  getPlace(id: number) {
+    return this.placeLoader.getValue(id);
   }
 
-  async loadCitiesByCountry(galleryId: number, countryId: number) {
-    if (this.loading || this.cities[countryId]) return;
-    this.setLoading(true);
-    try {
-      const result = await this.placeService.getCitiesByCountry(galleryId, countryId);
-      if (result.ok) {
-        this.setCities(countryId, result.value);
-      } else {
-        this.setCities(countryId, []);
-      }
-    } catch (error) {
-      console.error("PlacesStore: Error loading cities for country:", error);
-      this.setCities(countryId, []);
-    } finally {
-      this.setLoading(false);
-    }
+  getCitiesByCountry(countryId: number) {
+    return this.citiesLoader.getValue(this.galleryId, countryId);
   }
 
-  async loadPlacePhotos(placeId: number) {
-    if (this.loading || this.placePhotos[placeId]) return;
-    this.setLoading(true);
-    try {
-      const result = await this.placeService.getPlacePhotos(placeId);
-      if (result.ok) {
-        this.setPlacePhotos(placeId, result.value);
-      }
-    } catch (error) {
-      console.error("PlacesStore: Error loading place photos:", error);
-    } finally {
-      this.setLoading(false);
-    }
+  getPlacePhotos(
+    placeId: number,
+    year?: number | null,
+    month?: number | null
+  ): Photo[] | null {
+    return this.placePhotosLoader.getValue(placeId, year, month);
   }
 
-  setCountries(galleryId: number, countries: Place[]) {
-    this.countries[galleryId] = countries;
+  getPlacePhotoCount(
+    placeId: number,
+    year?: number | null,
+    month?: number | null
+  ): number | null {
+    return this.placePhotoCountLoader.getValue(placeId, year, month);
   }
 
-  setCities(countryId: number, cities: Place[]) {
-    this.cities[countryId] = cities;
+  getPlaceYears(placeId: number): Year[] | null {
+    return this.placeYearsLoader.getValue(placeId);
   }
 
-  setPlacePhotos(placeId: number, placePhotos: PlacePhotos) {
-    this.placePhotos[placeId] = placePhotos;
-  }
-
-  getCountriesByGallery(galleryId: number): Place[] {
-    return this.countries[galleryId] || [];
-  }
-
-  getCitiesByCountry(countryId: number): Place[] {
-    return this.cities[countryId] || [];
-  }
-
-  getPlacePhotos(placeId: number): PlacePhotos | null {
-    return this.placePhotos[placeId] || null;
+  getPlaceMonths(placeId: number, year: number): Month[] | null {
+    return this.placeMonthsLoader.getValue(placeId, year);
   }
 }
 
@@ -107,14 +67,36 @@ const PlacesStoreContext = createContext<PlacesStore | null>(null);
 
 export function PlacesStoreProvider({
   children,
+  galleryId,
 }: {
   children: React.ReactNode;
+  galleryId: number;
 }) {
   const apiClient = useApiClient();
-  const placesStore = useMemo(
-    () => new PlacesStore(new PlaceController(apiClient)),
-    [apiClient]
-  );
+  const placesStore = useMemo(() => {
+    const placeController = new PlaceController(apiClient);
+    const countriesLoader = new ValueLoader(
+      placeController.getCountriesByGallery
+    );
+    const placeLoader = new MapLoader(placeController.getPlaceById);
+    const citiesLoader = new MapLoader(placeController.getCitiesByCountry);
+    const placePhotosLoader = new MapLoader(placeController.getPlacePhotos);
+    const placeYearsLoader = new MapLoader(placeController.getPlaceYears);
+    const placeMonthsLoader = new MapLoader(placeController.getPlaceMonths);
+    const placePhotoCountLoader = new MapLoader(
+      placeController.getPlacePhotoCount
+    );
+    return new PlacesStore(
+      galleryId,
+      countriesLoader,
+      placeLoader,
+      citiesLoader,
+      placePhotosLoader,
+      placeYearsLoader,
+      placeMonthsLoader,
+      placePhotoCountLoader
+    );
+  }, [apiClient, galleryId]);
 
   return (
     <PlacesStoreContext.Provider value={placesStore}>

@@ -8,31 +8,30 @@ import {
   StyleSheet,
   Switch,
 } from "react-native";
-import { Directory } from "@/services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useDirectoryVisibilitiesStore } from "@/stores/directory-visibilities";
 import { useMembersStore } from "@/stores/members";
 import placeholder from "@/assets/placeholder.png";
-import { useRouter } from "expo-router";
+import { usePhotosStore } from "@/stores/photos";
+import { PhotoContainer, usePhotoContainer } from "@/stores/photo-container";
+import { Directory } from "@/services/views";
+
+function isDirectory(object: PhotoContainer): object is Directory {
+  return (object as Directory).numberOfSubDirectories !== undefined;
+}
 
 const SubdirectoryCard = observer(
-  ({ directory, size }: { directory: Directory; size: number }) => {
+  ({ directory, size }: { directory: PhotoContainer; size: number }) => {
     const directoriesStore = useDirectoriesStore();
+    const photosStore = usePhotosStore();
     const visibilitiesStore = useDirectoryVisibilitiesStore();
     const membersStore = useMembersStore();
     const visibilities = visibilitiesStore.visibilities;
-    const router = useRouter();
+    const photoContainer = usePhotoContainer();
 
     const handleNavigate = useCallback(() => {
-      router.push({
-        pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
-        params: {
-          galleryId: directoriesStore.galleryId,
-          directoryId: directory.id,
-          order: "date-desc",
-        },
-      });
-    }, [router, directoriesStore.galleryId, directory.id]);
+      photoContainer.navigateToChildContainer(directory.id);
+    }, [photoContainer, directory.id]);
 
     const handleUseAsParentCover = useCallback(async () => {
       try {
@@ -44,6 +43,7 @@ const SubdirectoryCard = observer(
 
     const toggleVisibility = useCallback(
       (visibilityValue: number) => (value: boolean) => {
+        if (!isDirectory(directory)) return;
         let newVisibility = directory.visibility & ~visibilityValue;
         if (value) newVisibility |= visibilityValue;
         directoriesStore.patchDirectory(directory, {
@@ -57,18 +57,18 @@ const SubdirectoryCard = observer(
       <View style={[styles.card, { width: size }]}>
         <TouchableOpacity onPress={handleNavigate}>
           <View style={styles.imageWrapper}>
-            {directory.coverPhotoId && (
+            {isDirectory(directory) && directory.coverPhotoId && (
               <Image
                 source={{
-                  uri: directoriesStore.getThumbnail(directory.coverPhotoId),
+                  uri: photosStore.getThumbnail(directory.coverPhotoId),
                 }}
                 style={styles.image}
                 resizeMode="cover"
               />
             )}
-            {!directory.coverPhotoId && (
+            {(!isDirectory(directory) || !directory.coverPhotoId) && (
               <Image
-                source={{ uri: placeholder }}
+                source={placeholder}
                 style={styles.image}
                 resizeMode="cover"
               />
@@ -84,14 +84,14 @@ const SubdirectoryCard = observer(
                 {directory.numberOfPhotos > 1 ? "s" : ""}
               </Text>
             )}
-            {directory.numberOfSubDirectories > 0 && (
+            {isDirectory(directory) && directory.numberOfSubDirectories > 0 && (
               <Text style={styles.metaText}>
                 {directory.numberOfSubDirectories} album
                 {directory.numberOfSubDirectories > 1 ? "s" : ""}
               </Text>
             )}
           </View>
-          {membersStore.administrator && (
+          {membersStore.administrator && isDirectory(directory) && (
             <View style={styles.visibilityRow}>
               {visibilities.map((v) => (
                 <View key={v.id} style={styles.visibilityItem}>
@@ -104,16 +104,18 @@ const SubdirectoryCard = observer(
               ))}
             </View>
           )}
-          {membersStore.administrator && directory.coverPhotoId && (
-            <TouchableOpacity
-              onPress={handleUseAsParentCover}
-              style={styles.actionButton}
-            >
-              <Text style={styles.actionButtonText}>
-                Utiliser comme couverture parente
-              </Text>
-            </TouchableOpacity>
-          )}
+          {membersStore.administrator &&
+            isDirectory(directory) &&
+            directory.coverPhotoId && (
+              <TouchableOpacity
+                onPress={handleUseAsParentCover}
+                style={styles.actionButton}
+              >
+                <Text style={styles.actionButtonText}>
+                  Utiliser comme couverture parente
+                </Text>
+              </TouchableOpacity>
+            )}
         </View>
       </View>
     );

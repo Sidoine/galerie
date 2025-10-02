@@ -13,9 +13,7 @@ function RootLayoutContent() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isAuthenticated}>
-        <Stack.Screen name="(app)" />
-      </Stack.Protected>
+      <Stack.Screen name="(app)" />
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen
           name="(auth)"

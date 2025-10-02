@@ -11,7 +11,7 @@ namespace Galerie.Server.ViewModels
         public string Name { get; set; }
         public int? NextId { get; set; }
         public int? PreviousId { get; set; }
-        public DateTime? DateTime { get; set; }
+        public DateTime DateTime { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public string? Camera { get; set; }

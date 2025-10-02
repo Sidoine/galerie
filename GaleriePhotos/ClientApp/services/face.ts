@@ -13,6 +13,10 @@ export class FaceController {
         return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/photos/${photoId}/faces`, "GET", undefined);
     }
 
+    getName = (galleryId: number, id: number) => {
+        return this.client.fetchJson<views.FaceName>(`api/gallery/${galleryId}/faces/names/${id}`, "GET", undefined);
+    }
+
     getNames = (galleryId: number) => {
         return this.client.fetchJson<views.FaceName[]>(`api/gallery/${galleryId}/faces/names`, "GET", undefined);
     }

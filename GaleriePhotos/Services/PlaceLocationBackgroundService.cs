@@ -57,7 +57,8 @@ namespace GaleriePhotos.Services
             {
                 // Find photos that have GPS location but no place assigned
                 var photosWithoutPlace = await context.Photos
-                    .Where(p => p.Latitude.HasValue && p.Longitude.HasValue && p.PlaceId == null)
+                    .Where(p => p.Latitude.HasValue && p.Longitude.HasValue && p.PlaceId == null && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
                     .Include(p => p.Directory)
                     .ThenInclude(d => d.Gallery)
                     .Take(10) // Process 10 photos at a time to avoid overwhelming the system

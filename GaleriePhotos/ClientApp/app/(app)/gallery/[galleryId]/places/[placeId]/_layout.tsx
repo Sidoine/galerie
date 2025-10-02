@@ -1,21 +1,33 @@
-import { Stack } from "expo-router";
+import BreadCrumbs from "@/components/bread-crumbs";
+import { PlaceStoreProvider } from "@/stores/place";
+import { Stack, useGlobalSearchParams } from "expo-router";
 
 export default function PlacePhotosLayout() {
+  const { placeId, order, year, month } = useGlobalSearchParams<{
+    placeId: string;
+    order?: "date-asc" | "date-desc";
+    year?: string;
+    month?: string;
+  }>();
   return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{
-          title: "Place Photos",
-          headerStyle: {
-            backgroundColor: "#f4f4f5",
-          },
-          headerTintColor: "#000",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
-      />
-    </Stack>
+    <PlaceStoreProvider
+      placeId={Number(placeId)}
+      order={order}
+      year={year ? Number(year) : undefined}
+      month={month ? Number(month) : undefined}
+    >
+      <Stack>
+        <Stack.Screen
+          name="index"
+          options={{
+            header: () => <BreadCrumbs />,
+          }}
+        />
+        <Stack.Screen
+          name="photos"
+          options={{ header: () => <BreadCrumbs /> }}
+        />
+      </Stack>
+    </PlaceStoreProvider>
   );
 }

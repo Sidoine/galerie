@@ -1,3 +1,4 @@
+using Galerie.Server.ViewModels;
 using GaleriePhotos.Models;
 using GaleriePhotos.Services;
 using GaleriePhotos.ViewModels;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Galerie.Server.Controllers
@@ -68,23 +70,47 @@ namespace Galerie.Server.Controllers
             }
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<PlaceViewModel>> GetPlaceById(int id)
+        {
+            return Ok(await placeService.GetPlaceByIdAsync(id));
+        }
+            
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PlacePhotosViewModel>> GetPlacePhotos(int id)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month)
         {
             try
             {
-                var placePhotos = await placeService.GetPlacePhotosAsync(id);
+                var placePhotos = await placeService.GetPlacePhotosAsync(id, year, month);
                 if (placePhotos == null)
                 {
                     return NotFound();
                 }
-                return Ok(placePhotos);
+                return Ok(placePhotos.Select(x => new PhotoViewModel(x)));
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting photos for place {PlaceId}", id);
                 return StatusCode(500, "Internal server error");
             }
+        }
+
+        [HttpGet("{id}/photos/count")]
+        public async Task<ActionResult<int>> GetPlacePhotoCount(int id, int? year, int? month)
+        {
+            return Ok(await placeService.GetPlaceNumberOfPhotosAsync(id, year, month));
+        }
+
+        [HttpGet("{id}/years")]
+        public async Task<ActionResult<YearViewModel[]>> GetPlaceYears(int id)
+        {
+            return Ok(await placeService.GetPlaceYearsAsync(id));
+        }
+
+        [HttpGet("{id}/years/{year}/monthes")]
+        public async Task<ActionResult<MonthViewModel[]>> GetPlaceMonths(int id, int year)
+        {
+            return Ok(await placeService.GetPlaceMonthsAsync(id, year));
         }
 
         [HttpPost("{placeId}/photos/{photoId}")]

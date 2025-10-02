@@ -35,6 +35,8 @@ namespace GaleriePhotos.Data
                 entity.HasIndex(e => new { e.DirectoryId, e.FileName }).IsUnique();
                 entity.HasIndex(x => x.DirectoryId);
                 entity.HasIndex(x => x.PlaceId);
+                entity.HasIndex(x => x.DateTime);
+                entity.HasIndex(x => new { x.DateTime, x.PlaceId });
                 
                 entity.HasOne(e => e.Place)
                     .WithMany()
@@ -77,7 +79,7 @@ namespace GaleriePhotos.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired();
-                entity.HasIndex(e => e.Name).IsUnique();
+                entity.HasIndex(e => new { e.GalleryId, e.Name }).IsUnique();
             });
             
             // Configure Place entity

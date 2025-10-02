@@ -4,8 +4,9 @@ import { useLocalSearchParams } from "expo-router";
 import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
-import { Text, useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { UsersStoreProvider } from "@/stores/users";
+import { PhotosStoreProvider } from "@/stores/photos";
 
 function LayoutContent() {
   const membersStore = useMembersStore();
@@ -26,11 +27,11 @@ function LayoutContent() {
       <Drawer.Screen name="index" options={{ title: "Gallerie" }} />
       <Drawer.Screen
         name="places"
-        options={{ title: "Carte des lieux" }}
+        options={{ headerShown: false, title: "Lieux" }}
       />
       <Drawer.Screen
         name="face-names"
-        options={{ title: "Noms des visages" }}
+        options={{ headerShown: false, title: "Noms des visages" }}
       />
       <Drawer.Protected guard={membersStore.administrator}>
         <Drawer.Screen name="settings" options={{ title: "Paramètres" }} />
@@ -43,30 +44,24 @@ function LayoutContent() {
           drawerItemStyle: { display: "none" },
         }}
       />
-      <Drawer.Screen
-        name="photos"
-        options={{
-          title: "Photo",
-          drawerItemStyle: { display: "none" },
-        }}
-      />
     </Drawer>
   );
 }
 
 export default function Layout() {
-  const { galleryId } = useLocalSearchParams<{ galleryId: string }>();
-  if (!galleryId) return <Text>No gallery id</Text>;
+  const { galleryId } = useLocalSearchParams<"/gallery/[galleryId]">();
   return (
     <MeStoreProvider>
       <UsersStoreProvider>
-        <DirectoriesStoreProvider galleryId={Number(galleryId)}>
-          <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
-            <MembersStoreProvider>
-              <LayoutContent />
-            </MembersStoreProvider>
-          </DirectoryVisibilitiesStoreProvider>
-        </DirectoriesStoreProvider>
+        <PhotosStoreProvider galleryId={Number(galleryId)}>
+          <DirectoriesStoreProvider galleryId={Number(galleryId)}>
+            <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
+              <MembersStoreProvider>
+                <LayoutContent />
+              </MembersStoreProvider>
+            </DirectoryVisibilitiesStoreProvider>
+          </DirectoriesStoreProvider>
+        </PhotosStoreProvider>
       </UsersStoreProvider>
     </MeStoreProvider>
   );

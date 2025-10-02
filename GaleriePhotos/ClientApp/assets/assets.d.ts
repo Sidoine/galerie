@@ -1,4 +1,5 @@
+// import type { ImageURISource } from "react-native";
 module "*.png" {
-  const value: string;
+  const value: ImageURISource;
   export default value;
 }

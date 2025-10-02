@@ -17,12 +17,28 @@ export class PlaceController {
         return this.client.fetchJson<views.Place[]>(`api/places/gallery/${galleryId}/countries`, "GET", undefined);
     }
 
-    getPlacePhotos = (id: number) => {
-        return this.client.fetchJson<views.PlacePhotos>(`api/places/${id}/photos`, "GET", undefined);
+    getPlaceById = (id: number) => {
+        return this.client.fetchJson<views.Place>(`api/places/${id}`, "GET", undefined);
+    }
+
+    getPlaceMonths = (id: number, year: number) => {
+        return this.client.fetchJson<views.Month[]>(`api/places/${id}/years/${year}/monthes`, "GET", undefined);
+    }
+
+    getPlacePhotoCount = (id: number, year?: number | null, month?: number | null) => {
+        return this.client.fetchJson<number>(`api/places/${id}/photos/count` + helpers.getQueryString({ year: year, month: month }), "GET", undefined);
+    }
+
+    getPlacePhotos = (id: number, year?: number | null, month?: number | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/places/${id}/photos` + helpers.getQueryString({ year: year, month: month }), "GET", undefined);
     }
 
     getPlacesByGallery = (galleryId: number) => {
         return this.client.fetchJson<views.Place[]>(`api/places/gallery/${galleryId}`, "GET", undefined);
+    }
+
+    getPlaceYears = (id: number) => {
+        return this.client.fetchJson<views.Year[]>(`api/places/${id}/years`, "GET", undefined);
     }
 }
 

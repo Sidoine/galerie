@@ -8,8 +8,8 @@ namespace GaleriePhotos.ViewModels
         public int Id { get; set; }
 
         [Required]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
-        public FaceNameViewModel(FaceName faceName) => (Id, Name) = (faceName.Id, faceName.Name);
+        public int NumberOfPhotos { get; set; }
     }
 }

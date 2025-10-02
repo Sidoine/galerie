@@ -1,3 +1,4 @@
+using Galerie.Server.ViewModels;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using GaleriePhotos.ViewModels;
@@ -335,18 +336,47 @@ namespace GaleriePhotos.Services
                     Name = p.Name,
                     Latitude = p.Latitude,
                     Longitude = p.Longitude,
-                    GalleryId = p.GalleryId,
-                    CreatedAt = p.CreatedAt,
                     Type = p.Type,
                     ParentId = p.ParentId,
                     // Count all photos in cities within this country
-                    PhotoCount = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
+                    NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
                                 context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 
             return countries;
+        }
+
+        public async Task<PlaceViewModel?> GetPlaceByIdAsync(int placeId)
+        {
+            return await context.Places.Where(x => x.Id == placeId)
+                .Select(p => new PlaceViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    Type = p.Type,
+                    ParentId = p.ParentId,
+                    NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
+                                context.Photos.Count(ph => ph.PlaceId == p.Id)
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<YearViewModel[]> GetPlaceYearsAsync(int placeId)
+        {
+            return await context.Photos.Where(x => x.PlaceId == placeId)
+                .GroupBy(x => x.DateTime.Year)
+                .Select(x => new YearViewModel
+                {
+                    Id = x.Key,
+                    Name = x.Key.ToString(),
+                    NumberOfPhotos = x.Count()
+                })
+                .Distinct()
+                .ToArrayAsync();
         }
 
         public async Task<List<PlaceViewModel>> GetCitiesByCountryAsync(int countryId, int galleryId)
@@ -359,12 +389,9 @@ namespace GaleriePhotos.Services
                     Name = p.Name,
                     Latitude = p.Latitude,
                     Longitude = p.Longitude,
-                    GalleryId = p.GalleryId,
-                    CreatedAt = p.CreatedAt,
                     Type = p.Type,
                     ParentId = p.ParentId,
-                    ParentName = p.Parent != null ? p.Parent.Name : null,
-                    PhotoCount = context.Photos.Count(ph => ph.PlaceId == p.Id)
+                    NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
                 .OrderBy(p => p.Name)
                 .ToListAsync();
@@ -382,12 +409,9 @@ namespace GaleriePhotos.Services
                     Name = p.Name,
                     Latitude = p.Latitude,
                     Longitude = p.Longitude,
-                    GalleryId = p.GalleryId,
-                    CreatedAt = p.CreatedAt,
                     Type = p.Type,
                     ParentId = p.ParentId,
-                    ParentName = p.Parent != null ? p.Parent.Name : null,
-                    PhotoCount = context.Photos.Count(ph => ph.PlaceId == p.Id)
+                    NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
                 .OrderBy(p => p.Name)
                 .ToListAsync();
@@ -395,113 +419,24 @@ namespace GaleriePhotos.Services
             return places;
         }
 
-        public async Task<PlacePhotosViewModel?> GetPlacePhotosAsync(int placeId)
+        public async Task<Photo[]> GetPlacePhotosAsync(int placeId, int? year, int? month)
         {
-            var place = await context.Places.FindAsync(placeId);
-            if (place == null)
-            {
-                return null;
-            }
-
-            var photos = await context.Photos
-                .Where(p => p.PlaceId == placeId)
-                .OrderBy(p => p.DateTime)
-                .Select(p => new { p.Id, p.DateTime })
-                .ToListAsync();
-
-            var placeViewModel = new PlaceViewModel
-            {
-                Id = place.Id,
-                Name = place.Name,
-                Latitude = place.Latitude,
-                Longitude = place.Longitude,
-                GalleryId = place.GalleryId,
-                CreatedAt = place.CreatedAt,
-                PhotoCount = photos.Count
-            };
-
-            var photoGroups = GroupPhotosByTimespan(photos.Select(p => (dynamic)new { p.Id, p.DateTime }).ToList());
-
-            return new PlacePhotosViewModel
-            {
-                Place = placeViewModel,
-                PhotoGroups = photoGroups
-            };
+            IQueryable<Photo> query = QueryPlacePhotos(placeId, year, month);
+            return await query.ToArrayAsync();
         }
 
-        private List<PhotoGroupViewModel> GroupPhotosByTimespan(List<dynamic> photos)
+        private IQueryable<Photo> QueryPlacePhotos(int placeId, int? year, int? month)
         {
-            if (!photos.Any())
-            {
-                return new List<PhotoGroupViewModel>();
-            }
+            var query = context.Photos
+                            .Where(p => p.PlaceId == placeId && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
+            if (year != null) query = query.Where(p => p.DateTime.Year == year.Value);
+            if (month != null) query = query.Where(p => p.DateTime.Month == month.Value);
+            return query;
+        }
 
-            var groups = new List<PhotoGroupViewModel>();
-            var photoList = photos.Select(p => new { Id = (int)p.Id, DateTime = (DateTime)p.DateTime }).ToList();
-
-            // Check if photos span more than 30 days
-            var minDate = photoList.Min(p => p.DateTime);
-            var maxDate = photoList.Max(p => p.DateTime);
-            var daySpan = (maxDate - minDate).TotalDays;
-
-            if (daySpan <= 30)
-            {
-                // Single group for all photos
-                groups.Add(new PhotoGroupViewModel
-                {
-                    Title = "All Photos",
-                    StartDate = minDate,
-                    EndDate = maxDate,
-                    PhotoCount = photoList.Count,
-                    PhotoIds = photoList.Select(p => p.Id).ToList()
-                });
-            }
-            else
-            {
-                // Group by year and month
-                var yearGroups = photoList.GroupBy(p => p.DateTime.Year);
-                
-                foreach (var yearGroup in yearGroups.OrderBy(g => g.Key))
-                {
-                    var yearPhotos = yearGroup.ToList();
-                    var yearSpan = (yearPhotos.Max(p => p.DateTime) - yearPhotos.Min(p => p.DateTime)).TotalDays;
-
-                    if (yearSpan <= 30 || yearPhotos.Count <= 20)
-                    {
-                        // Single group for the year
-                        groups.Add(new PhotoGroupViewModel
-                        {
-                            Title = yearGroup.Key.ToString(),
-                            StartDate = yearPhotos.Min(p => p.DateTime),
-                            EndDate = yearPhotos.Max(p => p.DateTime),
-                            PhotoCount = yearPhotos.Count,
-                            PhotoIds = yearPhotos.Select(p => p.Id).ToList()
-                        });
-                    }
-                    else
-                    {
-                        // Group by month within the year
-                        var monthGroups = yearPhotos.GroupBy(p => new { p.DateTime.Year, p.DateTime.Month });
-                        
-                        foreach (var monthGroup in monthGroups.OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month))
-                        {
-                            var monthPhotos = monthGroup.ToList();
-                            var monthName = new DateTime(monthGroup.Key.Year, monthGroup.Key.Month, 1).ToString("MMMM yyyy");
-                            
-                            groups.Add(new PhotoGroupViewModel
-                            {
-                                Title = monthName,
-                                StartDate = monthPhotos.Min(p => p.DateTime),
-                                EndDate = monthPhotos.Max(p => p.DateTime),
-                                PhotoCount = monthPhotos.Count,
-                                PhotoIds = monthPhotos.Select(p => p.Id).ToList()
-                            });
-                        }
-                    }
-                }
-            }
-
-            return groups;
+        public async Task<int> GetPlaceNumberOfPhotosAsync(int placeId, int? year, int? month)
+        {
+            return await QueryPlacePhotos(placeId, year, month).CountAsync();
         }
 
         public async Task<bool> AssignPhotoToPlaceAsync(int photoId, int placeId)
@@ -517,6 +452,20 @@ namespace GaleriePhotos.Services
             photo.PlaceId = placeId;
             await context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<MonthViewModel[]> GetPlaceMonthsAsync(int id, int year)
+        {
+            return await context.Photos.Where(x => x.PlaceId == id && x.DateTime.Year == year)
+                .GroupBy(x => x.DateTime.Month)
+                .Select(x => new MonthViewModel
+                {
+                    Id = x.Key,
+                    Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(x.Key),
+                    NumberOfPhotos = x.Count()
+                })
+                .Distinct()
+                .ToArrayAsync();
         }
     }
 }

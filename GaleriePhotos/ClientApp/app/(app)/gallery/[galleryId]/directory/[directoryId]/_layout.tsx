@@ -1,16 +1,22 @@
 import BreadCrumbs from "@/components/bread-crumbs";
+import { DirectoryStoreProvider } from "@/stores/directory";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { observer } from "mobx-react-lite";
-
-const Header = observer(function Header() {
-  const { directoryId } = useLocalSearchParams<{ directoryId: string }>();
-  return <BreadCrumbs directoryId={Number(directoryId)} />;
-});
 
 export default function Layout() {
+  const { directoryId } =
+    useLocalSearchParams<"/gallery/[galleryId]/directory/[directoryId]">();
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerTitle: () => <Header /> }} />
-    </Stack>
+    <DirectoryStoreProvider directoryId={Number(directoryId)}>
+      <Stack>
+        <Stack.Screen
+          name="index"
+          options={{ headerTitle: () => <BreadCrumbs /> }}
+        />
+        <Stack.Screen
+          name="photos"
+          options={{ title: "Photos", headerShown: false }}
+        />
+      </Stack>
+    </DirectoryStoreProvider>
   );
 }

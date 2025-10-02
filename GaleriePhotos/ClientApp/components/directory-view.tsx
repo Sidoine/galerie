@@ -9,11 +9,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import { useDirectoriesStore } from "@/stores/directories";
-import { useUi } from "@/stores/ui";
-import { Photo, Directory } from "@/services/views";
+import { Photo } from "@/services/views";
 import ImageCard from "./image-card";
 import SubdirectoryCard from "./subdirectory-card";
+import { PhotoContainer, usePhotoContainer } from "@/stores/photo-container";
 
 export interface DirectoryViewProps {
   id: number;
@@ -31,7 +30,8 @@ interface Section {
   title: string;
 }
 
-export const DirectoryView = observer(({ id }: { id: number }) => {
+export const DirectoryView = observer(() => {
+  const containerStore = usePhotoContainer();
   let { width } = useWindowDimensions();
   const columnWidth = 184; // approximate desired width
   const gap = 4;
@@ -41,17 +41,16 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
   }
   const cols = Math.max(1, Math.floor((width - gap) / (columnWidth + gap)));
 
-  const directoriesStore = useDirectoriesStore();
-  const directories = directoriesStore.subDirectoriesLoader.getValue(id);
+  const directories = containerStore.containersList;
 
-  const { order, navigateToDirectory } = useUi();
-  const directoryContent = directoriesStore.contentLoader.getValue(id);
+  const directoryContent = containerStore.photoList;
+  const order = containerStore.order;
   const values = directoryContent || [];
   const sortedValues =
     order === "date-desc" ? values.slice().reverse() : values;
 
   const data = useMemo(() => {
-    const result: SectionListData<(Directory | Photo)[], Section>[] = [];
+    const result: SectionListData<(PhotoContainer | Photo)[], Section>[] = [];
     if (directories && directories.length > 0) {
       result.push({
         title: "Albums",
@@ -61,7 +60,7 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
             {item.map((subDir) => (
               <SubdirectoryCard
                 key={subDir.id}
-                directory={subDir as Directory}
+                directory={subDir as PhotoContainer}
                 size={columnWidth * 2 + gap}
               />
             ))}
@@ -77,7 +76,7 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
           <View style={styles.container}>
             {item.map((photo) => (
               <ImageCard
-                value={photo as Photo}
+                photo={photo as Photo}
                 size={columnWidth}
                 key={photo.id}
               />
@@ -90,12 +89,12 @@ export const DirectoryView = observer(({ id }: { id: number }) => {
   }, [directories, sortedValues, cols]);
 
   const handleSortDateDesc = useCallback(
-    () => navigateToDirectory(id, "date-desc"),
-    [id, navigateToDirectory]
+    () => containerStore.sort("date-desc"),
+    [containerStore]
   );
   const handleSortDateAsc = useCallback(
-    () => navigateToDirectory(id, "date-asc"),
-    [id, navigateToDirectory]
+    () => containerStore.sort("date-asc"),
+    [containerStore]
   );
 
   return (
