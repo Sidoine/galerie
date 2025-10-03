@@ -9,6 +9,10 @@ import {
   PhotoContainerStore,
 } from "./photo-container";
 import { PlaceType } from "@/services/enums";
+import { Photo } from "@/services/views";
+
+const emptyPhotoContainer: PhotoContainer[] = [];
+const emptyPhotoList: Photo[] = [];
 
 export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   children,
@@ -174,17 +178,17 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   const photoList =
     (photoCount !== null && photoCount < tooManyPhotos) || month !== undefined
       ? placesStore.getPlacePhotos(placeId, year, month)
-      : null;
-  let containersList: PhotoContainer[] | null = null;
+      : emptyPhotoList;
+  let containersList: PhotoContainer[] | null = emptyPhotoContainer;
   if (place) {
     if (place.type === PlaceType.Country) {
       containersList = placesStore.getCitiesByCountry(place.id);
     } else {
       if (photoCount === null || photoCount < tooManyPhotos) {
-        containersList = null;
+        containersList = emptyPhotoContainer;
       } else {
         if (year && month) {
-          containersList = null;
+          containersList = emptyPhotoContainer;
         } else if (year) {
           containersList = placesStore.getPlaceMonths(placeId, year);
         } else {

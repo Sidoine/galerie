@@ -4,11 +4,12 @@ import { Stack, useGlobalSearchParams } from "expo-router";
 
 export default function PlacePhotosLayout() {
   const { placeId, order, year, month } = useGlobalSearchParams<{
-    placeId: string;
+    placeId?: string;
     order?: "date-asc" | "date-desc";
     year?: string;
     month?: string;
   }>();
+  if (!placeId) return null;
   return (
     <PlaceStoreProvider
       placeId={Number(placeId)}

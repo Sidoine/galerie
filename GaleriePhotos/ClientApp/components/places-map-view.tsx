@@ -7,12 +7,11 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { usePlacesStore } from "@/stores/places";
 import { theme } from "@/stores/theme";
 import { Place } from "@/services/views";
-import "leaflet/dist/leaflet.css";
 import { useRouter } from "expo-router";
+import PlacesMap from "./places-map";
 
 export const PlacesMapView = observer(() => {
   const placesStore = usePlacesStore();
@@ -91,12 +90,6 @@ export const PlacesMapView = observer(() => {
     );
   }
 
-  // Calculate map bounds to show all places
-  const latitudes = placesToShow.map((p) => p.latitude);
-  const longitudes = placesToShow.map((p) => p.longitude);
-  const centerLat = (Math.min(...latitudes) + Math.max(...latitudes)) / 2;
-  const centerLng = (Math.min(...longitudes) + Math.max(...longitudes)) / 2;
-
   return (
     <View style={styles.container}>
       {selectedCountry && (
@@ -113,48 +106,12 @@ export const PlacesMapView = observer(() => {
       <Text style={styles.mapTitle}>{mapTitle}</Text>
 
       <View style={styles.mapContainer}>
-        <MapContainer
-          key={selectedCountry?.id || "countries"} // Force re-render when switching views
-          center={[centerLat, centerLng]}
-          zoom={selectedCountry ? 6 : 2} // Zoom in more for cities, out for countries
-          style={{ height: "100%", width: "100%" }}
-          scrollWheelZoom={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {placesToShow.map((place) => (
-            <Marker key={place.id} position={[place.latitude, place.longitude]}>
-              <Popup>
-                <View>
-                  <Text style={styles.popupTitle}>{place.name}</Text>
-                  <Text style={styles.popupText}>
-                    {place.numberOfPhotos} photo
-                    {place.numberOfPhotos !== 1 ? "s" : ""}
-                  </Text>
-                  {selectedCountry ? (
-                    // For cities, show "View Photos" button
-                    <TouchableOpacity
-                      style={styles.popupButton}
-                      onPress={() => navigateToPlacePhotos(place.id)}
-                    >
-                      <Text style={styles.popupButtonText}>View Photos</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    // For countries, show "View Cities" button
-                    <TouchableOpacity
-                      style={styles.popupButton}
-                      onPress={() => handleCountryClick(place)}
-                    >
-                      <Text style={styles.popupButtonText}>View Cities</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+        <PlacesMap
+          selectedCountry={selectedCountry}
+          placesToShow={placesToShow}
+          onClickPhotos={navigateToPlacePhotos}
+          onClickPlace={handleCountryClick}
+        />
       </View>
 
       <ScrollView style={styles.placesListContainer}>
@@ -307,26 +264,6 @@ const styles = StyleSheet.create({
   actionHint: {
     color: theme.palette.primary,
     fontSize: 12,
-    fontWeight: "500",
-  },
-  popupTitle: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  popupText: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  popupButton: {
-    backgroundColor: theme.palette.primary,
-    padding: 8,
-    borderRadius: theme.radius.sm,
-    alignItems: "center",
-  },
-  popupButtonText: {
-    color: "white",
-    fontSize: 14,
     fontWeight: "500",
   },
 });

@@ -4,19 +4,32 @@ import "react-native-reanimated";
 import { Tabs } from "expo-router";
 import { MeStoreProvider, useMeStore } from "@/stores/me";
 import { observer } from "mobx-react-lite";
+import Icon from "@/components/Icon";
 
-const RootLayoutContent = observer(function RootLayoutContent() {
+const AppLayoutContent = observer(function RootLayoutContent() {
   const meStore = useMeStore();
   return (
     <Tabs>
       <Tabs.Screen
         name="gallery"
-        options={{ headerShown: false, title: "Gallerie" }}
+        options={{
+          headerShown: false,
+          title: "Gallerie",
+          tabBarIcon: ({ color }) => (
+            <Icon set="mi" name="image" size={20} color={color} />
+          ),
+        }}
       />
       <Tabs.Protected guard={meStore.administrator}>
         <Tabs.Screen
           name="settings"
-          options={{ headerShown: false, title: "Paramètres globaux" }}
+          options={{
+            headerShown: false,
+            title: "Paramètres globaux",
+            tabBarIcon: ({ color }) => (
+              <Icon set="mi" name="settings" size={20} color={color} />
+            ),
+          }}
         />
         <Tabs.Screen name="index" options={{ href: null }} />
       </Tabs.Protected>
@@ -24,11 +37,11 @@ const RootLayoutContent = observer(function RootLayoutContent() {
   );
 });
 
-export default function RootLayout() {
+export default function AppLayout() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <MeStoreProvider>
-        <RootLayoutContent />
+        <AppLayoutContent />
         <StatusBar style="auto" />
       </MeStoreProvider>
     </ThemeProvider>

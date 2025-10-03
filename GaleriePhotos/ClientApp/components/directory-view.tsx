@@ -7,6 +7,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
@@ -96,6 +97,8 @@ export const DirectoryView = observer(() => {
     () => containerStore.sort("date-asc"),
     [containerStore]
   );
+
+  if (!directories || !values) return <ActivityIndicator size="large" />;
 
   return (
     <SectionList

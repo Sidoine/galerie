@@ -8,9 +8,11 @@ import {
 } from "react";
 import { UserStore } from "folke-service-helpers";
 import { getBackendUrl } from "./config";
+import { set } from "mobx";
 
 export interface AuthenticationProps extends UserStore {
   authenticated: boolean;
+  loading: boolean;
   authenticate: (username: string, password: string) => Promise<boolean>;
   register: (username: string, password: string) => Promise<boolean>;
   clearCredentials: () => void;
@@ -43,45 +45,54 @@ export const AuthenticationStoreProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [token, setTokenState] = useState<StoredToken | null>(null);
-  const setToken = useCallback(async (newToken: BearerToken | null) => {
+  const [token, setToken] = useState<StoredToken | null>(null);
+  const [loading, setLoading] = useState(true);
+  const updateToken = useCallback(async (newToken: BearerToken | null) => {
     if (newToken) {
-      await SecureStore.setItemAsync("authToken", JSON.stringify(newToken));
-      setTokenState({
+      const newTokenState: StoredBearerToken = {
         tokenType: "Bearer",
         accessToken: newToken.accessToken,
         expiresAt: Date.now() + newToken.expiresIn * 1000,
         refreshToken: newToken.refreshToken,
-      });
+      };
+      await SecureStore.setItemAsync(
+        "authToken",
+        JSON.stringify(newTokenState)
+      );
+      setToken(newTokenState);
     } else {
       await SecureStore.deleteItemAsync("authToken");
-      setTokenState(null);
+      setToken(null);
     }
   }, []);
 
-  const refreshToken = useCallback(async () => {
-    if (token && token.tokenType === "Bearer") {
+  const refreshToken = useCallback(
+    async (refreshToken: string) => {
       const response = await fetch(`${getBackendUrl()}/refresh`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ refreshToken: token.refreshToken }),
+        body: JSON.stringify({ refreshToken: refreshToken }),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setToken(data);
+        const data = (await response.json()) as BearerToken;
+        updateToken(data);
+      } else {
+        updateToken(null);
       }
-    }
-  }, [token, setToken]);
+    },
+    [updateToken]
+  );
 
   useEffect(() => {
+    // Create a time out to refresh the token a bit before it expires
     if (token && token.tokenType === "Bearer") {
       const timeout = token.expiresAt - Date.now();
       const id = setTimeout(() => {
-        refreshToken();
-      }, Math.max(0, timeout));
+        refreshToken(token.refreshToken);
+      }, Math.max(10_000, timeout));
       return () => clearTimeout(id);
     }
   }, [refreshToken, token]);
@@ -89,11 +100,13 @@ export const AuthenticationStoreProvider = ({
   useEffect(() => {
     (async () => {
       if (token) return;
+      setLoading(true);
       if (!(await SecureStore.isAvailableAsync())) {
         const state = localStorage.getItem("authToken");
         if (state) {
-          setTokenState(JSON.parse(state));
+          setToken(JSON.parse(state));
         }
+        setLoading(false);
         return;
       }
 
@@ -101,19 +114,21 @@ export const AuthenticationStoreProvider = ({
       if (storedToken) {
         try {
           const parsedStoredToken: StoredToken = JSON.parse(storedToken);
+
           if (parsedStoredToken.tokenType === "Bearer") {
             if (parsedStoredToken.expiresAt > Date.now()) {
-              setTokenState(parsedStoredToken);
+              setToken(parsedStoredToken);
             } else {
-              await refreshToken();
+              await refreshToken(parsedStoredToken.refreshToken);
             }
           } else if (parsedStoredToken.tokenType === "cookie") {
-            setTokenState(parsedStoredToken);
+            setToken(parsedStoredToken);
           }
         } catch {
           await SecureStore.deleteItemAsync("authToken");
         }
       }
+      setLoading(false);
     })();
   }, [refreshToken, token]);
 
@@ -134,7 +149,7 @@ export const AuthenticationStoreProvider = ({
 
       if (response.ok) {
         if (useCookies) {
-          setTokenState({ tokenType: "cookie" });
+          setToken({ tokenType: "cookie" });
           localStorage.setItem(
             "authToken",
             JSON.stringify({ tokenType: "cookie" })
@@ -142,13 +157,13 @@ export const AuthenticationStoreProvider = ({
         } else {
           const text = await response.text();
           const data = JSON.parse(text) as BearerToken;
-          setToken(data);
+          updateToken(data);
         }
         return true;
       }
       return false;
     },
-    [setToken]
+    [updateToken]
   );
 
   const register = useCallback(
@@ -166,7 +181,7 @@ export const AuthenticationStoreProvider = ({
   );
 
   const clearCredentials = useCallback(() => {
-    setTokenState(null);
+    setToken(null);
   }, []);
 
   return (
@@ -182,6 +197,7 @@ export const AuthenticationStoreProvider = ({
           token && token.tokenType === "Bearer"
             ? `Bearer ${token.accessToken}`
             : null,
+        loading,
       }}
     >
       {children}

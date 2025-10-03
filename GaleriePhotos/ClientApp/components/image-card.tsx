@@ -5,7 +5,6 @@ import { Photo } from "@/services/views";
 import { usePhotosStore } from "@/stores/photos";
 import { usePhotoContainer } from "@/stores/photo-container";
 import { Link } from "expo-router";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 interface ImageCardProps {
   photo: Photo;

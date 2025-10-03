@@ -1,6 +1,7 @@
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using GaleriePhotos.Services;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -60,6 +61,9 @@ namespace GaleriePhotos
                 options.SignIn.RequireConfirmedAccount = false;
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+            services.AddOptions<BearerTokenOptions>(IdentityConstants.BearerScheme)
+                .Configure(options => options.RefreshTokenExpiration = TimeSpan.FromDays(30));
 
             services.AddControllersWithViews();
             services.AddRazorPages();

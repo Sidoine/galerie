@@ -18,6 +18,7 @@ export class MeStore {
   }
 
   private async loadMe() {
+    if (this.authentication.loading) return;
     const result = await this.meController.getMe();
     if (result.ok) {
       action(() => (this.me = result.value));
