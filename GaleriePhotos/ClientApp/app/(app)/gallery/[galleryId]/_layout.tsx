@@ -7,8 +7,9 @@ import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilit
 import { useWindowDimensions } from "react-native";
 import { UsersStoreProvider } from "@/stores/users";
 import { PhotosStoreProvider } from "@/stores/photos";
+import { observer } from "mobx-react-lite";
 
-function LayoutContent() {
+const LayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768; // Écran considéré comme large à partir de 768px
@@ -34,7 +35,10 @@ function LayoutContent() {
         options={{ headerShown: false, title: "Noms des visages" }}
       />
       <Drawer.Protected guard={membersStore.administrator}>
-        <Drawer.Screen name="settings" options={{ title: "Paramètres" }} />
+        <Drawer.Screen
+          name="settings"
+          options={{ title: "Paramètres", headerShown: false }}
+        />
       </Drawer.Protected>
       <Drawer.Screen
         name="directory"
@@ -46,7 +50,7 @@ function LayoutContent() {
       />
     </Drawer>
   );
-}
+});
 
 export default function Layout() {
   const { galleryId } = useLocalSearchParams<"/gallery/[galleryId]">();

@@ -8,7 +8,6 @@ import {
 } from "react";
 import { UserStore } from "folke-service-helpers";
 import { getBackendUrl } from "./config";
-import { set } from "mobx";
 
 export interface AuthenticationProps extends UserStore {
   authenticated: boolean;
@@ -104,7 +103,7 @@ export const AuthenticationStoreProvider = ({
       if (!(await SecureStore.isAvailableAsync())) {
         const state = localStorage.getItem("authToken");
         if (state) {
-          setToken(JSON.parse(state));
+          setToken(JSON.parse(state) as StoredCookie);
         }
         setLoading(false);
         return;

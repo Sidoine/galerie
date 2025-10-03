@@ -1,5 +1,5 @@
-import { useApiClient } from "folke-service-helpers";
-import { action, computed, makeObservable, observable } from "mobx";
+import { SingletonLoader, useApiClient } from "folke-service-helpers";
+import { computed, makeObservable } from "mobx";
 import { User } from "../services/views";
 import { createContext, useContext, useMemo } from "react";
 import { MeController } from "../services/me";
@@ -7,27 +7,23 @@ import { AuthenticationProps, useAuthenticationStore } from "./authentication";
 
 export class MeStore {
   constructor(
-    private meController: MeController,
-    private authentication: AuthenticationProps
+    private authentication: AuthenticationProps,
+    private meLoader: SingletonLoader<User>
   ) {
     makeObservable(this, {
-      me: observable,
+      me: computed,
       administrator: computed,
     });
-    this.loadMe();
   }
 
-  private async loadMe() {
-    if (this.authentication.loading) return;
-    const result = await this.meController.getMe();
-    if (result.ok) {
-      action(() => (this.me = result.value));
-    } else {
+  get me() {
+    if (this.authentication.loading) return null;
+    const value = this.meLoader.getValue();
+    if (value === null && !this.meLoader.isLoading) {
       this.authentication.clearCredentials();
     }
+    return value;
   }
-
-  me: User | null = null;
 
   get administrator() {
     return this.me?.administrator || false;
@@ -41,7 +37,8 @@ export function MeStoreProvider({ children }: { children: React.ReactNode }) {
   const authentication = useAuthenticationStore();
   const store = useMemo(() => {
     const meService = new MeController(apiClient);
-    return new MeStore(meService, authentication);
+    const meLoader = new SingletonLoader(meService.getMe);
+    return new MeStore(authentication, meLoader);
   }, [apiClient, authentication]);
   return (
     <MeStoreContext.Provider value={store}>{children}</MeStoreContext.Provider>

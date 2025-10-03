@@ -1,5 +1,5 @@
 import { useApiClient, ValueLoader } from "folke-service-helpers";
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, computed, makeObservable } from "mobx";
 import { User, GalleryMember } from "../services/views";
 import { createContext, useContext, useMemo } from "react";
 import { useDirectoriesStore } from "./directories";
@@ -7,9 +7,6 @@ import { GalleryMemberController } from "@/services/galleryMember";
 import { MeStore, useMeStore } from "./me";
 
 class MembersStore {
-  memberships: GalleryMember[] | null = null;
-  loadingMemberships = false;
-
   constructor(
     private galleryMemberService: GalleryMemberController,
     public galleryId: number,
@@ -17,8 +14,6 @@ class MembersStore {
     private meStore: MeStore
   ) {
     makeObservable(this, {
-      memberships: observable.ref,
-      loadingMemberships: observable,
       setMembershipAdmin: action,
       setMembershipVisibility: action,
       members: computed,
@@ -74,11 +69,7 @@ class MembersStore {
       }
     );
     if (created.ok) {
-      if (this.memberships) {
-        this.memberships = [...this.memberships, created.value];
-      } else {
-        this.memberships = [created.value];
-      }
+      this.membersLoader.invalidate();
     }
   }
 }

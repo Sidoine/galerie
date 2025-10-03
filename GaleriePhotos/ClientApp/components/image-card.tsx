@@ -1,5 +1,5 @@
-import React, { useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import React from "react";
+import { View, Text, Image, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
 import { usePhotosStore } from "@/stores/photos";

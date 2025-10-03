@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,8 +12,10 @@ import { useDirectoriesStore } from "@/stores/directories";
 import { useMembersStore } from "@/stores/members";
 import { FaceDetectionStatus } from "@/services/enums";
 import Icon from "../Icon";
+import * as Sharing from "expo-sharing";
 import { theme } from "@/stores/theme";
 import { usePhotosStore } from "@/stores/photos";
+import { observer } from "mobx-react-lite";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -26,7 +28,7 @@ interface TopActionsProps {
 // Remplacement des icônes MUI par de simples caractères/abréviations temporaires.
 // Pour une future amélioration on pourra intégrer une librairie d'icônes RN.
 
-export default function TopActions({
+function TopActions({
   onDetailsToggle,
   onFacesToggle,
   showFaces,
@@ -48,15 +50,49 @@ export default function TopActions({
     });
   }, [closeMenu, directoriesStore, photo.directoryId, photo.id]);
 
-  const handleShareClick = useCallback(() => {
+  const handleShareVisibilityClick = useCallback(() => {
     closeMenu();
     photosStore.setAccess(photo, false);
   }, [closeMenu, photosStore, photo]);
 
-  const handleUnshareClick = useCallback(() => {
+  const handleUnshareVisibilityClick = useCallback(() => {
     closeMenu();
     photosStore.setAccess(photo, true);
   }, [closeMenu, photosStore, photo]);
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    async function checkSharingAvailability() {
+      const available = await Sharing.isAvailableAsync();
+      setCanShare(available);
+    }
+    checkSharingAvailability();
+  }, []);
+
+  const handleSystemShareClick = useCallback(async () => {
+    closeMenu();
+    try {
+      if (!canShare) return;
+
+      // Construction de l'URL distante de l'image (originale) via store
+      const imageUrl = photosStore.getImage(photo.publicId);
+
+      // Télécharger l'image dans un fichier temporaire (obligatoire pour expo-sharing sur mobile)
+      // const fileName = `shared-${photo.publicId}.jpg`;
+      // const FS = FileSystem.Paths;
+      // const baseDir =
+      //   FS..cacheDirectory || FS.documentDirectory || FS.bundleDirectory || "";
+      // const tmpPath = `${baseDir}${fileName}`;
+      // const download = await FileSystem.downloadAsync(imageUrl, tmpPath);
+
+      await Sharing.shareAsync(imageUrl, {
+        dialogTitle: "Partager l'image",
+        mimeType: "image/jpeg",
+      });
+    } catch (err) {
+      // TODO: éventuellement gestion d'erreur utilisateur (toast)
+      console.warn("Erreur lors du partage", err);
+    }
+  }, [canShare, closeMenu, photo.publicId, photosStore]);
 
   const handleRotate = useCallback(
     async (angle: number) => {
@@ -100,15 +136,13 @@ export default function TopActions({
         >
           <Icon name="information-outline" set="mci" size={22} />
         </TouchableOpacity>
-        {membersStore.administrator && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={openMenu}
-            style={styles.iconButton}
-          >
-            <Icon name="dots-vertical" set="mci" size={24} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={openMenu}
+          style={styles.iconButton}
+        >
+          <Icon name="dots-vertical" set="mci" size={24} />
+        </TouchableOpacity>
       </View>
       <Modal
         visible={menuVisible}
@@ -118,17 +152,33 @@ export default function TopActions({
       >
         <Pressable style={styles.menuOverlay} onPress={closeMenu}>
           <View style={styles.menu}>
-            <MenuItem
-              label="Utiliser comme couverture"
-              onPress={handleCoverClick}
-            />
-            <MenuItem label="Tourner à droite" onPress={handleRotateRight} />
-            <MenuItem label="Tourner à gauche" onPress={handleRotateLeft} />
-            {photo.private && (
-              <MenuItem label="Partager" onPress={handleShareClick} />
+            {membersStore.administrator && (
+              <>
+                <MenuItem
+                  label="Utiliser comme couverture"
+                  onPress={handleCoverClick}
+                />
+                <MenuItem
+                  label="Tourner à droite"
+                  onPress={handleRotateRight}
+                />
+                <MenuItem label="Tourner à gauche" onPress={handleRotateLeft} />
+                {photo.private && (
+                  <MenuItem
+                    label="Rendre publique (lien)"
+                    onPress={handleShareVisibilityClick}
+                  />
+                )}
+                {!photo.private && (
+                  <MenuItem
+                    label="Rendre privée"
+                    onPress={handleUnshareVisibilityClick}
+                  />
+                )}
+              </>
             )}
-            {!photo.private && (
-              <MenuItem label="Ne plus partager" onPress={handleUnshareClick} />
+            {canShare && (
+              <MenuItem label="Partager..." onPress={handleSystemShareClick} />
             )}
             <MenuItem label="Fermer" onPress={closeMenu} />
           </View>
@@ -187,3 +237,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+export default observer(TopActions);

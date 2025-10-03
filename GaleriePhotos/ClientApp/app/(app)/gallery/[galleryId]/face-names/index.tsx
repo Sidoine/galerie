@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,9 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import { FaceController } from "../../../../../services/face";
 import { FaceName } from "../../../../../services/views";
-import { useApiClient } from "folke-service-helpers";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useRouter } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";

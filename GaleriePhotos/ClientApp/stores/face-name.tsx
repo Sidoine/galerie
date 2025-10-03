@@ -4,10 +4,14 @@ import { useCallback, useMemo } from "react";
 import { useFaceNamesStore } from "./face-names";
 import {
   BreadCrumb,
+  PhotoContainer,
   PhotoContainerContext,
   PhotoContainerStore,
 } from "./photo-container";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { Photo } from "@/services/views";
+
+const noPhoto: Photo[] = [];
+const noContainer: PhotoContainer[] = [];
 
 export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
   children,
@@ -53,7 +57,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       },
     });
   }, [router, faceNamesStore.galleryId, faceNameId, order]);
-  const navigateToChildContainer = useCallback((containerId: number) => {}, []);
+  const navigateToChildContainer = useCallback(() => {}, []);
   const navigateToParentContainer = useCallback(() => {
     router.push({
       pathname: "/gallery/[galleryId]/face-names",
@@ -99,7 +103,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
 
   const photoList = faceNameId
     ? faceNamesStore.getPhotosByName(faceNameId)
-    : null;
+    : noPhoto;
 
   const faceNameStore = useMemo<PhotoContainerStore>(() => {
     return {
@@ -108,7 +112,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       navigateToParentContainer,
       hasParent: false,
       photoList,
-      containersList: null,
+      containersList: noContainer,
       sort,
       order,
       breadCrumbs,
