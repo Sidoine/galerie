@@ -6,5 +6,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "app/(app)/gallery/choose.tsx"]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "app/(app)/gallery/choose.tsx", "app/(app)/gallery/[galleryId]/directory/_layout.tsx_", "app/(app)/gallery/[galleryId]/directory/[directoryId]/_layout.tsx_", "app/(app)/gallery/[galleryId]/directory/[directoryId]/photos/_layout.tsx_"]
 }

@@ -132,6 +132,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     sort,
     getPhotoLink,
   ]);
+  if (!faceNameId) return <>{children}</>;
   return (
     <PhotoContainerContext.Provider value={faceNameStore}>
       {children}

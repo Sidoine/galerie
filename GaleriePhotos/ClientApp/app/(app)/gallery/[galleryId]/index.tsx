@@ -3,16 +3,12 @@ import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useDirectoriesStore } from "@/stores/directories";
 import { DirectoryView } from "@/components/directory-view";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { DirectoryStoreProvider } from "@/stores/directory";
+import { useRouter } from "expo-router";
 
 const RootDirectoryPage = observer(function RootDirectoryPage() {
   const directoriesStore = useDirectoriesStore();
   const root = directoriesStore.root;
   const router = useRouter();
-  const { order = "date-asc" } = useLocalSearchParams<{
-    order?: "date-asc" | "date-desc";
-  }>();
 
   useEffect(() => {
     if (directoriesStore.isInError) {
@@ -31,11 +27,7 @@ const RootDirectoryPage = observer(function RootDirectoryPage() {
     );
   }
 
-  return (
-    <DirectoryStoreProvider directoryId={root.id} order={order}>
-      <DirectoryView />
-    </DirectoryStoreProvider>
-  );
+  return <DirectoryView />;
 });
 
 const styles = StyleSheet.create({

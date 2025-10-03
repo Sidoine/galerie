@@ -12,6 +12,7 @@ export default function Layout() {
         name="directory-visibility-settings"
         options={{ title: "Paramètres de visibilité" }}
       />
+      <Drawer.Screen name="back" options={{ title: "Retour" }} />
     </Drawer>
   );
 }

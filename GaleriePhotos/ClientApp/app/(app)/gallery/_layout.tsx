@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import React from "react";
-import { GalleriesStoreProvider } from "../../../stores/galleries";
+import { GalleriesStoreProvider } from "@/stores/galleries";
 
 export default function RootLayout() {
   return (

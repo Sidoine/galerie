@@ -15,13 +15,15 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   order = "date-asc",
 }: {
   children: React.ReactNode;
-  directoryId: number;
+  directoryId: number | undefined;
   order?: "date-asc" | "date-desc";
 }) {
   const router = useRouter();
   const directoriesStore = useDirectoriesStore();
   const galleryId = directoriesStore.galleryId;
-  const directory = directoriesStore.infoLoader.getValue(directoryId);
+  const directory = directoryId
+    ? directoriesStore.infoLoader.getValue(directoryId)
+    : null;
   const getPhotoLink = useCallback(
     (photoId: number): Href => {
       return {
@@ -29,7 +31,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
           "/(app)/gallery/[galleryId]/directory/[directoryId]/photos/[photoId]",
         params: {
           galleryId,
-          directoryId,
+          directoryId: directoryId ?? 0,
           photoId,
           order,
         },
@@ -73,7 +75,10 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       crumbs.unshift({
         id: current.id,
         name: current.name || "Tous les albums",
-        url: `/gallery/${galleryId}/directory/${current.id}`,
+        url:
+          current.parent === null
+            ? `/gallery/${galleryId}`
+            : `/gallery/${galleryId}/directory/${current.parent.id}/photos/${current.id}`,
       });
       current = current.parent
         ? directoriesStore.infoLoader.getValue(current.parent.id)
@@ -83,15 +88,18 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   }, [directoriesStore.infoLoader, directory, galleryId]);
 
   const hasParent = directory?.parent != null;
-  const photoList = directoriesStore.contentLoader.getValue(directoryId);
-  const containersList =
-    directoriesStore.subDirectoriesLoader.getValue(directoryId);
+  const photoList = directoryId
+    ? directoriesStore.contentLoader.getValue(directoryId)
+    : null;
+  const containersList = directoryId
+    ? directoriesStore.subDirectoriesLoader.getValue(directoryId)
+    : null;
 
   const sort = useCallback(
     (by: "date-asc" | "date-desc") => {
       router.replace({
         pathname: "/gallery/[galleryId]/directory/[directoryId]",
-        params: { galleryId, directoryId, order: by },
+        params: { galleryId, directoryId: directoryId ?? 0, order: by },
       });
     },
     [directoryId, galleryId, router]
