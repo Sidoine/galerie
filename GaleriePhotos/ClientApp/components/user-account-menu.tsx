@@ -2,11 +2,13 @@ import React, { useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { useMeStore } from "@/stores/me";
+import { useRouter } from "expo-router";
 
 // Version React Native du menu utilisateur
 const UserAccountMenu = observer(function UserAccountMenu() {
   const meStore = useMeStore();
   const user = meStore.me;
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const initial = user?.name?.[0]?.toUpperCase() || "U";
 
@@ -37,6 +39,17 @@ const UserAccountMenu = observer(function UserAccountMenu() {
         <View style={styles.backdrop}>
           <View style={styles.panel}>
             <Text style={styles.name}>{user.name}</Text>
+            {/* Lien Politique de confidentialité accessible publiquement */}
+            <TouchableOpacity
+              onPress={() => {
+                router.push("/privacy");
+                setOpen(false);
+              }}
+            >
+              <Text style={styles.privacyLink}>
+                Politique de confidentialité
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={handleLogout}
@@ -95,4 +108,5 @@ const styles = StyleSheet.create({
   actionText: { color: "#fff", fontWeight: "600" },
   closeLink: { marginTop: 16 },
   closeText: { color: "#1976d2", fontWeight: "500" },
+  privacyLink: { marginTop: 16, color: "#1976d2", fontWeight: "500" },
 });

@@ -28,6 +28,7 @@ function RootLayoutContent() {
           options={{ presentation: "modal", gestureEnabled: false }}
         />
       </Stack.Protected>
+      <Stack.Screen name="privacy" />
     </Stack>
   );
 }
