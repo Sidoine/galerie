@@ -1,5 +1,6 @@
 ﻿using GaleriePhotos.Models;
 using GaleriePhotos.Services;
+using System;
 
 namespace Galerie.Server.ViewModels
 {
@@ -15,7 +16,9 @@ namespace Galerie.Server.ViewModels
 
         public int DirectoryId { get; set; }
 
+        public DateTime DateTime { get; set; }
+
         public PhotoViewModel(Photo photo) =>
-            (Id, Name, Video, DirectoryId, PublicId) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId, photo.PublicId.ToString());
+            (Id, Name, Video, DirectoryId, PublicId, DateTime) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId, photo.PublicId.ToString(), photo.DateTime);
     }
 }

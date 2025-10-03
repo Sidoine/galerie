@@ -18,8 +18,6 @@ interface ImageDetailsProps {
   onClose: () => void;
 }
 
-// Remplacement du Drawer MUI par un panneau latéral overlay coulissant simple.
-// Pour l'instant, la carte (react-leaflet) est remplacée par un bloc affichant les coordonnées.
 export const ImageDetails = observer(function ImageDetails({
   image,
   open,

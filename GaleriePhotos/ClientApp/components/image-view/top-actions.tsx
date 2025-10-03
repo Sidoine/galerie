@@ -13,6 +13,7 @@ import { useMembersStore } from "@/stores/members";
 import { FaceDetectionStatus } from "@/services/enums";
 import Icon from "../Icon";
 import { theme } from "@/stores/theme";
+import { usePhotosStore } from "@/stores/photos";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -33,6 +34,7 @@ export default function TopActions({
   photo,
 }: TopActionsProps) {
   const directoriesStore = useDirectoriesStore();
+  const photosStore = usePhotosStore();
   const membersStore = useMembersStore();
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -48,20 +50,20 @@ export default function TopActions({
 
   const handleShareClick = useCallback(() => {
     closeMenu();
-    directoriesStore.setAccess(photo, false);
-  }, [closeMenu, directoriesStore, photo]);
+    photosStore.setAccess(photo, false);
+  }, [closeMenu, photosStore, photo]);
 
   const handleUnshareClick = useCallback(() => {
     closeMenu();
-    directoriesStore.setAccess(photo, true);
-  }, [closeMenu, directoriesStore, photo]);
+    photosStore.setAccess(photo, true);
+  }, [closeMenu, photosStore, photo]);
 
   const handleRotate = useCallback(
     async (angle: number) => {
       closeMenu();
-      await directoriesStore.rotatePhoto(photo, angle);
+      await photosStore.rotatePhoto(photo, angle);
     },
-    [closeMenu, directoriesStore, photo]
+    [closeMenu, photosStore, photo]
   );
   const handleRotateLeft = useCallback(() => handleRotate(270), [handleRotate]);
   const handleRotateRight = useCallback(() => handleRotate(90), [handleRotate]);

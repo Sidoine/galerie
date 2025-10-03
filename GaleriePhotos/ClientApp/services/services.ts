@@ -5,6 +5,7 @@ export * from "./gallery";
 export * from "./galleryMember";
 export * from "./me";
 export * from "./photo";
+export * from "./place";
 export * from "./user";
 export * from "./enums";
 export * from "./views";

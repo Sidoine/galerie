@@ -158,9 +158,7 @@ namespace GaleriePhotos.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GalleryId");
-
-                    b.HasIndex("Name")
+                    b.HasIndex("GalleryId", "Name")
                         .IsUnique();
 
                     b.ToTable("FaceNames");
@@ -292,17 +290,26 @@ namespace GaleriePhotos.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("double precision");
 
+                    b.Property<int?>("PlaceId")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DateTime");
+
                     b.HasIndex("DirectoryId");
 
                     b.HasIndex("GalleryId");
 
+                    b.HasIndex("PlaceId");
+
                     b.HasIndex("PublicId")
                         .IsUnique();
+
+                    b.HasIndex("DateTime", "PlaceId");
 
                     b.HasIndex("DirectoryId", "FileName")
                         .IsUnique();
@@ -344,6 +351,63 @@ namespace GaleriePhotos.Migrations
                         .IsUnique();
 
                     b.ToTable("PhotoDirectories");
+                });
+
+            modelBuilder.Entity("GaleriePhotos.Models.Place", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GalleryId")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long?>("OsmId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("OsmPlaceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OsmType")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GalleryId");
+
+                    b.HasIndex("OsmPlaceId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("GalleryId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("OsmType", "OsmId");
+
+                    b.ToTable("Places");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -549,7 +613,14 @@ namespace GaleriePhotos.Migrations
                         .WithMany("Photos")
                         .HasForeignKey("GalleryId");
 
+                    b.HasOne("GaleriePhotos.Models.Place", "Place")
+                        .WithMany()
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Directory");
+
+                    b.Navigation("Place");
                 });
 
             modelBuilder.Entity("GaleriePhotos.Models.PhotoDirectory", b =>
@@ -568,6 +639,24 @@ namespace GaleriePhotos.Migrations
                     b.Navigation("CoverPhoto");
 
                     b.Navigation("Gallery");
+                });
+
+            modelBuilder.Entity("GaleriePhotos.Models.Place", b =>
+                {
+                    b.HasOne("GaleriePhotos.Models.Gallery", "Gallery")
+                        .WithMany()
+                        .HasForeignKey("GalleryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GaleriePhotos.Models.Place", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Gallery");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -638,6 +727,11 @@ namespace GaleriePhotos.Migrations
                     b.Navigation("PhotoDirectories");
 
                     b.Navigation("Photos");
+                });
+
+            modelBuilder.Entity("GaleriePhotos.Models.Place", b =>
+                {
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

@@ -2,15 +2,12 @@ import { MapLoader, useApiClient } from "folke-service-helpers";
 import {
   Directory,
   Photo,
-  PhotoFull,
   DirectoryPatch,
-  PhotoPatch,
   DirectoryFull,
 } from "../services/views";
-import { DirectoryController, PhotoController } from "../services/services";
+import { DirectoryController } from "../services/services";
 import { action, makeObservable, observable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
-import { getBackendUrl } from "./config";
 
 class DirectoriesStore {
   root: Directory | null = null;
@@ -19,19 +16,14 @@ class DirectoriesStore {
   constructor(
     public subDirectoriesLoader: MapLoader<Directory[], [number]>,
     public contentLoader: MapLoader<Photo[], [number]>,
-    public imageLoader: MapLoader<PhotoFull, [number]>,
     public infoLoader: MapLoader<DirectoryFull, [number]>,
     private directoryService: DirectoryController,
-    private photoService: PhotoController,
     public galleryId: number
   ) {
     makeObservable(this, {
       photoReloadSuffix: observable,
       patchDirectoryAndClearCache: action,
       patchDirectory: action,
-      patchPhoto: action,
-      setAccess: action,
-      rotatePhoto: action,
       setParentCover: action,
       root: observable,
       isInError: observable,
@@ -57,22 +49,6 @@ class DirectoriesStore {
     this.root = root;
   }
 
-  getImage(publicId: string) {
-    const result = `${getBackendUrl()}/api/photos/${publicId}/image`;
-    if (this.photoReloadSuffix.has(publicId)) {
-      return `${result}?reload=${this.photoReloadSuffix.get(publicId)}`;
-    }
-    return result;
-  }
-
-  getThumbnail(publicId: string) {
-    const result = `${getBackendUrl()}/api/photos/${publicId}/thumbnail`;
-    if (this.photoReloadSuffix.has(publicId)) {
-      return `${result}?reload=${this.photoReloadSuffix.get(publicId)}`;
-    }
-    return result;
-  }
-
   async patchDirectoryAndClearCache(id: number, patch: DirectoryPatch) {
     this.infoLoader.cache.clear();
     this.subDirectoriesLoader.cache.clear();
@@ -91,23 +67,6 @@ class DirectoriesStore {
     this.infoLoader.cache.clear();
     this.subDirectoriesLoader.cache.clear();
   }
-
-  async patchPhoto(photo: Photo, patch: PhotoPatch) {
-    await this.photoService.patch(photo.id, patch);
-  }
-
-  async setAccess(photo: Photo, isPrivate: boolean) {
-    await this.photoService.setAccess(photo.id, {
-      private: isPrivate,
-    });
-    this.contentLoader.cache.clear();
-  }
-
-  async rotatePhoto(photo: Photo, angle: number) {
-    await this.photoService.rotate(photo.id, { angle });
-    this.photoReloadSuffix.set(photo.publicId, Date.now());
-    this.imageLoader.cache.clear();
-  }
 }
 
 const DirectoriesStoreContext = createContext<DirectoriesStore | null>(null);
@@ -122,18 +81,14 @@ export function DirectoriesStoreProvider({
   const apiClient = useApiClient();
   const store = useMemo(() => {
     const directoryService = new DirectoryController(apiClient);
-    const photoService = new PhotoController(apiClient);
     const directoriesLoader = new MapLoader(directoryService.getSubdirectories);
     const directoryContentLoader = new MapLoader(directoryService.getPhotos);
-    const imageLoader = new MapLoader(photoService.get);
     const directoryInfoLoader = new MapLoader(directoryService.get);
     return new DirectoriesStore(
       directoriesLoader,
       directoryContentLoader,
-      imageLoader,
       directoryInfoLoader,
       directoryService,
-      photoService,
       galleryId
     );
   }, [apiClient, galleryId]);

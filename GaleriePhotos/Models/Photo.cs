@@ -19,6 +19,7 @@ namespace GaleriePhotos.Models
         public DateTime DateTime { get; set; }
         public FaceDetectionStatus FaceDetectionStatus { get; set; }
         public int DirectoryId { get; internal set; }
+        public int? PlaceId { get; set; }
 
         public Photo(string fileName)
         {
@@ -28,5 +29,6 @@ namespace GaleriePhotos.Models
 
         // Navigation properties
         public required PhotoDirectory Directory { get; set; }
+        public Place? Place { get; set; }
     }
 }

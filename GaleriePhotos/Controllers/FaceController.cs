@@ -9,6 +9,7 @@ using Galerie.Server.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace GaleriePhotos.Controllers
 {
@@ -162,9 +163,35 @@ namespace GaleriePhotos.Controllers
             var names = await applicationDbContext.FaceNames
                 .Where(x => x.GalleryId == galleryId)
                 .OrderBy(n => n.Name)
+                .Select(x => new FaceNameViewModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    NumberOfPhotos = applicationDbContext.Faces.Count(f => f.FaceNameId == x.Id)
+                })
                 .ToArrayAsync();
 
-            return Ok(names.Select(x => new FaceNameViewModel(x)));
+            return Ok(names);
+        }
+
+        [HttpGet("{galleryId}/faces/names/{id}")]
+        public async Task<ActionResult<FaceNameViewModel>> GetName(int galleryId, int id)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
+            var name = await applicationDbContext.FaceNames
+                .Where(x => x.GalleryId == galleryId && x.Id == id)
+                .Select(x => new FaceNameViewModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    NumberOfPhotos = applicationDbContext.Faces.Count(f => f.FaceNameId == x.Id)
+                })
+                .FirstOrDefaultAsync();
+            if (name == null) return NotFound();
+            return Ok(name);
         }
 
         /// <summary>

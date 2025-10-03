@@ -1,7 +1,6 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import { theme } from "@/stores/theme";
 
 interface AdaptiveMapProps {

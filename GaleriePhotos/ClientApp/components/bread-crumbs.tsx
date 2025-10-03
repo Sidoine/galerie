@@ -1,34 +1,22 @@
-import { useDirectoriesStore } from "@/stores/directories";
-import { useGalleriesStore } from "@/stores/galleries";
+import { usePhotoContainer } from "@/stores/photo-container";
 import { Link } from "expo-router";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-function BreadCrumbs({ directoryId }: { directoryId?: number }) {
-  const directory = useDirectoriesStore();
-  const galleriesStore = useGalleriesStore();
-  if (!directoryId) return <Text>Galerie photo</Text>;
-  const currentDirectory = directory.infoLoader.getValue(Number(directoryId));
+function BreadCrumbs() {
+  const containerStore = usePhotoContainer();
+  if (!containerStore.breadCrumbs) return <Text>Galerie photo</Text>;
+  const currentDirectory = containerStore.container;
   if (!currentDirectory) return <></>;
-  const parent = currentDirectory.parent;
-  const gallery = galleriesStore.get(directory.galleryId);
   return (
     <View style={styles.container}>
-      {parent && (
-        <Link
-          href={`/gallery/${directory.galleryId}/directory/${parent.id}`}
-          style={[styles.text]}
-        >
-          <Text style={{ color: "#007aff" }}>
-            {parent.name || gallery?.galleryName}
-          </Text>
-          <Text> &gt;</Text>
+      {containerStore.breadCrumbs.map((crumb, index) => (
+        <Link key={index} href={crumb.url} style={[styles.text]}>
+          <Text style={{ color: "#007aff" }}>{crumb.name}</Text>
+          {index < containerStore.breadCrumbs.length - 1 && <Text> &gt;</Text>}
         </Link>
-      )}
-      <Text style={styles.text}>
-        {currentDirectory.name || gallery?.galleryName}
-      </Text>
+      ))}
     </View>
   );
 }

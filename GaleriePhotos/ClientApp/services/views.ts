@@ -66,6 +66,8 @@ export interface FaceName {
     id: number;
 
     name: string;
+
+    numberOfPhotos: number;
 }
 
 export interface Photo {
@@ -78,6 +80,8 @@ export interface Photo {
     video: boolean;
 
     directoryId: number;
+
+    dateTime: string;
 }
 
 export interface FaceNameSuggestionRequest {
@@ -251,7 +255,7 @@ export interface PhotoFull {
 
     previousId: number | null;
 
-    dateTime: string | null;
+    dateTime: string;
 
     latitude: number | null;
 
@@ -278,4 +282,36 @@ export interface PhotoAccess {
 
 export interface PhotoRotate {
     angle: number;
+}
+
+export interface Place {
+    id: number;
+
+    name: string;
+
+    latitude: number;
+
+    longitude: number;
+
+    numberOfPhotos: number;
+
+    type: enums.PlaceType;
+
+    parentId: number | null;
+}
+
+export interface Year {
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
+}
+
+export interface Month {
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
 }

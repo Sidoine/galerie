@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   TextInput,
   Button,
@@ -14,17 +14,20 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const authenticationStore = useAuthenticationStore();
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = useCallback(async () => {
+    setLoading(true);
     const signInResponse = await authenticationStore.authenticate(
       email,
       password
     );
+    setLoading(false);
     if (!signInResponse) {
       Alert.alert("Error", "Failed to sign in");
       return;
     }
-  };
+  }, [email, password, authenticationStore]);
 
   return (
     <ScrollView
@@ -49,7 +52,7 @@ export default function SignIn() {
         style={styles.input}
         secureTextEntry
       />
-      <Button title="Sign in" onPress={handleLogin} />
+      <Button title="Sign in" onPress={handleLogin} disabled={loading} />
       <Link href="/(auth)/sign-up" asChild>
         <Text style={{ textAlign: "center" }}>Sign up</Text>
       </Link>

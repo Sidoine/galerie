@@ -7,35 +7,44 @@ import {
   State,
 } from "react-native-gesture-handler";
 import { observer } from "mobx-react-lite";
-import TopActions from "@/components/image-view/top-actions";
-import { ImageDetails } from "@/components/image-view/image-details";
-import ImageFaces from "@/components/image-view/image-faces";
-import VideoPlayer from "@/components/image-view/video-player";
-import { useUi } from "@/stores/ui";
-import { useDirectoriesStore } from "@/stores/directories";
+import TopActions from "./top-actions";
+import { ImageDetails } from "./image-details";
+import ImageFaces from "./image-faces";
+import VideoPlayer from "./video-player";
 import { useLocalSearchParams } from "expo-router";
+import { usePhotosStore } from "@/stores/photos";
+import { usePhotoContainer } from "@/stores/photo-container";
 
 // Composant plein écran (modal) affichant une photo avec navigation précédente/suivante.
 export default observer(function ImageView() {
   const { photoId } = useLocalSearchParams<{
-    directoryId: string;
     photoId: string;
   }>();
-  const directoriesStore = useDirectoriesStore();
-  const { navigateToPhoto, navigateToDirectory } = useUi();
+  const photosStore = usePhotosStore();
+  const { navigateToPhoto, navigateToContainer, photoList } =
+    usePhotoContainer();
 
-  const photo = directoriesStore.imageLoader.getValue(Number(photoId));
+  const photo = photosStore.imageLoader.getValue(Number(photoId));
+
+  const photoIndex = photoList?.findIndex((p) => p.id === photo?.id);
 
   const handleNext = useCallback(() => {
-    if (photo && photo.nextId) navigateToPhoto(photo.directoryId, photo.nextId);
-  }, [navigateToPhoto, photo]);
+    const nextPhoto =
+      photoIndex !== undefined && photoList && photoIndex < photoList.length - 1
+        ? photoList[photoIndex + 1]
+        : null;
+    if (nextPhoto) navigateToPhoto(nextPhoto.id);
+  }, [navigateToPhoto, photoIndex, photoList]);
   const handlePrevious = useCallback(() => {
-    if (photo && photo.previousId)
-      navigateToPhoto(photo.directoryId, photo.previousId);
-  }, [navigateToPhoto, photo]);
+    const previousPhoto =
+      photoIndex !== undefined && photoList && photoIndex > 0
+        ? photoList[photoIndex - 1]
+        : null;
+    if (previousPhoto) navigateToPhoto(previousPhoto.id);
+  }, [navigateToPhoto, photoIndex, photoList]);
   const handleClose = useCallback(() => {
-    if (photo) navigateToDirectory(photo.directoryId);
-  }, [navigateToDirectory, photo]);
+    if (photo) navigateToContainer();
+  }, [navigateToContainer, photo]);
 
   // Gestion des gestes de swipe
   const handlePanGesture = useCallback(
@@ -73,7 +82,7 @@ export default observer(function ImageView() {
   const [rendered, setRendered] = useState({ width: 0, height: 0 });
   const [natural, setNatural] = useState({ width: 0, height: 0 });
   const imgUri = photo?.publicId
-    ? directoriesStore.getImage(photo?.publicId)
+    ? photosStore.getImage(photo?.publicId)
     : undefined;
   const isVideo = photo?.video;
 

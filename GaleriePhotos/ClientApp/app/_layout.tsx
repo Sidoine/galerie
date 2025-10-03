@@ -5,17 +5,21 @@ import {
   useAuthenticationStore,
 } from "@/stores/authentication";
 import { MyApiClientProvider } from "@/stores/api-client";
+import { Platform } from "react-native";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+if (Platform.OS === "web") require("@/stores/leaflet");
 
 function RootLayoutContent() {
   const authenticationStore = useAuthenticationStore();
-  const isAuthenticated = authenticationStore.authenticated;
+  const { authenticated, loading } = authenticationStore;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isAuthenticated}>
+      <Stack.Protected guard={authenticated || loading}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
-      <Stack.Protected guard={!isAuthenticated}>
+      <Stack.Protected guard={!authenticated && !loading}>
         <Stack.Screen
           name="(auth)"
           options={{ presentation: "modal", gestureEnabled: false }}
