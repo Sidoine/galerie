@@ -104,14 +104,6 @@ const LayoutContent = observer(function LayoutContent() {
               />
             </Drawer.Protected>
             <Drawer.Screen
-              name="directory"
-              options={{
-                title: "Album",
-                headerShown: false,
-                drawerItemStyle: { display: "none" },
-              }}
-            />
-            <Drawer.Screen
               name="directory/[directoryId]/photos/[photoId]"
               options={{
                 title: "Photo",

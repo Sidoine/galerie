@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import {
-  HandlerStateChangeEvent,
-  PanGestureHandler,
-  PanGestureHandlerEventPayload,
-  State,
-} from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { observer } from "mobx-react-lite";
 import TopActions from "./top-actions";
 import { ImageDetails } from "./image-details";
@@ -14,6 +13,7 @@ import VideoPlayer from "./video-player";
 import { useLocalSearchParams } from "expo-router";
 import { usePhotosStore } from "@/stores/photos";
 import { usePhotoContainer } from "@/stores/photo-container";
+import { runOnJS, scheduleOnRN } from "react-native-worklets";
 
 // Composant plein écran (modal) affichant une photo avec navigation précédente/suivante.
 export default observer(function ImageView() {
@@ -46,31 +46,15 @@ export default observer(function ImageView() {
     if (photo) navigateToContainer();
   }, [navigateToContainer, photo]);
 
-  // Gestion des gestes de swipe
-  const handlePanGesture = useCallback(
-    (event: HandlerStateChangeEvent<PanGestureHandlerEventPayload>) => {
-      if (event.nativeEvent.state === State.END) {
-        const { translationX, velocityX } = event.nativeEvent;
+  // isVideo / imgUri déjà calculés plus bas, on les remonte pour usage dans les gestes
+  const imgUri = photo?.publicId
+    ? photosStore.getImage(photo?.publicId)
+    : undefined;
+  const isVideo = photo?.video;
 
-        // Seuils pour détecter un swipe
-        const SWIPE_THRESHOLD = 50; // Distance minimale pour considérer un swipe
-        const VELOCITY_THRESHOLD = 500; // Vitesse minimale pour un swipe rapide
-
-        // Swipe vers la droite (image précédente)
-        if (translationX > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) {
-          handlePrevious();
-        }
-        // Swipe vers la gauche (image suivante)
-        else if (
-          translationX < -SWIPE_THRESHOLD ||
-          velocityX < -VELOCITY_THRESHOLD
-        ) {
-          handleNext();
-        }
-      }
-    },
-    [handleNext, handlePrevious]
-  );
+  // --- GESTE SWIPE NAVIGATION (Pan) ---
+  const SWIPE_THRESHOLD = 50;
+  const VELOCITY_THRESHOLD = 500;
 
   const [details, setDetails] = useState(false);
   const [showFaces, setShowFaces] = useState(false);
@@ -78,13 +62,98 @@ export default observer(function ImageView() {
   const handleFacesToggle = useCallback(() => setShowFaces((p) => !p), []);
   const handleDetailsClose = useCallback(() => setDetails(false), []);
 
+  // --- GESTES ZOOM / PAN ---
+  // Valeurs partagées (worklets reanimated)
+  const scale = useSharedValue(1);
+  const baseScale = useSharedValue(1); // scale mémorisé entre les pinch
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+  const MAX_SCALE = 4;
+  const swipeGesture = Gesture.Pan()
+    .enabled(!isVideo)
+    .onEnd((e) => {
+      if (scale.value > 1) return;
+      const { translationX, velocityX } = e;
+      if (translationX > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) {
+        scheduleOnRN(handlePrevious);
+      } else if (
+        translationX < -SWIPE_THRESHOLD ||
+        velocityX < -VELOCITY_THRESHOLD
+      ) {
+        scheduleOnRN(handleNext);
+      }
+    });
+
+  // Style animé de l'image
+  const animatedImageStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  // Geste pinch pour zoomer
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      // clamp simple 1..MAX_SCALE
+      const next = baseScale.value * e.scale;
+      scale.value = Math.min(Math.max(1, next), MAX_SCALE);
+    })
+    .onEnd(() => {
+      baseScale.value = scale.value; // mémorise
+      if (scale.value === 1) {
+        // reset translations quand on revient à 1
+        translateX.value = 0;
+        translateY.value = 0;
+      }
+    });
+
+  // Geste pan pour déplacer l'image quand zoomée
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = translateX.value;
+      startY.value = translateY.value;
+    })
+    .onUpdate((e) => {
+      if (scale.value <= 1) return; // pas de pan si pas zoomé
+      translateX.value = startX.value + e.translationX;
+      translateY.value = startY.value + e.translationY;
+    });
+
+  // Double tap pour zoom rapide 1 <-> 2
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd((_e, success) => {
+      if (!success) return;
+      if (baseScale.value > 1) {
+        scale.value = 1;
+        baseScale.value = 1;
+        translateX.value = 0;
+        translateY.value = 0;
+      } else {
+        scale.value = 2;
+        baseScale.value = 2;
+      }
+    });
+
+  // Combinaison des gestes (double tap simultané avec pinch + pan)
+  const imageGestures = React.useMemo(
+    () =>
+      Gesture.Simultaneous(
+        doubleTapGesture,
+        pinchGesture,
+        panGesture,
+        swipeGesture
+      ),
+    [doubleTapGesture, pinchGesture, panGesture, swipeGesture]
+  );
+
   // Dimensions image rendue pour overlay faces
   const [rendered, setRendered] = useState({ width: 0, height: 0 });
   const [natural, setNatural] = useState({ width: 0, height: 0 });
-  const imgUri = photo?.publicId
-    ? photosStore.getImage(photo?.publicId)
-    : undefined;
-  const isVideo = photo?.video;
 
   useEffect(() => {
     if (imgUri && !isVideo) {
@@ -114,7 +183,7 @@ export default observer(function ImageView() {
         showFaces={showFaces}
         photo={photo}
       />
-      <PanGestureHandler onHandlerStateChange={handlePanGesture}>
+      <GestureDetector gesture={imageGestures}>
         <View style={styles.mediaContainer}>
           {/* Zones de navigation uniquement pour les images */}
           {!isVideo && (
@@ -149,9 +218,9 @@ export default observer(function ImageView() {
                 })
               }
             >
-              <Image
+              <Animated.Image
                 source={{ uri: imgUri }}
-                style={styles.image}
+                style={[styles.image, animatedImageStyle]}
                 resizeMode="contain"
                 accessible
               />
@@ -168,7 +237,7 @@ export default observer(function ImageView() {
             </View>
           )}
         </View>
-      </PanGestureHandler>
+      </GestureDetector>
       <ImageDetails image={photo} open={details} onClose={handleDetailsClose} />
     </View>
   );

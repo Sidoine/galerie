@@ -57,7 +57,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
       pathname: "/gallery/[galleryId]/places/[placeId]",
       params: {
         galleryId: placesStore.galleryId,
-        placeId,
+        placeId: placeId ?? 0,
         order,
         year,
         month,
