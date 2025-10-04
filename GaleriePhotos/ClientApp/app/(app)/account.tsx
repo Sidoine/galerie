@@ -2,20 +2,19 @@ import React, { useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useMeStore } from "@/stores/me";
+import { useAuthenticationStore } from "@/stores/authentication";
 import { useRouter } from "expo-router";
 
 const AccountScreen = observer(function AccountScreen() {
   const meStore = useMeStore();
+  const authStore = useAuthenticationStore();
   const user = meStore.me;
   const router = useRouter();
   const initial = user?.name?.[0]?.toUpperCase() || "U";
 
-  const handleLogout = useCallback(() => {
-    // Fallback web: simple redirection si backend Identity disponible
-    if (typeof window !== "undefined") {
-      window.location.href = "/Identity/Account/Logout";
-    }
-  }, []);
+  const handleLogout = useCallback(async () => {
+    await authStore.logout();
+  }, [authStore]);
 
   if (!user) {
     return (

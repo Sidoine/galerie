@@ -14,6 +14,7 @@ export interface AuthenticationProps extends UserStore {
   loading: boolean;
   authenticate: (username: string, password: string) => Promise<boolean>;
   register: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   clearCredentials: () => void;
 }
 
@@ -179,6 +180,27 @@ export const AuthenticationStoreProvider = ({
     []
   );
 
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${getBackendUrl()}/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && token.tokenType === "Bearer" 
+            ? { Authorization: `Bearer ${token.accessToken}` }
+            : {}),
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      // Ignore network errors, still clear local token
+      console.warn("Logout request failed:", error);
+    }
+    
+    // Clear stored token regardless of API response
+    await updateToken(null);
+  }, [token, updateToken]);
+
   const clearCredentials = useCallback(() => {
     setToken(null);
   }, []);
@@ -190,6 +212,7 @@ export const AuthenticationStoreProvider = ({
         clearCredentials,
         authenticate,
         register,
+        logout,
         identifier:
           token && token.tokenType === "Bearer" ? token.accessToken : null,
         authorizationHeader:
