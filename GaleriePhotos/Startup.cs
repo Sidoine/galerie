@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -126,15 +128,15 @@ namespace GaleriePhotos
             }
 
             app.UseHttpsRedirection();
-            
+
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
-            
+
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
@@ -142,9 +144,19 @@ namespace GaleriePhotos
                     pattern: "{controller}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
                 endpoints.MapIdentityApi<ApplicationUser>();
+                endpoints.MapPost("/logout", async (SignInManager<ApplicationUser> signInManager, [FromBody] object empty) =>
+                    {
+                        if (empty != null)
+                        {
+                            await signInManager.SignOutAsync();
+                            return Results.Ok();
+                        }
+                        return Results.Unauthorized();
+                    })
+                    .RequireAuthorization();
             });
 
-            app.UseSpa(spa => 
+            app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
                 spa.Options.PackageManagerCommand = "yarn";

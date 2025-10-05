@@ -1,28 +1,47 @@
 import { SingletonLoader, useApiClient } from "folke-service-helpers";
-import { computed, makeObservable } from "mobx";
+import { action, computed, makeObservable, observable } from "mobx";
 import { User } from "../services/views";
 import { createContext, useContext, useMemo } from "react";
 import { MeController } from "../services/me";
 import { AuthenticationProps, useAuthenticationStore } from "./authentication";
 
 export class MeStore {
+  public user: User | null = null;
+  public loading = false;
+
   constructor(
     private authentication: AuthenticationProps,
-    private meLoader: SingletonLoader<User>
+    private meService: MeController
   ) {
     makeObservable(this, {
       me: computed,
       administrator: computed,
+      user: observable,
+      loading: observable,
+      loadMe: action,
+      setUser: action,
     });
+    this.loadMe();
+  }
+
+  async loadMe() {
+    this.loading = true;
+    const result = await this.meService.getMe();
+    if (result.ok) {
+      this.setUser(result.value);
+    } else {
+      this.authentication.clearCredentials();
+      this.setUser(null);
+    }
+  }
+
+  setUser(user: User | null) {
+    this.user = user;
+    this.loading = false;
   }
 
   get me() {
-    if (this.authentication.loading) return null;
-    const value = this.meLoader.getValue();
-    if (value === null && !this.meLoader.isLoading) {
-      this.authentication.clearCredentials();
-    }
-    return value;
+    return this.user;
   }
 
   get administrator() {
@@ -37,8 +56,7 @@ export function MeStoreProvider({ children }: { children: React.ReactNode }) {
   const authentication = useAuthenticationStore();
   const store = useMemo(() => {
     const meService = new MeController(apiClient);
-    const meLoader = new SingletonLoader(meService.getMe);
-    return new MeStore(authentication, meLoader);
+    return new MeStore(authentication, meService);
   }, [apiClient, authentication]);
   return (
     <MeStoreContext.Provider value={store}>{children}</MeStoreContext.Provider>

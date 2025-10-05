@@ -55,13 +55,17 @@ export const AuthenticationStoreProvider = ({
         expiresAt: Date.now() + newToken.expiresIn * 1000,
         refreshToken: newToken.refreshToken,
       };
-      await SecureStore.setItemAsync(
-        "authToken",
-        JSON.stringify(newTokenState)
-      );
+      if (await SecureStore.isAvailableAsync()) {
+        await SecureStore.setItemAsync(
+          "authToken",
+          JSON.stringify(newTokenState)
+        );
+      }
       setToken(newTokenState);
     } else {
-      await SecureStore.deleteItemAsync("authToken");
+      if (await SecureStore.isAvailableAsync()) {
+        await SecureStore.deleteItemAsync("authToken");
+      }
       setToken(null);
     }
   }, []);
@@ -186,7 +190,7 @@ export const AuthenticationStoreProvider = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && token.tokenType === "Bearer" 
+          ...(token && token.tokenType === "Bearer"
             ? { Authorization: `Bearer ${token.accessToken}` }
             : {}),
         },
@@ -196,13 +200,18 @@ export const AuthenticationStoreProvider = ({
       // Ignore network errors, still clear local token
       console.warn("Logout request failed:", error);
     }
-    
+
     // Clear stored token regardless of API response
     await updateToken(null);
   }, [token, updateToken]);
 
-  const clearCredentials = useCallback(() => {
+  const clearCredentials = useCallback(async () => {
     setToken(null);
+    if (await SecureStore.isAvailableAsync()) {
+      await SecureStore.deleteItemAsync("authToken");
+    } else {
+      localStorage.removeItem("authToken");
+    }
   }, []);
 
   return (
