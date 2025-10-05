@@ -16,6 +16,7 @@ export interface AuthenticationProps extends UserStore {
   register: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearCredentials: () => void;
+  forgotPassword: (email: string) => Promise<void>;
 }
 
 interface BearerToken {
@@ -214,6 +215,16 @@ export const AuthenticationStoreProvider = ({
     }
   }, []);
 
+  const forgotPassword = useCallback(async (email: string) => {
+    await fetch(`${getBackendUrl()}/forgotPassword`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+  }, []);
+
   return (
     <AuthenticationContext.Provider
       value={{
@@ -229,6 +240,7 @@ export const AuthenticationStoreProvider = ({
             ? `Bearer ${token.accessToken}`
             : null,
         loading,
+        forgotPassword,
       }}
     >
       {children}

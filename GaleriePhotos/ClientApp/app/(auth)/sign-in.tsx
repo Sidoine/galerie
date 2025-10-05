@@ -56,6 +56,11 @@ export default function SignIn() {
       <Link href="/(auth)/sign-up" asChild>
         <Text style={{ textAlign: "center" }}>Sign up</Text>
       </Link>
+      <Link href="/(auth)/forgot-password" asChild>
+        <Text style={{ textAlign: "center", marginTop: 10 }}>
+          Forgot Password?
+        </Text>
+      </Link>
     </ScrollView>
   );
 }
