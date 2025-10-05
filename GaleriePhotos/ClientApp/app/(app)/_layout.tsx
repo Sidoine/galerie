@@ -33,6 +33,16 @@ const AppLayoutContent = observer(function RootLayoutContent() {
         />
         <Tabs.Screen name="index" options={{ href: null }} />
       </Tabs.Protected>
+      <Tabs.Screen
+        name="account"
+        options={{
+          headerShown: false,
+          title: "Compte",
+          tabBarIcon: ({ color }) => (
+            <Icon set="mi" name="person" size={20} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 });
