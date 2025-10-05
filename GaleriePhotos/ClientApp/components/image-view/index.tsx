@@ -13,7 +13,7 @@ import VideoPlayer from "./video-player";
 import { useLocalSearchParams } from "expo-router";
 import { usePhotosStore } from "@/stores/photos";
 import { usePhotoContainer } from "@/stores/photo-container";
-import { runOnJS, scheduleOnRN } from "react-native-worklets";
+import { scheduleOnRN } from "react-native-worklets";
 
 // Composant plein écran (modal) affichant une photo avec navigation précédente/suivante.
 export default observer(function ImageView() {
