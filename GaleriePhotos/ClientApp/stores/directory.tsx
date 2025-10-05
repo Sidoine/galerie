@@ -78,7 +78,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
         url:
           current.parent === null
             ? `/gallery/${galleryId}`
-            : `/gallery/${galleryId}/directory/${current.parent.id}/photos/${current.id}`,
+            : `/gallery/${galleryId}/directory/${current.id}`,
       });
       current = current.parent
         ? directoriesStore.infoLoader.getValue(current.parent.id)
