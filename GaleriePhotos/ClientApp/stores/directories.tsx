@@ -41,12 +41,17 @@ class DirectoriesStore {
     if (result.ok) {
       this.setRoot(result.value);
     } else {
-      this.isInError = true;
+      this.setRoot(null);
     }
   }
 
   setRoot(root: Directory | null) {
-    this.root = root;
+    if (root === null) {
+      this.isInError = true;
+    } else {
+      this.root = root;
+      this.isInError = false;
+    }
   }
 
   async patchDirectoryAndClearCache(id: number, patch: DirectoryPatch) {
