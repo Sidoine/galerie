@@ -7,21 +7,27 @@ function ForgotPassword() {
   const [email, setEmail] = useState("");
   const auth = useAuthenticationStore();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const onSubmit = useCallback(async () => {
+    setLoading(true);
     await auth.forgotPassword(email);
-    router.push("/(auth)/sign-in");
+    setLoading(false);
+    router.push({
+      pathname: "/(auth)/reset-password",
+      params: { email },
+    });
   }, [auth, email, router]);
   return (
     <View>
-      <Text style={styles.title}>Forgot Password</Text>
+      <Text style={styles.title}>Mot-de-passe oublié</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
       />
-      <Button title="Submit" onPress={onSubmit} />
+      <Button title="Envoyer" onPress={onSubmit} disabled={loading} />
     </View>
   );
 }

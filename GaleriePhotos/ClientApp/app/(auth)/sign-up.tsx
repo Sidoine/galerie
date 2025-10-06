@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   TextInput,
   Button,
@@ -8,19 +8,23 @@ import {
   Alert,
 } from "react-native";
 import { useAuthenticationStore } from "@/stores/authentication";
+import { set } from "mobx";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const authenticationStore = useAuthenticationStore();
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = async () => {
+  const handleSignUp = useCallback(async () => {
+    setLoading(true);
     const signUpResponse = await authenticationStore.register(email, password);
+    setLoading(false);
     if (!signUpResponse) {
       Alert.alert("Error", "Failed to sign up");
       return;
     }
-  };
+  }, [email, password, authenticationStore]);
 
   return (
     <ScrollView
@@ -45,7 +49,7 @@ export default function SignUp() {
         style={styles.input}
         secureTextEntry
       />
-      <Button title="Sign up" onPress={handleSignUp} />
+      <Button title="Sign up" onPress={handleSignUp} disabled={loading} />
     </ScrollView>
   );
 }
