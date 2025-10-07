@@ -10,5 +10,10 @@ namespace GaleriePhotos.Services
         {
             return Path.ChangeExtension(photo.FileName, "jpg");
         }
+
+        protected string GetFaceThumbnailFileName(Face face)
+        {
+            return $"face_{face.Id}.jpg";
+        }
     }
 }

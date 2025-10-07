@@ -1,3 +1,4 @@
+using GaleriePhotos;
 using GaleriePhotos.Controllers;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
@@ -6,8 +7,10 @@ using GaleriePhotos.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Pgvector;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -16,6 +19,14 @@ using Microsoft.AspNetCore.Http;
 
 namespace GaleriePhotosTest.Controllers
 {
+    public class TestPhotoService : PhotoService
+    {
+        public TestPhotoService(ApplicationDbContext context, DataService dataService) 
+            : base(Microsoft.Extensions.Options.Options.Create(new GalerieOptions()), context, new TestLogger<PhotoService>(), dataService)
+        {
+        }
+    }
+
     public class FaceControllerTests
     {
         private ApplicationDbContext GetInMemoryContext()
@@ -47,9 +58,10 @@ namespace GaleriePhotosTest.Controllers
             using var context = GetInMemoryContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
-            var faceDetectionService = new FaceDetectionService(context, logger, dataService);
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
             var galleryService = new GalleryService(context);
-            var controller = new FaceController(context, faceDetectionService, galleryService);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
             var userId = "user-1";
 
@@ -132,9 +144,10 @@ namespace GaleriePhotosTest.Controllers
             using var context = GetInMemoryContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
-            var faceDetectionService = new FaceDetectionService(context, logger, dataService);
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
             var galleryService = new GalleryService(context);
-            var controller = new FaceController(context, faceDetectionService, galleryService);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
             var userId = "user-2";
 
@@ -197,9 +210,10 @@ namespace GaleriePhotosTest.Controllers
             using var context = GetInMemoryContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
-            var faceDetectionService = new FaceDetectionService(context, logger, dataService);
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
             var galleryService = new GalleryService(context);
-            var controller = new FaceController(context, faceDetectionService, galleryService);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
             var userId = "user-3";
 
@@ -254,9 +268,10 @@ namespace GaleriePhotosTest.Controllers
             using var context = GetInMemoryContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
-            var faceDetectionService = new FaceDetectionService(context, logger, dataService);
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
             var galleryService = new GalleryService(context);
-            var controller = new FaceController(context, faceDetectionService, galleryService);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
             var userId = "user-4";
 

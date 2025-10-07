@@ -392,5 +392,64 @@ namespace GaleriePhotos.Services
                 return false;
             }
         }
+
+        public async Task<Stream?> GetFaceThumbnail(Face face)
+        {
+            var photo = face.Photo;
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
+            
+            if (!await dataProvider.FaceThumbnailExists(face))
+            {
+                // Create the faces directory if it doesn't exist
+                var facesDir = Path.Combine(photo.Directory.Gallery.ThumbnailsDirectory, "faces");
+                Directory.CreateDirectory(facesDir);
+                
+                // Get the original photo
+                using var imagePath = await dataProvider.GetLocalFileName(photo);
+                if (imagePath == null) return null;
+                
+                // Get the face thumbnail path
+                using var faceThumbnailPath = await dataProvider.GetLocalFaceThumbnailFileName(face);
+                
+                try
+                {
+                    using var image = await Image.LoadAsync(imagePath.Path);
+                    image.Mutate(x => x.AutoOrient());
+                    
+                    // Extract face region with some padding
+                    var padding = 0.2f; // 20% padding
+                    var paddedWidth = face.Width * (1 + padding * 2);
+                    var paddedHeight = face.Height * (1 + padding * 2);
+                    var paddedX = Math.Max(0, face.X - face.Width * padding);
+                    var paddedY = Math.Max(0, face.Y - face.Height * padding);
+                    
+                    // Ensure we don't exceed image bounds
+                    paddedWidth = Math.Min(paddedWidth, image.Width - paddedX);
+                    paddedHeight = Math.Min(paddedHeight, image.Height - paddedY);
+                    
+                    var faceRect = new Rectangle((int)paddedX, (int)paddedY, (int)paddedWidth, (int)paddedHeight);
+                    
+                    using var faceImage = image.Clone(ctx => ctx.Crop(faceRect));
+                    
+                    // Resize to a standard thumbnail size (square for round portraits)
+                    var thumbnailSize = 150;
+                    faceImage.Mutate(x => x.Resize(new ResizeOptions 
+                    { 
+                        Mode = ResizeMode.Crop, 
+                        Size = new Size(thumbnailSize, thumbnailSize) 
+                    }));
+                    
+                    faceImage.Save(faceThumbnailPath.Path);
+                    await faceThumbnailPath.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error generating face thumbnail for face {FaceId}", face.Id);
+                    return null;
+                }
+            }
+            
+            return await dataProvider.OpenFaceThumbnailRead(face);
+        }
     }
 }

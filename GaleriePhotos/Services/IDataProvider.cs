@@ -70,6 +70,25 @@ namespace GaleriePhotos.Services
 
         Task<IFileName> GetLocalThumbnailFileName(Photo photo);
 
+        // Face thumbnail specialized operations
+        /// <summary>
+        /// Checks if a face thumbnail exists.
+        /// </summary>
+        /// <param name="face">The face to check thumbnail for.</param>
+        Task<bool> FaceThumbnailExists(Face face);
+
+        /// <summary>
+        /// Opens a stream for reading a face thumbnail.
+        /// </summary>
+        /// <param name="face">The face to read thumbnail for.</param>
+        Task<Stream?> OpenFaceThumbnailRead(Face face);
+
+        /// <summary>
+        /// Gets local filename for a face thumbnail.
+        /// </summary>
+        /// <param name="face">The face to get thumbnail filename for.</param>
+        Task<IFileName> GetLocalFaceThumbnailFileName(Face face);
+
         bool IsSetup { get; }
     }
 }
