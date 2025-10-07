@@ -135,7 +135,7 @@ namespace GaleriePhotos.Services
                         // Generate thumbnail for the face
                         try
                         {
-                            await photoService.GetFaceThumbnail(face);
+                            await photoService.GetFaceThumbnail(face, image);
                             logger.LogDebug("Generated thumbnail for face {FaceId}", face.Id);
                         }
                         catch (Exception ex)

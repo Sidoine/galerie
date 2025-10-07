@@ -97,6 +97,11 @@ namespace GaleriePhotos.Services
         public Task<IFileName> GetLocalFaceThumbnailFileName(Face face)
         {
             var facesDir = Path.Combine(Gallery.ThumbnailsDirectory, "faces");
+            // S'assurer que le répertoire des miniatures de visages existe
+            if (!Directory.Exists(facesDir))
+            {
+                Directory.CreateDirectory(facesDir);
+            }
             var path = Path.Combine(facesDir, GetFaceThumbnailFileName(face));
             var exists = File.Exists(path);
             return Task.FromResult<IFileName>(new FileSystemFileName(path, exists));
