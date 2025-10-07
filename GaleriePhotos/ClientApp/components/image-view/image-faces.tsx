@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, LayoutRectangle } from "react-native";
 import { Face } from "@/services/views";
 import { FaceController } from "@/services/face";
 import FaceSelector from "./face-selector";
@@ -10,8 +10,7 @@ interface ImageFacesProps {
   photoId: number;
   visible: boolean;
   // Dimensions de l'image rendue (fournies par le parent via onLayout)
-  renderedWidth: number;
-  renderedHeight: number;
+  renderedLayout: LayoutRectangle;
   // Dimensions naturelles de l'image (originales)
   naturalWidth: number;
   naturalHeight: number;
@@ -24,8 +23,7 @@ interface ImageFacesProps {
 export default function ImageFaces({
   photoId,
   visible,
-  renderedWidth,
-  renderedHeight,
+  renderedLayout,
   naturalWidth,
   naturalHeight,
 }: ImageFacesProps) {
@@ -60,8 +58,21 @@ export default function ImageFaces({
     };
   }, [photoId, faceController, visible, directoriesStore.galleryId]);
 
-  const scaleX = naturalWidth ? renderedWidth / naturalWidth : 1;
-  const scaleY = naturalHeight ? renderedHeight / naturalHeight : 1;
+  const naturalRatio = naturalWidth / naturalHeight;
+  let leftOrigin = 0;
+  let topOrigin = 0;
+  let scale: number;
+  if (naturalRatio > 1) {
+    // Center vertically
+    topOrigin =
+      (renderedLayout.height - renderedLayout.width / naturalRatio) / 2;
+    scale = renderedLayout.width / naturalWidth;
+  } else {
+    // Center horizontally
+    leftOrigin =
+      (renderedLayout.width - renderedLayout.height * naturalRatio) / 2;
+    scale = renderedLayout.height / naturalHeight;
+  }
 
   if (!visible) return null;
   if (loading) {
@@ -83,14 +94,14 @@ export default function ImageFaces({
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {faces.map((f) => {
-        const left = f.x * scaleX;
-        const top = f.y * scaleY;
-        const width = f.width * scaleX;
-        const height = f.height * scaleY;
+        const left = f.x * scale + leftOrigin;
+        const top = f.y * scale + topOrigin;
+        const minWidth = f.width * scale;
+        const height = f.height * scale;
         return (
           <View
             key={f.id}
-            style={[styles.faceBox, { left, top, width, height }]}
+            style={[styles.faceBox, { left, top, minWidth, height }]}
             pointerEvents="box-none"
           >
             <View style={styles.faceHeader} pointerEvents="auto">

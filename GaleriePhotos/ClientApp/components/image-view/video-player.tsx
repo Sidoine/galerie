@@ -28,20 +28,14 @@ export default function VideoPlayer({
     player.muted = false;
   });
 
-  const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-
-  // Suivre l'état de lecture du player
-  const [isPlaying, setIsPlaying] = useState(player?.playing || false);
 
   // Écouter les changements d'état du player
   useEffect(() => {
     if (!player) return;
 
     const interval = setInterval(() => {
-      setIsPlaying(player.playing);
-
       if (player.status === "loading") {
         setIsLoading(true);
         setHasError(false);
@@ -58,27 +52,9 @@ export default function VideoPlayer({
     return () => clearInterval(interval);
   }, [player]);
 
-  // Masquer automatiquement les contrôles après 3 secondes
-  useEffect(() => {
-    if (showControls && isPlaying) {
-      const timer = setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showControls, isPlaying]);
-
-  const handleVideoPress = useCallback(() => {
-    setShowControls(true);
-  }, []);
-
   return (
     <View style={[styles.container, style]}>
-      <TouchableOpacity
-        style={styles.videoContainer}
-        onPress={handleVideoPress}
-        activeOpacity={1}
-      >
+      <TouchableOpacity style={styles.videoContainer} activeOpacity={1}>
         <VideoView
           style={styles.video}
           player={player}

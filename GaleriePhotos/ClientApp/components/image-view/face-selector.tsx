@@ -257,7 +257,7 @@ export function FaceSelector({
           {submitting ? (
             <ActivityIndicator size="small" />
           ) : (
-            <Icon name="check" set="mci" size={18} />
+            <Icon name="check" set="mci" size={18} color="green" />
           )}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleCancel} style={styles.iconButton}>

@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  LayoutRectangle,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -152,7 +159,12 @@ export default observer(function ImageView() {
   );
 
   // Dimensions image rendue pour overlay faces
-  const [rendered, setRendered] = useState({ width: 0, height: 0 });
+  const [rendered, setRendered] = useState<LayoutRectangle>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
   const [natural, setNatural] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -211,12 +223,7 @@ export default observer(function ImageView() {
           {!isVideo && (
             <View
               style={styles.imageWrapper}
-              onLayout={(e) =>
-                setRendered({
-                  width: e.nativeEvent.layout.width,
-                  height: e.nativeEvent.layout.height,
-                })
-              }
+              onLayout={(e) => setRendered(e.nativeEvent.layout)}
             >
               <Animated.Image
                 source={{ uri: imgUri }}
@@ -228,8 +235,7 @@ export default observer(function ImageView() {
                 <ImageFaces
                   photoId={photo.id}
                   visible={showFaces}
-                  renderedWidth={rendered.width}
-                  renderedHeight={rendered.height}
+                  renderedLayout={rendered}
                   naturalWidth={natural.width}
                   naturalHeight={natural.height}
                 />
