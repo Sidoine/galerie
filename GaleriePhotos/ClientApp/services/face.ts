@@ -9,6 +9,10 @@ export class FaceController {
         return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/name`, "POST", JSON.stringify(model));
     }
 
+    getFaceNameThumbnail = (galleryId: number, faceNameId: number) => {
+        return this.client.fetch(`api/gallery/${galleryId}/face-names/${faceNameId}/thumbnail`, "GET", undefined);
+    }
+
     getFacesByPhoto = (galleryId: number, photoId: number) => {
         return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/photos/${photoId}/faces`, "GET", undefined);
     }

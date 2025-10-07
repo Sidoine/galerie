@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { FaceName } from "../../../../../services/views";
@@ -50,6 +51,10 @@ const FaceNames = observer(function FaceNames() {
         })
       }
     >
+      <Image
+        source={{ uri: faceNamesStore.getFaceNameThumbnailUrl(item.id) }}
+        style={styles.faceImage}
+      />
       <Text style={styles.faceNameText}>{item.name}</Text>
     </TouchableOpacity>
   );
@@ -61,6 +66,8 @@ const FaceNames = observer(function FaceNames() {
         data={names}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderFaceName}
+        numColumns={3}
+        contentContainerStyle={styles.gridContainer}
       />
     </View>
   );
@@ -82,17 +89,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 16,
   },
+  gridContainer: {
+    paddingBottom: 20,
+  },
   faceNameItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    flex: 1,
+    alignItems: "center",
+    margin: 8,
+    padding: 12,
     backgroundColor: "#f9f9f9",
+    borderRadius: 12,
+    maxWidth: "30%",
+  },
+  faceImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     marginBottom: 8,
-    borderRadius: 8,
+    backgroundColor: "#e0e0e0",
   },
   faceNameText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
+    textAlign: "center",
+    color: "#333",
   },
   photoCount: {
     fontSize: 14,

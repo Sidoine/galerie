@@ -27,6 +27,10 @@ class FaceNamesStore {
   getPhotosByName(id: number) {
     return this.namePhotosLoader.getValue(this.galleryId, id);
   }
+
+  getFaceNameThumbnailUrl(id: number) {
+    return `/api/gallery/${this.galleryId}/face-names/${id}/thumbnail`;
+  }
 }
 
 const FaceNamesStoreContext = createContext<FaceNamesStore | null>(null);
