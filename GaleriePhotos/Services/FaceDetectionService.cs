@@ -183,7 +183,7 @@ namespace GaleriePhotos.Services
             var unnamedFaces = await applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Where(f => f.FaceName == null && f.Photo.Directory.GalleryId == galleryId)
-                .OrderBy(f => Guid.NewGuid()) // Random sample
+                .OrderBy(f => f.Id)
                 .Take(count)
                 .ToListAsync();
 

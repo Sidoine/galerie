@@ -63,6 +63,7 @@ namespace GaleriePhotos.Services
                         && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
                     .Include(p => p.Directory)
                     .ThenInclude(x => x.Gallery)
+                    .OrderBy(p => p.Id)
                     .Take(10) // Process 10 photos at a time to avoid overwhelming the system
                     .ToListAsync(cancellationToken);
 
