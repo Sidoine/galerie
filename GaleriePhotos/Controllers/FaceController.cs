@@ -19,15 +19,18 @@ namespace GaleriePhotos.Controllers
         private readonly ApplicationDbContext applicationDbContext;
         private readonly FaceDetectionService faceDetectionService;
         private readonly GalleryService _galleryService;
+        private readonly PhotoService _photoService;
 
         public FaceController(
             ApplicationDbContext applicationDbContext,
             FaceDetectionService faceDetectionService,
-            GalleryService galleryService)
+            GalleryService galleryService,
+            PhotoService photoService)
         {
             this.applicationDbContext = applicationDbContext;
             this.faceDetectionService = faceDetectionService;
             _galleryService = galleryService;
+            _photoService = photoService;
         }
 
         /// <summary>
@@ -238,6 +241,42 @@ namespace GaleriePhotos.Controllers
             }
 
             return Ok(new FaceNameSuggestionResponseViewModel { Name = suggestion.Name });
+        }
+
+        /// <summary>
+        /// Gets the thumbnail for a face name, returning the thumbnail of the latest face linked to the face name.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID</param>
+        /// <param name="faceNameId">Face name ID</param>
+        /// <returns>Face thumbnail image</returns>
+        [HttpGet("{galleryId}/face-names/{faceNameId}/thumbnail")]
+        public async Task<ActionResult> GetFaceNameThumbnail(int galleryId, int faceNameId)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
+            // Get the latest face linked to this face name
+            var latestFace = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                    .ThenInclude(p => p.Directory)
+                        .ThenInclude(d => d.Gallery)
+                .Where(f => f.FaceNameId == faceNameId && f.Photo.Directory.GalleryId == galleryId)
+                .OrderByDescending(f => f.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (latestFace == null)
+            {
+                return NotFound("No faces found for this face name");
+            }
+
+            var thumbnailStream = await _photoService.GetFaceThumbnail(latestFace);
+            if (thumbnailStream == null)
+            {
+                return NotFound("Face thumbnail not available");
+            }
+
+            return File(thumbnailStream, "image/jpeg");
         }
     }
 }

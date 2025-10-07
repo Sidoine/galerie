@@ -25,14 +25,18 @@ namespace GaleriePhotos.Services
         private readonly IFaceDetector faceDetector;
         private readonly IFaceEmbeddingsGenerator faceEmbeddingsGenerator;
 
+        private readonly PhotoService photoService;
+
         public FaceDetectionService(
             ApplicationDbContext applicationDbContext,
             ILogger<FaceDetectionService> logger,
-            DataService dataService)
+            DataService dataService,
+            PhotoService photoService)
         {
             this.applicationDbContext = applicationDbContext;
             this.logger = logger;
             this.dataService = dataService;
+            this.photoService = photoService;
 
             // TODO: Initialize FaceAiSharp components when API is confirmed
             faceDetector = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
@@ -126,6 +130,18 @@ namespace GaleriePhotos.Services
                             CreatedAt = DateTime.UtcNow
                         };
                         await applicationDbContext.Faces.AddAsync(face);
+                        await applicationDbContext.SaveChangesAsync(); // Save to get the face ID
+                        
+                        // Generate thumbnail for the face
+                        try
+                        {
+                            await photoService.GetFaceThumbnail(face, image);
+                            logger.LogDebug("Generated thumbnail for face {FaceId}", face.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Failed to generate thumbnail for face {FaceId}", face.Id);
+                        }
                     }
                 }
 

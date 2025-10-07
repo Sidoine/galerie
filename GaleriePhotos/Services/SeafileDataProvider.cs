@@ -316,6 +316,30 @@ namespace GaleriePhotos.Services
             return await ReadStreamAsync(_thumbnailsLibraryId, GetThumbnailFileName(photo));
         }
 
+        // Face thumbnail specialized operations
+        public async Task<bool> FaceThumbnailExists(Face face)
+        {
+            var faceThumbnailPath = Path.Combine("faces", GetFaceThumbnailFileName(face));
+            return await FileExistsInternal(_thumbnailsLibraryId, faceThumbnailPath);
+        }
+
+        public async Task<Stream?> OpenFaceThumbnailRead(Face face)
+        {
+            var faceThumbnailPath = Path.Combine("faces", GetFaceThumbnailFileName(face));
+            return await ReadStreamAsync(_thumbnailsLibraryId, faceThumbnailPath);
+        }
+
+        public async Task<IFileName> GetLocalFaceThumbnailFileName(Face face)
+        {
+            var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.jpg");
+            var faceThumbnailPath = Path.Combine("faces", GetFaceThumbnailFileName(face));
+            using var stream = await ReadStreamAsync(_thumbnailsLibraryId, faceThumbnailPath);
+            if (stream == null) return new SeafileFileName(localPath, this, _thumbnailsLibraryId, faceThumbnailPath, false);
+            using var fileStream = File.Create(localPath);
+            await stream.CopyToAsync(fileStream);
+            return new SeafileFileName(localPath, this, _thumbnailsLibraryId, faceThumbnailPath, true);
+        }
+
         public void Dispose()
         {
             _httpClient?.Dispose();

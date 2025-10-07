@@ -341,6 +341,27 @@ namespace GaleriePhotos.Services
         }
 
         /// <summary>
+        /// Calcule le rectangle (avec marge) contenant le visage, limité aux bornes de l'image.
+        /// </summary>
+        /// <param name="face">Le visage.</param>
+        /// <param name="imageWidth">Largeur de l'image.</param>
+        /// <param name="imageHeight">Hauteur de l'image.</param>
+        /// <param name="padding">Marge relative (0.2 = 20%).</param>
+        private static Rectangle CalculateFaceRectangle(Face face, int imageWidth, int imageHeight, float padding = 0.2f)
+        {
+            var paddedWidth = face.Width * (1 + padding * 2);
+            var paddedHeight = face.Height * (1 + padding * 2);
+            var paddedX = Math.Max(0, face.X - face.Width * padding);
+            var paddedY = Math.Max(0, face.Y - face.Height * padding);
+
+            // Limitation aux bornes de l'image
+            paddedWidth = Math.Min(paddedWidth, imageWidth - paddedX);
+            paddedHeight = Math.Min(paddedHeight, imageHeight - paddedY);
+
+            return new Rectangle((int)paddedX, (int)paddedY, (int)paddedWidth, (int)paddedHeight);
+        }
+
+        /// <summary>
         /// Fait pivoter une photo de 90°, 180° ou 270° dans le sens horaire.
         /// </summary>
         /// <param name="photoDirectory">Le répertoire contenant la photo.</param>
@@ -391,6 +412,88 @@ namespace GaleriePhotos.Services
                 logger.LogError(ex, $"Erreur lors de la rotation de la photo {photo.FileName}.");
                 return false;
             }
+        }
+
+        public async Task<Stream?> GetFaceThumbnail(Face face)
+        {
+            var photo = face.Photo;
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
+            
+            if (!await dataProvider.FaceThumbnailExists(face))
+            {
+                // Get the original photo
+                using var imagePath = await dataProvider.GetLocalFileName(photo);
+                if (imagePath == null) return null;
+                
+                // Get the face thumbnail path
+                using var faceThumbnailPath = await dataProvider.GetLocalFaceThumbnailFileName(face);
+                
+                try
+                {
+                    using var image = await Image.LoadAsync(imagePath.Path);
+                    image.Mutate(x => x.AutoOrient());
+                    var faceRect = CalculateFaceRectangle(face, image.Width, image.Height);
+                    using var faceImage = image.Clone(ctx => ctx.Crop(faceRect));
+                    
+                    // Resize to a standard thumbnail size (square for round portraits)
+                    var thumbnailSize = 150;
+                    faceImage.Mutate(x => x.Resize(new ResizeOptions 
+                    { 
+                        Mode = ResizeMode.Crop, 
+                        Size = new Size(thumbnailSize, thumbnailSize) 
+                    }));
+                    
+                    faceImage.Save(faceThumbnailPath.Path);
+                    await faceThumbnailPath.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error generating face thumbnail for face {FaceId}", face.Id);
+                    return null;
+                }
+            }
+            
+            return await dataProvider.OpenFaceThumbnailRead(face);
+        }
+
+        /// <summary>
+        /// Génère (si nécessaire) et retourne le flux de la miniature d'un visage en réutilisant une instance d'image déjà chargée.
+        /// Utiliser cette surcharge dans un pipeline de détection de visages pour éviter de recharger le fichier disque.
+        /// </summary>
+        /// <param name="face">Le visage dont on veut la miniature.</param>
+        /// <param name="baseImage">L'image complète contenant le visage (doit correspondre à face.Photo). Ne sera pas disposée par cette méthode.</param>
+        /// <returns>Un flux en lecture de la miniature, ou null en cas d'erreur.</returns>
+        public async Task<Stream?> GetFaceThumbnail(Face face, Image baseImage)
+        {
+            var photo = face.Photo;
+            var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
+
+            if (!await dataProvider.FaceThumbnailExists(face))
+            {
+                using var faceThumbnailPath = await dataProvider.GetLocalFaceThumbnailFileName(face);
+                try
+                {
+                    var faceRect = CalculateFaceRectangle(face, baseImage.Width, baseImage.Height);
+                    using var faceImage = baseImage.Clone(ctx => ctx.Crop(faceRect));
+
+                    var thumbnailSize = 150;
+                    faceImage.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Crop,
+                        Size = new Size(thumbnailSize, thumbnailSize)
+                    }));
+
+                    faceImage.Save(faceThumbnailPath.Path);
+                    await faceThumbnailPath.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error generating face thumbnail (preloaded image) for face {FaceId}", face.Id);
+                    return null;
+                }
+            }
+
+            return await dataProvider.OpenFaceThumbnailRead(face);
         }
     }
 }
