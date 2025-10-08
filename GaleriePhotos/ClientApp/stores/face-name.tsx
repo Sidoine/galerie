@@ -1,17 +1,18 @@
 import { Href, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useCallback, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import { useFaceNamesStore } from "./face-names";
 import {
   BreadCrumb,
   PhotoContainer,
-  PhotoContainerContext,
   PhotoContainerStore,
 } from "./photo-container";
 import { Photo } from "@/services/views";
 
 const noPhoto: Photo[] = [];
 const noContainer: PhotoContainer[] = [];
+
+const FaceNameStoreContext = createContext<PhotoContainerStore | null>(null);
 
 export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
   children,
@@ -132,10 +133,19 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     sort,
     getPhotoLink,
   ]);
-  if (!faceNameId) return <>{children}</>;
   return (
-    <PhotoContainerContext.Provider value={faceNameStore}>
+    <FaceNameStoreContext.Provider value={faceNameStore}>
       {children}
-    </PhotoContainerContext.Provider>
+    </FaceNameStoreContext.Provider>
   );
 });
+
+export function useFaceNameStore() {
+  const store = useContext(FaceNameStoreContext);
+  if (!store) {
+    throw new Error(
+      "useFaceNameStore must be used within a FaceNameStoreProvider."
+    );
+  }
+  return store;
+}

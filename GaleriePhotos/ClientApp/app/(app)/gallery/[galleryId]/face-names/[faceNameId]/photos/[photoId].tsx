@@ -1,5 +1,6 @@
 import ImageView from "@/components/image-view";
+import { useFaceNameStore } from "@/stores/face-name";
 
 export default function FaceNamePhotoScreen() {
-  return <ImageView />;
+  return <ImageView store={useFaceNameStore()} />;
 }

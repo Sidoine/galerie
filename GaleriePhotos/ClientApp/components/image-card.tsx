@@ -3,20 +3,22 @@ import { View, Text, Image, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
 import { usePhotosStore } from "@/stores/photos";
-import { usePhotoContainer } from "@/stores/photo-container";
 import { Link } from "expo-router";
+import { PhotoContainerStore } from "@/stores/photo-container";
 
 interface ImageCardProps {
   photo: Photo;
   size?: number;
+  store: PhotoContainerStore;
 }
 
 const ImageCard = observer(function ImageCard({
   photo,
+  store,
   size = 100,
 }: ImageCardProps) {
   const photosStore = usePhotosStore();
-  const { getPhotoLink } = usePhotoContainer();
+  const { getPhotoLink } = store;
 
   const thumbnailUri = photosStore.getThumbnail(photo.publicId);
 

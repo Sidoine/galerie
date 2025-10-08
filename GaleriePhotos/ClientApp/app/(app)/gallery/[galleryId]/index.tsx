@@ -2,8 +2,7 @@ import React, { useEffect } from "react";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useDirectoriesStore } from "@/stores/directories";
-import { DirectoryView } from "@/components/directory-view";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 
 const RootDirectoryPage = observer(function RootDirectoryPage() {
   const directoriesStore = useDirectoriesStore();
@@ -27,7 +26,14 @@ const RootDirectoryPage = observer(function RootDirectoryPage() {
     );
   }
 
-  return <DirectoryView />;
+  return (
+    <Redirect
+      href={{
+        pathname: `/(app)/gallery/[galleryId]/directory/[directoryId]`,
+        params: { galleryId: directoriesStore.galleryId, directoryId: root.id },
+      }}
+    />
+  );
 });
 
 const styles = StyleSheet.create({

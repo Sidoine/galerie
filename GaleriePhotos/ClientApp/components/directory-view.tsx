@@ -13,10 +13,10 @@ import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
 import ImageCard from "./image-card";
 import SubdirectoryCard from "./subdirectory-card";
-import { PhotoContainer, usePhotoContainer } from "@/stores/photo-container";
+import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 
 export interface DirectoryViewProps {
-  id: number;
+  store: PhotoContainerStore;
 }
 
 function splitInRows<T>(data: T[], cols: number): T[][] {
@@ -35,8 +35,9 @@ interface Section {
 const columnWidth = 184; // approximate desired width
 const gap = 4;
 
-export const DirectoryView = observer(() => {
-  const containerStore = usePhotoContainer();
+export const DirectoryView = observer(function DirectoryView({
+  store,
+}: DirectoryViewProps) {
   let { width } = useWindowDimensions();
   if (width > 768) {
     // The left drawer takes 279px
@@ -44,10 +45,10 @@ export const DirectoryView = observer(() => {
   }
   const cols = Math.max(1, Math.floor((width - gap) / (columnWidth + gap)));
 
-  const directories = containerStore.containersList;
+  const directories = store.containersList;
 
-  const directoryContent = containerStore.photoList;
-  const order = containerStore.order;
+  const directoryContent = store.photoList;
+  const order = store.order;
   const values = directoryContent || [];
   const sortedValues =
     order === "date-desc" ? values.slice().reverse() : values;
@@ -103,6 +104,7 @@ export const DirectoryView = observer(() => {
                   <SubdirectoryCard
                     directory={subDir as PhotoContainer}
                     size={columnWidth * 2 + gap}
+                    store={store}
                   />
                 </View>
               ))}
@@ -119,13 +121,17 @@ export const DirectoryView = observer(() => {
                   i === items.length - 1 && styles.itemWrapperLast,
                 ]}
               >
-                <ImageCard photo={photo as Photo} size={columnWidth} />
+                <ImageCard
+                  photo={photo as Photo}
+                  size={columnWidth}
+                  store={store}
+                />
               </View>
             ))}
           </View>
         );
       }),
-    []
+    [store]
   );
 
   const renderItem = useCallback(
@@ -149,13 +155,10 @@ export const DirectoryView = observer(() => {
   );
 
   const handleSortDateDesc = useCallback(
-    () => containerStore.sort("date-desc"),
-    [containerStore]
+    () => store.sort("date-desc"),
+    [store]
   );
-  const handleSortDateAsc = useCallback(
-    () => containerStore.sort("date-asc"),
-    [containerStore]
-  );
+  const handleSortDateAsc = useCallback(() => store.sort("date-asc"), [store]);
 
   return (
     <>

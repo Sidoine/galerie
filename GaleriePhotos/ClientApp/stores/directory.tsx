@@ -1,13 +1,11 @@
-import {
-  BreadCrumb,
-  PhotoContainerContext,
-  PhotoContainerStore,
-} from "./photo-container";
-import { useCallback, useMemo } from "react";
+import { BreadCrumb, PhotoContainerStore } from "./photo-container";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import { Href, useRouter } from "expo-router";
 import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
 import { DirectoryFull } from "@/services/views";
+
+const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);
 
 export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   children,
@@ -137,8 +135,18 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   );
 
   return (
-    <PhotoContainerContext.Provider value={directoryStore}>
+    <DirectoryStoreContext.Provider value={directoryStore}>
       {children}
-    </PhotoContainerContext.Provider>
+    </DirectoryStoreContext.Provider>
   );
 });
+
+export function useDirectoryStore() {
+  const store = useContext(DirectoryStoreContext);
+  if (!store) {
+    throw new Error(
+      "useDirectoryStore must be used within a DirectoryStoreProvider."
+    );
+  }
+  return store;
+}

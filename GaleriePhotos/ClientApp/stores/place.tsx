@@ -1,11 +1,10 @@
 import { Href, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { usePlacesStore } from "./places";
-import { useCallback, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import {
   BreadCrumb,
   PhotoContainer,
-  PhotoContainerContext,
   PhotoContainerStore,
 } from "./photo-container";
 import { PlaceType } from "@/services/enums";
@@ -13,6 +12,8 @@ import { Photo } from "@/services/views";
 
 const emptyPhotoContainer: PhotoContainer[] = [];
 const emptyPhotoList: Photo[] = [];
+
+const PlaceStoreContext = createContext<PhotoContainerStore | null>(null);
 
 export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   children,
@@ -250,8 +251,16 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   ]);
   if (!placeId) return <>{children}</>;
   return (
-    <PhotoContainerContext.Provider value={placeStore}>
+    <PlaceStoreContext.Provider value={placeStore}>
       {children}
-    </PhotoContainerContext.Provider>
+    </PlaceStoreContext.Provider>
   );
 });
+
+export function usePlaceStore() {
+  const store = useContext(PlaceStoreContext);
+  if (!store) {
+    throw new Error("usePlaceStore must be used within a PlaceStoreProvider.");
+  }
+  return store;
+}

@@ -20,17 +20,20 @@ import ImageFaces from "./image-faces";
 import VideoPlayer from "./video-player";
 import { useLocalSearchParams } from "expo-router";
 import { usePhotosStore } from "@/stores/photos";
-import { usePhotoContainer } from "@/stores/photo-container";
 import { scheduleOnRN } from "react-native-worklets";
+import { PhotoContainerStore } from "@/stores/photo-container";
 
 // Composant plein écran (modal) affichant une photo avec navigation précédente/suivante.
-export default observer(function ImageView() {
+export default observer(function ImageView({
+  store,
+}: {
+  store: PhotoContainerStore;
+}) {
   const { photoId } = useLocalSearchParams<{
     photoId: string;
   }>();
   const photosStore = usePhotosStore();
-  const { navigateToPhoto, navigateToContainer, photoList } =
-    usePhotoContainer();
+  const { navigateToPhoto, navigateToContainer, photoList } = store;
 
   const photo = photosStore.imageLoader.getValue(Number(photoId));
 

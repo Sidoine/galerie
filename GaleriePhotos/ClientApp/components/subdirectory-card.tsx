@@ -13,7 +13,7 @@ import { useDirectoryVisibilitiesStore } from "@/stores/directory-visibilities";
 import { useMembersStore } from "@/stores/members";
 import placeholder from "@/assets/placeholder.png";
 import { usePhotosStore } from "@/stores/photos";
-import { PhotoContainer, usePhotoContainer } from "@/stores/photo-container";
+import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 import { Directory } from "@/services/views";
 
 function isDirectory(object: PhotoContainer): object is Directory {
@@ -21,17 +21,24 @@ function isDirectory(object: PhotoContainer): object is Directory {
 }
 
 const SubdirectoryCard = observer(
-  ({ directory, size }: { directory: PhotoContainer; size: number }) => {
+  ({
+    directory,
+    size,
+    store,
+  }: {
+    directory: PhotoContainer;
+    size: number;
+    store: PhotoContainerStore;
+  }) => {
     const directoriesStore = useDirectoriesStore();
     const photosStore = usePhotosStore();
     const visibilitiesStore = useDirectoryVisibilitiesStore();
     const membersStore = useMembersStore();
     const visibilities = visibilitiesStore.visibilities;
-    const photoContainer = usePhotoContainer();
 
     const handleNavigate = useCallback(() => {
-      photoContainer.navigateToChildContainer(directory.id);
-    }, [photoContainer, directory.id]);
+      store.navigateToChildContainer(directory.id);
+    }, [store, directory.id]);
 
     const handleUseAsParentCover = useCallback(async () => {
       try {
