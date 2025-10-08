@@ -49,7 +49,10 @@ export default function VideoPlayer({
       }
     }, 100);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      player.release();
+    };
   }, [player]);
 
   return (
