@@ -307,6 +307,98 @@ namespace GaleriePhotosTest.Controllers
             var vm = Assert.IsType<FaceNameSuggestionResponseViewModel>(okResult.Value);
             Assert.Null(vm.Name);
         }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task DeleteFace_ReturnsNotFound_WhenGalleryDoesNotExist()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService)
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext { User = BuildUser("user-x", globalAdmin: true) }
+                }
+            };
+
+            var result = await controller.DeleteFace(12345, 1);
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task DeleteFace_ReturnsForbid_WhenUserNotGalleryAdmin()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "user-not-admin";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            // Membre non admin
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: false));
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var result = await controller.DeleteFace(gallery.Id, 999); // face inexistant
+            Assert.IsType<ForbidResult>(result);
+        }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task DeleteFace_ReturnsNoContent_OnSuccess()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "admin-user";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true));
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var directory = new PhotoDirectory("/", 0, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            var photo = new Photo("p.jpg") { Directory = directory };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+            var face = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = new Pgvector.Vector(new float[] { 0.1f, 0.2f }),
+                X = 1, Y = 2, Width = 3, Height = 4
+            };
+            context.Faces.Add(face);
+            await context.SaveChangesAsync();
+
+            var result = await controller.DeleteFace(gallery.Id, face.Id);
+            Assert.IsType<NoContentResult>(result);
+            Assert.False(context.Faces.Any());
+        }
     }
 
     // Simple test logger implementation

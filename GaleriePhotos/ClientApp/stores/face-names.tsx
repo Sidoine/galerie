@@ -24,6 +24,10 @@ class FaceNamesStore {
     return this.nameLoader.getValue(this.galleryId, id);
   }
 
+  clearCache() {
+    this.namePhotosLoader.cache.clear();
+  }
+
   getPhotosByName(id: number) {
     return this.namePhotosLoader.getValue(this.galleryId, id);
   }

@@ -278,5 +278,67 @@ namespace GaleriePhotos.Controllers
 
             return File(thumbnailStream, "image/jpeg");
         }
+
+        /// <summary>
+        /// Gets the thumbnail (cropped face region) for a specific face id.
+        /// </summary>
+        /// <param name="galleryId">Gallery id</param>
+        /// <param name="faceId">Face id</param>
+        /// <returns>Face thumbnail image</returns>
+        [HttpGet("{galleryId}/faces/{faceId}/thumbnail")]
+        public async Task<ActionResult> GetFaceThumbnail(int galleryId, int faceId)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
+            // Ensure face belongs to gallery
+            var face = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                    .ThenInclude(p => p.Directory)
+                        .ThenInclude(d => d.Gallery)
+                .Where(f => f.Id == faceId && f.Photo.Directory.GalleryId == galleryId)
+                .FirstOrDefaultAsync();
+
+            if (face == null)
+            {
+                return NotFound("Face not found");
+            }
+
+            var thumbnailStream = await _photoService.GetFaceThumbnail(face);
+            if (thumbnailStream == null)
+            {
+                return NotFound("Face thumbnail not available");
+            }
+
+            return File(thumbnailStream, "image/jpeg");
+        }
+
+        /// <summary>
+        /// Supprime un visage (Face) de la galerie. Réservé aux administrateurs de la galerie.
+        /// </summary>
+        /// <param name="galleryId">Identifiant de la galerie</param>
+        /// <param name="faceId">Identifiant du visage</param>
+        [HttpDelete("{galleryId}/faces/{faceId}")]
+        public async Task<ActionResult> DeleteFace(int galleryId, int faceId)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            // Récupère le face en s'assurant qu'il appartient bien à la galerie
+            var face = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                    .ThenInclude(p => p.Directory)
+                .Where(f => f.Id == faceId && f.Photo.Directory.GalleryId == galleryId)
+                .FirstOrDefaultAsync();
+
+            if (face == null) return NotFound();
+
+            applicationDbContext.Faces.Remove(face);
+            await applicationDbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
