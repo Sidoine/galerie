@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -13,8 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 interface VideoPlayerProps {
   uri: string;
   style?: StyleProp<ViewStyle>;
-  onNext?: () => void;
-  onPrevious?: () => void;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 export default function VideoPlayer({
@@ -54,47 +54,41 @@ export default function VideoPlayer({
 
   return (
     <View style={[styles.container, style]}>
-      <TouchableOpacity style={styles.videoContainer} activeOpacity={1}>
-        <VideoView
-          style={styles.video}
-          player={player}
-          fullscreenOptions={{ enable: false }}
-          allowsPictureInPicture={false}
-        />
+      <VideoView
+        style={styles.video}
+        player={player}
+        fullscreenOptions={{ enable: false }}
+        allowsPictureInPicture={false}
+        nativeControls
+      />
 
-        {/* Overlay de chargement */}
-        {isLoading && !hasError && (
-          <View style={styles.loadingOverlay}>
-            <Text style={styles.loadingText}>Chargement de la vidéo...</Text>
-          </View>
-        )}
+      {/* Overlay de chargement */}
+      {isLoading && !hasError && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <Text style={styles.loadingText}>Chargement de la vidéo...</Text>
+        </View>
+      )}
 
-        {/* Overlay d'erreur */}
-        {hasError && (
-          <View style={styles.loadingOverlay}>
-            <Ionicons name="alert-circle-outline" size={60} color="white" />
-            <Text style={styles.loadingText}>
-              Erreur lors du chargement de la vidéo
-            </Text>
-          </View>
-        )}
+      {/* Overlay d'erreur */}
+      {hasError && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <Ionicons name="alert-circle-outline" size={60} color="white" />
+          <Text style={styles.loadingText}>
+            Erreur lors du chargement de la vidéo
+          </Text>
+        </View>
+      )}
 
-        {/* Zones de navigation (toujours présentes) */}
-        {onPrevious && (
-          <TouchableOpacity
-            style={[styles.navZone, { left: 0 }]}
-            onPress={onPrevious}
-            accessibilityLabel="Vidéo précédente"
-          />
-        )}
-        {onNext && (
-          <TouchableOpacity
-            style={[styles.navZone, { right: 0 }]}
-            onPress={onNext}
-            accessibilityLabel="Vidéo suivante"
-          />
-        )}
-      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.navZone, { left: 0 }]}
+        onPress={onPrevious}
+        accessibilityLabel="Vidéo précédente"
+      />
+      <TouchableOpacity
+        style={[styles.navZone, { right: 0 }]}
+        onPress={onNext}
+        accessibilityLabel="Vidéo suivante"
+      />
     </View>
   );
 }

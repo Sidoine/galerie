@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   LayoutRectangle,
+  Platform,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -78,20 +79,18 @@ export default observer(function ImageView() {
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
   const MAX_SCALE = 4;
-  const swipeGesture = Gesture.Pan()
-    .enabled(!isVideo)
-    .onEnd((e) => {
-      if (scale.value > 1) return;
-      const { translationX, velocityX } = e;
-      if (translationX > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) {
-        scheduleOnRN(handlePrevious);
-      } else if (
-        translationX < -SWIPE_THRESHOLD ||
-        velocityX < -VELOCITY_THRESHOLD
-      ) {
-        scheduleOnRN(handleNext);
-      }
-    });
+  const swipeGesture = Gesture.Pan().onEnd((e) => {
+    if (scale.value > 1) return;
+    const { translationX, velocityX } = e;
+    if (translationX > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) {
+      scheduleOnRN(handlePrevious);
+    } else if (
+      translationX < -SWIPE_THRESHOLD ||
+      velocityX < -VELOCITY_THRESHOLD
+    ) {
+      scheduleOnRN(handleNext);
+    }
+  });
 
   // Style animé de l'image
   const animatedImageStyle = useAnimatedStyle(() => ({
@@ -104,6 +103,7 @@ export default observer(function ImageView() {
 
   // Geste pinch pour zoomer
   const pinchGesture = Gesture.Pinch()
+    .enabled(!isVideo)
     .onUpdate((e) => {
       // clamp simple 1..MAX_SCALE
       const next = baseScale.value * e.scale;
@@ -120,6 +120,7 @@ export default observer(function ImageView() {
 
   // Geste pan pour déplacer l'image quand zoomée
   const panGesture = Gesture.Pan()
+    .enabled(!isVideo)
     .onStart(() => {
       startX.value = translateX.value;
       startY.value = translateY.value;
@@ -132,6 +133,7 @@ export default observer(function ImageView() {
 
   // Double tap pour zoom rapide 1 <-> 2
   const doubleTapGesture = Gesture.Tap()
+    .enabled(!isVideo)
     .numberOfTaps(2)
     .onEnd((_e, success) => {
       if (!success) return;
@@ -252,7 +254,7 @@ export default observer(function ImageView() {
 const styles = StyleSheet.create({
   fullscreen: {
     position: "absolute",
-    top: 0,
+    top: Platform.OS === "web" ? 0 : 32,
     left: 0,
     right: 0,
     bottom: 0,

@@ -5429,7 +5429,7 @@ __metadata:
     react-leaflet: "npm:^5.0.0"
     react-native: "npm:0.81.4"
     react-native-gesture-handler: "npm:~2.28.0"
-    react-native-maps: "npm:1.20.1"
+    react-native-maps: "npm:^1.26.14"
     react-native-reanimated: "npm:~4.1.1"
     react-native-safe-area-context: "npm:~5.6.0"
     react-native-screens: "npm:~4.16.0"
@@ -8267,19 +8267,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-maps@npm:1.20.1":
-  version: 1.20.1
-  resolution: "react-native-maps@npm:1.20.1"
+"react-native-maps@npm:^1.26.14":
+  version: 1.26.14
+  resolution: "react-native-maps@npm:1.26.14"
   dependencies:
     "@types/geojson": "npm:^7946.0.13"
   peerDependencies:
-    react: ">= 17.0.1"
-    react-native: ">= 0.64.3"
+    react: ">= 18.3.1"
+    react-native: ">= 0.76.0"
     react-native-web: ">= 0.11"
   peerDependenciesMeta:
     react-native-web:
       optional: true
-  checksum: 10c0/59c8d5600feb907df179c675b7185ef3bf205bdc85391c7ef530bb17d56d44d03ffd9ab3ae08dcc00cfabe9b14e37041327c7446114104b141efb2c8d4c3e797
+  checksum: 10c0/3cc96b0dfe227853052bd72526384b78611741f5bc80e45a3821c90cb90f7fed1d0c3276a89ca035096ceca0b03651fe87eb89db6cff70df75ff80ba16dbaaa2
   languageName: node
   linkType: hard
 

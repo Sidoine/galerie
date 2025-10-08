@@ -43,6 +43,12 @@
         {
           "configureAndroidBackup": true
         }
+      ],
+      [
+        "react-native-maps",
+        {
+          "androidGoogleMapsApiKey": "AIzaSyA_nHvWwjYaImYTfSEo9vTNQ7RmhbYaQDE"
+        }
       ]
     ],
     "extra": {
