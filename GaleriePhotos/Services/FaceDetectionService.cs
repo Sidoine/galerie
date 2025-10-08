@@ -22,8 +22,8 @@ namespace GaleriePhotos.Services
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<FaceDetectionService> logger;
         private readonly DataService dataService;
-        private readonly IFaceDetector faceDetector;
-        private readonly IFaceEmbeddingsGenerator faceEmbeddingsGenerator;
+        private static readonly IFaceDetector faceDetector = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
+        private static readonly IFaceEmbeddingsGenerator faceEmbeddingsGenerator = FaceAiSharpBundleFactory.CreateFaceEmbeddingsGenerator();
 
         private readonly PhotoService photoService;
 
@@ -37,10 +37,6 @@ namespace GaleriePhotos.Services
             this.logger = logger;
             this.dataService = dataService;
             this.photoService = photoService;
-
-            // TODO: Initialize FaceAiSharp components when API is confirmed
-            faceDetector = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
-            faceEmbeddingsGenerator = FaceAiSharpBundleFactory.CreateFaceEmbeddingsGenerator();
         }
 
         public async Task<bool> ProcessPhotoAsync(Photo photo)
