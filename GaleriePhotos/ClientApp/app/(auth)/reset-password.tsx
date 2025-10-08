@@ -10,7 +10,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuthenticationStore } from "@/stores/authentication";
 
-export default function ResetPassword() {
+export default function ResetPasswordScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
   const [email, setEmail] = useState(params.email || "");
   const [code, setCode] = useState("");

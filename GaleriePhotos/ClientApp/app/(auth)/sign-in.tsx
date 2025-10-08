@@ -10,7 +10,7 @@ import {
 import { useAuthenticationStore } from "@/stores/authentication";
 import { Link } from "expo-router";
 
-export default function SignIn() {
+export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const authenticationStore = useAuthenticationStore();

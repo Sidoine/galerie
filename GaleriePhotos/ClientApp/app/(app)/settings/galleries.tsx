@@ -16,7 +16,7 @@ import { UserController } from "../../../services/user";
 import * as views from "../../../services/views";
 import { DataProviderType } from "../../../services/enums";
 
-const Galleries = observer(function Galleries() {
+const GalleriesSettingsScreen = observer(function Galleries() {
   const apiClient = useApiClient();
   const galleryController = useMemo(
     () => new GalleryController(apiClient),
@@ -336,7 +336,7 @@ const Galleries = observer(function Galleries() {
   );
 });
 
-export default Galleries;
+export default GalleriesSettingsScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },

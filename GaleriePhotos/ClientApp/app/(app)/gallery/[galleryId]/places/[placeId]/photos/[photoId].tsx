@@ -1,5 +1,5 @@
 import ImageView from "@/components/image-view";
 
-export default function PhotoScreen() {
+export default function PlacePhotoScreen() {
   return <ImageView />;
 }

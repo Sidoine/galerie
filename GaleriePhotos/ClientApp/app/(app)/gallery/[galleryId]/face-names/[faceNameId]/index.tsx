@@ -1,8 +1,8 @@
 import React from "react";
 import { DirectoryView } from "@/components/directory-view";
 
-function DirectoryPage() {
+function FaceNameScreen() {
   return <DirectoryView />;
 }
 
-export default DirectoryPage;
+export default FaceNameScreen;

@@ -14,7 +14,7 @@ import { useDirectoriesStore } from "@/stores/directories";
 import { useRouter } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";
 
-const FaceNames = observer(function FaceNames() {
+const FaceNamesScreen = observer(function FaceNames() {
   const { galleryId } = useDirectoriesStore();
   const faceNamesStore = useFaceNamesStore();
   const router = useRouter();
@@ -135,4 +135,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FaceNames;
+export default FaceNamesScreen;

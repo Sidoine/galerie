@@ -26,13 +26,10 @@ const UserRow = observer(({ user }: { user: User }) => {
   );
 });
 
-const Users = observer(() => {
+const UsersSettingsScreen = observer(() => {
   const usersStore = useUsersStore();
 
   if (!usersStore.users) {
-    // if (!usersStore.usersLoader.loading) {
-    //     usersStore.usersLoader.load();
-    // }
     return (
       <View style={styles.container}>
         <Text style={styles.loadingText}>Chargement...</Text>
@@ -51,7 +48,7 @@ const Users = observer(() => {
   );
 });
 
-export default Users;
+export default UsersSettingsScreen;
 
 const styles = StyleSheet.create({
   container: {

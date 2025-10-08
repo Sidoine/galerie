@@ -31,7 +31,7 @@ function GalleryItem({
   );
 }
 
-const GalleryChooser = observer(function GalleryChooser() {
+const GalleriesScreen = observer(function GalleryChooser() {
   const router = useRouter();
   const galleriesStore = useGalleriesStore();
   const { galleryId } = useLocalSearchParams<{ galleryId?: string }>();
@@ -118,4 +118,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GalleryChooser;
+export default GalleriesScreen;

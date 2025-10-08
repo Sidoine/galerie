@@ -3,7 +3,7 @@ import { Text, View, TextInput, Button, StyleSheet } from "react-native";
 import { useAuthenticationStore } from "@/stores/authentication";
 import { useRouter } from "expo-router";
 
-function ForgotPassword() {
+function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const auth = useAuthenticationStore();
   const router = useRouter();
@@ -31,7 +31,7 @@ function ForgotPassword() {
     </View>
   );
 }
-export default ForgotPassword;
+export default ForgotPasswordScreen;
 const styles = StyleSheet.create({
   title: {
     fontSize: 32,
