@@ -249,7 +249,6 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     navigateToChildContainer,
     getPhotoLink,
   ]);
-  if (!placeId) return <>{children}</>;
   return (
     <PlaceStoreContext.Provider value={placeStore}>
       {children}
