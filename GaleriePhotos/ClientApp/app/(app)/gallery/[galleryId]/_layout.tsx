@@ -59,7 +59,35 @@ const LayoutContent = observer(function LayoutContent() {
               headerLeft: isLargeScreen ? () => null : undefined,
             }}
           >
-            <Drawer.Screen name="index" options={{ title: "Gallerie" }} />
+            <Drawer.Screen
+              name="index"
+              options={{
+                title: "Albums",
+                drawerItemStyle: { display: "none" },
+                headerTitle: () => <BreadCrumbs />,
+              }}
+            />
+            <Drawer.Screen
+              name="directory/index"
+              options={{ title: "Albums", headerTitle: () => <BreadCrumbs /> }}
+            />
+            <Drawer.Screen
+              name="directory/[directoryId]/photos/[photoId]"
+              options={{
+                title: "Photo",
+                headerShown: false,
+                drawerItemStyle: { display: "none" },
+              }}
+            />
+            <Drawer.Screen
+              name="directory/[directoryId]/index"
+              options={{
+                title: "Album",
+                headerTitle: () => <BreadCrumbs />,
+                drawerItemStyle: { display: "none" },
+              }}
+            />
+
             <Drawer.Screen name="places/index" options={{ title: "Lieux" }} />
             <Drawer.Screen
               name="places/[placeId]/photos/[photoId]"
@@ -79,7 +107,7 @@ const LayoutContent = observer(function LayoutContent() {
             />
             <Drawer.Screen
               name="face-names/index"
-              options={{ title: "Noms des visages" }}
+              options={{ title: "Visages" }}
             />
             <Drawer.Screen
               name="face-names/[faceNameId]/photos/[photoId]"
@@ -103,22 +131,6 @@ const LayoutContent = observer(function LayoutContent() {
                 options={{ title: "Paramètres", headerShown: false }}
               />
             </Drawer.Protected>
-            <Drawer.Screen
-              name="directory/[directoryId]/photos/[photoId]"
-              options={{
-                title: "Photo",
-                headerShown: false,
-                drawerItemStyle: { display: "none" },
-              }}
-            />
-            <Drawer.Screen
-              name="directory/[directoryId]/index"
-              options={{
-                title: "Album",
-                headerTitle: () => <BreadCrumbs />,
-                drawerItemStyle: { display: "none" },
-              }}
-            />
           </Drawer>
         </PlaceStoreProvider>
       </FaceNameStoreProvider>

@@ -61,7 +61,6 @@ const FaceNames = observer(function FaceNames() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Noms des visages</Text>
       <FlatList
         data={names}
         keyExtractor={(item) => item.id.toString()}

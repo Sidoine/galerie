@@ -204,6 +204,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing(2),
     paddingVertical: theme.spacing(1),
     backgroundColor: "rgba(0,0,0,0.4)",
+    zIndex: 1,
   },
   leftGroup: {
     flexDirection: "row",
