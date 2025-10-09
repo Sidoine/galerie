@@ -3,104 +3,50 @@ import * as helpers from "folke-service-helpers";
 import * as views from "./views";
 
 export class FaceController {
-  constructor(private client: helpers.ApiClient) {}
+	constructor(private client: helpers.ApiClient) {}
 
-  assignName = (
-    galleryId: number,
-    faceId: number,
-    model: views.FaceAssignName
-  ) => {
-    return this.client.fetch(
-      `api/gallery/${galleryId}/faces/${faceId}/name`,
-      "POST",
-      JSON.stringify(model)
-    );
-  };
+    assignName = (galleryId: number, faceId: number, model: views.FaceAssignName) => {
+        return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/name`, "POST", JSON.stringify(model));
+    }
 
-  deleteFace = (galleryId: number, faceId: number) => {
-    return this.client.fetch(
-      `api/gallery/${galleryId}/faces/${faceId}`,
-      "DELETE",
-      undefined
-    );
-  };
+    deleteFace = (galleryId: number, faceId: number) => {
+        return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}`, "DELETE", undefined);
+    }
 
-  getFaceNameThumbnail = (galleryId: number, faceNameId: number) => {
-    return this.client.fetch(
-      `api/gallery/${galleryId}/face-names/${faceNameId}/thumbnail`,
-      "GET",
-      undefined
-    );
-  };
+    getFaceNameThumbnail = (galleryId: number, faceNameId: number) => {
+        return this.client.fetch(`api/gallery/${galleryId}/face-names/${faceNameId}/thumbnail`, "GET", undefined);
+    }
 
-  getFaceThumbnail = (galleryId: number, faceId: number) => {
-    return this.client.fetch(
-      `api/gallery/${galleryId}/faces/${faceId}/thumbnail`,
-      "GET",
-      undefined
-    );
-  };
+    getFacesByPhoto = (galleryId: number, photoId: number) => {
+        return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/photos/${photoId}/faces`, "GET", undefined);
+    }
 
-  getFacesByPhoto = (galleryId: number, photoId: number) => {
-    return this.client.fetchJson<views.Face[]>(
-      `api/gallery/${galleryId}/photos/${photoId}/faces`,
-      "GET",
-      undefined
-    );
-  };
+    getFaceThumbnail = (galleryId: number, faceId: number) => {
+        return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/thumbnail`, "GET", undefined);
+    }
 
-  getName = (galleryId: number, id: number) => {
-    return this.client.fetchJson<views.FaceName>(
-      `api/gallery/${galleryId}/faces/names/${id}`,
-      "GET",
-      undefined
-    );
-  };
+    getName = (galleryId: number, id: number) => {
+        return this.client.fetchJson<views.FaceName>(`api/gallery/${galleryId}/faces/names/${id}`, "GET", undefined);
+    }
 
-  getNames = (galleryId: number) => {
-    return this.client.fetchJson<views.FaceName[]>(
-      `api/gallery/${galleryId}/faces/names`,
-      "GET",
-      undefined
-    );
-  };
+    getNames = (galleryId: number) => {
+        return this.client.fetchJson<views.FaceName[]>(`api/gallery/${galleryId}/faces/names`, "GET", undefined);
+    }
 
-  getPhotosByFaceName = (galleryId: number, id: number) => {
-    return this.client.fetchJson<views.Photo[]>(
-      `api/gallery/${galleryId}/face-names/${id}/photos`,
-      "GET",
-      undefined
-    );
-  };
+    getPhotosByFaceName = (galleryId: number, id: number) => {
+        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/face-names/${id}/photos`, "GET", undefined);
+    }
 
-  getSimilarFaces = (galleryId: number, model: views.SimilarFacesRequest) => {
-    return this.client.fetchJson<views.Face[]>(
-      `api/gallery/${galleryId}/faces/similar`,
-      "POST",
-      JSON.stringify(model)
-    );
-  };
+    getSimilarFaces = (galleryId: number, model: views.SimilarFacesRequest) => {
+        return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/faces/similar`, "POST", JSON.stringify(model));
+    }
 
-  getUnnamedFacesSample = (
-    galleryId: number,
-    model: views.UnnamedFacesSampleRequest
-  ) => {
-    return this.client.fetchJson<views.Face[]>(
-      `api/gallery/${galleryId}/faces/unnamed-sample`,
-      "POST",
-      JSON.stringify(model)
-    );
-  };
+    getUnnamedFacesSample = (galleryId: number, model: views.UnnamedFacesSampleRequest) => {
+        return this.client.fetchJson<views.Face[]>(`api/gallery/${galleryId}/faces/unnamed-sample`, "POST", JSON.stringify(model));
+    }
 
-  suggestName = (
-    galleryId: number,
-    faceId: number,
-    model: views.FaceNameSuggestionRequest
-  ) => {
-    return this.client.fetchJson<views.FaceNameSuggestionResponse>(
-      `api/gallery/${galleryId}/faces/${faceId}/suggest-name`,
-      "POST",
-      JSON.stringify(model)
-    );
-  };
+    suggestName = (galleryId: number, faceId: number, model: views.FaceNameSuggestionRequest) => {
+        return this.client.fetchJson<views.FaceNameSuggestionResponse>(`api/gallery/${galleryId}/faces/${faceId}/suggest-name`, "POST", JSON.stringify(model));
+    }
 }
+
