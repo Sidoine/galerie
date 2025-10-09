@@ -32,7 +32,6 @@ interface Section {
   type: "Albums" | "Photos";
 }
 
-const columnWidth = 184; // approximate desired width
 const gap = 4;
 
 export const DirectoryView = observer(function DirectoryView({
@@ -43,7 +42,12 @@ export const DirectoryView = observer(function DirectoryView({
     // The left drawer takes 279px
     width -= 279;
   }
-  const cols = Math.max(1, Math.floor((width - gap) / (columnWidth + gap)));
+  let columnWidth = 184; // approximate desired width
+  let cols = Math.max(1, Math.floor((width - gap) / (columnWidth + gap)));
+  if (cols < 2) {
+    cols = 2;
+  }
+  columnWidth = (width - gap) / cols - gap;
 
   const directories = store.containersList;
 
