@@ -40,7 +40,8 @@ class PhotosStore {
     await this.photoService.patch(photo.id, patch);
   }
 
-  async setAccess(photo: Photo, isPrivate: boolean) {
+  async setAccess(photo: PhotoFull, isPrivate: boolean) {
+    photo.private = isPrivate;
     await this.photoService.setAccess(photo.id, {
       private: isPrivate,
     });

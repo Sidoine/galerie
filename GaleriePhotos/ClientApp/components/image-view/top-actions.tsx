@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  Platform,
 } from "react-native";
 import { PhotoFull } from "@/services/views";
 import { useDirectoriesStore } from "@/stores/directories";
@@ -13,9 +14,11 @@ import { useMembersStore } from "@/stores/members";
 import { FaceDetectionStatus } from "@/services/enums";
 import Icon from "../Icon";
 import * as Sharing from "expo-sharing";
+import { Directory, File, Paths } from "expo-file-system";
 import { theme } from "@/stores/theme";
 import { usePhotosStore } from "@/stores/photos";
 import { observer } from "mobx-react-lite";
+import { PhotoContainerStore } from "@/stores/photo-container";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -23,10 +26,30 @@ interface TopActionsProps {
   showFaces?: boolean;
   onClose: () => void;
   photo: PhotoFull;
+  store: PhotoContainerStore;
 }
 
-// Remplacement des icônes MUI par de simples caractères/abréviations temporaires.
-// Pour une future amélioration on pourra intégrer une librairie d'icônes RN.
+function getMimeTypeFromExtension(extension: string) {
+  switch (extension.toLowerCase()) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "gif":
+      return "image/gif";
+    case "mp4":
+      return "video/mp4";
+    case "mov":
+      return "video/quicktime";
+    case "webm":
+      return "video/webm";
+    case "webp":
+      return "image/webp";
+    default:
+      return "application/octet-stream";
+  }
+}
 
 function TopActions({
   onDetailsToggle,
@@ -34,6 +57,7 @@ function TopActions({
   showFaces,
   onClose,
   photo,
+  store,
 }: TopActionsProps) {
   const directoriesStore = useDirectoriesStore();
   const photosStore = usePhotosStore();
@@ -50,15 +74,19 @@ function TopActions({
     });
   }, [closeMenu, directoriesStore, photo.directoryId, photo.id]);
 
-  const handleShareVisibilityClick = useCallback(() => {
+  const handleShareVisibilityClick = useCallback(async () => {
     closeMenu();
-    photosStore.setAccess(photo, false);
-  }, [closeMenu, photosStore, photo]);
+    await photosStore.setAccess(photo, false);
+    directoriesStore.clearCache();
+    store.navigateToContainer();
+  }, [closeMenu, photosStore, photo, directoriesStore, store]);
 
-  const handleUnshareVisibilityClick = useCallback(() => {
+  const handleUnshareVisibilityClick = useCallback(async () => {
     closeMenu();
-    photosStore.setAccess(photo, true);
-  }, [closeMenu, photosStore, photo]);
+    await photosStore.setAccess(photo, true);
+    directoriesStore.clearCache();
+    store.navigateToContainer();
+  }, [closeMenu, photosStore, photo, directoriesStore, store]);
   const [canShare, setCanShare] = useState(false);
   useEffect(() => {
     async function checkSharingAvailability() {
@@ -70,27 +98,29 @@ function TopActions({
 
   const handleSystemShareClick = useCallback(async () => {
     closeMenu();
-    try {
-      if (!canShare) return;
+    if (!canShare) return;
 
-      // Construction de l'URL distante de l'image (originale) via store
-      const imageUrl = photosStore.getImage(photo.publicId);
+    // Construction de l'URL distante de l'image (originale) via store
+    const imageUrl = photosStore.getImage(photo.publicId);
 
-      // Télécharger l'image dans un fichier temporaire (obligatoire pour expo-sharing sur mobile)
-      // const fileName = `shared-${photo.publicId}.jpg`;
-      // const FS = FileSystem.Paths;
-      // const baseDir =
-      //   FS..cacheDirectory || FS.documentDirectory || FS.bundleDirectory || "";
-      // const tmpPath = `${baseDir}${fileName}`;
-      // const download = await FileSystem.downloadAsync(imageUrl, tmpPath);
-
+    // Télécharger l'image dans un fichier temporaire (obligatoire pour expo-sharing sur mobile)
+    if (Platform.OS !== "web") {
+      const fileName = `shared-${photo.publicId}.jpg`;
+      const baseDir = Paths.cache;
+      const tmpPath = `${baseDir}${fileName}`;
+      const download = await File.downloadFileAsync(
+        imageUrl,
+        new Directory(tmpPath)
+      );
+      await Sharing.shareAsync(download.uri, {
+        dialogTitle: "Partager l'image",
+        mimeType: download.type,
+      });
+    } else {
       await Sharing.shareAsync(imageUrl, {
         dialogTitle: "Partager l'image",
-        mimeType: "image/jpeg",
+        mimeType: getMimeTypeFromExtension(imageUrl.split(".").pop() || "jpg"),
       });
-    } catch (err) {
-      // TODO: éventuellement gestion d'erreur utilisateur (toast)
-      console.warn("Erreur lors du partage", err);
     }
   }, [canShare, closeMenu, photo.publicId, photosStore]);
 
@@ -165,7 +195,7 @@ function TopActions({
                 <MenuItem label="Tourner à gauche" onPress={handleRotateLeft} />
                 {photo.private && (
                   <MenuItem
-                    label="Rendre publique (lien)"
+                    label="Rendre publique"
                     onPress={handleShareVisibilityClick}
                   />
                 )}

@@ -23,6 +23,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";
 import { observer } from "mobx-react-lite";
 import { usePhotosStore } from "@/stores/photos";
+import { useMembersStore } from "@/stores/members";
 
 interface SuggestedFacesProps {
   max?: number;
@@ -36,6 +37,7 @@ export const SuggestedFaces = observer(function SuggestedFaces({
     faceNameId: string;
     galleryId: string;
   }>();
+  const membersStore = useMembersStore();
   const faceNamesStore = useFaceNamesStore();
   const apiClient = useApiClient();
   const faceController = useMemo(
@@ -88,6 +90,7 @@ export const SuggestedFaces = observer(function SuggestedFaces({
 
   if (!faceName) return null;
   if (faces && faces.length === 0) return null;
+  if (!membersStore.administrator) return null;
 
   return (
     <AssignFaceContext.Provider value={assignContextValue}>

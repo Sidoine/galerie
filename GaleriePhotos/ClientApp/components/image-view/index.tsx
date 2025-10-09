@@ -199,6 +199,7 @@ export default observer(function ImageView({
         onFacesToggle={handleFacesToggle}
         showFaces={showFaces}
         photo={photo}
+        store={store}
       />
       <GestureDetector gesture={imageGestures}>
         <View style={styles.mediaContainer}>

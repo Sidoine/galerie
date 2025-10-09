@@ -106,23 +106,21 @@ const SubdirectoryCard = observer(
                     value={(directory.visibility & v.value) > 0}
                     onValueChange={toggleVisibility(v.value)}
                   />
-                  <Text style={styles.visibilityIcon}>{v.name || ""}</Text>
+                  <Text style={styles.visibilityIcon}>{v.icon}</Text>
                 </View>
               ))}
+              {directory.coverPhotoId && (
+                <TouchableOpacity
+                  onPress={handleUseAsParentCover}
+                  style={styles.actionButton}
+                >
+                  <Text style={styles.actionButtonText}>
+                    Utiliser comme couverture parente
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
-          {membersStore.administrator &&
-            isDirectory(directory) &&
-            directory.coverPhotoId && (
-              <TouchableOpacity
-                onPress={handleUseAsParentCover}
-                style={styles.actionButton}
-              >
-                <Text style={styles.actionButtonText}>
-                  Utiliser comme couverture parente
-                </Text>
-              </TouchableOpacity>
-            )}
         </View>
       </View>
     );
@@ -168,8 +166,10 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     marginTop: 4,
+    alignContent: "center",
   },
   visibilityItem: {
+    flexDirection: "row",
     alignItems: "center",
   },
   visibilityIcon: {
@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   actionButton: {
-    marginTop: 8,
     backgroundColor: "#1976d2",
     paddingVertical: 6,
     paddingHorizontal: 8,

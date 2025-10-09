@@ -72,6 +72,12 @@ class DirectoriesStore {
     this.infoLoader.cache.clear();
     this.subDirectoriesLoader.cache.clear();
   }
+
+  clearCache() {
+    this.contentLoader.cache.clear();
+    this.subDirectoriesLoader.cache.clear();
+    this.infoLoader.cache.clear();
+  }
 }
 
 const DirectoriesStoreContext = createContext<DirectoriesStore | null>(null);

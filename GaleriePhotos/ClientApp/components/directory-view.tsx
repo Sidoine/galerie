@@ -135,7 +135,7 @@ export const DirectoryView = observer(function DirectoryView({
           </View>
         );
       }),
-    [store]
+    [columnWidth, store]
   );
 
   const renderItem = useCallback(
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexGrow: 0,
     flexShrink: 0,
-    // gap n'est pas supporté partout en natif -> utiliser marges
+    gap: 4,
     flexWrap: "wrap",
   },
   sectionHeader: {
