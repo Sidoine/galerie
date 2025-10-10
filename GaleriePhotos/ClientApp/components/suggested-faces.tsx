@@ -24,6 +24,7 @@ import { useFaceNamesStore } from "@/stores/face-names";
 import { observer } from "mobx-react-lite";
 import { usePhotosStore } from "@/stores/photos";
 import { useMembersStore } from "@/stores/members";
+import { ZoomedFaceImage } from "./zoomed-face-image";
 
 interface SuggestedFacesProps {
   max?: number;
@@ -46,7 +47,6 @@ export const SuggestedFaces = observer(function SuggestedFaces({
   );
   const [faces, setFaces] = useState<Face[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
   const [rejectFace, setRejectFace] = useState<Face | null>(null);
   const [previewFace, setPreviewFace] = useState<Face | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
@@ -109,26 +109,15 @@ export const SuggestedFaces = observer(function SuggestedFaces({
                 key={f.id}
                 face={f}
                 galleryId={Number(galleryId)}
-                selected={selectedFaceId === f.id}
                 onPress={() => {
-                  setSelectedFaceId((prev) => {
-                    // si déjà sélectionné => ouvrir la modale
-                    if (prev === f.id) {
-                      setPreviewFace(f);
-                      return prev; // conserve sélection
-                    }
-                    // sinon on sélectionne simplement
-                    return f.id;
-                  });
+                  setPreviewFace(f);
                 }}
                 onAssigned={() => {
-                  setSelectedFaceId(null);
                   setPreviewFace(null);
                   load();
                 }}
                 onReject={() => {
                   setRejectFace(f);
-                  setSelectedFaceId(null);
                   setPreviewFace(null);
                 }}
               />
@@ -142,7 +131,6 @@ export const SuggestedFaces = observer(function SuggestedFaces({
           animationType="fade"
           onRequestClose={() => {
             setPreviewFace(null);
-            setSelectedFaceId(null);
           }}
         >
           {previewFace && (
@@ -151,17 +139,14 @@ export const SuggestedFaces = observer(function SuggestedFaces({
               faceName={faceName?.name || ""}
               onClose={() => {
                 setPreviewFace(null);
-                setSelectedFaceId(null);
               }}
               onAssigned={() => {
                 setPreviewFace(null);
-                setSelectedFaceId(null);
                 load();
               }}
               onReject={() => {
                 setRejectFace(previewFace);
                 setPreviewFace(null);
-                setSelectedFaceId(null);
               }}
             />
           )}
@@ -211,67 +196,20 @@ function useAssignFace() {
 function SuggestedFaceThumbnail({
   face,
   galleryId,
-  selected,
   onPress,
-  onAssigned,
-  onReject,
 }: {
   face: Face;
   galleryId: number;
-  selected: boolean;
   onPress: () => void; // ouvre la modale de preview
   onAssigned: () => void;
   onReject: () => void;
 }) {
-  // Contrôleur non nécessaire ici depuis le refactor
-  const [assignError, setAssignError] = useState<string | null>(null);
-  const [assigning, setAssigning] = useState(false);
-  const assignCtx = useAssignFace();
   const faceThumbnailUrl = `/api/gallery/${galleryId}/faces/${face.id}/thumbnail`;
-  // L'assignation se fait désormais dans la modale d'aperçu
 
   return (
     <TouchableOpacity onPress={onPress}>
-      <View
-        style={[styles.faceWrapper, selected && styles.faceWrapperSelected]}
-      >
+      <View style={[styles.faceWrapper]}>
         <Image source={{ uri: faceThumbnailUrl }} style={styles.faceImage} />
-        {selected && (
-          <View style={styles.overlay}>
-            <TouchableOpacity
-              accessibilityLabel="Assigner ce visage"
-              style={[styles.actionButton, styles.okButton]}
-              onPress={async () => {
-                if (assigning) return;
-                setAssignError(null);
-                setAssigning(true);
-                try {
-                  const ok = await assignCtx.assign(face, ""); // le nom sera injecté via faceName prop future si besoin
-                  if (!ok) setAssignError("Erreur assignation");
-                  else onAssigned();
-                } catch (e: unknown) {
-                  setAssignError(
-                    e instanceof Error ? e.message : "Erreur assignation"
-                  );
-                } finally {
-                  setAssigning(false);
-                }
-              }}
-              disabled={assigning}
-            >
-              <Text style={styles.actionText}>✓</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityLabel="Rejeter ce visage"
-              style={[styles.actionButton, styles.rejectButton]}
-              onPress={onReject}
-              disabled={assigning}
-            >
-              <Text style={styles.actionText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {assignError && <Text style={styles.errorBadge}>{assignError}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -292,24 +230,8 @@ const FacePhotoPreview = observer(function FacePhotoPreview({
 }) {
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const assignCtx = useAssignFace();
   const faceNamesStore = useFaceNamesStore();
-  const photoStore = usePhotosStore();
-  const photo = photoStore.imageLoader.getValue(face.photoId);
-
-  // Construction d'URL de la photo (grand format) via l'ID public nécessiterait d'abord de charger la photo.
-  // On réutilise l'endpoint de miniature pour l'instant si nécessaire.
-  // Hypothèse: endpoint image: /api/photos/{photoId}/image accepte l'id numérique (sinon adaptation future en chargeant PhotoFull)
-  useEffect(() => {
-    // tentative directe (si backend accepte l'id numérique); sinon il faudra récupérer le publicId via PhotoController.get(face.photoId)
-    const directUrl = photo?.publicId
-      ? photoStore.getImage(photo.publicId)
-      : null;
-    setPhotoUrl(directUrl);
-    setLoading(false);
-  }, [face.photoId, photo?.publicId, photoStore]);
 
   const handleAssign = async () => {
     if (assigning) return;
@@ -333,16 +255,7 @@ const FacePhotoPreview = observer(function FacePhotoPreview({
     <View style={styles.modalBackdrop}>
       <View style={[styles.modal, styles.previewModal]}>
         <Text style={styles.modalTitle}>Visage</Text>
-        <View style={styles.previewImageContainer}>
-          {loading && <Text>Chargement...</Text>}
-          {!loading && photoUrl && (
-            <Image
-              source={{ uri: photoUrl }}
-              style={styles.previewImage}
-              resizeMode="contain"
-            />
-          )}
-        </View>
+        <ZoomedFaceImage face={face} />
         {assignError && <Text style={styles.error}>{assignError}</Text>}
         <View style={styles.previewActionsRow}>
           <TouchableOpacity
@@ -423,21 +336,7 @@ const RejectFaceModal = observer(function RejectFaceModal({
     <View style={styles.modalBackdrop}>
       <View style={styles.modal}>
         <Text style={styles.modalTitle}>Rejeter le visage</Text>
-        <View
-          style={[
-            styles.previewImageContainer,
-            { aspectRatio: 1, marginBottom: 16 },
-          ]}
-        >
-          {photoLoading && <Text>Chargement...</Text>}
-          {!photoLoading && rejectPhotoUrl && (
-            <Image
-              source={{ uri: rejectPhotoUrl }}
-              style={styles.previewImage}
-              resizeMode="contain"
-            />
-          )}
-        </View>
+        <ZoomedFaceImage face={face} />
         <View style={styles.modalSection}>
           <Text style={styles.sectionHeader}>Associer à un autre nom</Text>
           <FaceNameInput
@@ -471,7 +370,7 @@ const RejectFaceModal = observer(function RejectFaceModal({
   );
 });
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -510,12 +409,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     backgroundColor: "#f0f0f0",
     position: "relative",
-  },
-  faceWrapperSelected: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    marginTop: -6,
   },
   faceImage: {
     width: "100%",
@@ -604,20 +497,7 @@ const styles = StyleSheet.create({
     width: 360,
     maxWidth: "100%",
   },
-  previewImageContainer: {
-    width: "100%",
-    aspectRatio: 1,
-    marginBottom: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#000",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  previewImage: {
-    width: "100%",
-    height: "100%",
-  },
+  
   previewActionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
