@@ -1,18 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  FlatList,
-} from "react-native";
-import { FaceController } from "@/services/face";
+import React, { useCallback, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "../Icon";
 import { Face } from "@/services/views";
-import { useDirectoriesStore } from "@/stores/directories";
-import { useApiClient } from "folke-service-helpers";
 import FaceNameInput from "../face-name-input";
 
 /**

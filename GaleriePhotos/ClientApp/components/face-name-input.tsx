@@ -8,10 +8,9 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import { FaceController } from "@/services/face";
-import { useApiClient } from "folke-service-helpers";
 import Icon from "./Icon";
 import { useDirectoriesStore } from "@/stores/directories";
+import { useFaceNamesStore } from "@/stores/face-names";
 
 export interface FaceNameInputProps {
   faceId: number;
@@ -30,37 +29,15 @@ export function FaceNameInput({
   onCancel,
   dense,
 }: FaceNameInputProps) {
-  const apiClient = useApiClient();
   const directoriesStore = useDirectoriesStore();
-  const faceController = useMemo(
-    () => new FaceController(apiClient),
-    [apiClient]
-  );
-  const [names, setNames] = useState<string[]>([]);
-  const [loadingNames, setLoadingNames] = useState(false);
+  const faceNamesStore = useFaceNamesStore();
+  const names = faceNamesStore.names;
   const [value, setValue] = useState<string>(initialName ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
   const [showAutoComplete, setShowAutoComplete] = useState(false);
-
-  // Charger noms au montage (cas modale)
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingNames(true);
-    async function loadFaceNames() {
-      const n = await faceController.getNames(directoriesStore.galleryId);
-      if (cancelled) return;
-      if (n.ok) setNames(n.value.map((x) => x.name));
-      else setNames([]);
-      setLoadingNames(false);
-    }
-    loadFaceNames();
-    return () => {
-      cancelled = true;
-    };
-  }, [directoriesStore.galleryId, faceController]);
 
   // Suggestion automatique si demandé et pas de nom initial
   useEffect(() => {
@@ -69,12 +46,8 @@ export function FaceNameInput({
     async function fetchSuggestion() {
       setSuggestionLoading(true);
       try {
-        const resp = await faceController.suggestName(
-          directoriesStore.galleryId,
-          faceId,
-          { threshold: 0.8 }
-        );
-        if (!cancelled && resp.ok) setSuggestedName(resp.value.name);
+        const resp = await faceNamesStore.suggestNameForFace(faceId);
+        if (!cancelled && resp) setSuggestedName(resp);
       } finally {
         if (!cancelled) setSuggestionLoading(false);
       }
@@ -88,15 +61,15 @@ export function FaceNameInput({
     initialName,
     directoriesStore.galleryId,
     faceId,
-    faceController,
+    faceNamesStore,
   ]);
 
   const filteredNames = useMemo(() => {
-    if (!value.trim() || !names.length) return [];
+    if (!value.trim() || !names) return [];
     const searchText = value.trim().toLowerCase();
     return names
-      .filter((name) => name.toLowerCase().includes(searchText))
-      .filter((name) => name !== value)
+      .filter((name) => name.name.toLowerCase().includes(searchText))
+      .filter((name) => name.name !== value)
       .slice(0, 5);
   }, [value, names]);
 
@@ -124,25 +97,10 @@ export function FaceNameInput({
     setSubmitting(true);
     setError(null);
     setShowAutoComplete(false);
-    try {
-      await faceController.assignName(directoriesStore.galleryId, faceId, {
-        name: value.trim(),
-      });
-      onAssigned?.(value.trim());
-    } catch (e) {
-      if (e instanceof Error) setError(e.message);
-      else setError("Erreur inconnue");
-    } finally {
-      setSubmitting(false);
-    }
-  }, [
-    canSubmit,
-    directoriesStore.galleryId,
-    faceId,
-    faceController,
-    onAssigned,
-    value,
-  ]);
+    await faceNamesStore.assignNameToFace(faceId, value.trim());
+    onAssigned?.(value.trim());
+    setSubmitting(false);
+  }, [canSubmit, faceId, faceNamesStore, onAssigned, value]);
 
   return (
     <View style={styles.container}>
@@ -156,17 +114,20 @@ export function FaceNameInput({
           onFocus={() => setShowAutoComplete(value.trim().length > 0)}
           autoFocus
         />
+        {showAutoComplete && names === null && (
+          <ActivityIndicator size="small" />
+        )}
         {showAutoComplete && filteredNames.length > 0 && (
           <View style={styles.autoCompleteContainer}>
             <FlatList
               data={filteredNames}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.suggestionItem}
-                  onPress={() => handleSelectName(item)}
+                  onPress={() => handleSelectName(item.name)}
                 >
-                  <Text style={styles.autoCompleteText}>{item}</Text>
+                  <Text style={styles.autoCompleteText}>{item.name}</Text>
                 </TouchableOpacity>
               )}
               style={styles.suggestionsList}
@@ -197,7 +158,6 @@ export function FaceNameInput({
           )}
       </View>
       <View style={styles.actionsRow}>
-        {loadingNames && <ActivityIndicator size="small" />}
         {suggestionLoading && !suggestedName && (
           <ActivityIndicator size="small" />
         )}
