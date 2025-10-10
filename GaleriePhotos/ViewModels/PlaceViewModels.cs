@@ -12,5 +12,6 @@ namespace GaleriePhotos.ViewModels
         public int NumberOfPhotos { get; set; }
         public PlaceType Type { get; set; }
         public int? ParentId { get; set; }
+        public string? CoverPhotoId { get; set; }
     }
 }

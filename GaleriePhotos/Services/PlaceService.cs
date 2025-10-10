@@ -329,6 +329,7 @@ namespace GaleriePhotos.Services
         public async Task<List<PlaceViewModel>> GetCountriesByGalleryAsync(int galleryId)
         {
             var countries = await context.Places
+                .Include(x => x.CoverPhoto)
                 .Where(p => p.GalleryId == galleryId && p.Type == PlaceType.Country)
                 .Select(p => new PlaceViewModel
                 {
@@ -338,6 +339,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     // Count all photos in cities within this country
                     NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
                                 context.Photos.Count(ph => ph.PlaceId == p.Id)
@@ -350,7 +352,9 @@ namespace GaleriePhotos.Services
 
         public async Task<PlaceViewModel?> GetPlaceByIdAsync(int placeId)
         {
-            return await context.Places.Where(x => x.Id == placeId)
+            return await context.Places
+                .Include(x => x.CoverPhoto)
+                .Where(x => x.Id == placeId)
                 .Select(p => new PlaceViewModel
                 {
                     Id = p.Id,
@@ -359,6 +363,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
                                 context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
@@ -382,6 +387,7 @@ namespace GaleriePhotos.Services
         public async Task<List<PlaceViewModel>> GetCitiesByCountryAsync(int countryId, int galleryId)
         {
             var cities = await context.Places
+                .Include(x => x.CoverPhoto)
                 .Where(p => p.GalleryId == galleryId && p.ParentId == countryId)
                 .Select(p => new PlaceViewModel
                 {
@@ -391,6 +397,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
                 .OrderBy(p => p.Name)
@@ -402,6 +409,7 @@ namespace GaleriePhotos.Services
         public async Task<List<PlaceViewModel>> GetPlacesByGalleryAsync(int galleryId)
         {
             var places = await context.Places
+                .Include(x => x.CoverPhoto)
                 .Where(p => p.GalleryId == galleryId)
                 .Select(p => new PlaceViewModel
                 {
@@ -411,6 +419,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
                 .OrderBy(p => p.Name)
@@ -450,6 +459,26 @@ namespace GaleriePhotos.Services
             }
 
             photo.PlaceId = placeId;
+            // Auto assign cover if none yet
+            if (place.CoverPhotoId == null)
+            {
+                place.CoverPhotoId = photo.Id;
+            }
+            await context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> SetPlaceCoverAsync(int placeId, int photoId)
+        {
+            var place = await context.Places.FindAsync(placeId);
+            if (place == null) return false;
+
+            var photo = await context.Photos.Include(p => p.Directory).FirstOrDefaultAsync(x => x.Id == photoId);
+            if (photo == null) return false;
+
+            if (photo.Directory.GalleryId != place.GalleryId) return false;
+
+            place.CoverPhotoId = photo.Id;
             await context.SaveChangesAsync();
             return true;
         }

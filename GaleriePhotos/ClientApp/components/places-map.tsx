@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { Place } from "@/services/views";
 import { theme } from "@/stores/theme";
+import { PlacesMapProps } from "./places-map-props";
 
 /**
  * Mobile implementation of PlacesMap (parallèle à places-map.web.tsx) utilisant react-native-maps.
@@ -25,12 +26,7 @@ function PlacesMap({
   placesToShow,
   onClickPhotos,
   onClickPlace,
-}: {
-  selectedCountry: Place | null;
-  placesToShow: Place[];
-  onClickPlace: (place: Place) => void;
-  onClickPhotos: (placeId: number) => void;
-}) {
+}: PlacesMapProps) {
   const { width } = useWindowDimensions();
 
   // Valeurs par défaut si liste vide (éviter NaN)
@@ -69,7 +65,7 @@ function PlacesMap({
 
   return (
     <MapView
-      style={{ width, height: "100%" }}
+      style={{ width, height: 512 }}
       provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
       initialRegion={initialRegion}
     >
@@ -99,7 +95,7 @@ function PlacesMap({
               ) : (
                 <TouchableOpacity
                   style={styles.calloutButton}
-                  onPress={() => onClickPlace(place)}
+                  onPress={() => onClickPlace(place.id)}
                 >
                   <Text style={styles.calloutButtonText}>Voir les villes</Text>
                 </TouchableOpacity>

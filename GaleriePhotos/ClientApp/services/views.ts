@@ -68,6 +68,8 @@ export interface FaceName {
     name: string;
 
     numberOfPhotos: number;
+
+    coverPhotoId: string | null;
 }
 
 export interface Photo {
@@ -298,6 +300,8 @@ export interface Place {
     type: enums.PlaceType;
 
     parentId: number | null;
+
+    coverPhotoId: string | null;
 }
 
 export interface Year {
@@ -306,6 +310,8 @@ export interface Year {
     name: string;
 
     numberOfPhotos: number;
+
+    coverPhotoId: string | null;
 }
 
 export interface Month {
@@ -314,4 +320,6 @@ export interface Month {
     name: string;
 
     numberOfPhotos: number;
+
+    coverPhotoId: string | null;
 }

@@ -67,7 +67,13 @@ const LayoutContent = observer(function LayoutContent() {
         }}
       />
 
-      <Drawer.Screen name="places/index" options={{ title: "Lieux" }} />
+      <Drawer.Screen
+        name="places/index"
+        options={{
+          title: "Lieux",
+          headerTitle: () => <BreadCrumbs store={placeStore} />,
+        }}
+      />
       <Drawer.Screen
         name="places/[placeId]/photos/[photoId]"
         options={{

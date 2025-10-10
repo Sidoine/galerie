@@ -8,5 +8,6 @@ namespace GaleriePhotos.ViewModels
         [Required]
         public required string Name { get; set; }
         public int NumberOfPhotos { get; set; }
+        public string? CoverPhotoId { get; set; }
     }
 }

@@ -69,10 +69,8 @@ function TopActions({
 
   const handleCoverClick = useCallback(() => {
     closeMenu();
-    directoriesStore.patchDirectoryAndClearCache(photo.directoryId, {
-      coverPhotoId: photo.id,
-    });
-  }, [closeMenu, directoriesStore, photo.directoryId, photo.id]);
+    store.setCover?.(photo.id);
+  }, [closeMenu, store, photo.id]);
 
   const handleShareVisibilityClick = useCallback(async () => {
     closeMenu();
@@ -184,10 +182,12 @@ function TopActions({
           <View style={styles.menu}>
             {membersStore.administrator && (
               <>
-                <MenuItem
-                  label="Utiliser comme couverture"
-                  onPress={handleCoverClick}
-                />
+                {store.setCover && (
+                  <MenuItem
+                    label="Utiliser comme couverture"
+                    onPress={handleCoverClick}
+                  />
+                )}
                 <MenuItem
                   label="Tourner à droite"
                   onPress={handleRotateRight}

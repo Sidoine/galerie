@@ -1,5 +1,7 @@
-import { PlacesMapView } from "@/components/places-map-view";
+import { DirectoryView } from "@/components/directory-view";
+import { usePlaceStore } from "@/stores/place";
 
 export default function PlacesMapScreen() {
-  return <PlacesMapView />;
+  const placeStore = usePlaceStore();
+  return <DirectoryView store={placeStore} />;
 }

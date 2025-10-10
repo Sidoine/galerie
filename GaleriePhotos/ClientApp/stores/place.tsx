@@ -8,7 +8,9 @@ import {
   PhotoContainerStore,
 } from "./photo-container";
 import { PlaceType } from "@/services/enums";
-import { Photo } from "@/services/views";
+import { Photo, Place } from "@/services/views";
+import PlacesMap from "@/components/places-map";
+import { Text } from "react-native";
 
 const emptyPhotoContainer: PhotoContainer[] = [];
 const emptyPhotoList: Photo[] = [];
@@ -73,7 +75,9 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
         params: {
           galleryId: placesStore.galleryId,
           placeId:
-            place?.type === PlaceType.Country ? containerId : placeId ?? 0,
+            place === null || place.type === PlaceType.Country
+              ? containerId
+              : placeId ?? 0,
           order,
           year:
             place?.type !== PlaceType.Country && year === undefined
@@ -83,7 +87,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
         },
       });
     },
-    [router, placesStore.galleryId, place?.type, placeId, order, year]
+    [router, placesStore.galleryId, place, placeId, order, year]
   );
 
   const navigateToParentContainer = useCallback(() => {
@@ -177,13 +181,13 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   }, [month, order, parentPlace, place, placesStore.galleryId, year]);
   const photoCount = placeId
     ? placesStore.getPlacePhotoCount(placeId, year, month)
-    : null;
+    : 0;
   const tooManyPhotos = 10;
   const photoList =
     (photoCount !== null && photoCount < tooManyPhotos) || month !== undefined
       ? placeId
         ? placesStore.getPlacePhotos(placeId, year, month)
-        : null
+        : emptyPhotoList
       : emptyPhotoList;
   let containersList: PhotoContainer[] | null = emptyPhotoContainer;
   if (place) {
@@ -204,6 +208,8 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
         }
       }
     }
+  } else {
+    containersList = placesStore.countries;
   }
 
   const sort = useCallback(
@@ -221,6 +227,28 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     },
     [month, placeId, placesStore.galleryId, router, year]
   );
+
+  const setCover = useCallback(
+    async (photoId: number) => {
+      if (placeId) await placesStore.setCover(placeId, photoId);
+    },
+    [placeId, placesStore]
+  );
+
+  const childContainersHeader = useMemo(
+    () =>
+      place === null || place.type === PlaceType.Country ? (
+        <PlacesMap
+          onClickPhotos={navigateToChildContainer}
+          onClickPlace={navigateToChildContainer}
+          placesToShow={(containersList as Place[]) || emptyPhotoContainer}
+          selectedCountry={place}
+        />
+      ) : (
+        <Text>Années</Text>
+      ),
+    [containersList, navigateToChildContainer, place]
+  );
   const placeStore = useMemo<PhotoContainerStore>(() => {
     return {
       navigateToPhoto,
@@ -235,6 +263,8 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
       container: place || null,
       navigateToChildContainer,
       getPhotoLink,
+      setCover,
+      childContainersHeader,
     };
   }, [
     navigateToPhoto,
@@ -248,6 +278,8 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     breadCrumbs,
     navigateToChildContainer,
     getPhotoLink,
+    setCover,
+    childContainersHeader,
   ]);
   return (
     <PlaceStoreContext.Provider value={placeStore}>

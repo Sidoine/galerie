@@ -19,7 +19,8 @@ class PlacesStore {
     private placePhotoCountLoader: MapLoader<
       number,
       [placeId: number, year?: number | null, month?: number | null]
-    >
+    >,
+    private placeController: PlaceController
   ) {
     makeObservable(this, {
       countries: computed,
@@ -61,6 +62,12 @@ class PlacesStore {
   getPlaceMonths(placeId: number, year: number): Month[] | null {
     return this.placeMonthsLoader.getValue(placeId, year);
   }
+
+  async setCover(placeId: number, photoId: number) {
+    const result = await this.placeController.setPlaceCover(placeId, photoId);
+    this.placeLoader.cache.clear();
+    return result;
+  }
 }
 
 const PlacesStoreContext = createContext<PlacesStore | null>(null);
@@ -94,7 +101,8 @@ export function PlacesStoreProvider({
       placePhotosLoader,
       placeYearsLoader,
       placeMonthsLoader,
-      placePhotoCountLoader
+      placePhotoCountLoader,
+      placeController
     );
   }, [apiClient, galleryId]);
 

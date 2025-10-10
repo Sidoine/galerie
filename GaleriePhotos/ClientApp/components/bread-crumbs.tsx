@@ -6,8 +6,6 @@ import { View, Text, StyleSheet } from "react-native";
 
 function BreadCrumbs({ store }: { store: PhotoContainerStore }) {
   if (!store.breadCrumbs) return <Text>Galerie photo</Text>;
-  const currentDirectory = store.container;
-  if (!currentDirectory) return <></>;
   return (
     <View style={styles.container}>
       {store.breadCrumbs.map((crumb, index) => (
