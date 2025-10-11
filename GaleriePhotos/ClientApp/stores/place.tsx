@@ -71,7 +71,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   const photoCount = placeId
     ? placesStore.getPlacePhotoCount(placeId, year, month)
     : 0;
-  const tooManyPhotos = 10;
+  const tooManyPhotos = 100;
   const photoList =
     (photoCount !== null && photoCount < tooManyPhotos) || month !== undefined
       ? placeId
