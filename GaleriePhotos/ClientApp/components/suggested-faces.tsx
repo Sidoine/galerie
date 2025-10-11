@@ -22,9 +22,9 @@ import { FaceController } from "@/services/face";
 import { useLocalSearchParams } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";
 import { observer } from "mobx-react-lite";
-import { usePhotosStore } from "@/stores/photos";
 import { useMembersStore } from "@/stores/members";
 import { ZoomedFaceImage } from "./zoomed-face-image";
+import { usePhotosStore } from "@/stores/photos";
 
 interface SuggestedFacesProps {
   max?: number;
@@ -50,6 +50,8 @@ export const SuggestedFaces = observer(function SuggestedFaces({
   const [rejectFace, setRejectFace] = useState<Face | null>(null);
   const [previewFace, setPreviewFace] = useState<Face | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
+  const [bulkAssigning, setBulkAssigning] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   const faceName = faceNameId
     ? faceNamesStore.getName(Number(faceNameId))
@@ -59,6 +61,7 @@ export const SuggestedFaces = observer(function SuggestedFaces({
     if (!faceName || !galleryId) return;
     try {
       setError(null);
+      setBulkError(null);
       const response = await faceController.getSimilarFaces(Number(galleryId), {
         name: faceName.name,
         limit: max,
@@ -88,6 +91,29 @@ export const SuggestedFaces = observer(function SuggestedFaces({
     [faceController, galleryId]
   );
 
+  const handleAcceptAll = useCallback(async () => {
+    if (!faces || faces.length === 0 || !galleryId || !faceName) return;
+    setBulkAssigning(true);
+    setBulkError(null);
+    let failures = 0;
+    for (const f of faces) {
+      try {
+        const resp = await faceController.assignName(Number(galleryId), f.id, {
+          name: faceName.name,
+        });
+        if (!resp.ok) failures++;
+      } catch {
+        failures++;
+      }
+    }
+    setBulkAssigning(false);
+    faceNamesStore.clearCache();
+    if (failures > 0) {
+      setBulkError(`${failures} échec(s) lors de l'assignation`);
+    }
+    load();
+  }, [faces, galleryId, faceName, faceController, load, faceNamesStore]);
+
   if (!faceName) return null;
   if (faces && faces.length === 0) return null;
   if (!membersStore.administrator) return null;
@@ -97,11 +123,27 @@ export const SuggestedFaces = observer(function SuggestedFaces({
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Visages suggérés</Text>
+          {faces && faces.length > 0 && (
+            <TouchableOpacity
+              onPress={handleAcceptAll}
+              style={[
+                styles.refreshButton,
+                styles.acceptAllButton,
+                bulkAssigning && styles.disabledBtn,
+              ]}
+              disabled={bulkAssigning}
+            >
+              <Text style={styles.acceptAllText}>
+                {bulkAssigning ? "…" : "Tout accepter"}
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={load} style={styles.refreshButton}>
             <Text style={styles.refreshText}>↻</Text>
           </TouchableOpacity>
         </View>
         {error && <Text style={styles.error}>{error}</Text>}
+        {bulkError && <Text style={styles.error}>{bulkError}</Text>}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.facesRow}>
             {faces?.map((f) => (
@@ -232,6 +274,15 @@ const FacePhotoPreview = observer(function FacePhotoPreview({
   const [assignError, setAssignError] = useState<string | null>(null);
   const assignCtx = useAssignFace();
   const faceNamesStore = useFaceNamesStore();
+  const photosStore = usePhotosStore();
+  const photo = photosStore.imageLoader.getValue(face.photoId);
+  const photoDateLabel = photo?.dateTime
+    ? new Date(photo.dateTime).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+    : undefined;
 
   const handleAssign = async () => {
     if (assigning) return;
@@ -256,6 +307,11 @@ const FacePhotoPreview = observer(function FacePhotoPreview({
       <View style={[styles.modal, styles.previewModal]}>
         <Text style={styles.modalTitle}>Visage</Text>
         <ZoomedFaceImage face={face} />
+        {photoDateLabel && (
+          <View style={styles.photoDateBadge} pointerEvents="none">
+            <Text style={styles.photoDateBadgeText}>{photoDateLabel}</Text>
+          </View>
+        )}
         {assignError && <Text style={styles.error}>{assignError}</Text>}
         <View style={styles.previewActionsRow}>
           <TouchableOpacity
@@ -383,6 +439,15 @@ export const styles = StyleSheet.create({
   refreshText: {
     fontSize: 14,
   },
+  acceptAllButton: {
+    marginRight: 8,
+    backgroundColor: "#1976d2",
+  },
+  acceptAllText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#fff",
+  },
   error: {
     color: "#b00020",
     marginBottom: 4,
@@ -503,6 +568,21 @@ export const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  photoDateBadge: {
+    position: "relative",
+    left: 0,
+    top: -32,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  photoDateBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });
 
