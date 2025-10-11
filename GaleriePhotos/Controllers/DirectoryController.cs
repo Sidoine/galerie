@@ -33,7 +33,7 @@ namespace Galerie.Server.Controllers
 
         // New: get root directory for a specific gallery (used when galleryId is in the URL)
         [HttpGet("root/{galleryId}")]
-        public async Task<ActionResult<DirectoryViewModel>> GetGalleryRoot(int galleryId)
+        public async Task<ActionResult<DirectoryFullViewModel>> GetGalleryRoot(int galleryId)
         {
             var userId = User.GetUserId();
             if (userId == null) return Unauthorized();
@@ -46,7 +46,7 @@ namespace Galerie.Server.Controllers
             if (gallery == null || !dataService.GetDataProvider(gallery).IsSetup) return NotFound();
 
             var galleryRootDirectory = await photoService.GetRootDirectory(gallery);
-            return Ok(new DirectoryViewModel(galleryRootDirectory, await photoService.GetNumberOfPhotos(galleryRootDirectory), await photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
+            return Ok(new DirectoryFullViewModel(galleryRootDirectory, null, await photoService.GetNumberOfPhotos(galleryRootDirectory), await photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
         }
 
         [HttpGet("{id}")]

@@ -10,7 +10,7 @@ export class DirectoryController {
     }
 
     getGalleryRoot = (galleryId: number) => {
-        return this.client.fetchJson<views.Directory>(`api/directories/root/${galleryId}`, "GET", undefined);
+        return this.client.fetchJson<views.DirectoryFull>(`api/directories/root/${galleryId}`, "GET", undefined);
     }
 
     getPhotos = (id: number) => {

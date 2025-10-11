@@ -21,7 +21,10 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   const galleryId = directoriesStore.galleryId;
   const directory = directoryId
     ? directoriesStore.infoLoader.getValue(directoryId)
-    : null;
+    : directoriesStore.root;
+  if (directory !== null && directoryId === undefined) {
+    directoryId = directory.id;
+  }
   const getPhotoLink = useCallback(
     (photoId: number): Href => {
       return {

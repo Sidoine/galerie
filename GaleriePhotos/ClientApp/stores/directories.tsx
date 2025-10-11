@@ -10,7 +10,7 @@ import { action, makeObservable, observable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class DirectoriesStore {
-  root: Directory | null = null;
+  root: DirectoryFull | null = null;
   isInError = false;
 
   constructor(
@@ -45,7 +45,7 @@ class DirectoriesStore {
     }
   }
 
-  setRoot(root: Directory | null) {
+  setRoot(root: DirectoryFull | null) {
     if (root === null) {
       this.isInError = true;
     } else {
