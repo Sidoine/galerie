@@ -54,6 +54,16 @@ namespace GaleriePhotos.Data
                     .OnDelete(DeleteBehavior.SetNull);
             });
             
+            // New relationship: Gallery.LastScannedDirectory
+            modelBuilder.Entity<Gallery>(entity =>
+            {
+                entity.HasOne(g => g.LastScannedDirectory)
+                    .WithMany()
+                    .HasForeignKey(g => g.LastScannedDirectoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(g => g.LastScannedDirectoryId);
+            });
+            
             // Configure Face entity
             modelBuilder.Entity<Face>(entity =>
             {

@@ -214,9 +214,9 @@ namespace GaleriePhotos.Controllers
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
                 .Where(f => f.FaceName != null && f.FaceNameId == id && f.Photo.Directory.GalleryId == galleryId)
+                .OrderBy(f => f.Photo.DateTime)
                 .Select(f => f.Photo)
                 .Distinct()
-                .OrderBy(p => p.Id)
                 .ToListAsync();
 
             var result = photos.Select(p => new PhotoViewModel(p)).ToArray();
