@@ -13,6 +13,7 @@ import { FaceName } from "../../../../../services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useRouter } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";
+import { UnnamedFaces } from "@/components/unnamed-faces";
 
 const FaceNamesScreen = observer(function FaceNames() {
   const { galleryId } = useDirectoriesStore();
@@ -29,14 +30,6 @@ const FaceNamesScreen = observer(function FaceNames() {
   }
 
   const names = faceNamesStore.names;
-
-  if (!names || names.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Aucun nom de visage trouvé</Text>
-      </View>
-    );
-  }
 
   const renderFaceName = ({ item }: { item: FaceName }) => (
     <TouchableOpacity
@@ -61,6 +54,7 @@ const FaceNamesScreen = observer(function FaceNames() {
 
   return (
     <View style={styles.container}>
+      <UnnamedFaces />
       <FlatList
         data={names}
         keyExtractor={(item) => item.id.toString()}

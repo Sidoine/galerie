@@ -71,7 +71,9 @@ namespace GaleriePhotos.Data
 
                 entity.HasIndex(e => e.PhotoId);
                 entity.HasIndex(e => e.FaceNameId);
-                entity.HasIndex(x => x.Embedding).HasMethod("ivfflat").HasOperators("vector_l2_ops");
+                entity.HasIndex(x => x.Embedding)
+                .HasMethod("ivfflat")
+                .HasOperators("vector_l2_ops");
             });
             
             // Configure FaceName entity

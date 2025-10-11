@@ -84,7 +84,7 @@ namespace GaleriePhotos.Controllers
                 Y = f.Y,
                 Width = f.Width,
                 Height = f.Height,
-                Name = f.FaceName?.Name,
+                Name = null,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
             }).ToArray();

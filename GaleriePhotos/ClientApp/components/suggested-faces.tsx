@@ -305,17 +305,6 @@ const RejectFaceModal = observer(function RejectFaceModal({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const photosStore = usePhotosStore();
-  const photo = photosStore.imageLoader.getValue(face.photoId);
-  const [rejectPhotoUrl, setRejectPhotoUrl] = useState<string | null>(null);
-  const [photoLoading, setPhotoLoading] = useState(true);
-
-  useEffect(() => {
-    if (photo?.publicId) {
-      setRejectPhotoUrl(photosStore.getImage(photo.publicId));
-      setPhotoLoading(false);
-    }
-  }, [photo?.publicId, photosStore, face.photoId]);
 
   const handleDelete = async () => {
     if (busy) return;
@@ -497,7 +486,7 @@ export const styles = StyleSheet.create({
     width: 360,
     maxWidth: "100%",
   },
-  
+
   previewActionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",

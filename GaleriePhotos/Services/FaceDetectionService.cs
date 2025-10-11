@@ -159,35 +159,25 @@ namespace GaleriePhotos.Services
 
         public async Task<IEnumerable<Face>> GetSimilarFacesAsync(int galleryId, string name, int limit = 10)
         {
-            // Get all named faces for the given name
-            var namedFaces = await applicationDbContext.Faces
-                .Include(f => f.Photo)
-                .Include(f => f.FaceName)
-                .Where(f => f.FaceName != null && f.FaceName.Name == name && f.Photo.Directory.GalleryId == galleryId)
-                .ToListAsync();
-
-            if (!namedFaces.Any())
+            var faceName = await applicationDbContext.FaceNames
+                .FirstOrDefaultAsync(fn => fn.Name == name && fn.GalleryId == galleryId);
+            if (faceName == null)
             {
                 return Enumerable.Empty<Face>();
             }
 
-            // Calculate average embedding for the named faces
-            var avgEmbedding = CalculateAverageEmbedding(namedFaces.Select(f => f.Embedding));
-
             // Find similar unnamed faces using cosine similarity
-            var unnamedFaces = await applicationDbContext.Faces
-                .Include(f => f.Photo)
-                .Where(f => f.FaceName == null)
-                .ToListAsync();
+            var unnamedFaces = await applicationDbContext.Faces.FromSql($@"SELECT f.""Id"", f.""CreatedAt"", f.""Embedding"", f.""FaceNameId"", f.""Height"", f.""NamedAt"", f.""PhotoId"", f.""Width"", f.""X"", f.""Y"", f.""Embedding"" AS c
+    FROM ""Faces"" AS f
+    LEFT JOIN ""FaceNames"" AS f0 ON f.""FaceNameId"" = f0.""Id""
+	LEFT JOIN ""Photos"" AS ph ON f.""PhotoId"" = ph.""Id""
+	LEFT JOIN ""PhotoDirectories"" AS d ON ph.""DirectoryId"" = d.""Id""
+    WHERE f0.""Id"" IS NULL AND d.""GalleryId"" = {galleryId}
+    ORDER BY f.""Embedding"" <=>(
+		SELECT AVG(""Embedding"") FROM ""Faces"" WHERE ""FaceNameId"" = {faceName.Id}) ASC
+    LIMIT 10").ToArrayAsync();
 
-            // Calculate similarities in memory (for simplicity)
-            var similarities = unnamedFaces
-                .Select(f => new { Face = f, Similarity = CalculateCosineSimilarity(f.Embedding, avgEmbedding) })
-                .OrderByDescending(x => x.Similarity)
-                .Take(limit)
-                .Select(x => x.Face);
-
-            return similarities;
+            return unnamedFaces;
         }
 
         public async Task<IEnumerable<Face>> GetUnnamedFacesSampleAsync(int galleryId, int count = 20)
@@ -275,58 +265,6 @@ namespace GaleriePhotos.Services
                 .FirstOrDefaultAsync();
 
             return namedFaces;
-        }
-
-        private Vector CalculateAverageEmbedding(IEnumerable<Vector> embeddings)
-        {
-            var embeddingsList = embeddings.ToList();
-            if (!embeddingsList.Any())
-            {
-                throw new ArgumentException("No embeddings provided");
-            }
-
-            var dimension = embeddingsList.First().Memory.Length;
-            var avgArray = new float[dimension];
-
-            foreach (var embedding in embeddingsList)
-            {
-                var span = embedding.Memory.Span;
-                for (int i = 0; i < dimension; i++)
-                {
-                    avgArray[i] += span[i];
-                }
-            }
-
-            for (int i = 0; i < dimension; i++)
-            {
-                avgArray[i] /= embeddingsList.Count;
-            }
-
-            return new Vector(avgArray);
-        }
-
-        private float CalculateCosineSimilarity(Vector a, Vector b)
-        {
-            var spanA = a.Memory.Span;
-            var spanB = b.Memory.Span;
-            
-            if (spanA.Length != spanB.Length)
-            {
-                throw new ArgumentException("Vectors must have the same dimension");
-            }
-
-            float dotProduct = 0;
-            float normA = 0;
-            float normB = 0;
-
-            for (int i = 0; i < spanA.Length; i++)
-            {
-                dotProduct += spanA[i] * spanB[i];
-                normA += spanA[i] * spanA[i];
-                normB += spanB[i] * spanB[i];
-            }
-
-            return dotProduct / (float)(Math.Sqrt(normA) * Math.Sqrt(normB));
         }
     }
 }
