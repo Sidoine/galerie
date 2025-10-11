@@ -15,7 +15,7 @@ namespace GaleriePhotos.Models
 
         public required Gallery Gallery { get; set; }
         
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;        
         
         // Navigation properties
         public ICollection<Face> Faces { get; set; } = new List<Face>();

@@ -32,6 +32,9 @@ namespace GaleriePhotos.Models
         
         // Place type (Country, City, Town, etc.)
         public PlaceType Type { get; set; } = PlaceType.City;
+        
+        // Photo de couverture optionnelle
+        public int? CoverPhotoId { get; set; }
 
         public Place(string name, double latitude, double longitude)
         {
@@ -44,6 +47,7 @@ namespace GaleriePhotos.Models
         public required Gallery Gallery { get; set; }
         public Place? Parent { get; set; }
         public ICollection<Place> Children { get; set; } = new List<Place>();
+        public Photo? CoverPhoto { get; set; }
     }
 
     public enum PlaceType

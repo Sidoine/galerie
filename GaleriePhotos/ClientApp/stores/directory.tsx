@@ -4,6 +4,7 @@ import { Href, useRouter } from "expo-router";
 import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
 import { DirectoryFull } from "@/services/views";
+import { Text } from "react-native";
 
 const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);
 
@@ -106,6 +107,22 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [directoryId, galleryId, router]
   );
 
+  const setCover = useCallback(
+    async (photoId: number) => {
+      if (directoryId)
+        await directoriesStore.patchDirectoryAndClearCache(directoryId, {
+          coverPhotoId: photoId,
+        });
+    },
+    [directoriesStore, directoryId]
+  );
+
+  const setParentCover = useCallback(
+    async (directoryId: number) =>
+      await directoriesStore.setParentCover(directoryId),
+    [directoriesStore]
+  );
+
   const directoryStore = useMemo<PhotoContainerStore>(
     () => ({
       navigateToPhoto,
@@ -120,6 +137,9 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       container: directory,
       navigateToChildContainer,
       getPhotoLink,
+      setCover,
+      setParentCover,
+      childContainersHeader: <Text>Albums</Text>,
     }),
     [
       navigateToPhoto,
@@ -134,6 +154,8 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       directory,
       navigateToChildContainer,
       getPhotoLink,
+      setCover,
+      setParentCover,
     ]
   );
 

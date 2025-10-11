@@ -40,5 +40,9 @@ export class PlaceController {
     getPlaceYears = (id: number) => {
         return this.client.fetchJson<views.Year[]>(`api/places/${id}/years`, "GET", undefined);
     }
+
+    setPlaceCover = (placeId: number, photoId: number) => {
+        return this.client.fetch(`api/places/${placeId}/cover/${photoId}`, "POST", undefined);
+    }
 }
 

@@ -8,6 +8,7 @@ import {
   PhotoContainerStore,
 } from "./photo-container";
 import { Photo } from "@/services/views";
+import { Text } from "react-native";
 
 const noPhoto: Photo[] = [];
 const noContainer: PhotoContainer[] = [];
@@ -120,6 +121,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       container: faceName,
       navigateToChildContainer,
       getPhotoLink,
+      childContainersHeader: <Text>??</Text>,
     };
   }, [
     breadCrumbs,

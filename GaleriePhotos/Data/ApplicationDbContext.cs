@@ -34,7 +34,7 @@ namespace GaleriePhotos.Data
             {
                 entity.HasIndex(e => new { e.DirectoryId, e.FileName }).IsUnique();
                 entity.HasIndex(x => x.DirectoryId);
-                entity.HasIndex(x => x.PlaceId);
+                entity.HasIndex(x => x.PlaceId).IsUnique(false);
                 entity.HasIndex(x => x.DateTime);
                 entity.HasIndex(x => new { x.DateTime, x.PlaceId });
                 
@@ -93,6 +93,7 @@ namespace GaleriePhotos.Data
                 entity.HasIndex(e => new { e.GalleryId, e.OsmType, e.OsmId });
                 entity.HasIndex(e => e.ParentId);
                 entity.HasIndex(e => e.Type);
+                entity.HasIndex(e => e.CoverPhotoId);
                 
                 entity.HasOne(e => e.Gallery)
                     .WithMany()
@@ -104,6 +105,11 @@ namespace GaleriePhotos.Data
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.CoverPhoto)
+                    .WithMany()
+                    .HasForeignKey(e => e.CoverPhotoId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

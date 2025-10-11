@@ -41,12 +41,8 @@ const SubdirectoryCard = observer(
     }, [store, directory.id]);
 
     const handleUseAsParentCover = useCallback(async () => {
-      try {
-        await directoriesStore.setParentCover(directory.id);
-      } catch (error) {
-        console.error("Failed to set parent cover:", error);
-      }
-    }, [directory.id, directoriesStore]);
+      if (store.setParentCover) await store.setParentCover(directory.id);
+    }, [store, directory.id]);
 
     const toggleVisibility = useCallback(
       (visibilityValue: number) => (value: boolean) => {
@@ -64,7 +60,7 @@ const SubdirectoryCard = observer(
       <View style={[styles.card, { width: size }]}>
         <TouchableOpacity onPress={handleNavigate}>
           <View style={styles.imageWrapper}>
-            {isDirectory(directory) && directory.coverPhotoId && (
+            {directory.coverPhotoId && (
               <Image
                 source={{
                   uri: photosStore.getThumbnail(directory.coverPhotoId),
@@ -73,7 +69,7 @@ const SubdirectoryCard = observer(
                 resizeMode="cover"
               />
             )}
-            {(!isDirectory(directory) || !directory.coverPhotoId) && (
+            {!directory.coverPhotoId && (
               <Image
                 source={placeholder}
                 style={styles.image}
@@ -98,18 +94,19 @@ const SubdirectoryCard = observer(
               </Text>
             )}
           </View>
-          {membersStore.administrator && isDirectory(directory) && (
+          {membersStore.administrator && (
             <View style={styles.visibilityRow}>
-              {visibilities.map((v) => (
-                <View key={v.id} style={styles.visibilityItem}>
-                  <Switch
-                    value={(directory.visibility & v.value) > 0}
-                    onValueChange={toggleVisibility(v.value)}
-                  />
-                  <Text style={styles.visibilityIcon}>{v.icon}</Text>
-                </View>
-              ))}
-              {directory.coverPhotoId && (
+              {isDirectory(directory) &&
+                visibilities.map((v) => (
+                  <View key={v.id} style={styles.visibilityItem}>
+                    <Switch
+                      value={(directory.visibility & v.value) > 0}
+                      onValueChange={toggleVisibility(v.value)}
+                    />
+                    <Text style={styles.visibilityIcon}>{v.icon}</Text>
+                  </View>
+                ))}
+              {store.setParentCover && (
                 <TouchableOpacity
                   onPress={handleUseAsParentCover}
                   style={styles.actionButton}

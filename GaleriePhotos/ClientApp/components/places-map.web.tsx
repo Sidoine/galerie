@@ -4,20 +4,15 @@
 // on pourrait renommer ce fichier en `places-map.web.tsx` (déjà le cas) et importer simplement `./places-map`.
 import { TileLayer, Marker, Popup, MapContainer } from "react-leaflet";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { Place } from "@/services/views";
 import { theme } from "@/stores/theme";
+import { PlacesMapProps } from "./places-map-props";
 
 function PlacesMap({
   selectedCountry,
   placesToShow,
   onClickPhotos,
   onClickPlace,
-}: {
-  selectedCountry: Place | null;
-  placesToShow: Place[];
-  onClickPlace: (place: Place) => void;
-  onClickPhotos: (placeId: number) => void;
-}) {
+}: PlacesMapProps) {
   // Calculate map bounds to show all places
   const latitudes = placesToShow.map((p) => p.latitude);
   const longitudes = placesToShow.map((p) => p.longitude);
@@ -29,7 +24,7 @@ function PlacesMap({
       key={selectedCountry?.id || "countries"} // Force re-render when switching views
       center={[centerLat, centerLng]}
       zoom={selectedCountry ? 6 : 2} // Zoom in more for cities, out for countries
-      style={{ height: "100%", width: "100%" }}
+      style={{ height: 512, width: "100%" }}
       scrollWheelZoom={true}
     >
       <TileLayer
@@ -57,7 +52,7 @@ function PlacesMap({
                 // For countries, show "View Cities" button
                 <TouchableOpacity
                   style={styles.popupButton}
-                  onPress={() => onClickPlace(place)}
+                  onPress={() => onClickPlace(place.id)}
                 >
                   <Text style={styles.popupButtonText}>View Cities</Text>
                 </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, memo } from "react";
+import React, { useCallback, useMemo, memo, ReactNode } from "react";
 import {
   SectionList,
   SectionListData,
@@ -28,7 +28,7 @@ function splitInRows<T>(data: T[], cols: number): T[][] {
 }
 
 interface Section {
-  title: string;
+  title: ReactNode;
   type: "Albums" | "Photos";
 }
 
@@ -76,13 +76,21 @@ export const DirectoryView = observer(function DirectoryView({
   const data = useMemo(() => {
     const result: SectionListData<(PhotoContainer | Photo)[], Section>[] = [];
     if (albumRows.length > 0) {
-      result.push({ title: "Albums", data: albumRows, type: "Albums" });
+      result.push({
+        title: store.childContainersHeader,
+        data: albumRows,
+        type: "Albums",
+      });
     }
     if (photoRows.length > 0) {
-      result.push({ title: "Photos", data: photoRows, type: "Photos" });
+      result.push({
+        title: <Text style={styles.sectionTitle}>Photos</Text>,
+        data: photoRows,
+        type: "Photos",
+      });
     }
     return result;
-  }, [albumRows, photoRows]);
+  }, [albumRows, photoRows, store.childContainersHeader]);
 
   // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
   const Row = useMemo(
@@ -177,8 +185,8 @@ export const DirectoryView = observer(function DirectoryView({
         updateCellsBatchingPeriod={50}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.title === "Photos" && (
+            {section.title}
+            {section.type === "Photos" && (
               <View style={styles.buttonRow}>
                 <SortButton
                   selected={order === "date-desc"}

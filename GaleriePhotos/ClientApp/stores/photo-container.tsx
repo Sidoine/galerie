@@ -1,7 +1,15 @@
 import { Href } from "@/.expo/types/router";
-import { Directory, Month, Photo, Year } from "@/services/views";
+import {
+  Directory,
+  FaceName,
+  Month,
+  Photo,
+  Place,
+  Year,
+} from "@/services/views";
+import { ReactNode } from "react";
 
-export type PhotoContainer = Year | Month | Directory;
+export type PhotoContainer = Year | Month | Directory | Place | FaceName;
 
 export interface BreadCrumb {
   id: number;
@@ -22,4 +30,7 @@ export interface PhotoContainerStore {
   breadCrumbs: BreadCrumb[];
   container: PhotoContainer | null;
   getPhotoLink(photoId: number): Href;
+  setCover?(photoId: number): Promise<void>;
+  setParentCover?(containerId: number): Promise<void>;
+  childContainersHeader: ReactNode;
 }

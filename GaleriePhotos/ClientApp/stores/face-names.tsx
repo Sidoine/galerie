@@ -9,7 +9,8 @@ class FaceNamesStore {
     public galleryId: number,
     private namesLoader: ValueLoader<FaceName[], [number]>,
     private nameLoader: MapLoader<FaceName, [number, number]>,
-    private namePhotosLoader: MapLoader<Photo[], [number, number]>
+    private namePhotosLoader: MapLoader<Photo[], [number, number]>,
+    private faceController: FaceController
   ) {
     makeObservable(this, {
       names: computed,
@@ -35,6 +36,26 @@ class FaceNamesStore {
   getFaceNameThumbnailUrl(id: number) {
     return `/api/gallery/${this.galleryId}/face-names/${id}/thumbnail`;
   }
+
+  async suggestNameForFace(faceId: number) {
+    const response = await this.faceController.suggestName(
+      this.galleryId,
+      faceId,
+      { threshold: 0.8 }
+    );
+    if (response.ok) return response.value.name;
+    return null;
+  }
+
+  async assignNameToFace(faceId: number, name: string) {
+    const response = await this.faceController.assignName(
+      this.galleryId,
+      faceId,
+      { name }
+    );
+    this.namesLoader.invalidate();
+    return response.ok;
+  }
 }
 
 const FaceNamesStoreContext = createContext<FaceNamesStore | null>(null);
@@ -58,7 +79,8 @@ export function FaceNamesStoreProvider({
       Number(galleryId),
       faceNamesLoader,
       faceNameLoader,
-      faceNamePhotosLoader
+      faceNamePhotosLoader,
+      faceController
     );
   }, [apiClient, galleryId]);
 

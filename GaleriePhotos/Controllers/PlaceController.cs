@@ -132,5 +132,25 @@ namespace Galerie.Server.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        [HttpPost("{placeId}/cover/{photoId}")]
+        [Authorize(Policy = Policies.Administrator)]
+        public async Task<ActionResult> SetPlaceCover(int placeId, int photoId)
+        {
+            try
+            {
+                var success = await placeService.SetPlaceCoverAsync(placeId, photoId);
+                if (!success)
+                {
+                    return BadRequest("Could not set cover photo for place");
+                }
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error setting cover photo {PhotoId} for place {PlaceId}", photoId, placeId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }
