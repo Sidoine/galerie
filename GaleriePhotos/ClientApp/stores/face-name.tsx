@@ -59,7 +59,18 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       },
     });
   }, [router, faceNamesStore.galleryId, faceNameId, order]);
-  const navigateToChildContainer = useCallback(() => {}, []);
+  const getChildContainerLink = useCallback((): Href => {
+    // No child container for face names
+    return {
+      pathname: "/gallery/[galleryId]/face-names",
+      params: {
+        galleryId: faceNamesStore.galleryId,
+      },
+    };
+  }, [faceNamesStore.galleryId]);
+  const navigateToChildContainer = useCallback(() => {
+    router.push(getChildContainerLink());
+  }, [router, getChildContainerLink]);
   const navigateToParentContainer = useCallback(() => {
     router.push({
       pathname: "/gallery/[galleryId]/face-names",
@@ -122,6 +133,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       navigateToChildContainer,
       getPhotoLink,
       childContainersHeader: <Text>??</Text>,
+      getChildContainerLink,
     };
   }, [
     breadCrumbs,
@@ -134,6 +146,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     photoList,
     sort,
     getPhotoLink,
+    getChildContainerLink,
   ]);
   return (
     <FaceNameStoreContext.Provider value={faceNameStore}>

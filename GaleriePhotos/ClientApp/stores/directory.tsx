@@ -53,11 +53,25 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     router.push(`/gallery/${galleryId}/directory/${directoryId}`);
   }, [galleryId, directoryId, router]);
 
+  const getChildContainerLink = useCallback(
+    (containerId: number): Href => {
+      return {
+        pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
+        params: {
+          galleryId,
+          directoryId: containerId,
+          order,
+        },
+      };
+    },
+    [galleryId, order]
+  );
+
   const navigateToChildContainer = useCallback(
     (containerId: number) => {
-      router.push(`/gallery/${galleryId}/directory/${containerId}`);
+      router.push(getChildContainerLink(containerId));
     },
-    [galleryId, router]
+    [router, getChildContainerLink]
   );
 
   const navigateToParentContainer = useCallback(() => {
@@ -140,6 +154,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       setCover,
       setParentCover,
       childContainersHeader: <Text>Albums</Text>,
+      getChildContainerLink,
     }),
     [
       navigateToPhoto,
@@ -156,6 +171,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       getPhotoLink,
       setCover,
       setParentCover,
+      getChildContainerLink,
     ]
   );
 

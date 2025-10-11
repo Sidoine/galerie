@@ -15,6 +15,7 @@ import placeholder from "@/assets/placeholder.png";
 import { usePhotosStore } from "@/stores/photos";
 import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 import { Directory } from "@/services/views";
+import { Link } from "expo-router";
 
 function isDirectory(object: PhotoContainer): object is Directory {
   return (object as Directory).numberOfSubDirectories !== undefined;
@@ -58,7 +59,7 @@ const SubdirectoryCard = observer(
 
     return (
       <View style={[styles.card, { width: size }]}>
-        <TouchableOpacity onPress={handleNavigate}>
+        <Link href={store.getChildContainerLink(directory.id)} asChild>
           <View style={styles.imageWrapper}>
             {directory.coverPhotoId && (
               <Image
@@ -77,7 +78,7 @@ const SubdirectoryCard = observer(
               />
             )}
           </View>
-        </TouchableOpacity>
+        </Link>
         <View style={styles.meta}>
           <Text style={styles.title}>{directory.name}</Text>
           <View style={styles.subtitleRow}>

@@ -33,4 +33,5 @@ export interface PhotoContainerStore {
   setCover?(photoId: number): Promise<void>;
   setParentCover?(containerId: number): Promise<void>;
   childContainersHeader: ReactNode;
+  getChildContainerLink(containerId: number): Href;
 }

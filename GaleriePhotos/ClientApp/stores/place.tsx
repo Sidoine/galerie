@@ -68,26 +68,92 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     });
   }, [router, placesStore.galleryId, placeId, order, year, month]);
 
+  const photoCount = placeId
+    ? placesStore.getPlacePhotoCount(placeId, year, month)
+    : 0;
+  const tooManyPhotos = 10;
+  const photoList =
+    (photoCount !== null && photoCount < tooManyPhotos) || month !== undefined
+      ? placeId
+        ? placesStore.getPlacePhotos(placeId, year, month)
+        : emptyPhotoList
+      : emptyPhotoList;
+  let childType: "places" | "years" | "months" | "none" = "none";
+  let containersList: PhotoContainer[] | null = emptyPhotoContainer;
+  if (place) {
+    if (place.type === PlaceType.Country) {
+      containersList = placesStore.getCitiesByCountry(place.id);
+      childType = "places";
+    } else {
+      if (photoCount === null || photoCount < tooManyPhotos) {
+        containersList = emptyPhotoContainer;
+      } else {
+        if (year && month) {
+          containersList = emptyPhotoContainer;
+        } else if (year) {
+          childType = "months";
+          containersList = placeId
+            ? placesStore.getPlaceMonths(placeId, year)
+            : null;
+        } else {
+          childType = "years";
+          containersList = placeId ? placesStore.getPlaceYears(placeId) : null;
+        }
+      }
+    }
+  } else {
+    containersList = placesStore.countries;
+  }
+
+  const getChildContainerLink = useCallback(
+    (containerId: number): Href => {
+      const pathname = "/gallery/[galleryId]/places/[placeId]";
+      switch (childType) {
+        case "none":
+          return {
+            pathname,
+            params: {
+              galleryId: placesStore.galleryId,
+              placeId: containerId ?? 0,
+            },
+          };
+        case "places":
+          return {
+            pathname,
+            params: {
+              galleryId: placesStore.galleryId,
+              placeId: containerId ?? 0,
+            },
+          };
+        case "years":
+          return {
+            pathname,
+            params: {
+              galleryId: placesStore.galleryId,
+              placeId: placeId ?? 0,
+              year: containerId,
+            },
+          };
+        case "months":
+          return {
+            pathname,
+            params: {
+              galleryId: placesStore.galleryId,
+              placeId: placeId ?? 0,
+              year: year,
+              month: containerId,
+            },
+          };
+      }
+    },
+    [childType, placesStore.galleryId, placeId, year]
+  );
+
   const navigateToChildContainer = useCallback(
     (containerId: number) => {
-      router.push({
-        pathname: "/gallery/[galleryId]/places/[placeId]",
-        params: {
-          galleryId: placesStore.galleryId,
-          placeId:
-            place === null || place.type === PlaceType.Country
-              ? containerId
-              : placeId ?? 0,
-          order,
-          year:
-            place?.type !== PlaceType.Country && year === undefined
-              ? containerId
-              : year,
-          month: year !== undefined ? containerId : undefined,
-        },
-      });
+      router.push(getChildContainerLink(containerId));
     },
-    [router, placesStore.galleryId, place, placeId, order, year]
+    [router, getChildContainerLink]
   );
 
   const navigateToParentContainer = useCallback(() => {
@@ -142,13 +208,16 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   const breadCrumbs = useMemo<BreadCrumb[]>(() => {
     const crumbs: BreadCrumb[] = [];
     if (place) {
-      if (month) {
+      if (month && year) {
         crumbs.unshift({
           id: place.id,
-          name: month.toString(),
+          name: new Date(year, month - 1, 1).toLocaleString("default", {
+            month: "long",
+          }),
           url: `/gallery/${placesStore.galleryId}/places/${place.id}?order=${order}&year=${year}&month=${month}`,
         });
-      } else if (year) {
+      }
+      if (year) {
         crumbs.unshift({
           id: place.id,
           name: year.toString(),
@@ -179,38 +248,6 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
 
     return crumbs;
   }, [month, order, parentPlace, place, placesStore.galleryId, year]);
-  const photoCount = placeId
-    ? placesStore.getPlacePhotoCount(placeId, year, month)
-    : 0;
-  const tooManyPhotos = 10;
-  const photoList =
-    (photoCount !== null && photoCount < tooManyPhotos) || month !== undefined
-      ? placeId
-        ? placesStore.getPlacePhotos(placeId, year, month)
-        : emptyPhotoList
-      : emptyPhotoList;
-  let containersList: PhotoContainer[] | null = emptyPhotoContainer;
-  if (place) {
-    if (place.type === PlaceType.Country) {
-      containersList = placesStore.getCitiesByCountry(place.id);
-    } else {
-      if (photoCount === null || photoCount < tooManyPhotos) {
-        containersList = emptyPhotoContainer;
-      } else {
-        if (year && month) {
-          containersList = emptyPhotoContainer;
-        } else if (year) {
-          containersList = placeId
-            ? placesStore.getPlaceMonths(placeId, year)
-            : null;
-        } else {
-          containersList = placeId ? placesStore.getPlaceYears(placeId) : null;
-        }
-      }
-    }
-  } else {
-    containersList = placesStore.countries;
-  }
 
   const sort = useCallback(
     (order: "date-asc" | "date-desc") => {
@@ -265,6 +302,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
       getPhotoLink,
       setCover,
       childContainersHeader,
+      getChildContainerLink,
     };
   }, [
     navigateToPhoto,
@@ -280,6 +318,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     getPhotoLink,
     setCover,
     childContainersHeader,
+    getChildContainerLink,
   ]);
   return (
     <PlaceStoreContext.Provider value={placeStore}>
