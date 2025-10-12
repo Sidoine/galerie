@@ -1,4 +1,4 @@
-import { Href } from "@/.expo/types/router";
+import { Href } from "expo-router";
 import {
   Directory,
   FaceName,
