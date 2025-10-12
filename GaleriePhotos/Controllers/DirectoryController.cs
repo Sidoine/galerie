@@ -144,5 +144,38 @@ namespace Galerie.Server.Controllers
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPost("{id}/bulk-update-date")]
+        public async Task<ActionResult> BulkUpdateDate(int id, [FromBody] DirectoryBulkUpdateDateViewModel viewModel)
+        {
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
+            if (directory == null) return NotFound();
+            
+            await photoService.BulkUpdatePhotosDate(id, viewModel.DateTime);
+            return Ok();
+        }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPost("{id}/bulk-update-location")]
+        public async Task<ActionResult> BulkUpdateLocation(int id, [FromBody] DirectoryBulkUpdateLocationViewModel viewModel)
+        {
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
+            if (directory == null) return NotFound();
+            
+            await photoService.BulkUpdatePhotosLocation(id, viewModel.Latitude, viewModel.Longitude);
+            return Ok();
+        }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpGet("{id}/suggest-date")]
+        public async Task<ActionResult<DirectoryPathDateSuggestionViewModel>> GetSuggestedDate(int id)
+        {
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
+            if (directory == null) return NotFound();
+            
+            var suggestedDate = photoService.SuggestDateFromDirectoryPath(directory.Path);
+            return Ok(new DirectoryPathDateSuggestionViewModel(directory.Path, suggestedDate));
+        }
     }
 }

@@ -246,6 +246,38 @@ export interface DirectoryPatch {
     coverPhotoId?: number | undefined;
 }
 
+export interface DirectoryBulkUpdateDate {
+    dateTime: string;
+}
+
+export interface DirectoryBulkUpdateLocation {
+    latitude: number;
+
+    longitude: number;
+}
+
+export interface DirectoryPathDateSuggestion {
+    suggestedDate: string | null;
+
+    directoryPath: string;
+}
+
+export interface AddressGeocodeRequest {
+    address: string;
+}
+
+export interface AddressGeocodeResponse {
+    latitude: number | null;
+
+    longitude: number | null;
+
+    formattedAddress: string | null;
+
+    success: boolean;
+
+    error: string | null;
+}
+
 export interface PhotoFull {
     id: number;
 

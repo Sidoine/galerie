@@ -3,6 +3,7 @@ export * from "./directoryVisibility";
 export * from "./face";
 export * from "./gallery";
 export * from "./galleryMember";
+export * from "./geocoding";
 export * from "./me";
 export * from "./photo";
 export * from "./place";
