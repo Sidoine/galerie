@@ -25,8 +25,8 @@ export function groupPhotosByDate(
   photos.forEach((photo) => {
     const date = new Date(photo.dateTime);
     const key = groupByDay
-      ? date.toISOString().split('T')[0] // YYYY-MM-DD
-      : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      ? date.toISOString().split("T")[0] // YYYY-MM-DD
+      : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
 
     if (!groups.has(key)) {
       groups.set(key, []);
@@ -49,19 +49,19 @@ export function groupPhotosByDate(
  */
 function formatDateGroupTitle(dateKey: string, isDay: boolean): string {
   if (isDay) {
-    const date = new Date(dateKey + 'T00:00:00');
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    const date = new Date(dateKey + "T00:00:00");
+    return new Intl.DateTimeFormat("fr-FR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     }).format(date);
   } else {
-    const [year, month] = dateKey.split('-');
+    const [year, month] = dateKey.split("-");
     const date = new Date(Number(year), Number(month) - 1, 1);
-    return new Intl.DateTimeFormat('fr-FR', {
-      year: 'numeric',
-      month: 'long',
+    return new Intl.DateTimeFormat("fr-FR", {
+      year: "numeric",
+      month: "long",
     }).format(date);
   }
 }
@@ -69,20 +69,27 @@ function formatDateGroupTitle(dateKey: string, isDay: boolean): string {
 /**
  * Determines the optimal grouping strategy based on photo count and date range
  */
-export function determineGroupingStrategy(photos: Photo[]): 'day' | 'month' | 'none' {
-  if (photos.length <= 20) return 'none';
-  
-  if (photos.length === 0) return 'none';
-  
+export function determineGroupingStrategy(
+  photos: Photo[]
+): "day" | "month" | "none" {
+  if (photos.length <= 20) return "none";
+
+  if (photos.length === 0) return "none";
+
   // Calculate date range
-  const dates = photos.map(p => new Date(p.dateTime)).sort((a, b) => a.getTime() - b.getTime());
-  const daysDiff = Math.ceil((dates[dates.length - 1].getTime() - dates[0].getTime()) / (1000 * 60 * 60 * 24));
-  
-  // If photos span more than 90 days or we have >100 photos, group by month
-  if (daysDiff > 90 || photos.length > 100) return 'month';
-  
+  const dates = photos
+    .map((p) => new Date(p.dateTime))
+    .sort((a, b) => a.getTime() - b.getTime());
+  const daysDiff = Math.ceil(
+    (dates[dates.length - 1].getTime() - dates[0].getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+
+  // If photos span more than 90 days, group by month
+  if (daysDiff > 90) return "month";
+
   // Otherwise group by day
-  return 'day';
+  return "day";
 }
 
 /**
