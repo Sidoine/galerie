@@ -5,11 +5,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useRouter, useGlobalSearchParams } from "expo-router";
-import { DashboardController, DashboardStatistics } from "@/services/services";
+import {
+  DashboardController,
+  DashboardStatistics,
+  AlbumWithoutGpsInfo,
+} from "@/services/services";
 import { useMeStore } from "@/stores/me";
 import { useApiClient } from "folke-service-helpers";
 import Icon from "@/components/Icon";
@@ -20,27 +23,33 @@ const Dashboard = observer(function Dashboard() {
   const { galleryId } = useGlobalSearchParams<{ galleryId: string }>();
   const meStore = useMeStore();
   const apiClient = useApiClient();
-  const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
+  const [statistics, setStatistics] = useState<DashboardStatistics | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const dashboardController = useMemo(() => new DashboardController(apiClient), [apiClient]);
-
-  useEffect(() => {
-    loadStatistics();
-  }, [loadStatistics]);
+  const dashboardController = useMemo(
+    () => new DashboardController(apiClient),
+    [apiClient]
+  );
 
   const loadStatistics = useCallback(async () => {
     if (!galleryId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      const response = await dashboardController.getStatistics(Number(galleryId));
+      const response = await dashboardController.getStatistics(
+        Number(galleryId)
+      );
       if (response.ok) {
         setStatistics(response.value);
       } else {
-        setError(response.message || "Impossible de charger les statistiques du tableau de bord");
+        setError(
+          response.message ||
+            "Impossible de charger les statistiques du tableau de bord"
+        );
       }
     } catch (err) {
       console.error("Failed to load dashboard statistics:", err);
@@ -50,38 +59,20 @@ const Dashboard = observer(function Dashboard() {
     }
   }, [dashboardController, galleryId]);
 
-  const navigateToAlbum = (galleryId: number, directoryId: number) => {
-    // Navigate to the specific album/directory
-    router.push(`/gallery/${galleryId}/directory/${directoryId}`);
-  };
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
-  const showPhotoDetails = (photoInfo: {
-    photoId: number;
-    photoName: string;
-    directoryId: number;
-    directoryName: string;
-    directoryPath: string;
-    galleryId: number;
-    galleryName: string;
-  }) => {
-    Alert.alert(
-      "Détails de la photo",
-      `Photo: ${photoInfo.photoName}\nAlbum: ${photoInfo.directoryName}\nGalerie: ${photoInfo.galleryName}\nChemin: ${photoInfo.directoryPath}`,
-      [
-        {
-          text: "Voir l'album",
-          onPress: () => navigateToAlbum(photoInfo.galleryId, photoInfo.directoryId),
-        },
-        { text: "Fermer", style: "cancel" },
-      ]
-    );
+  const navigateToAlbum = (albumInfo: AlbumWithoutGpsInfo) => {
+    router.push(`/gallery/${galleryId}/directory/${albumInfo.directoryId}`);
   };
 
   if (!meStore.administrator) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>
-          Accès non autorisé. Seuls les administrateurs peuvent accéder au tableau de bord.
+          Accès non autorisé. Seuls les administrateurs peuvent accéder au
+          tableau de bord.
         </Text>
       </View>
     );
@@ -117,39 +108,59 @@ const Dashboard = observer(function Dashboard() {
         <View style={styles.statisticsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statTitle}>Photos sans coordonnées GPS</Text>
-            <Text style={styles.statNumber}>{statistics.photosWithoutGpsCount}</Text>
+            <Text style={styles.statNumber}>
+              {statistics.photosWithoutGpsCount}
+            </Text>
             <Text style={styles.statDescription}>
-              Photos qui n'ont pas de coordonnées GPS définies
+              Nombre total de photos sans localisation dans cette galerie
             </Text>
           </View>
-
-          {statistics.photosWithoutGpsCount > 0 && (
+          {statistics.albumsWithoutGps.length > 0 && (
             <View style={styles.photosSection}>
-              <Text style={styles.sectionTitle}>Albums contenant des photos sans GPS</Text>
-              {statistics.photosWithoutGpsAlbums.length < statistics.photosWithoutGpsCount && (
-                <Text style={styles.sampleInfo}>
-                  Affichage de {statistics.photosWithoutGpsAlbums.length} photos sur {statistics.photosWithoutGpsCount}
-                </Text>
-              )}
-              {statistics.photosWithoutGpsAlbums.map((photoInfo) => (
+              <Text style={styles.sectionTitle}>
+                Albums avec photos sans GPS
+              </Text>
+              <Text style={styles.sampleInfo}>
+                {statistics.albumsWithPhotosWithoutGpsCount} albums listés (top{" "}
+                {statistics.albumsWithoutGps.length})
+              </Text>
+              {statistics.albumsWithoutGps.map((albumInfo) => (
                 <TouchableOpacity
-                  key={`${photoInfo.photoId}`}
+                  key={`${albumInfo.directoryId}`}
                   style={styles.photoCard}
-                  onPress={() => showPhotoDetails(photoInfo)}
+                  onPress={() => navigateToAlbum(albumInfo)}
                 >
                   <View style={styles.photoInfo}>
                     <View style={styles.photoHeader}>
-                      <Icon set="mi" name="image" size={16} color={palette.textPrimary} />
-                      <Text style={styles.photoName}>{photoInfo.photoName}</Text>
+                      <Icon
+                        set="mi"
+                        name="folder"
+                        size={16}
+                        color={palette.textPrimary}
+                      />
+                      <Text style={styles.photoName}>
+                        {albumInfo.directoryPath
+                          .split(/[\\/]/)
+                          .filter(Boolean)
+                          .slice(-1)[0] ||
+                          albumInfo.directoryPath ||
+                          "(racine)"}
+                      </Text>
                     </View>
                     <Text style={styles.albumInfo}>
-                      Album: {photoInfo.directoryName}
+                      {albumInfo.missingGpsPhotoCount} photo
+                      {albumInfo.missingGpsPhotoCount > 1 ? "s" : ""} sans GPS
                     </Text>
-                    <Text style={styles.galleryInfo}>
-                      Galerie: {photoInfo.galleryName}
+                    <Text style={styles.albumPath} numberOfLines={1}>
+                      {albumInfo.directoryPath}
                     </Text>
                   </View>
-                  <Icon set="mi" name="chevron-right" size={16} color={palette.textSecondary} />
+                  <Icon
+                    set="mi"
+                    name="chevron-right"
+                    size={16}
+                    color={palette.textSecondary}
+                  />
                 </TouchableOpacity>
               ))}
             </View>
@@ -282,9 +293,10 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
     marginBottom: 2,
   },
-  galleryInfo: {
-    fontSize: 14,
+  albumPath: {
+    fontSize: 12,
     color: palette.textSecondary,
+    fontStyle: "italic",
   },
 });
 

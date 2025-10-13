@@ -154,26 +154,20 @@ export interface Month {
     coverPhotoId: string | null;
 }
 
-export interface PhotoWithoutGpsAlbumInfo {
-    photoId: number;
-
-    photoName: string;
-
+export interface AlbumWithoutGpsInfo {
     directoryId: number;
-
-    directoryName: string;
 
     directoryPath: string;
 
-    galleryId: number;
-
-    galleryName: string;
+    missingGpsPhotoCount: number;
 }
 
 export interface DashboardStatistics {
     photosWithoutGpsCount: number;
 
-    photosWithoutGpsAlbums: PhotoWithoutGpsAlbumInfo[];
+    albumsWithPhotosWithoutGpsCount: number;
+
+    albumsWithoutGps: AlbumWithoutGpsInfo[];
 }
 
 export interface GalleryDirectoryVisibility {

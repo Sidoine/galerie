@@ -21,40 +21,42 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpGet("statistics")]
-        public async Task<ActionResult<DashboardStatisticsViewModel>> GetStatistics(int galleryId)
+        public async Task<ActionResult<DashboardStatisticsViewModel>> GetStatistics(int galleryId, [FromQuery] int limit = 20)
         {
-            // Count all photos that have no GPS coordinates for the specific gallery
-            var photosWithoutGpsCount = await applicationDbContext.Photos
-                .Where(p => p.Directory.GalleryId == galleryId
-                    && (p.Latitude == null || p.Longitude == null || (p.Latitude == 0 && p.Longitude == 0))
-                    && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
-                    && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
-                .CountAsync();
+            if (limit <= 0) limit = 20;
+            if (limit > 200) limit = 200; // guardrail
 
-            // Get a small sample of photos for display (max 10)
-            var photosWithoutGpsSample = await applicationDbContext.Photos
+            var photosQuery = applicationDbContext.Photos
                 .Where(p => p.Directory.GalleryId == galleryId
-                    && (p.Latitude == null || p.Longitude == null || (p.Latitude == 0 && p.Longitude == 0))
-                    && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
-                    && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
-                .Include(p => p.Directory)
-                .ThenInclude(d => d.Gallery)
-                .OrderBy(p => p.Directory.Path)
-                .ThenBy(p => p.FileName)
-                .Take(10)
+                            && (p.Latitude == null || p.Longitude == null || (p.Latitude == 0 && p.Longitude == 0))
+                            && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
+                            && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
+
+            // Total photos without GPS
+            var photosWithoutGpsCount = await photosQuery.CountAsync();
+
+            // Group by directory to get aggregated missing GPS counts
+            var grouped = await photosQuery
+                .GroupBy(p => new { p.DirectoryId, p.Directory.Path })
+                .Select(g => new
+                {
+                    g.Key.DirectoryId,
+                    DirectoryPath = g.Key.Path,
+                    MissingCount = g.Count()
+                })
+                .OrderByDescending(x => x.MissingCount)
+                .ThenBy(x => x.DirectoryPath)
+                .Take(limit)
                 .ToListAsync();
 
             var statistics = new DashboardStatisticsViewModel
             {
                 PhotosWithoutGpsCount = photosWithoutGpsCount,
-                PhotosWithoutGpsAlbums = photosWithoutGpsSample.Select(p => new PhotoWithoutGpsAlbumInfo(
-                    p.Id,
-                    p.FileName,
-                    p.DirectoryId,
-                    System.IO.Path.GetFileName(p.Directory.Path) ?? p.Directory.Path,
-                    p.Directory.Path,
-                    p.Directory.GalleryId,
-                    p.Directory.Gallery.Name ?? "Unknown Gallery"
+                AlbumsWithPhotosWithoutGpsCount = grouped.Count,
+                AlbumsWithoutGps = grouped.Select(a => new AlbumWithoutGpsInfoViewModel(
+                    a.DirectoryId,
+                    a.DirectoryPath,
+                    a.MissingCount
                 )).ToList()
             };
 
