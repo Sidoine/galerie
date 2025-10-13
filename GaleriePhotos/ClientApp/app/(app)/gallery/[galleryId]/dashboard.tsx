@@ -126,6 +126,11 @@ const Dashboard = observer(function Dashboard() {
           {statistics.photosWithoutGpsCount > 0 && (
             <View style={styles.photosSection}>
               <Text style={styles.sectionTitle}>Albums contenant des photos sans GPS</Text>
+              {statistics.photosWithoutGpsAlbums.length < statistics.photosWithoutGpsCount && (
+                <Text style={styles.sampleInfo}>
+                  Affichage de {statistics.photosWithoutGpsAlbums.length} photos sur {statistics.photosWithoutGpsCount}
+                </Text>
+              )}
               {statistics.photosWithoutGpsAlbums.map((photoInfo) => (
                 <TouchableOpacity
                   key={`${photoInfo.photoId}`}
@@ -236,6 +241,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: palette.textPrimary,
     marginBottom: 12,
+  },
+  sampleInfo: {
+    fontSize: 14,
+    color: palette.textSecondary,
+    fontStyle: "italic",
+    marginBottom: 12,
+    textAlign: "center",
   },
   photoCard: {
     backgroundColor: palette.surface,
