@@ -35,6 +35,14 @@ class DirectoriesStore {
 
   photoReloadSuffix = new Map<string, number>();
 
+  getDirectory(directoryId: number) {
+    return this.infoLoader.getValue(directoryId);
+  }
+
+  getPhotos(directoryId: number) {
+    return this.contentLoader.getValue(directoryId);
+  }
+
   public async loadRoot() {
     this.isInError = false;
     const result = await this.directoryService.getGalleryRoot(this.galleryId);

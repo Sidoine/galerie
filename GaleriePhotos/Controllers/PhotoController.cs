@@ -115,5 +115,27 @@ namespace Galerie.Server.Controllers
                 return BadRequest("Impossible de faire pivoter la photo (angle invalide ou erreur interne).");
             return Ok();
         }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPost("bulk-update-location")]
+        public async Task<ActionResult> BulkUpdateLocation([FromBody] PhotoBulkUpdateLocationViewModel viewModel)
+        {
+            if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
+                return BadRequest("Aucune photo spécifiée");
+
+            await photoService.BulkUpdatePhotosLocation(viewModel.PhotoIds, viewModel.Latitude, viewModel.Longitude);
+            return Ok();
+        }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPost("bulk-update-date")]
+        public async Task<ActionResult> BulkUpdateDate([FromBody] PhotoBulkUpdateDateViewModel viewModel)
+        {
+            if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
+                return BadRequest("Aucune photo spécifiée");
+
+            await photoService.BulkUpdatePhotosDate(viewModel.PhotoIds, viewModel.DateTime);
+            return Ok();
+        }
     }
 }

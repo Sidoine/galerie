@@ -12,6 +12,7 @@ import Icon from "./Icon";
 import { useMembersStore } from "@/stores/members";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
+import { useDirectoriesStore } from "@/stores/directories";
 
 interface DirectoryAdminMenuProps {
   directoryId: number;
@@ -26,6 +27,8 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
   const [menuVisible, setMenuVisible] = useState(false);
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+
+  const photos = useDirectoriesStore().getPhotos(directoryId);
 
   // Only show for administrators
   if (!membersStore.administrator) {
@@ -78,19 +81,23 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
       </Modal>
 
       {/* Date Modal */}
-      <DirectoryBulkDateModal
-        visible={dateModalVisible}
-        directoryId={directoryId}
-        directoryPath={directoryPath}
-        onClose={() => setDateModalVisible(false)}
-      />
+      {photos && (
+        <DirectoryBulkDateModal
+          visible={dateModalVisible}
+          photoIds={photos.map((p) => p.id)}
+          directoryPath={directoryPath}
+          onClose={() => setDateModalVisible(false)}
+        />
+      )}
 
       {/* Location Modal */}
-      <DirectoryBulkLocationModal
-        visible={locationModalVisible}
-        directoryId={directoryId}
-        onClose={() => setLocationModalVisible(false)}
-      />
+      {photos && (
+        <DirectoryBulkLocationModal
+          visible={locationModalVisible}
+          photos={photos}
+          onClose={() => setLocationModalVisible(false)}
+        />
+      )}
     </>
   );
 });

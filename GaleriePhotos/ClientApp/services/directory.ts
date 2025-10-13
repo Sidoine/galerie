@@ -5,14 +5,6 @@ import * as views from "./views";
 export class DirectoryController {
 	constructor(private client: helpers.ApiClient) {}
 
-    bulkUpdateDate = (id: number, viewModel: views.DirectoryBulkUpdateDate) => {
-        return this.client.fetch(`api/directories/${id}/bulk-update-date`, "POST", JSON.stringify(viewModel));
-    }
-
-    bulkUpdateLocation = (id: number, viewModel: views.DirectoryBulkUpdateLocation) => {
-        return this.client.fetch(`api/directories/${id}/bulk-update-location`, "POST", JSON.stringify(viewModel));
-    }
-
     get = (id: number) => {
         return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
@@ -27,10 +19,6 @@ export class DirectoryController {
 
     getSubdirectories = (id: number) => {
         return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
-    }
-
-    getSuggestedDate = (id: number) => {
-        return this.client.fetchJson<views.DirectoryPathDateSuggestion>(`api/directories/${id}/suggest-date`, "GET", undefined);
     }
 
     patch = (id: number, viewModel: views.DirectoryPatch) => {

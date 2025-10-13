@@ -5,6 +5,14 @@ import * as views from "./views";
 export class PhotoController {
 	constructor(private client: helpers.ApiClient) {}
 
+    bulkUpdateDate = (viewModel: views.PhotoBulkUpdateDate) => {
+        return this.client.fetch("api/photos/bulk-update-date", "POST", JSON.stringify(viewModel));
+    }
+
+    bulkUpdateLocation = (viewModel: views.PhotoBulkUpdateLocation) => {
+        return this.client.fetch("api/photos/bulk-update-location", "POST", JSON.stringify(viewModel));
+    }
+
     get = (id: number) => {
         return this.client.fetchJson<views.PhotoFull>(`api/photos/${id}`, "GET", undefined);
     }

@@ -512,6 +512,23 @@ namespace GaleriePhotos.Services
             
             await applicationDbContext.SaveChangesAsync();
         }
+        /// <summary>
+        /// Updates the date/time of a list of photos
+        /// </summary>
+        public async Task BulkUpdatePhotosDate(int[] photoIds, DateTime dateTime)
+        {
+            if (photoIds.Length == 0) return;
+            var photos = await applicationDbContext.Photos
+                .Where(p => photoIds.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var photo in photos)
+            {
+                photo.DateTime = dateTime;
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+        }
         
         /// <summary>
         /// Updates the GPS coordinates of all photos in a directory
@@ -528,6 +545,25 @@ namespace GaleriePhotos.Services
                 photo.Longitude = longitude;
             }
             
+            await applicationDbContext.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Updates the GPS coordinates of a list of photos by their IDs
+        /// </summary>
+        public async Task BulkUpdatePhotosLocation(int[] photoIds, double latitude, double longitude)
+        {
+            if (photoIds.Length == 0) return;
+            var photos = await applicationDbContext.Photos
+                .Where(p => photoIds.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var photo in photos)
+            {
+                photo.Latitude = latitude;
+                photo.Longitude = longitude;
+            }
+
             await applicationDbContext.SaveChangesAsync();
         }
     }

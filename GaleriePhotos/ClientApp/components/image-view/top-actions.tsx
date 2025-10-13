@@ -8,7 +8,7 @@ import {
   Pressable,
   Platform,
 } from "react-native";
-import { PhotoFull } from "@/services/views";
+import { PhotoFull, Photo } from "@/services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useMembersStore } from "@/stores/members";
 import { FaceDetectionStatus } from "@/services/enums";
@@ -19,6 +19,8 @@ import { theme } from "@/stores/theme";
 import { usePhotosStore } from "@/stores/photos";
 import { observer } from "mobx-react-lite";
 import { PhotoContainerStore } from "@/stores/photo-container";
+import { DirectoryBulkDateModal } from "../modals/directory-bulk-date-modal";
+import { DirectoryBulkLocationModal } from "../modals/directory-bulk-location-modal";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -63,6 +65,8 @@ function TopActions({
   const photosStore = usePhotosStore();
   const membersStore = useMembersStore();
   const [menuVisible, setMenuVisible] = useState(false);
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
   const openMenu = useCallback(() => setMenuVisible(true), []);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
@@ -131,6 +135,20 @@ function TopActions({
   );
   const handleRotateLeft = useCallback(() => handleRotate(270), [handleRotate]);
   const handleRotateRight = useCallback(() => handleRotate(90), [handleRotate]);
+
+  const openDateModal = useCallback(() => {
+    closeMenu();
+    setDateModalVisible(true);
+  }, [closeMenu]);
+  const openLocationModal = useCallback(() => {
+    closeMenu();
+    setLocationModalVisible(true);
+  }, [closeMenu]);
+  const closeDateModal = useCallback(() => setDateModalVisible(false), []);
+  const closeLocationModal = useCallback(
+    () => setLocationModalVisible(false),
+    []
+  );
 
   return (
     <View style={styles.container}>
@@ -205,6 +223,11 @@ function TopActions({
                     onPress={handleUnshareVisibilityClick}
                   />
                 )}
+                <MenuItem label="Changer la date" onPress={openDateModal} />
+                <MenuItem
+                  label="Changer la localisation"
+                  onPress={openLocationModal}
+                />
               </>
             )}
             {canShare && (
@@ -214,6 +237,21 @@ function TopActions({
           </View>
         </Pressable>
       </Modal>
+      {dateModalVisible && (
+        <DirectoryBulkDateModal
+          visible={dateModalVisible}
+          photoIds={[photo.id]}
+          directoryPath={""}
+          onClose={closeDateModal}
+        />
+      )}
+      {locationModalVisible && (
+        <DirectoryBulkLocationModal
+          visible={locationModalVisible}
+          photos={[photo as unknown as Photo]}
+          onClose={closeLocationModal}
+        />
+      )}
     </View>
   );
 }

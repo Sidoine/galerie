@@ -11,22 +11,22 @@ import {
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useApiClient } from "folke-service-helpers";
-import { DirectoryController } from "@/services/directory";
-import { DirectoryBulkUpdateDate } from "@/services/views";
+import { PhotoController } from "@/services/photo";
+import { PhotoBulkUpdateDate } from "@/services/views";
 import { usePhotosStore } from "@/stores/photos";
-import { useDirectoriesStore } from "@/stores/directories";
-import { when } from "mobx";
+// import { useDirectoriesStore } from "@/stores/directories";
+// import { when } from "mobx";
 
 interface DirectoryBulkDateModalProps {
   visible: boolean;
-  directoryId: number;
-  directoryPath: string;
+  photoIds: number[]; // liste des photos ciblées
+  directoryPath: string; // conservé pour affichage si utile
   onClose: () => void;
 }
 
 export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
   visible,
-  directoryId,
+  photoIds,
   directoryPath,
   onClose,
 }: DirectoryBulkDateModalProps) {
@@ -35,37 +35,26 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const apiClient = useApiClient();
   const photosStore = usePhotosStore();
-  const directoriesStore = useDirectoriesStore();
+  // const directoriesStore = useDirectoriesStore();
 
   useEffect(() => {
-    (async () => {
-      if (visible) {
-        await when(() =>
-          Boolean(directoriesStore.infoLoader.getValue(directoryId))
-        );
-        const directory = directoriesStore.infoLoader.getValue(directoryId);
-
-        if (directory && directory.name) {
-          const fullName = directory.parent
-            ? `${directory.parent.name}/${directory.name}`
-            : directory.name;
-          // Try to extract a date from the directory name (e.g. "Vacation 2023-08-15")
-          const dateMatch = fullName.match(/(\d{4})[-_/](\d{2})[-_/]?(\d{2})?/);
-          if (dateMatch) {
-            const [, year, month, day] = dateMatch;
-            const formattedDate = `${year}-${month}-${day ?? 1}`;
-            setSuggestedDate(formattedDate);
-          } else {
-            setSuggestedDate(null);
-          }
-        }
+    if (visible) {
+      // On tente d'extraire une date depuis le chemin (directoryPath) si fourni
+      const dateMatch = directoryPath.match(
+        /(\d{4})[-_/](\d{2})[-_/]?(\d{2})?/
+      );
+      if (dateMatch) {
+        const [, year, month, day] = dateMatch;
+        const formattedDate = `${year}-${month}-${day ?? 1}`;
+        setSuggestedDate(formattedDate);
       } else {
-        // Reset when modal closes
-        setDateString("");
         setSuggestedDate(null);
       }
-    })();
-  }, [visible, directoryId, apiClient, directoriesStore.infoLoader]);
+    } else {
+      setDateString("");
+      setSuggestedDate(null);
+    }
+  }, [visible, directoryPath]);
 
   const handleSave = async () => {
     if (!dateString.trim()) {
@@ -81,20 +70,23 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
       }
 
       setLoading(true);
-      const directoryService = new DirectoryController(apiClient);
-      const updateData: DirectoryBulkUpdateDate = {
+      if (!photoIds || photoIds.length === 0) {
+        Alert.alert("Erreur", "Aucune photo sélectionnée");
+        return;
+      }
+
+      const photoService = new PhotoController(apiClient);
+      const updateData: PhotoBulkUpdateDate = {
+        photoIds,
         dateTime: date.toISOString(),
       };
 
-      const response = await directoryService.bulkUpdateDate(
-        directoryId,
-        updateData
-      );
+      const response = await photoService.bulkUpdateDate(updateData);
 
       if (response.ok) {
         Alert.alert(
           "Succès",
-          "Les dates de toutes les photos ont été mises à jour"
+          "La date des photos sélectionnées a été mise à jour"
         );
         onClose();
         photosStore.clearCache();
@@ -128,12 +120,14 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>
-            Modifier la date de toutes les photos
+            Modifier la date des photos sélectionnées
           </Text>
 
-          <Text style={styles.modalText}>
-            Album : {directoryPath.split("/").pop()}
-          </Text>
+          {directoryPath && (
+            <Text style={styles.modalText}>
+              Chemin : {directoryPath.split("/").pop()}
+            </Text>
+          )}
 
           {suggestedDate && (
             <View style={styles.suggestionSection}>

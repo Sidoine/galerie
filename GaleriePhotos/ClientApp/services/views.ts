@@ -246,22 +246,6 @@ export interface DirectoryPatch {
     coverPhotoId?: number | undefined;
 }
 
-export interface DirectoryBulkUpdateDate {
-    dateTime: string;
-}
-
-export interface DirectoryBulkUpdateLocation {
-    latitude: number;
-
-    longitude: number;
-}
-
-export interface DirectoryPathDateSuggestion {
-    suggestedDate: string | null;
-
-    directoryPath: string;
-}
-
 export interface AddressGeocodeRequest {
     address: string;
 }
@@ -316,6 +300,20 @@ export interface PhotoAccess {
 
 export interface PhotoRotate {
     angle: number;
+}
+
+export interface PhotoBulkUpdateLocation {
+    photoIds: number[];
+
+    latitude: number;
+
+    longitude: number;
+}
+
+export interface PhotoBulkUpdateDate {
+    photoIds: number[];
+
+    dateTime: string;
 }
 
 export interface Place {
