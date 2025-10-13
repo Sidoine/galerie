@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo, memo } from "react";
+import React, { useCallback, useMemo, memo, useEffect } from "react";
 import {
   StyleSheet,
   useWindowDimensions,
   View,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
@@ -15,9 +16,11 @@ import {
   determineGroupingStrategy, 
   splitPhotosIntoRows
 } from "./photo-date-grouping";
+import { PaginatedPhotosStore } from "@/stores/paginated-photos";
 
 export interface PhotosFlashListProps {
   store: PhotoContainerStore;
+  paginatedStore?: PaginatedPhotosStore;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
 }
@@ -42,6 +45,7 @@ const gap = 4;
 
 export const PhotosFlashList = observer(function PhotosFlashList({
   store,
+  paginatedStore,
   onEndReached,
   onEndReachedThreshold = 0.3,
 }: PhotosFlashListProps) {
@@ -57,11 +61,19 @@ export const PhotosFlashList = observer(function PhotosFlashList({
   }
   columnWidth = (width - gap) / cols - gap;
 
-  const directoryContent = store.photoList;
+  // Use paginated store if available, otherwise fall back to regular store
+  const directoryContent = paginatedStore ? paginatedStore.getAllPhotos() : store.photoList;
   const order = store.order;
   const values = directoryContent || [];
   const sortedValues =
     order === "date-desc" ? values.slice().reverse() : values;
+
+  // Load initial photos if using paginated store
+  useEffect(() => {
+    if (paginatedStore && paginatedStore.getAllPhotos().length === 0) {
+      paginatedStore.loadInitial();
+    }
+  }, [paginatedStore]);
 
   // Determine grouping strategy and create list data
   const listData = useMemo(() => {
@@ -131,6 +143,28 @@ export const PhotosFlashList = observer(function PhotosFlashList({
 
   const getItemType = useCallback((item: ListItem) => item.type, []);
 
+  // Handle end reached for paginated loading
+  const handleEndReached = useCallback(() => {
+    if (paginatedStore) {
+      paginatedStore.loadMore();
+    } else if (onEndReached) {
+      onEndReached();
+    }
+  }, [paginatedStore, onEndReached]);
+
+  // Create footer component for loading indicator
+  const renderFooter = useCallback(() => {
+    if (paginatedStore?.isLoading) {
+      return (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Chargement des photos...</Text>
+        </View>
+      );
+    }
+    return null;
+  }, [paginatedStore?.isLoading]);
+
   return (
     <FlashList
       data={listData}
@@ -138,9 +172,10 @@ export const PhotosFlashList = observer(function PhotosFlashList({
       keyExtractor={keyExtractor}
       getItemType={getItemType}
       estimatedItemSize={120}
-      onEndReached={onEndReached}
+      onEndReached={handleEndReached}
       onEndReachedThreshold={onEndReachedThreshold}
       removeClippedSubviews
+      ListFooterComponent={renderFooter}
     />
   );
 });
@@ -197,5 +232,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
+  },
+  loadingFooter: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
   },
 });

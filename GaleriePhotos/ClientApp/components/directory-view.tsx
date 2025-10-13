@@ -17,6 +17,7 @@ import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 import { DirectoryAdminMenu } from "./directory-admin-menu";
 import { PhotosFlashList } from "./photos-flash-list";
 import { determineGroupingStrategy } from "./photo-date-grouping";
+import { PaginatedPhotosStore } from "@/stores/paginated-photos";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -83,6 +84,21 @@ export const DirectoryView = observer(function DirectoryView({
   const shouldUseFlashList = useMemo(() => {
     return determineGroupingStrategy(sortedValues) !== 'none';
   }, [sortedValues]);
+
+  // Create paginated store for large photo collections
+  const paginatedStore = useMemo(() => {
+    if (shouldUseFlashList && directoryId && sortedValues.length > 100) {
+      // Create a loader function that uses the directory API with date ranges
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const loadPhotosFunction = async (startDate?: string | null, endDate?: string | null) => {
+        // For now, we'll just return the existing photos since pagination isn't fully integrated
+        // TODO: Integrate with the actual API calls for date-based loading
+        return sortedValues;
+      };
+      return new PaginatedPhotosStore(loadPhotosFunction);
+    }
+    return undefined;
+  }, [shouldUseFlashList, directoryId, sortedValues]);
 
   const data = useMemo(() => {
     const result: SectionListData<(PhotoContainer | Photo)[], Section>[] = [];
@@ -253,7 +269,7 @@ export const DirectoryView = observer(function DirectoryView({
               />
             </View>
           </View>
-          <PhotosFlashList store={store} />
+          <PhotosFlashList store={store} paginatedStore={paginatedStore} />
         </View>
       )}
 
