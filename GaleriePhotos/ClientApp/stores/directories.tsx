@@ -15,7 +15,7 @@ class DirectoriesStore {
 
   constructor(
     public subDirectoriesLoader: MapLoader<Directory[], [number]>,
-    public contentLoader: MapLoader<Photo[], [number]>,
+    public contentLoader: MapLoader<Photo[], [number, (string | null)?, (string | null)?]>,
     public infoLoader: MapLoader<DirectoryFull, [number]>,
     private directoryService: DirectoryController,
     public galleryId: number

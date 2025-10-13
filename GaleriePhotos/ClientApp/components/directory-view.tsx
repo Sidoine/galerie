@@ -15,6 +15,8 @@ import ImageCard from "./image-card";
 import SubdirectoryCard from "./subdirectory-card";
 import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 import { DirectoryAdminMenu } from "./directory-admin-menu";
+import { PhotosFlashList } from "./photos-flash-list";
+import { determineGroupingStrategy } from "./photo-date-grouping";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -77,6 +79,11 @@ export const DirectoryView = observer(function DirectoryView({
     [sortedValues, cols]
   );
 
+  // Determine if we should use FlashList for photos (when grouping by date)
+  const shouldUseFlashList = useMemo(() => {
+    return determineGroupingStrategy(sortedValues) !== 'none';
+  }, [sortedValues]);
+
   const data = useMemo(() => {
     const result: SectionListData<(PhotoContainer | Photo)[], Section>[] = [];
     if (albumRows.length > 0) {
@@ -86,7 +93,8 @@ export const DirectoryView = observer(function DirectoryView({
         type: "Albums",
       });
     }
-    if (photoRows.length > 0) {
+    // Only add photos section to SectionList if we're not using FlashList for photos
+    if (!shouldUseFlashList && photoRows.length > 0) {
       result.push({
         title: <Text style={styles.sectionTitle}>Photos</Text>,
         data: photoRows,
@@ -94,7 +102,7 @@ export const DirectoryView = observer(function DirectoryView({
       });
     }
     return result;
-  }, [albumRows, photoRows, store.childContainersHeader]);
+  }, [albumRows, photoRows, store.childContainersHeader, shouldUseFlashList]);
 
   // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
   const Row = useMemo(
@@ -178,43 +186,77 @@ export const DirectoryView = observer(function DirectoryView({
 
   return (
     <>
-      <SectionList
-        sections={data}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        removeClippedSubviews
-        windowSize={7}
-        maxToRenderPerBatch={8}
-        initialNumToRender={4}
-        updateCellsBatchingPeriod={50}
-        renderSectionHeader={({ section }) => (
+      {/* Render albums section using SectionList */}
+      {data.length > 0 && (
+        <SectionList
+          sections={data}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          removeClippedSubviews
+          windowSize={7}
+          maxToRenderPerBatch={8}
+          initialNumToRender={4}
+          updateCellsBatchingPeriod={50}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                {section.title}
+                {section.type === "Photos" && directoryId && (
+                  <DirectoryAdminMenu
+                    directoryId={directoryId}
+                    directoryPath={directoryPath}
+                  />
+                )}
+              </View>
+              {section.type === "Photos" && (
+                <View style={styles.buttonRow}>
+                  <SortButton
+                    selected={order === "date-desc"}
+                    label="Plus récent en premier"
+                    onPress={handleSortDateDesc}
+                  />
+                  <SortButton
+                    selected={order !== "date-desc"}
+                    label="Plus ancien en premier"
+                    onPress={handleSortDateAsc}
+                  />
+                </View>
+              )}
+            </View>
+          )}
+        />
+      )}
+
+      {/* Render photos using FlashList when grouping by date */}
+      {shouldUseFlashList && sortedValues.length > 0 && (
+        <View style={styles.photosSection}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              {section.title}
-              {section.type === "Photos" && directoryId && (
+              <Text style={styles.sectionTitle}>Photos</Text>
+              {directoryId && (
                 <DirectoryAdminMenu
                   directoryId={directoryId}
                   directoryPath={directoryPath}
                 />
               )}
             </View>
-            {section.type === "Photos" && (
-              <View style={styles.buttonRow}>
-                <SortButton
-                  selected={order === "date-desc"}
-                  label="Plus récent en premier"
-                  onPress={handleSortDateDesc}
-                />
-                <SortButton
-                  selected={order !== "date-desc"}
-                  label="Plus ancien en premier"
-                  onPress={handleSortDateAsc}
-                />
-              </View>
-            )}
+            <View style={styles.buttonRow}>
+              <SortButton
+                selected={order === "date-desc"}
+                label="Plus récent en premier"
+                onPress={handleSortDateDesc}
+              />
+              <SortButton
+                selected={order !== "date-desc"}
+                label="Plus ancien en premier"
+                onPress={handleSortDateAsc}
+              />
+            </View>
           </View>
-        )}
-      />
+          <PhotosFlashList store={store} />
+        </View>
+      )}
+
       {(!directories || !directoryContent) && (
         <ActivityIndicator size="large" />
       )}
@@ -295,5 +337,8 @@ const styles = StyleSheet.create({
   },
   sortButtonTextSelected: {
     color: "white",
+  },
+  photosSection: {
+    flex: 1,
   },
 });
