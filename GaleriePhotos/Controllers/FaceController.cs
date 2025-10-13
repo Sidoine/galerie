@@ -204,20 +204,26 @@ namespace GaleriePhotos.Controllers
         /// <param name="name">Nom du visage</param>
         /// <returns>Liste de PhotoViewModel</returns>
         [HttpGet("{galleryId}/face-names/{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id, DateTime? startDate = null, DateTime? endDate = null)
         {
             var gallery = await _galleryService.Get(galleryId);
             if (gallery == null) return NotFound();
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
-            var photos = await applicationDbContext.Faces
+            var query = applicationDbContext.Faces
                 .Include(f => f.Photo)
                 .Include(f => f.FaceName)
                 .Where(f => f.FaceName != null && f.FaceNameId == id && f.Photo.Directory.GalleryId == galleryId)
                 .Select(f => f.Photo)
-                .Distinct()
-                .OrderBy(f => f.DateTime)
-                .ToListAsync();
+                .Distinct();
+            
+            // Apply date filtering if specified
+            if (startDate.HasValue)
+                query = query.Where(p => p.DateTime >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(p => p.DateTime <= endDate.Value);
+                
+            var photos = await query.OrderBy(f => f.DateTime).ToListAsync();
 
             var result = photos.Select(p => new PhotoViewModel(p)).ToArray();
             return Ok(result);

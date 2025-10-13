@@ -29,8 +29,8 @@ export class PlaceController {
         return this.client.fetchJson<number>(`api/places/${id}/photos/count` + helpers.getQueryString({ year: year, month: month }), "GET", undefined);
     }
 
-    getPlacePhotos = (id: number, year?: number | null, month?: number | null) => {
-        return this.client.fetchJson<views.Photo[]>(`api/places/${id}/photos` + helpers.getQueryString({ year: year, month: month }), "GET", undefined);
+    getPlacePhotos = (id: number, year?: number | null, month?: number | null, startDate?: string | null, endDate?: string | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/places/${id}/photos` + helpers.getQueryString({ year: year, month: month, startDate: startDate, endDate: endDate }), "GET", undefined);
     }
 
     getPlacesByGallery = (galleryId: number) => {
