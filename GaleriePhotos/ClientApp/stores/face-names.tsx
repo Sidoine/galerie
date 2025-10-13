@@ -9,7 +9,7 @@ class FaceNamesStore {
     public galleryId: number,
     private namesLoader: ValueLoader<FaceName[], [number]>,
     private nameLoader: MapLoader<FaceName, [number, number]>,
-    private namePhotosLoader: MapLoader<Photo[], [number, number]>,
+    private namePhotosLoader: MapLoader<Photo[], [number, number, (string | null)?, (string | null)?]>,
     private faceController: FaceController
   ) {
     makeObservable(this, {
@@ -30,7 +30,7 @@ class FaceNamesStore {
   }
 
   getPhotosByName(id: number) {
-    return this.namePhotosLoader.getValue(this.galleryId, id);
+    return this.namePhotosLoader.getValue(this.galleryId, id, null, null);
   }
 
   getFaceNameThumbnailUrl(id: number) {

@@ -12,7 +12,7 @@ class PlacesStore {
     private citiesLoader: MapLoader<Place[], [number, number]>,
     private placePhotosLoader: MapLoader<
       Photo[],
-      [placeId: number, year?: number | null, month?: number | null]
+      [placeId: number, year?: number | null, month?: number | null, startDate?: (string | null), endDate?: (string | null)]
     >,
     private placeYearsLoader: MapLoader<Year[], [number]>,
     private placeMonthsLoader: MapLoader<Month[], [number, number]>,

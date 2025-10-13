@@ -77,7 +77,7 @@ namespace Galerie.Server.Controllers
         }
             
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
@@ -86,6 +86,16 @@ namespace Galerie.Server.Controllers
                 {
                     return NotFound();
                 }
+                
+                // Apply additional date filtering if startDate/endDate are specified
+                if (startDate.HasValue || endDate.HasValue)
+                {
+                    placePhotos = placePhotos.Where(p => 
+                        (!startDate.HasValue || p.DateTime >= startDate.Value) &&
+                        (!endDate.HasValue || p.DateTime <= endDate.Value)
+                    ).ToArray();
+                }
+                
                 return Ok(placePhotos.Select(x => new PhotoViewModel(x)));
             }
             catch (Exception ex)
