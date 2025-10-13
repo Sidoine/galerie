@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import { useRouter } from "expo-router";
+import { useRouter, useGlobalSearchParams } from "expo-router";
 import { DashboardController, DashboardStatistics } from "@/services/services";
 import { useMeStore } from "@/stores/me";
 import { useApiClient } from "folke-service-helpers";
@@ -17,6 +17,7 @@ import { palette, radius } from "@/stores/theme";
 
 const Dashboard = observer(function Dashboard() {
   const router = useRouter();
+  const { galleryId } = useGlobalSearchParams<{ galleryId: string }>();
   const meStore = useMeStore();
   const apiClient = useApiClient();
   const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
@@ -30,10 +31,12 @@ const Dashboard = observer(function Dashboard() {
   }, [loadStatistics]);
 
   const loadStatistics = useCallback(async () => {
+    if (!galleryId) return;
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await dashboardController.getStatistics();
+      const response = await dashboardController.getStatistics(Number(galleryId));
       if (response.ok) {
         setStatistics(response.value);
       } else {
@@ -45,7 +48,7 @@ const Dashboard = observer(function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [dashboardController]);
+  }, [dashboardController, galleryId]);
 
   const navigateToAlbum = (galleryId: number, directoryId: number) => {
     // Navigate to the specific album/directory

@@ -5,8 +5,8 @@ import * as views from "./views";
 export class DashboardController {
 	constructor(private client: helpers.ApiClient) {}
 
-    getStatistics = () => {
-        return this.client.fetchJson<views.DashboardStatistics>("api/dashboard/statistics", "GET", undefined);
+    getStatistics = (galleryId: number) => {
+        return this.client.fetchJson<views.DashboardStatistics>(`api/galleries/${galleryId}/dashboard/statistics`, "GET", undefined);
     }
 }
 
