@@ -120,7 +120,8 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>
-            Modifier la date des photos sélectionnées
+            Modifier la date de {photoIds.length} photo
+            {photoIds.length > 1 ? "s" : ""}
           </Text>
 
           {directoryPath && (

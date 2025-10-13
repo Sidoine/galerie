@@ -551,7 +551,7 @@ namespace GaleriePhotos.Services
         /// <summary>
         /// Updates the GPS coordinates of a list of photos by their IDs
         /// </summary>
-        public async Task BulkUpdatePhotosLocation(int[] photoIds, double latitude, double longitude)
+        public async Task BulkUpdatePhotosLocation(int[] photoIds, double latitude, double longitude, bool overwriteExisting = true)
         {
             if (photoIds.Length == 0) return;
             var photos = await applicationDbContext.Photos
@@ -560,8 +560,11 @@ namespace GaleriePhotos.Services
 
             foreach (var photo in photos)
             {
-                photo.Latitude = latitude;
-                photo.Longitude = longitude;
+                if (overwriteExisting || photo.Latitude == null || photo.Longitude == null)
+                {
+                    photo.Latitude = latitude;
+                    photo.Longitude = longitude;
+                }
             }
 
             await applicationDbContext.SaveChangesAsync();

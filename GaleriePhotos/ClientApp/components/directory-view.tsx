@@ -1,4 +1,11 @@
-import React, { useCallback, useMemo, memo, ReactNode, useEffect } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  memo,
+  ReactNode,
+  useEffect,
+  useState,
+} from "react";
 import {
   StyleSheet,
   useWindowDimensions,
@@ -20,6 +27,10 @@ import {
   splitPhotosIntoRows,
 } from "./photo-date-grouping";
 import { PaginatedPhotosStore } from "@/stores/paginated-photos";
+import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
+import { MaterialIcons } from "@expo/vector-icons";
+import { ActionMenu, ActionMenuItem } from "./action-menu";
+import { useMembersStore } from "@/stores/members";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -78,6 +89,7 @@ const gap = 4;
 export const DirectoryView = observer(function DirectoryView({
   store,
 }: DirectoryViewProps) {
+  const membersStore = useMembersStore();
   // Get directory info for admin menu
   const directoryId = store.container?.id;
   const directoryPath = store.breadCrumbs.map((crumb) => crumb.name).join("/");
@@ -258,6 +270,58 @@ export const DirectoryView = observer(function DirectoryView({
   );
   const handleSortDateAsc = useCallback(() => store.sort("date-asc"), [store]);
 
+  // -----------------------------
+  // Gestion des actions de groupe par date (bulk GPS)
+  // (déclaré avant renderItem pour éviter use-before-definition)
+  // -----------------------------
+  const [bulkLocationVisible, setBulkLocationVisible] = useState(false);
+  const [bulkLocationPhotos, setBulkLocationPhotos] = useState<Photo[] | null>(
+    null
+  );
+  const [groupActionsVisible, setGroupActionsVisible] = useState(false);
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
+
+  const openGroupMenu = useCallback((groupId: string) => {
+    setCurrentGroupId(groupId);
+    setGroupActionsVisible(true);
+  }, []);
+  const closeGroupMenu = useCallback(() => {
+    setGroupActionsVisible(false);
+    setCurrentGroupId(null);
+  }, []);
+
+  const openBulkLocationForGroup = useCallback(
+    (groupId: string) => {
+      // Récupérer toutes les photos dont la groupId correspond
+      // On reconstruit les groupes de la même manière que lors de la création de flatData
+      let photosInGroup: Photo[] = [];
+      if (!shouldGroupPhotos) {
+        if (groupId === "all") {
+          photosInGroup = sortedValues;
+        }
+      } else {
+        const groups = groupPhotosByDate(
+          sortedValues,
+          groupingStrategy === "day"
+        );
+        const group = groups.find((g) => g.id === groupId);
+        if (group) {
+          photosInGroup = group.photos;
+        }
+      }
+      if (photosInGroup.length > 0) {
+        setBulkLocationPhotos(photosInGroup);
+        setBulkLocationVisible(true);
+      }
+    },
+    [sortedValues, shouldGroupPhotos, groupingStrategy]
+  );
+
+  const closeBulkLocation = useCallback(() => {
+    setBulkLocationVisible(false);
+    setBulkLocationPhotos(null);
+  }, []);
+
   const renderItem: ListRenderItem<DirectoryFlatListItem> = useCallback(
     ({ item }) => {
       switch (item.type) {
@@ -299,6 +363,17 @@ export const DirectoryView = observer(function DirectoryView({
           return (
             <View style={styles.dateHeader}>
               <Text style={styles.dateHeaderText}>{item.title}</Text>
+              {membersStore.administrator && (
+                <TouchableOpacity
+                  accessibilityLabel="Actions sur cette date"
+                  style={styles.dateHeaderActionBtn}
+                  onPress={() =>
+                    openGroupMenu(item.id.replace("date-header-", ""))
+                  }
+                >
+                  <MaterialIcons name="more-vert" size={20} color="#1976d2" />
+                </TouchableOpacity>
+              )}
             </View>
           );
         case "photoRow":
@@ -312,7 +387,6 @@ export const DirectoryView = observer(function DirectoryView({
         default:
           return null;
       }
-      // handlers declared later are stable (useCallback), but to avoid linter 'used before defined', list primitive deps only
     },
     [
       AlbumRow,
@@ -322,6 +396,8 @@ export const DirectoryView = observer(function DirectoryView({
       order,
       handleSortDateDesc,
       handleSortDateAsc,
+      openGroupMenu,
+      membersStore.administrator,
     ]
   );
 
@@ -343,24 +419,51 @@ export const DirectoryView = observer(function DirectoryView({
   // handlers déjà déclarés plus haut
 
   return (
-    <FlashList
-      data={flatData}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      getItemType={getItemType}
-      estimatedItemSize={120}
-      onEndReached={handleEndReached}
-      onEndReachedThreshold={0.3}
-      removeClippedSubviews
-      ListFooterComponent={
-        paginatedStore?.isLoading ? (
-          <View style={styles.loadingFooter}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.loadingText}>Chargement des photos...</Text>
-          </View>
-        ) : null
-      }
-    />
+    <>
+      <FlashList
+        data={flatData}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        getItemType={getItemType}
+        estimatedItemSize={120}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
+        removeClippedSubviews
+        ListFooterComponent={
+          paginatedStore?.isLoading ? (
+            <View style={styles.loadingFooter}>
+              <ActivityIndicator size="large" />
+              <Text style={styles.loadingText}>Chargement des photos...</Text>
+            </View>
+          ) : null
+        }
+      />
+      <DirectoryBulkLocationModal
+        visible={bulkLocationVisible}
+        photos={bulkLocationPhotos || []}
+        onClose={closeBulkLocation}
+      />
+      <ActionMenu
+        visible={groupActionsVisible}
+        onClose={closeGroupMenu}
+        items={((): ActionMenuItem[] =>
+          currentGroupId
+            ? [
+                {
+                  label: "Changer la localisation (GPS)",
+                  onPress: () => openBulkLocationForGroup(currentGroupId),
+                  icon: (
+                    <MaterialIcons
+                      name="my-location"
+                      size={18}
+                      color="#1976d2"
+                    />
+                  ),
+                },
+              ]
+            : [])()}
+      />
+    </>
   );
 });
 
@@ -445,11 +548,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: "#f5f5f5",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   dateHeaderText: {
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
+  },
+  dateHeaderActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#e3f2fd",
+    borderRadius: 16,
   },
   loadingFooter: {
     paddingVertical: 20,

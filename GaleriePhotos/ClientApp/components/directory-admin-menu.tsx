@@ -1,17 +1,11 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  StyleSheet,
-} from "react-native";
+import React, { useState, useCallback } from "react";
+import { TouchableOpacity, StyleSheet } from "react-native";
 import { observer } from "mobx-react-lite";
 import Icon from "./Icon";
 import { useMembersStore } from "@/stores/members";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
+import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { useDirectoriesStore } from "@/stores/directories";
 
 interface DirectoryAdminMenuProps {
@@ -30,23 +24,36 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
 
   const photos = useDirectoriesStore().getPhotos(directoryId);
 
-  // Only show for administrators
+  // NOTE: tous les hooks doivent être déclarés avant tout return conditionnel.
+
+  const openMenu = useCallback(() => setMenuVisible(true), []);
+  const closeMenu = useCallback(() => setMenuVisible(false), []);
+
+  const openDateModal = useCallback(() => {
+    closeMenu();
+    setDateModalVisible(true);
+  }, [closeMenu]);
+
+  const openLocationModal = useCallback(() => {
+    closeMenu();
+    setLocationModalVisible(true);
+  }, [closeMenu]);
+
+  const items: ActionMenuItem[] = [
+    {
+      label: "Modifier la date de toutes les photos",
+      onPress: openDateModal,
+    },
+    {
+      label: "Modifier la localisation de toutes les photos",
+      onPress: openLocationModal,
+    },
+    { label: "Annuler", onPress: closeMenu },
+  ];
+
   if (!membersStore.administrator) {
     return null;
   }
-
-  const openMenu = () => setMenuVisible(true);
-  const closeMenu = () => setMenuVisible(false);
-
-  const openDateModal = () => {
-    closeMenu();
-    setDateModalVisible(true);
-  };
-
-  const openLocationModal = () => {
-    closeMenu();
-    setLocationModalVisible(true);
-  };
 
   return (
     <>
@@ -57,30 +64,12 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
       >
         <Icon name="dots-vertical" set="mci" size={20} color="#007aff" />
       </TouchableOpacity>
-
-      {/* Action Menu Modal */}
-      <Modal
+      <ActionMenu
         visible={menuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeMenu}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={closeMenu}>
-          <View style={styles.menu}>
-            <MenuItem
-              label="Modifier la date de toutes les photos"
-              onPress={openDateModal}
-            />
-            <MenuItem
-              label="Modifier la localisation de toutes les photos"
-              onPress={openLocationModal}
-            />
-            <MenuItem label="Annuler" onPress={closeMenu} />
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Date Modal */}
+        onClose={closeMenu}
+        items={items}
+        minWidth={300}
+      />
       {photos && (
         <DirectoryBulkDateModal
           visible={dateModalVisible}
@@ -89,8 +78,6 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
           onClose={() => setDateModalVisible(false)}
         />
       )}
-
-      {/* Location Modal */}
       {photos && (
         <DirectoryBulkLocationModal
           visible={locationModalVisible}
@@ -102,51 +89,9 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
   );
 });
 
-interface MenuItemProps {
-  label: string;
-  onPress: () => void;
-}
-
-function MenuItem({ label, onPress }: MenuItemProps) {
-  return (
-    <TouchableOpacity onPress={onPress} style={styles.menuItem}>
-      <Text style={styles.menuItemText}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
   menuButton: {
     padding: 8,
     borderRadius: 4,
-  },
-  modalBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  menu: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 8,
-    minWidth: 280,
-    maxWidth: "90%",
-  },
-  menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e0e0e0",
-  },
-  menuItemText: {
-    fontSize: 16,
-    color: "#007aff",
-    textAlign: "center",
   },
 });

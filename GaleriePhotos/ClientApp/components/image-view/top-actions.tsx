@@ -1,13 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Pressable,
-  Platform,
-} from "react-native";
+import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { PhotoFull, Photo } from "@/services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useMembersStore } from "@/stores/members";
@@ -21,6 +13,7 @@ import { observer } from "mobx-react-lite";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { DirectoryBulkDateModal } from "../modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "../modals/directory-bulk-location-modal";
+import { ActionMenu, ActionMenuItem } from "../action-menu";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -150,6 +143,28 @@ function TopActions({
     []
   );
 
+  const items: ActionMenuItem[] = [];
+  if (membersStore.administrator) {
+    if (store.setCover) {
+      items.push({
+        label: "Utiliser comme couverture",
+        onPress: handleCoverClick,
+      });
+    }
+    items.push(
+      { label: "Tourner à droite", onPress: handleRotateRight },
+      { label: "Tourner à gauche", onPress: handleRotateLeft },
+      photo.private
+        ? { label: "Rendre publique", onPress: handleShareVisibilityClick }
+        : { label: "Rendre privée", onPress: handleUnshareVisibilityClick },
+      { label: "Changer la date", onPress: openDateModal },
+      { label: "Changer la localisation", onPress: openLocationModal }
+    );
+  }
+  if (canShare) {
+    items.push({ label: "Partager...", onPress: handleSystemShareClick });
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.leftGroup}>
@@ -190,53 +205,7 @@ function TopActions({
           <Icon name="dots-vertical" set="mci" size={24} />
         </TouchableOpacity>
       </View>
-      <Modal
-        visible={menuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeMenu}
-      >
-        <Pressable style={styles.menuOverlay} onPress={closeMenu}>
-          <View style={styles.menu}>
-            {membersStore.administrator && (
-              <>
-                {store.setCover && (
-                  <MenuItem
-                    label="Utiliser comme couverture"
-                    onPress={handleCoverClick}
-                  />
-                )}
-                <MenuItem
-                  label="Tourner à droite"
-                  onPress={handleRotateRight}
-                />
-                <MenuItem label="Tourner à gauche" onPress={handleRotateLeft} />
-                {photo.private && (
-                  <MenuItem
-                    label="Rendre publique"
-                    onPress={handleShareVisibilityClick}
-                  />
-                )}
-                {!photo.private && (
-                  <MenuItem
-                    label="Rendre privée"
-                    onPress={handleUnshareVisibilityClick}
-                  />
-                )}
-                <MenuItem label="Changer la date" onPress={openDateModal} />
-                <MenuItem
-                  label="Changer la localisation"
-                  onPress={openLocationModal}
-                />
-              </>
-            )}
-            {canShare && (
-              <MenuItem label="Partager..." onPress={handleSystemShareClick} />
-            )}
-            <MenuItem label="Fermer" onPress={closeMenu} />
-          </View>
-        </Pressable>
-      </Modal>
+      <ActionMenu visible={menuVisible} onClose={closeMenu} items={items} />
       {dateModalVisible && (
         <DirectoryBulkDateModal
           visible={dateModalVisible}
@@ -250,17 +219,10 @@ function TopActions({
           visible={locationModalVisible}
           photos={[photo as unknown as Photo]}
           onClose={closeLocationModal}
+          overwriteExisting
         />
       )}
     </View>
-  );
-}
-
-function MenuItem({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <TouchableOpacity onPress={onPress} style={styles.menuItem}>
-      <Text style={styles.menuItemText}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -285,25 +247,6 @@ const styles = StyleSheet.create({
   iconButton: {
     paddingHorizontal: theme.spacing(3),
     paddingVertical: theme.spacing(2),
-  },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  menu: {
-    backgroundColor: "#222",
-    paddingVertical: 8,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  menuItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  menuItemText: {
-    color: "white",
-    fontSize: 16,
   },
 });
 export default observer(TopActions);

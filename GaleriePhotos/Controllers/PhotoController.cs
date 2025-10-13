@@ -123,7 +123,7 @@ namespace Galerie.Server.Controllers
             if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
                 return BadRequest("Aucune photo spécifiée");
 
-            await photoService.BulkUpdatePhotosLocation(viewModel.PhotoIds, viewModel.Latitude, viewModel.Longitude);
+            await photoService.BulkUpdatePhotosLocation(viewModel.PhotoIds, viewModel.Latitude, viewModel.Longitude, viewModel.OverwriteExisting);
             return Ok();
         }
 

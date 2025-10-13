@@ -8,6 +8,7 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  Switch,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useApiClient } from "folke-service-helpers";
@@ -24,6 +25,7 @@ interface DirectoryBulkLocationModalProps {
   visible: boolean;
   photos: Photo[]; // liste d'IDs de photos à mettre à jour
   onClose: () => void;
+  overwriteExisting?: boolean; // si true (par défaut false ici), écrase les coordonnées existantes
 }
 
 export const DirectoryBulkLocationModal = observer(
@@ -31,6 +33,7 @@ export const DirectoryBulkLocationModal = observer(
     visible,
     photos: photoIds,
     onClose,
+    overwriteExisting = false,
   }: DirectoryBulkLocationModalProps) {
     const [address, setAddress] = useState("");
     const [coordinates, setCoordinates] = useState<{
@@ -38,6 +41,7 @@ export const DirectoryBulkLocationModal = observer(
       longitude: number;
     } | null>(null);
     const [formattedAddress, setFormattedAddress] = useState("");
+    const [overwriteFlag, setOverwriteFlag] = useState(overwriteExisting);
     const [loading, setLoading] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
     const apiClient = useApiClient();
@@ -108,6 +112,7 @@ export const DirectoryBulkLocationModal = observer(
           photoIds: photoIds.map((p) => p.id),
           latitude: coordinates.latitude,
           longitude: coordinates.longitude,
+          overwriteExisting: overwriteFlag,
         };
         const response = await photoService.bulkUpdateLocation(request);
 
@@ -151,11 +156,13 @@ export const DirectoryBulkLocationModal = observer(
         <Pressable style={styles.modalBackdrop} onPress={handleClose}>
           <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>
-              Modifier la localisation des photos sélectionnées
+              Modifier la localisation de {photoIds.length} photo
+              {photoIds.length > 1 ? "s" : ""}
             </Text>
 
             <Text style={styles.modalText}>
-              Saisissez une adresse pour géolocaliser les photos sélectionnées.
+              Saisissez une adresse pour géolocaliser{" "}
+              {photoIds.length > 1 ? "ces photos" : "cette photo"}.
             </Text>
 
             <View style={styles.inputSection}>
@@ -190,6 +197,21 @@ export const DirectoryBulkLocationModal = observer(
                 <Text style={styles.resultCoords}>
                   Latitude: {coordinates.latitude.toFixed(6)}, Longitude:{" "}
                   {coordinates.longitude.toFixed(6)}
+                </Text>
+              </View>
+            )}
+
+            {/* Switch overwrite existing */}
+            {photoIds.length > 1 && (
+              <View style={styles.overwriteRow}>
+                <Switch
+                  value={overwriteFlag}
+                  onValueChange={setOverwriteFlag}
+                  thumbColor={overwriteFlag ? "#007aff" : undefined}
+                  trackColor={{ true: "#66b2ff", false: "#ccc" }}
+                />
+                <Text style={styles.overwriteLabel}>
+                  Écraser les positions existantes
                 </Text>
               </View>
             )}
@@ -330,5 +352,32 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  overwriteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#888",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    backgroundColor: "#fff",
+  },
+  checkboxMark: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#007aff",
+  },
+  overwriteLabel: {
+    fontSize: 14,
+    color: "#333",
+    flexShrink: 1,
   },
 });

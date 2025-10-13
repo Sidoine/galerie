@@ -112,6 +112,8 @@ export interface PhotoBulkUpdateLocation {
     latitude: number;
 
     longitude: number;
+
+    overwriteExisting: boolean;
 }
 
 export interface PhotoBulkUpdateDate {
