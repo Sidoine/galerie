@@ -1,4 +1,4 @@
-import { SingletonLoader, useApiClient } from "folke-service-helpers";
+import { useApiClient } from "folke-service-helpers";
 import { action, computed, makeObservable, observable } from "mobx";
 import { User } from "../services/views";
 import { createContext, useContext, useMemo } from "react";

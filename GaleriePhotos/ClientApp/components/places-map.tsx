@@ -13,7 +13,6 @@ import {
   useWindowDimensions,
   Platform,
 } from "react-native";
-import { Place } from "@/services/views";
 import { theme } from "@/stores/theme";
 import { PlacesMapProps } from "./places-map-props";
 

@@ -495,5 +495,40 @@ namespace GaleriePhotos.Services
 
             return await dataProvider.OpenFaceThumbnailRead(face);
         }
+        
+        /// <summary>
+        /// Updates the date/time of all photos in a directory
+        /// </summary>
+        public async Task BulkUpdatePhotosDate(int directoryId, DateTime dateTime)
+        {
+            var photos = await applicationDbContext.Photos
+                .Where(p => p.DirectoryId == directoryId)
+                .ToListAsync();
+                
+            foreach (var photo in photos)
+            {
+                photo.DateTime = dateTime;
+            }
+            
+            await applicationDbContext.SaveChangesAsync();
+        }
+        
+        /// <summary>
+        /// Updates the GPS coordinates of all photos in a directory
+        /// </summary>
+        public async Task BulkUpdatePhotosLocation(int directoryId, double latitude, double longitude)
+        {
+            var photos = await applicationDbContext.Photos
+                .Where(p => p.DirectoryId == directoryId)
+                .ToListAsync();
+                
+            foreach (var photo in photos)
+            {
+                photo.Latitude = latitude;
+                photo.Longitude = longitude;
+            }
+            
+            await applicationDbContext.SaveChangesAsync();
+        }
     }
 }

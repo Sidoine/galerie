@@ -37,10 +37,6 @@ const SubdirectoryCard = observer(
     const membersStore = useMembersStore();
     const visibilities = visibilitiesStore.visibilities;
 
-    const handleNavigate = useCallback(() => {
-      store.navigateToChildContainer(directory.id);
-    }, [store, directory.id]);
-
     const handleUseAsParentCover = useCallback(async () => {
       if (store.setParentCover) await store.setParentCover(directory.id);
     }, [store, directory.id]);

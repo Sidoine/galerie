@@ -14,6 +14,7 @@ import { Photo } from "@/services/views";
 import ImageCard from "./image-card";
 import SubdirectoryCard from "./subdirectory-card";
 import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
+import { DirectoryAdminMenu } from "./directory-admin-menu";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -37,6 +38,9 @@ const gap = 4;
 export const DirectoryView = observer(function DirectoryView({
   store,
 }: DirectoryViewProps) {
+  // Get directory info for admin menu
+  const directoryId = store.container?.id;
+  const directoryPath = store.breadCrumbs.map(crumb => crumb.name).join("/");
   let { width } = useWindowDimensions();
   if (width > 768) {
     // The left drawer takes 279px
@@ -185,7 +189,15 @@ export const DirectoryView = observer(function DirectoryView({
         updateCellsBatchingPeriod={50}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            {section.title}
+            <View style={styles.sectionTitleRow}>
+              {section.title}
+              {section.type === "Photos" && directoryId && (
+                <DirectoryAdminMenu
+                  directoryId={directoryId}
+                  directoryPath={directoryPath}
+                />
+              )}
+            </View>
             {section.type === "Photos" && (
               <View style={styles.buttonRow}>
                 <SortButton
@@ -255,6 +267,15 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 6,
+    color: "#222",
   },
   sectionTitle: {
     fontSize: 20,
