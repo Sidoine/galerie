@@ -109,6 +109,10 @@ const LayoutContent = observer(function LayoutContent() {
       />
       <Drawer.Protected guard={membersStore.administrator}>
         <Drawer.Screen
+          name="dashboard"
+          options={{ title: "Tableau de bord" }}
+        />
+        <Drawer.Screen
           name="settings"
           options={{ title: "Paramètres", headerShown: false }}
         />
