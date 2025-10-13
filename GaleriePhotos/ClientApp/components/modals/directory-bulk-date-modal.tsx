@@ -13,6 +13,9 @@ import { observer } from "mobx-react-lite";
 import { useApiClient } from "folke-service-helpers";
 import { DirectoryController } from "@/services/directory";
 import { DirectoryBulkUpdateDate } from "@/services/views";
+import { usePhotosStore } from "@/stores/photos";
+import { useDirectoriesStore } from "@/stores/directories";
+import { when } from "mobx";
 
 interface DirectoryBulkDateModalProps {
   visible: boolean;
@@ -31,30 +34,38 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
   const [loading, setLoading] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<string | null>(null);
   const apiClient = useApiClient();
+  const photosStore = usePhotosStore();
+  const directoriesStore = useDirectoriesStore();
 
   useEffect(() => {
-    if (visible) {
-      // Fetch suggested date when modal opens
-      const directoryService = new DirectoryController(apiClient);
-      directoryService
-        .getSuggestedDate(directoryId)
-        .then((response) => {
-          if (response.ok && response.value?.suggestedDate) {
-            const date = new Date(response.value.suggestedDate);
-            const formatted = date.toISOString().split("T")[0]; // YYYY-MM-DD format
-            setSuggestedDate(formatted);
-            setDateString(formatted);
+    (async () => {
+      if (visible) {
+        await when(() =>
+          Boolean(directoriesStore.infoLoader.getValue(directoryId))
+        );
+        const directory = directoriesStore.infoLoader.getValue(directoryId);
+
+        if (directory && directory.name) {
+          const fullName = directory.parent
+            ? `${directory.parent.name}/${directory.name}`
+            : directory.name;
+          // Try to extract a date from the directory name (e.g. "Vacation 2023-08-15")
+          const dateMatch = fullName.match(/(\d{4})[-_/](\d{2})[-_/]?(\d{2})?/);
+          if (dateMatch) {
+            const [, year, month, day] = dateMatch;
+            const formattedDate = `${year}-${month}-${day ?? 1}`;
+            setSuggestedDate(formattedDate);
+          } else {
+            setSuggestedDate(null);
           }
-        })
-        .catch((error) => {
-          console.error("Error fetching suggested date:", error);
-        });
-    } else {
-      // Reset when modal closes
-      setDateString("");
-      setSuggestedDate(null);
-    }
-  }, [visible, directoryId, apiClient]);
+        }
+      } else {
+        // Reset when modal closes
+        setDateString("");
+        setSuggestedDate(null);
+      }
+    })();
+  }, [visible, directoryId, apiClient, directoriesStore.infoLoader]);
 
   const handleSave = async () => {
     if (!dateString.trim()) {
@@ -75,11 +86,21 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
         dateTime: date.toISOString(),
       };
 
-      const response = await directoryService.bulkUpdateDate(directoryId, updateData);
-      
+      const response = await directoryService.bulkUpdateDate(
+        directoryId,
+        updateData
+      );
+
       if (response.ok) {
-        Alert.alert("Succès", "Les dates de toutes les photos ont été mises à jour");
+        Alert.alert(
+          "Succès",
+          "Les dates de toutes les photos ont été mises à jour"
+        );
         onClose();
+        photosStore.clearCache();
+        // Reset form
+        setDateString("");
+        setSuggestedDate(null);
       } else {
         Alert.alert("Erreur", "Impossible de mettre à jour les dates");
       }
@@ -109,7 +130,7 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
           <Text style={styles.modalTitle}>
             Modifier la date de toutes les photos
           </Text>
-          
+
           <Text style={styles.modalText}>
             Album : {directoryPath.split("/").pop()}
           </Text>
@@ -147,9 +168,13 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
             >
               <Text style={styles.cancelButtonText}>Annuler</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              style={[styles.button, styles.saveButton, loading && styles.disabledButton]}
+              style={[
+                styles.button,
+                styles.saveButton,
+                loading && styles.disabledButton,
+              ]}
               onPress={handleSave}
               disabled={loading}
             >

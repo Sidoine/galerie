@@ -88,7 +88,7 @@ yarn start
 # Build for production
 yarn build
 
-# Run linting (note: currently has ESLint 9 config issues)
+# Run linting
 yarn lint
 ```
 
@@ -116,10 +116,11 @@ docker run --rm -p 5000:5000 --env DATABASE_URL=postgres://user:pass@host:port/d
 ### Frontend Patterns
 
 - **Services**: API client services auto-generated from C# controllers using Folke.CsTsService
-- **Stores**: MobX stores for state management in `src/stores/`
-- **Components**: React components in `src/components/`
-- **Routing**: React Router configuration in main application files
-- **Styling**: Material-UI theming and component styling
+- **Stores**: MobX stores for state management in `stores/`
+- **Components**: React (React Native / Expo) components in `components/`
+- **Routing**: React Navigation (Expo Router / file-based where applicable). Screens are in `app/`.
+- **Styling**: React Native core components + StyleSheet / inline styles (aucune dépendance Material-UI). Éviter d'introduire Material-UI : rester cohérent avec l'écosystème Expo/React Native.
+- **Hooks Performance**: Stabiliser les callbacks et valeurs dérivées avec `useCallback` / `useMemo` lorsque passés à des composants enfants susceptibles de mémoriser (`React.memo`) ou déclencher des effets. Ne pas sur-utiliser : si la fonction n'est pas passée en prop et est triviale, `useCallback` est optionnel.
 
 ### Database Patterns
 
@@ -169,10 +170,11 @@ The TypeScript services are auto-generated from C# controllers and should not be
 
 ### Adding Frontend Features
 
-1. Create/update React components in `src/components/`
-2. Add state management in MobX stores if needed
-3. Update routing configuration if adding new pages
-4. Use Material-UI components for consistent styling
+1. Créer / mettre à jour des composants React Native (Expo) dans `src/components/`
+2. Ajouter la gestion d'état dans les stores MobX si nécessaire
+3. Mettre à jour la configuration de routage (Expo Router / React Navigation) si de nouvelles pages sont ajoutées
+4. Styling: utiliser les primitives React Native (View, Text, Image, etc.) et `StyleSheet` / styles utilitaires existants. Ne pas ajouter Material-UI.
+5. Lorsque vous définissez des fonctions passées comme props à des composants enfants ou utilisées dans des dépendances de `useEffect`, les encapsuler dans `useCallback` avec une liste de dépendances minimale et correcte pour éviter des re-rendus inutiles.
 
 ### Image/Video Processing
 
@@ -228,12 +230,11 @@ The TypeScript services are auto-generated from C# controllers and should not be
 │   ├── Services/ (business logic)
 │   ├── Data/ (Entity Framework context)
 │   ├── ClientApp/ (frontend React app)
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   ├── services/ (auto-generated API clients)
-│   │   │   └── stores/ (MobX state management)
-│   │   ├── package.json
-│   │   └── vite.config.ts
+│   │   ├── apps/ (applications screens using expo router)
+│   │   ├── components/
+│   │   ├── services/ (auto-generated API clients)
+│   │   ├── stores/ (MobX state management)
+│   │   └── package.json
 │   └── GaleriePhotos.csproj
 ├── GaleriePhotos.sln
 ├── Dockerfile

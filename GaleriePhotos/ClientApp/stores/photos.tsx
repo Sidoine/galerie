@@ -20,6 +20,10 @@ class PhotosStore {
 
   photoReloadSuffix = new Map<string, number>();
 
+  clearCache() {
+    this.imageLoader.cache.clear();
+  }
+
   getImage(publicId: string) {
     const result = `${getBackendUrl()}/api/photos/${publicId}/image`;
     if (this.photoReloadSuffix.has(publicId)) {

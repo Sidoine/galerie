@@ -14,6 +14,7 @@ import { useApiClient } from "folke-service-helpers";
 import { DirectoryController } from "@/services/directory";
 import { GeocodingController } from "@/services/geocoding";
 import { DirectoryBulkUpdateLocation, AddressGeocodeRequest } from "@/services/views";
+import { usePhotosStore } from "@/stores/photos";
 
 interface DirectoryBulkLocationModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ export const DirectoryBulkLocationModal = observer(function DirectoryBulkLocatio
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const apiClient = useApiClient();
+  const photosStore = usePhotosStore();
 
   const handleGeocode = async () => {
     if (!address.trim()) {
@@ -88,6 +90,7 @@ export const DirectoryBulkLocationModal = observer(function DirectoryBulkLocatio
         setAddress("");
         setCoordinates(null);
         setFormattedAddress("");
+        photosStore.clearCache();
       } else {
         Alert.alert("Erreur", "Impossible de mettre à jour la localisation");
       }

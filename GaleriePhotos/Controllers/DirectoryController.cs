@@ -166,16 +166,5 @@ namespace Galerie.Server.Controllers
             await photoService.BulkUpdatePhotosLocation(id, viewModel.Latitude, viewModel.Longitude);
             return Ok();
         }
-
-        [Authorize(Policy = Policies.Administrator)]
-        [HttpGet("{id}/suggest-date")]
-        public async Task<ActionResult<DirectoryPathDateSuggestionViewModel>> GetSuggestedDate(int id)
-        {
-            var directory = await photoService.GetPhotoDirectoryAsync(id);
-            if (directory == null) return NotFound();
-            
-            var suggestedDate = photoService.SuggestDateFromDirectoryPath(directory.Path);
-            return Ok(new DirectoryPathDateSuggestionViewModel(directory.Path, suggestedDate));
-        }
     }
 }
