@@ -1,7 +1,5 @@
-import React, { useCallback, useMemo, memo, ReactNode } from "react";
+import React, { useCallback, useMemo, memo, ReactNode, useEffect } from "react";
 import {
-  SectionList,
-  SectionListData,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -9,14 +7,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
 import ImageCard from "./image-card";
 import SubdirectoryCard from "./subdirectory-card";
 import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 import { DirectoryAdminMenu } from "./directory-admin-menu";
-import { PhotosFlashList } from "./photos-flash-list";
-import { determineGroupingStrategy } from "./photo-date-grouping";
+import {
+  determineGroupingStrategy,
+  groupPhotosByDate,
+  splitPhotosIntoRows,
+} from "./photo-date-grouping";
 import { PaginatedPhotosStore } from "@/stores/paginated-photos";
 
 export interface DirectoryViewProps {
@@ -31,10 +33,45 @@ function splitInRows<T>(data: T[], cols: number): T[][] {
   return rows;
 }
 
-interface Section {
-  title: ReactNode;
-  type: "Albums" | "Photos";
+// -----------------------------
+// Types d'items pour la FlashList plate
+// -----------------------------
+interface BaseItem {
+  id: string;
+  type: string;
 }
+
+interface AlbumsHeaderItem extends BaseItem {
+  type: "albumsHeader";
+  title: ReactNode;
+}
+interface AlbumRowItem extends BaseItem {
+  type: "albumRow";
+  items: PhotoContainer[];
+}
+interface PhotosHeaderItem extends BaseItem {
+  type: "photosHeader";
+}
+interface DateHeaderItem extends BaseItem {
+  type: "dateHeader";
+  title: string;
+}
+interface PhotoRowItem extends BaseItem {
+  type: "photoRow";
+  items: Photo[];
+  groupId: string;
+}
+interface LoadingItem extends BaseItem {
+  type: "loading";
+}
+
+type DirectoryFlatListItem =
+  | AlbumsHeaderItem
+  | AlbumRowItem
+  | PhotosHeaderItem
+  | DateHeaderItem
+  | PhotoRowItem
+  | LoadingItem;
 
 const gap = 4;
 
@@ -43,7 +80,7 @@ export const DirectoryView = observer(function DirectoryView({
 }: DirectoryViewProps) {
   // Get directory info for admin menu
   const directoryId = store.container?.id;
-  const directoryPath = store.breadCrumbs.map(crumb => crumb.name).join("/");
+  const directoryPath = store.breadCrumbs.map((crumb) => crumb.name).join("/");
   let { width } = useWindowDimensions();
   if (width > 768) {
     // The left drawer takes 279px
@@ -72,98 +109,116 @@ export const DirectoryView = observer(function DirectoryView({
         : [],
     [directories, cols]
   );
-  const photoRows = useMemo(
-    () =>
-      sortedValues && sortedValues.length > 0
-        ? splitInRows(sortedValues, cols)
-        : [],
-    [sortedValues, cols]
-  );
 
-  // Determine if we should use FlashList for photos (when grouping by date)
-  const shouldUseFlashList = useMemo(() => {
-    return determineGroupingStrategy(sortedValues) !== 'none';
-  }, [sortedValues]);
+  const groupingStrategy = useMemo(
+    () => determineGroupingStrategy(sortedValues),
+    [sortedValues]
+  );
+  const shouldGroupPhotos = groupingStrategy !== "none";
 
   // Create paginated store for large photo collections
   const paginatedStore = useMemo(() => {
-    if (shouldUseFlashList && directoryId && sortedValues.length > 100) {
-      // Create a loader function that uses the directory API with date ranges
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const loadPhotosFunction = async (startDate?: string | null, endDate?: string | null) => {
-        // For now, we'll just return the existing photos since pagination isn't fully integrated
-        // TODO: Integrate with the actual API calls for date-based loading
-        return sortedValues;
-      };
+    if (directoryId && sortedValues.length > 500) {
+      // Placeholder pagination logic; real impl devrait interroger API avec plages de dates
+      const loadPhotosFunction = async () => sortedValues;
       return new PaginatedPhotosStore(loadPhotosFunction);
     }
     return undefined;
-  }, [shouldUseFlashList, directoryId, sortedValues]);
+  }, [directoryId, sortedValues]);
 
-  const data = useMemo(() => {
-    const result: SectionListData<(PhotoContainer | Photo)[], Section>[] = [];
+  // Chargement initial si pagination
+  useEffect(() => {
+    if (paginatedStore && paginatedStore.getAllPhotos().length === 0) {
+      paginatedStore.loadInitial();
+    }
+  }, [paginatedStore]);
+
+  // Construction de la liste plate
+  const flatData: DirectoryFlatListItem[] = useMemo(() => {
+    const items: DirectoryFlatListItem[] = [];
+
     if (albumRows.length > 0) {
-      result.push({
+      items.push({
+        id: "albums-header",
+        type: "albumsHeader",
         title: store.childContainersHeader,
-        data: albumRows,
-        type: "Albums",
+      });
+      albumRows.forEach((row, idx) => {
+        items.push({ id: `album-row-${idx}`, type: "albumRow", items: row });
       });
     }
-    // Only add photos section to SectionList if we're not using FlashList for photos
-    if (!shouldUseFlashList && photoRows.length > 0) {
-      result.push({
-        title: <Text style={styles.sectionTitle}>Photos</Text>,
-        data: photoRows,
-        type: "Photos",
-      });
+
+    if (sortedValues.length > 0) {
+      items.push({ id: "photos-header", type: "photosHeader" });
+
+      if (!shouldGroupPhotos) {
+        const rows = splitPhotosIntoRows(sortedValues, cols);
+        rows.forEach((row, idx) =>
+          items.push({
+            id: `photo-row-${idx}`,
+            type: "photoRow",
+            items: row,
+            groupId: "all",
+          })
+        );
+      } else {
+        const groups = groupPhotosByDate(
+          sortedValues,
+          groupingStrategy === "day"
+        );
+        groups.forEach((group) => {
+          items.push({
+            id: `date-header-${group.id}`,
+            type: "dateHeader",
+            title: group.displayTitle,
+          });
+          const rows = splitPhotosIntoRows(group.photos, cols);
+          rows.forEach((row, idx) =>
+            items.push({
+              id: `${group.id}-row-${idx}`,
+              type: "photoRow",
+              items: row,
+              groupId: group.id,
+            })
+          );
+        });
+      }
     }
-    return result;
-  }, [albumRows, photoRows, store.childContainersHeader, shouldUseFlashList]);
+
+    if ((!directories || !directoryContent) && items.length === 0) {
+      items.push({ id: "loading", type: "loading" });
+    }
+
+    return items;
+  }, [
+    albumRows,
+    sortedValues,
+    shouldGroupPhotos,
+    groupingStrategy,
+    cols,
+    store.childContainersHeader,
+    directories,
+    directoryContent,
+  ]);
 
   // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
-  const Row = useMemo(
+  // Rendu d'une ligne d'albums
+  const AlbumRow = useMemo(
     () =>
-      memo(function Row({
-        items,
-        type,
-      }: {
-        items: (PhotoContainer | Photo)[];
-        type: "Albums" | "Photos";
-      }) {
-        if (type === "Albums") {
-          return (
-            <View style={styles.rowContainer}>
-              {items.map((subDir, i) => (
-                <View
-                  key={(subDir as PhotoContainer).id}
-                  style={[
-                    styles.itemWrapper,
-                    i === items.length - 1 && styles.itemWrapperLast,
-                  ]}
-                >
-                  <SubdirectoryCard
-                    directory={subDir as PhotoContainer}
-                    size={columnWidth * 2 + gap}
-                    store={store}
-                  />
-                </View>
-              ))}
-            </View>
-          );
-        }
+      memo(function AlbumRow({ items }: { items: PhotoContainer[] }) {
         return (
           <View style={styles.rowContainer}>
-            {items.map((photo, i) => (
+            {items.map((subDir, i) => (
               <View
-                key={(photo as Photo).id}
+                key={subDir.id}
                 style={[
                   styles.itemWrapper,
                   i === items.length - 1 && styles.itemWrapperLast,
                 ]}
               >
-                <ImageCard
-                  photo={photo as Photo}
-                  size={columnWidth}
+                <SubdirectoryCard
+                  directory={subDir}
+                  size={columnWidth * 2 + gap}
                   store={store}
                 />
               </View>
@@ -174,24 +229,27 @@ export const DirectoryView = observer(function DirectoryView({
     [columnWidth, store]
   );
 
-  const renderItem = useCallback(
-    ({
-      item,
-      section,
-    }: {
-      item: (PhotoContainer | Photo)[];
-      section: Section;
-    }) => <Row items={item} type={section.type} />,
-    [Row]
-  );
-
-  const keyExtractor = useCallback(
-    (row: (PhotoContainer | Photo)[], index: number) => {
-      const firstId = row[0]?.id ?? index;
-      // Ajoute longueur et index pour limiter collisions; section sera préfixée dans renderItem key interne
-      return `${firstId}-${row.length}-${index}`;
-    },
-    []
+  // Rendu d'une ligne de photos
+  const PhotoRow = useMemo(
+    () =>
+      memo(function PhotoRow({ items }: { items: Photo[] }) {
+        return (
+          <View style={styles.rowContainer}>
+            {items.map((photo, i) => (
+              <View
+                key={photo.id}
+                style={[
+                  styles.itemWrapper,
+                  i === items.length - 1 && styles.itemWrapperLast,
+                ]}
+              >
+                <ImageCard photo={photo} size={columnWidth} store={store} />
+              </View>
+            ))}
+          </View>
+        );
+      }),
+    [columnWidth, store]
   );
 
   const handleSortDateDesc = useCallback(
@@ -200,83 +258,109 @@ export const DirectoryView = observer(function DirectoryView({
   );
   const handleSortDateAsc = useCallback(() => store.sort("date-asc"), [store]);
 
-  return (
-    <>
-      {/* Render albums section using SectionList */}
-      {data.length > 0 && (
-        <SectionList
-          sections={data}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          removeClippedSubviews
-          windowSize={7}
-          maxToRenderPerBatch={8}
-          initialNumToRender={4}
-          updateCellsBatchingPeriod={50}
-          renderSectionHeader={({ section }) => (
+  const renderItem: ListRenderItem<DirectoryFlatListItem> = useCallback(
+    ({ item }) => {
+      switch (item.type) {
+        case "albumsHeader":
+          return (
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>{item.title}</View>
+            </View>
+          );
+        case "albumRow":
+          return <AlbumRow items={item.items} />;
+        case "photosHeader":
+          return (
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                {section.title}
-                {section.type === "Photos" && directoryId && (
+                <Text style={styles.sectionTitle}>Photos</Text>
+                {directoryId && (
                   <DirectoryAdminMenu
                     directoryId={directoryId}
                     directoryPath={directoryPath}
                   />
                 )}
               </View>
-              {section.type === "Photos" && (
-                <View style={styles.buttonRow}>
-                  <SortButton
-                    selected={order === "date-desc"}
-                    label="Plus récent en premier"
-                    onPress={handleSortDateDesc}
-                  />
-                  <SortButton
-                    selected={order !== "date-desc"}
-                    label="Plus ancien en premier"
-                    onPress={handleSortDateAsc}
-                  />
-                </View>
-              )}
-            </View>
-          )}
-        />
-      )}
-
-      {/* Render photos using FlashList when grouping by date */}
-      {shouldUseFlashList && sortedValues.length > 0 && (
-        <View style={styles.photosSection}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Photos</Text>
-              {directoryId && (
-                <DirectoryAdminMenu
-                  directoryId={directoryId}
-                  directoryPath={directoryPath}
+              <View style={styles.buttonRow}>
+                <SortButton
+                  selected={order === "date-desc"}
+                  label="Plus récent en premier"
+                  onPress={handleSortDateDesc}
                 />
-              )}
+                <SortButton
+                  selected={order !== "date-desc"}
+                  label="Plus ancien en premier"
+                  onPress={handleSortDateAsc}
+                />
+              </View>
             </View>
-            <View style={styles.buttonRow}>
-              <SortButton
-                selected={order === "date-desc"}
-                label="Plus récent en premier"
-                onPress={handleSortDateDesc}
-              />
-              <SortButton
-                selected={order !== "date-desc"}
-                label="Plus ancien en premier"
-                onPress={handleSortDateAsc}
-              />
+          );
+        case "dateHeader":
+          return (
+            <View style={styles.dateHeader}>
+              <Text style={styles.dateHeaderText}>{item.title}</Text>
             </View>
-          </View>
-          <PhotosFlashList store={store} paginatedStore={paginatedStore} />
-        </View>
-      )}
+          );
+        case "photoRow":
+          return <PhotoRow items={item.items} />;
+        case "loading":
+          return (
+            <View style={styles.loadingFooter}>
+              <ActivityIndicator size="large" />
+            </View>
+          );
+        default:
+          return null;
+      }
+      // handlers declared later are stable (useCallback), but to avoid linter 'used before defined', list primitive deps only
+    },
+    [
+      AlbumRow,
+      PhotoRow,
+      directoryId,
+      directoryPath,
+      order,
+      handleSortDateDesc,
+      handleSortDateAsc,
+    ]
+  );
 
-      {(!directories || !directoryContent) && (
-        <ActivityIndicator size="large" />
-      )}
-    </>
+  const keyExtractor = useCallback(
+    (item: DirectoryFlatListItem) => item.id,
+    []
+  );
+  const getItemType = useCallback(
+    (item: DirectoryFlatListItem) => item.type,
+    []
+  );
+
+  const handleEndReached = useCallback(() => {
+    if (paginatedStore) {
+      paginatedStore.loadMore();
+    }
+  }, [paginatedStore]);
+
+  // handlers déjà déclarés plus haut
+
+  return (
+    <FlashList
+      data={flatData}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      getItemType={getItemType}
+      estimatedItemSize={120}
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.3}
+      removeClippedSubviews
+      ListFooterComponent={
+        paginatedStore?.isLoading ? (
+          <View style={styles.loadingFooter}>
+            <ActivityIndicator size="large" />
+            <Text style={styles.loadingText}>Chargement des photos...</Text>
+          </View>
+        ) : null
+      }
+    />
   );
 });
 
@@ -356,5 +440,24 @@ const styles = StyleSheet.create({
   },
   photosSection: {
     flex: 1,
+  },
+  dateHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#f5f5f5",
+  },
+  dateHeaderText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  loadingFooter: {
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#666",
   },
 });
