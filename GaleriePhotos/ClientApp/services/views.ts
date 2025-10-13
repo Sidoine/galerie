@@ -1,5 +1,179 @@
 import * as enums from "./enums";
 
+export interface Directory {
+    id: number;
+
+    visibility: number;
+
+    name: string;
+
+    coverPhotoId: string | null;
+
+    numberOfPhotos: number;
+
+    numberOfSubDirectories: number;
+}
+
+export interface DirectoryFull {
+    parent: Directory | null;
+
+    id: number;
+
+    visibility: number;
+
+    name: string;
+
+    coverPhotoId: string | null;
+
+    numberOfPhotos: number;
+
+    numberOfSubDirectories: number;
+}
+
+export interface Photo {
+    id: number;
+
+    publicId: string;
+
+    name: string;
+
+    video: boolean;
+
+    directoryId: number;
+
+    dateTime: string;
+}
+
+export interface DirectoryPatch {
+    visibility?: number | undefined;
+
+    coverPhotoId?: number | undefined;
+}
+
+export interface AddressGeocodeRequest {
+    address: string;
+}
+
+export interface AddressGeocodeResponse {
+    latitude: number | null;
+
+    longitude: number | null;
+
+    formattedAddress: string | null;
+
+    success: boolean;
+
+    error: string | null;
+}
+
+export interface PhotoFull {
+    id: number;
+
+    publicId: string;
+
+    name: string;
+
+    nextId: number | null;
+
+    previousId: number | null;
+
+    dateTime: string;
+
+    latitude: number | null;
+
+    longitude: number | null;
+
+    camera: string | null;
+
+    video: boolean;
+
+    private: boolean;
+
+    faceDetectionStatus: enums.FaceDetectionStatus;
+
+    directoryId: number;
+}
+
+export interface PhotoPatch {
+    visible?: boolean | undefined;
+}
+
+export interface PhotoAccess {
+    private: boolean;
+}
+
+export interface PhotoRotate {
+    angle: number;
+}
+
+export interface PhotoBulkUpdateLocation {
+    photoIds: number[];
+
+    latitude: number;
+
+    longitude: number;
+}
+
+export interface PhotoBulkUpdateDate {
+    photoIds: number[];
+
+    dateTime: string;
+}
+
+export interface Place {
+    id: number;
+
+    name: string;
+
+    latitude: number;
+
+    longitude: number;
+
+    numberOfPhotos: number;
+
+    type: enums.PlaceType;
+
+    parentId: number | null;
+
+    coverPhotoId: string | null;
+}
+
+export interface Year {
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
+}
+
+export interface Month {
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
+}
+
+export interface AlbumWithoutGpsInfo {
+    directoryId: number;
+
+    directoryPath: string;
+
+    missingGpsPhotoCount: number;
+}
+
+export interface DashboardStatistics {
+    photosWithoutGpsCount: number;
+
+    albumsWithPhotosWithoutGpsCount: number;
+
+    albumsWithoutGps: AlbumWithoutGpsInfo[];
+}
+
 export interface GalleryDirectoryVisibility {
     id: number;
 
@@ -70,20 +244,6 @@ export interface FaceName {
     numberOfPhotos: number;
 
     coverPhotoId: string | null;
-}
-
-export interface Photo {
-    id: number;
-
-    publicId: string;
-
-    name: string;
-
-    video: boolean;
-
-    directoryId: number;
-
-    dateTime: string;
 }
 
 export interface FaceNameSuggestionRequest {
@@ -208,148 +368,4 @@ export interface User {
 
 export interface UserPatch {
     administrator?: boolean | undefined;
-}
-
-export interface Directory {
-    id: number;
-
-    visibility: number;
-
-    name: string;
-
-    coverPhotoId: string | null;
-
-    numberOfPhotos: number;
-
-    numberOfSubDirectories: number;
-}
-
-export interface DirectoryFull {
-    parent: Directory | null;
-
-    id: number;
-
-    visibility: number;
-
-    name: string;
-
-    coverPhotoId: string | null;
-
-    numberOfPhotos: number;
-
-    numberOfSubDirectories: number;
-}
-
-export interface DirectoryPatch {
-    visibility?: number | undefined;
-
-    coverPhotoId?: number | undefined;
-}
-
-export interface AddressGeocodeRequest {
-    address: string;
-}
-
-export interface AddressGeocodeResponse {
-    latitude: number | null;
-
-    longitude: number | null;
-
-    formattedAddress: string | null;
-
-    success: boolean;
-
-    error: string | null;
-}
-
-export interface PhotoFull {
-    id: number;
-
-    publicId: string;
-
-    name: string;
-
-    nextId: number | null;
-
-    previousId: number | null;
-
-    dateTime: string;
-
-    latitude: number | null;
-
-    longitude: number | null;
-
-    camera: string | null;
-
-    video: boolean;
-
-    private: boolean;
-
-    faceDetectionStatus: enums.FaceDetectionStatus;
-
-    directoryId: number;
-}
-
-export interface PhotoPatch {
-    visible?: boolean | undefined;
-}
-
-export interface PhotoAccess {
-    private: boolean;
-}
-
-export interface PhotoRotate {
-    angle: number;
-}
-
-export interface PhotoBulkUpdateLocation {
-    photoIds: number[];
-
-    latitude: number;
-
-    longitude: number;
-}
-
-export interface PhotoBulkUpdateDate {
-    photoIds: number[];
-
-    dateTime: string;
-}
-
-export interface Place {
-    id: number;
-
-    name: string;
-
-    latitude: number;
-
-    longitude: number;
-
-    numberOfPhotos: number;
-
-    type: enums.PlaceType;
-
-    parentId: number | null;
-
-    coverPhotoId: string | null;
-}
-
-export interface Year {
-    id: number;
-
-    name: string;
-
-    numberOfPhotos: number;
-
-    coverPhotoId: string | null;
-}
-
-export interface Month {
-    id: number;
-
-    name: string;
-
-    numberOfPhotos: number;
-
-    coverPhotoId: string | null;
 }

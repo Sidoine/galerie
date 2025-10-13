@@ -1,10 +1,4 @@
 
-export enum DataProviderType {
-    FileSystem = 0,
-
-    Seafile = 1
-}
-
 export enum FaceDetectionStatus {
     NotStarted = 0,
 
@@ -27,4 +21,10 @@ export enum PlaceType {
     Village = 4,
 
     Hamlet = 5
+}
+
+export enum DataProviderType {
+    FileSystem = 0,
+
+    Seafile = 1
 }

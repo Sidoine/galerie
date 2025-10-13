@@ -105,7 +105,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
 
   const hasParent = directory?.parent != null;
   const photoList = directoryId
-    ? directoriesStore.contentLoader.getValue(directoryId)
+    ? directoriesStore.contentLoader.getValue(directoryId, null, null)
     : null;
   const containersList = directoryId
     ? directoriesStore.subDirectoriesLoader.getValue(directoryId)
