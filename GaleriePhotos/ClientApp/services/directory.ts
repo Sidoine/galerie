@@ -29,10 +29,6 @@ export class DirectoryController {
         return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
     }
 
-    getSuggestedDate = (id: number) => {
-        return this.client.fetchJson<views.DirectoryPathDateSuggestion>(`api/directories/${id}/suggest-date`, "GET", undefined);
-    }
-
     patch = (id: number, viewModel: views.DirectoryPatch) => {
         return this.client.fetch(`api/directories/${id}`, "PATCH", JSON.stringify(viewModel));
     }

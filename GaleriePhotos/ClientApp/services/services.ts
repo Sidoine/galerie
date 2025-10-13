@@ -1,3 +1,5 @@
+export * from "./dashboard";
+export * from "./dashboard";
 export * from "./directory";
 export * from "./directoryVisibility";
 export * from "./face";

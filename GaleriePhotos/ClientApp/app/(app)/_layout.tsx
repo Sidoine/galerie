@@ -22,6 +22,16 @@ const AppLayoutContent = observer(function RootLayoutContent() {
       />
       <Tabs.Protected guard={meStore.administrator}>
         <Tabs.Screen
+          name="dashboard"
+          options={{
+            headerShown: false,
+            title: "Tableau de bord",
+            tabBarIcon: ({ color }) => (
+              <Icon set="mi" name="dashboard" size={20} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="settings"
           options={{
             headerShown: false,
