@@ -176,7 +176,8 @@ export const DirectoryView = observer(function DirectoryView({
       } else {
         const groups = groupPhotosByDate(
           sortedValues,
-          groupingStrategy === "day"
+          groupingStrategy === "day",
+          order === "date-desc" ? "date-desc" : "date-asc"
         );
         groups.forEach((group) => {
           items.push({
@@ -211,6 +212,7 @@ export const DirectoryView = observer(function DirectoryView({
     store.childContainersHeader,
     directories,
     directoryContent,
+    order,
   ]);
 
   // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
@@ -302,7 +304,8 @@ export const DirectoryView = observer(function DirectoryView({
       } else {
         const groups = groupPhotosByDate(
           sortedValues,
-          groupingStrategy === "day"
+          groupingStrategy === "day",
+          order === "date-desc" ? "date-desc" : "date-asc"
         );
         const group = groups.find((g) => g.id === groupId);
         if (group) {
@@ -314,7 +317,7 @@ export const DirectoryView = observer(function DirectoryView({
         setBulkLocationVisible(true);
       }
     },
-    [sortedValues, shouldGroupPhotos, groupingStrategy]
+    [sortedValues, shouldGroupPhotos, groupingStrategy, order]
   );
 
   const closeBulkLocation = useCallback(() => {

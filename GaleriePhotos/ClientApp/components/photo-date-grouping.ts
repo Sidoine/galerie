@@ -18,7 +18,8 @@ export interface DateGroup extends DateGroupedPhoto {
  */
 export function groupPhotosByDate(
   photos: Photo[],
-  groupByDay = true
+  groupByDay = true,
+  order: "date-desc" | "date-asc" = "date-desc"
 ): DateGroup[] {
   const groups = new Map<string, Photo[]>();
 
@@ -34,14 +35,19 @@ export function groupPhotosByDate(
     groups.get(key)!.push(photo);
   });
 
-  return Array.from(groups.entries())
-    .map(([date, photos]) => ({
-      id: date,
-      date,
-      photos,
-      displayTitle: formatDateGroupTitle(date, groupByDay),
-    }))
-    .sort((a, b) => b.date.localeCompare(a.date)); // Most recent first
+  const grouped = Array.from(groups.entries()).map(([date, photos]) => ({
+    id: date,
+    date,
+    photos,
+    displayTitle: formatDateGroupTitle(date, groupByDay),
+  }));
+
+  grouped.sort((a, b) =>
+    order === "date-desc"
+      ? b.date.localeCompare(a.date)
+      : a.date.localeCompare(b.date)
+  );
+  return grouped;
 }
 
 /**
