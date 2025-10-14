@@ -26,7 +26,6 @@ import {
   groupPhotosByDate,
   splitPhotosIntoRows,
 } from "./photo-date-grouping";
-import { PaginatedPhotosStore } from "@/stores/paginated-photos";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
@@ -106,12 +105,7 @@ export const DirectoryView = observer(function DirectoryView({
   columnWidth = (width - gap) / cols - gap;
 
   const directories = store.containersList;
-
-  const directoryContent = store.photoList;
   const order = store.order;
-  const values = directoryContent || [];
-  const sortedValues =
-    order === "date-desc" ? values.slice().reverse() : values;
 
   // Pré-calcule les lignes en fonction des colonnes pour limiter le travail en scroll
   const albumRows = useMemo(
@@ -123,30 +117,27 @@ export const DirectoryView = observer(function DirectoryView({
   );
 
   const groupingStrategy = useMemo(
-    () => determineGroupingStrategy(sortedValues),
-    [sortedValues]
+    () => determineGroupingStrategy(store.container),
+    [store.container]
   );
   const shouldGroupPhotos = groupingStrategy !== "none";
 
-  // Create paginated store for large photo collections
-  const paginatedStore = useMemo(() => {
-    if (directoryId && sortedValues.length > 500) {
-      // Placeholder pagination logic; real impl devrait interroger API avec plages de dates
-      const loadPhotosFunction = async () => sortedValues;
-      return new PaginatedPhotosStore(loadPhotosFunction);
-    }
-    return undefined;
-  }, [directoryId, sortedValues]);
+  // Utilise le store paginé fourni par le store parent
+  const paginatedStore = store.paginatedPhotosStore;
+
+  // Photos: utilisation exclusive du paginatedStore (pagination par plage de dates)
+  const paginatedPhotos = paginatedStore.photos;
 
   // Chargement initial si pagination
   useEffect(() => {
-    if (paginatedStore && paginatedStore.getAllPhotos().length === 0) {
+    if (paginatedPhotos.length === 0) {
       paginatedStore.loadInitial();
     }
-  }, [paginatedStore]);
+  }, [paginatedStore, paginatedPhotos.length]);
 
   // Construction de la liste plate
   const flatData: DirectoryFlatListItem[] = useMemo(() => {
+    console.log("Rebuild flatData", albumRows.length, paginatedPhotos.length);
     const items: DirectoryFlatListItem[] = [];
 
     if (albumRows.length > 0) {
@@ -160,11 +151,11 @@ export const DirectoryView = observer(function DirectoryView({
       });
     }
 
-    if (sortedValues.length > 0) {
+    if (paginatedPhotos.length > 0) {
       items.push({ id: "photos-header", type: "photosHeader" });
 
       if (!shouldGroupPhotos) {
-        const rows = splitPhotosIntoRows(sortedValues, cols);
+        const rows = splitPhotosIntoRows(paginatedPhotos, cols);
         rows.forEach((row, idx) =>
           items.push({
             id: `photo-row-${idx}`,
@@ -175,7 +166,7 @@ export const DirectoryView = observer(function DirectoryView({
         );
       } else {
         const groups = groupPhotosByDate(
-          sortedValues,
+          paginatedPhotos,
           groupingStrategy === "day",
           order === "date-desc" ? "date-desc" : "date-asc"
         );
@@ -198,20 +189,20 @@ export const DirectoryView = observer(function DirectoryView({
       }
     }
 
-    if ((!directories || !directoryContent) && items.length === 0) {
+    // État de chargement initial (aucune photo encore disponible)
+    if (paginatedStore.isLoading && paginatedPhotos.length === 0) {
       items.push({ id: "loading", type: "loading" });
     }
 
     return items;
   }, [
     albumRows,
-    sortedValues,
-    shouldGroupPhotos,
-    groupingStrategy,
-    cols,
+    paginatedPhotos,
+    paginatedStore.isLoading,
     store.childContainersHeader,
-    directories,
-    directoryContent,
+    shouldGroupPhotos,
+    cols,
+    groupingStrategy,
     order,
   ]);
 
@@ -299,11 +290,11 @@ export const DirectoryView = observer(function DirectoryView({
       let photosInGroup: Photo[] = [];
       if (!shouldGroupPhotos) {
         if (groupId === "all") {
-          photosInGroup = sortedValues;
+          photosInGroup = paginatedPhotos;
         }
       } else {
         const groups = groupPhotosByDate(
-          sortedValues,
+          paginatedPhotos,
           groupingStrategy === "day",
           order === "date-desc" ? "date-desc" : "date-asc"
         );
@@ -317,7 +308,7 @@ export const DirectoryView = observer(function DirectoryView({
         setBulkLocationVisible(true);
       }
     },
-    [sortedValues, shouldGroupPhotos, groupingStrategy, order]
+    [shouldGroupPhotos, paginatedPhotos, groupingStrategy, order]
   );
 
   const closeBulkLocation = useCallback(() => {
@@ -414,7 +405,7 @@ export const DirectoryView = observer(function DirectoryView({
   );
 
   const handleEndReached = useCallback(() => {
-    if (paginatedStore) {
+    if (paginatedStore && paginatedStore.shouldLoadMore()) {
       paginatedStore.loadMore();
     }
   }, [paginatedStore]);

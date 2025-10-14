@@ -178,7 +178,7 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpGet("{galleryId}/faces/names/{id}")]
-        public async Task<ActionResult<FaceNameViewModel>> GetName(int galleryId, int id)
+        public async Task<ActionResult<FaceNameFullViewModel>> GetName(int galleryId, int id)
         {
             var gallery = await _galleryService.Get(galleryId);
             if (gallery == null) return NotFound();
@@ -186,11 +186,14 @@ namespace GaleriePhotos.Controllers
 
             var name = await applicationDbContext.FaceNames
                 .Where(x => x.GalleryId == galleryId && x.Id == id)
-                .Select(x => new FaceNameViewModel
+                .Select(x => new FaceNameFullViewModel
                 {
                     Id = x.Id,
                     Name = x.Name,
-                    NumberOfPhotos = applicationDbContext.Faces.Count(f => f.FaceNameId == x.Id)
+                    NumberOfPhotos = applicationDbContext.Faces.Count(f => f.FaceNameId == x.Id),
+                    MinDate = applicationDbContext.Faces.Where(f => f.FaceNameId == x.Id).Min(f => f.Photo.DateTime),
+                    MaxDate = applicationDbContext.Faces.Where(f => f.FaceNameId == x.Id).Max(f => f.Photo.DateTime),
+                    CoverPhotoId = applicationDbContext.Faces.Where(f => f.FaceNameId == x.Id).OrderBy(f => f.Photo.DateTime).Select(f => f.Photo.PublicId.ToString()).FirstOrDefault()
                 })
                 .FirstOrDefaultAsync();
             if (name == null) return NotFound();
@@ -219,9 +222,9 @@ namespace GaleriePhotos.Controllers
             
             // Apply date filtering if specified
             if (startDate.HasValue)
-                query = query.Where(p => p.DateTime >= startDate.Value);
+                query = query.Where(p => p.DateTime >= startDate.Value.ToUniversalTime());
             if (endDate.HasValue)
-                query = query.Where(p => p.DateTime <= endDate.Value);
+                query = query.Where(p => p.DateTime <= endDate.Value.ToUniversalTime());
                 
             var photos = await query.OrderBy(f => f.DateTime).ToListAsync();
 

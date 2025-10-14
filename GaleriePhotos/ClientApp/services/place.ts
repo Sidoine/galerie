@@ -18,7 +18,11 @@ export class PlaceController {
     }
 
     getPlaceById = (id: number) => {
-        return this.client.fetchJson<views.Place>(`api/places/${id}`, "GET", undefined);
+        return this.client.fetchJson<views.PlaceFull>(`api/places/${id}`, "GET", undefined);
+    }
+
+    getPlaceMonth = (id: number, year: number, month: number) => {
+        return this.client.fetchJson<views.MonthFull>(`api/places/${id}/years/${year}/months/${month}`, "GET", undefined);
     }
 
     getPlaceMonths = (id: number, year: number) => {
@@ -35,6 +39,10 @@ export class PlaceController {
 
     getPlacesByGallery = (galleryId: number) => {
         return this.client.fetchJson<views.Place[]>(`api/places/gallery/${galleryId}`, "GET", undefined);
+    }
+
+    getPlaceYear = (id: number, year: number) => {
+        return this.client.fetchJson<views.YearFull>(`api/places/${id}/years/${year}`, "GET", undefined);
     }
 
     getPlaceYears = (id: number) => {

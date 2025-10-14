@@ -33,26 +33,29 @@ export default observer(function ImageView({
     photoId: string;
   }>();
   const photosStore = usePhotosStore();
-  const { navigateToPhoto, navigateToContainer, photoList } = store;
+  const { navigateToPhoto, navigateToContainer, paginatedPhotosStore } = store;
 
   const photo = photosStore.imageLoader.getValue(Number(photoId));
 
-  const photoIndex = photoList?.findIndex((p) => p.id === photo?.id);
+  const photoIndex = paginatedPhotosStore.photos.findIndex(
+    (p) => p.id === photo?.id
+  );
 
   const handleNext = useCallback(() => {
     const nextPhoto =
-      photoIndex !== undefined && photoList && photoIndex < photoList.length - 1
-        ? photoList[photoIndex + 1]
+      photoIndex !== undefined &&
+      photoIndex < paginatedPhotosStore.photos.length - 1
+        ? paginatedPhotosStore.photos[photoIndex + 1]
         : null;
     if (nextPhoto) navigateToPhoto(nextPhoto.id);
-  }, [navigateToPhoto, photoIndex, photoList]);
+  }, [navigateToPhoto, photoIndex, paginatedPhotosStore.photos]);
   const handlePrevious = useCallback(() => {
     const previousPhoto =
-      photoIndex !== undefined && photoList && photoIndex > 0
-        ? photoList[photoIndex - 1]
+      photoIndex !== undefined && photoIndex > 0
+        ? paginatedPhotosStore.photos[photoIndex - 1]
         : null;
     if (previousPhoto) navigateToPhoto(previousPhoto.id);
-  }, [navigateToPhoto, photoIndex, photoList]);
+  }, [navigateToPhoto, photoIndex, paginatedPhotosStore.photos]);
   const handleClose = useCallback(() => {
     if (photo) navigateToContainer();
   }, [navigateToContainer, photo]);

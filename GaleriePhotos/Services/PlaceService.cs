@@ -350,12 +350,12 @@ namespace GaleriePhotos.Services
             return countries;
         }
 
-        public async Task<PlaceViewModel?> GetPlaceByIdAsync(int placeId)
+        public async Task<PlaceFullViewModel?> GetPlaceByIdAsync(int placeId)
         {
             return await context.Places
                 .Include(x => x.CoverPhoto)
                 .Where(x => x.Id == placeId)
-                .Select(p => new PlaceViewModel
+                .Select(p => new PlaceFullViewModel
                 {
                     Id = p.Id,
                     Name = p.Name,
@@ -365,7 +365,9 @@ namespace GaleriePhotos.Services
                     ParentId = p.ParentId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
-                                context.Photos.Count(ph => ph.PlaceId == p.Id)
+                                context.Photos.Count(ph => ph.PlaceId == p.Id),
+                    MinDate = context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime),
+                    MaxDate = context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime)
                 })
                 .FirstOrDefaultAsync();
         }
@@ -495,6 +497,47 @@ namespace GaleriePhotos.Services
                 })
                 .Distinct()
                 .ToArrayAsync();
+        }
+
+        public async Task<YearFullViewModel?> GetPlaceYearAsync(int placeId, int year)
+        {
+            var baseQuery = context.Photos.Where(p => p.PlaceId == placeId && p.DateTime.Year == year);
+            if (!await baseQuery.AnyAsync()) return null;
+
+            var number = await baseQuery.CountAsync();
+            var min = await baseQuery.MinAsync(p => p.DateTime);
+            var max = await baseQuery.MaxAsync(p => p.DateTime);
+            // Cover : première photo chronologique de l'année si disponible
+            var cover = await baseQuery.OrderBy(p => p.DateTime).Select(p => p.PublicId.ToString()).FirstOrDefaultAsync();
+            return new YearFullViewModel
+            {
+                Id = year,
+                Name = year.ToString(),
+                NumberOfPhotos = number,
+                CoverPhotoId = cover,
+                MinDate = min,
+                MaxDate = max
+            };
+        }
+
+        public async Task<MonthFullViewModel?> GetPlaceMonthAsync(int placeId, int year, int month)
+        {
+            var baseQuery = context.Photos.Where(p => p.PlaceId == placeId && p.DateTime.Year == year && p.DateTime.Month == month);
+            if (!await baseQuery.AnyAsync()) return null;
+
+            var number = await baseQuery.CountAsync();
+            var min = await baseQuery.MinAsync(p => p.DateTime);
+            var max = await baseQuery.MaxAsync(p => p.DateTime);
+            var cover = await baseQuery.OrderBy(p => p.DateTime).Select(p => p.PublicId.ToString()).FirstOrDefaultAsync();
+            return new MonthFullViewModel
+            {
+                Id = month,
+                Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month),
+                NumberOfPhotos = number,
+                CoverPhotoId = cover,
+                MinDate = min,
+                MaxDate = max
+            };
         }
     }
 }

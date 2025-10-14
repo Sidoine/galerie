@@ -1,5 +1,13 @@
 import { computed, makeObservable } from "mobx";
-import { Month, Photo, Place, Year } from "../services/views";
+import {
+  Month,
+  MonthFull,
+  Photo,
+  Place,
+  PlaceFull,
+  Year,
+  YearFull,
+} from "../services/views";
 import { PlaceController } from "../services/place";
 import { createContext, useContext, useMemo } from "react";
 import { MapLoader, useApiClient, ValueLoader } from "folke-service-helpers";
@@ -8,11 +16,17 @@ class PlacesStore {
   constructor(
     public galleryId: number,
     private countriesLoader: ValueLoader<Place[], [number]>,
-    private placeLoader: MapLoader<Place, [number]>,
+    private placeLoader: MapLoader<PlaceFull, [number]>,
     private citiesLoader: MapLoader<Place[], [number, number]>,
     private placePhotosLoader: MapLoader<
       Photo[],
-      [placeId: number, year?: number | null, month?: number | null, startDate?: (string | null), endDate?: (string | null)]
+      [
+        placeId: number,
+        year?: number | null,
+        month?: number | null,
+        startDate?: string | null,
+        endDate?: string | null
+      ]
     >,
     private placeYearsLoader: MapLoader<Year[], [number]>,
     private placeMonthsLoader: MapLoader<Month[], [number, number]>,
@@ -20,7 +34,9 @@ class PlacesStore {
       number,
       [placeId: number, year?: number | null, month?: number | null]
     >,
-    private placeController: PlaceController
+    public placeController: PlaceController,
+    private placeYearLoader: MapLoader<YearFull, [number, number]>,
+    private placeMonthLoader: MapLoader<MonthFull, [number, number, number]>
   ) {
     makeObservable(this, {
       countries: computed,
@@ -35,16 +51,36 @@ class PlacesStore {
     return this.placeLoader.getValue(id);
   }
 
+  getPlaceYear(placeId: number, year: number) {
+    return this.placeYearLoader.getValue(placeId, year);
+  }
+
+  getPlaceMonth(placeId: number, year: number, month: number) {
+    return this.placeMonthLoader.getValue(placeId, year, month);
+  }
+
   getCitiesByCountry(countryId: number) {
     return this.citiesLoader.getValue(this.galleryId, countryId);
   }
 
+  /**
+   * Récupère les photos d'un lieu, éventuellement filtrées par année, mois et/ou plage de dates (YYYY-MM-DD).
+   * Le loader clé inclut startDate/endDate pour permettre la pagination temporelle.
+   */
   getPlacePhotos(
     placeId: number,
     year?: number | null,
-    month?: number | null
+    month?: number | null,
+    startDate?: string | null,
+    endDate?: string | null
   ): Photo[] | null {
-    return this.placePhotosLoader.getValue(placeId, year, month);
+    return this.placePhotosLoader.getValue(
+      placeId,
+      year,
+      month,
+      startDate ?? null,
+      endDate ?? null
+    );
   }
 
   getPlacePhotoCount(
@@ -90,6 +126,8 @@ export function PlacesStoreProvider({
     const placePhotosLoader = new MapLoader(placeController.getPlacePhotos);
     const placeYearsLoader = new MapLoader(placeController.getPlaceYears);
     const placeMonthsLoader = new MapLoader(placeController.getPlaceMonths);
+    const placeYearLoader = new MapLoader(placeController.getPlaceYear);
+    const placeMonthLoader = new MapLoader(placeController.getPlaceMonth);
     const placePhotoCountLoader = new MapLoader(
       placeController.getPlacePhotoCount
     );
@@ -102,7 +140,9 @@ export function PlacesStoreProvider({
       placeYearsLoader,
       placeMonthsLoader,
       placePhotoCountLoader,
-      placeController
+      placeController,
+      placeYearLoader,
+      placeMonthLoader
     );
   }, [apiClient, galleryId]);
 

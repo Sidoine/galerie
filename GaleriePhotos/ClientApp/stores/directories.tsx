@@ -15,9 +15,12 @@ class DirectoriesStore {
 
   constructor(
     public subDirectoriesLoader: MapLoader<Directory[], [number]>,
-    public contentLoader: MapLoader<Photo[], [number, (string | null)?, (string | null)?]>,
+    public contentLoader: MapLoader<
+      Photo[],
+      [number, (string | null)?, (string | null)?]
+    >,
     public infoLoader: MapLoader<DirectoryFull, [number]>,
-    private directoryService: DirectoryController,
+    public directoryService: DirectoryController,
     public galleryId: number
   ) {
     makeObservable(this, {
@@ -37,10 +40,6 @@ class DirectoriesStore {
 
   getDirectory(directoryId: number) {
     return this.infoLoader.getValue(directoryId);
-  }
-
-  getPhotos(directoryId: number) {
-    return this.contentLoader.getValue(directoryId);
   }
 
   public async loadRoot() {

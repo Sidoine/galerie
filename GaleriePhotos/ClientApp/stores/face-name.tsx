@@ -7,10 +7,9 @@ import {
   PhotoContainer,
   PhotoContainerStore,
 } from "./photo-container";
-import { Photo } from "@/services/views";
+import { PaginatedPhotosStore } from "./paginated-photos";
 import { Text } from "react-native";
 
-const noPhoto: Photo[] = [];
 const noContainer: PhotoContainer[] = [];
 
 const FaceNameStoreContext = createContext<PhotoContainerStore | null>(null);
@@ -114,9 +113,23 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     [faceNameId, faceNamesStore.galleryId, router]
   );
 
-  const photoList = faceNameId
-    ? faceNamesStore.getPhotosByName(faceNameId)
-    : noPhoto;
+  const loadPhotos = useCallback(
+    async (startDate?: string | null, endDate?: string | null) => {
+      if (!faceNameId) return null;
+      return await faceNamesStore.faceController.getPhotosByFaceName(
+        faceNamesStore.galleryId,
+        faceNameId,
+        startDate,
+        endDate
+      );
+    },
+    [faceNameId, faceNamesStore]
+  );
+
+  const paginatedPhotosStore = useMemo(() => {
+    const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
+    return new PaginatedPhotosStore(faceName, loadPhotos, sortOrder);
+  }, [faceName, loadPhotos, order]);
 
   const faceNameStore = useMemo<PhotoContainerStore>(() => {
     return {
@@ -124,7 +137,6 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       navigateToContainer,
       navigateToParentContainer,
       hasParent: false,
-      photoList,
       containersList: noContainer,
       sort,
       order,
@@ -134,19 +146,20 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       getPhotoLink,
       childContainersHeader: <Text>??</Text>,
       getChildContainerLink,
+      paginatedPhotosStore,
     };
   }, [
+    navigateToPhoto,
+    navigateToContainer,
+    navigateToParentContainer,
+    sort,
+    order,
     breadCrumbs,
     faceName,
     navigateToChildContainer,
-    navigateToContainer,
-    navigateToParentContainer,
-    navigateToPhoto,
-    order,
-    photoList,
-    sort,
     getPhotoLink,
     getChildContainerLink,
+    paginatedPhotosStore,
   ]);
   return (
     <FaceNameStoreContext.Provider value={faceNameStore}>

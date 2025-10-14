@@ -6,7 +6,7 @@ import { useMembersStore } from "@/stores/members";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
-import { useDirectoriesStore } from "@/stores/directories";
+import { Photo } from "@/services/views";
 
 interface DirectoryAdminMenuProps {
   directoryId: number;
@@ -22,7 +22,8 @@ export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
 
-  const photos = useDirectoriesStore().getPhotos(directoryId);
+  // TODO
+  const photos: Photo[] = [];
 
   // NOTE: tous les hooks doivent être déclarés avant tout return conditionnel.
 

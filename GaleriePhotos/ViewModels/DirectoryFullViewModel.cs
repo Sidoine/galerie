@@ -9,6 +9,8 @@ namespace GaleriePhotos.ViewModels
     public class DirectoryFullViewModel : DirectoryViewModel
     {
         public DirectoryViewModel? Parent { get; set; }
+        public DateTime MinDate { get; set; }
+        public DateTime MaxDate { get; set; }
 
         public DirectoryFullViewModel(PhotoDirectory photoDirectory, PhotoDirectory? parentDirectory, int numberOfPhotos, int numberOfSubDirectories) : base(photoDirectory, numberOfPhotos, numberOfSubDirectories)
         {

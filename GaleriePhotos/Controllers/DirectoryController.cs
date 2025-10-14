@@ -23,12 +23,14 @@ namespace Galerie.Server.Controllers
         private readonly PhotoService photoService;
         private readonly ApplicationDbContext applicationDbContext;
         private readonly DataService dataService;
+        private readonly DirectoryService directoryService;
 
-        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService)
+        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService, DirectoryService directoryService)
         {
             this.photoService = photoService;
             this.applicationDbContext = applicationDbContext;
             this.dataService = dataService;
+            this.directoryService = directoryService;
         }
 
         // New: get root directory for a specific gallery (used when galleryId is in the URL)
@@ -46,7 +48,15 @@ namespace Galerie.Server.Controllers
             if (gallery == null || !dataService.GetDataProvider(gallery).IsSetup) return NotFound();
 
             var galleryRootDirectory = await photoService.GetRootDirectory(gallery);
-            return Ok(new DirectoryFullViewModel(galleryRootDirectory, null, await photoService.GetNumberOfPhotos(galleryRootDirectory), await photoService.GetNumberOfSubDirectories(galleryRootDirectory)));
+            var (minRoot, maxRoot) = await directoryService.GetPhotoDateRangeAsync(galleryRootDirectory);
+            var rootVm = new DirectoryFullViewModel(galleryRootDirectory, null,
+                await photoService.GetNumberOfPhotos(galleryRootDirectory),
+                await photoService.GetNumberOfSubDirectories(galleryRootDirectory))
+            {
+                MinDate = minRoot,
+                MaxDate = maxRoot
+            };
+            return Ok(rootVm);
         }
 
         [HttpGet("{id}")]
@@ -63,7 +73,15 @@ namespace Galerie.Server.Controllers
 
             var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
             var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Include(x => x.CoverPhoto).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
-            return Ok(new DirectoryFullViewModel(directory, parentDirectory, await photoService.GetNumberOfPhotos(directory), await photoService.GetNumberOfSubDirectories(directory)));
+            var (min, max) = await directoryService.GetPhotoDateRangeAsync(directory);
+            var dirVm = new DirectoryFullViewModel(directory, parentDirectory,
+                await photoService.GetNumberOfPhotos(directory),
+                await photoService.GetNumberOfSubDirectories(directory))
+            {
+                MinDate = min,
+                MaxDate = max
+            };
+            return Ok(dirVm);
         }
 
         // GET: api/values

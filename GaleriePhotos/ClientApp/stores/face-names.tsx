@@ -1,5 +1,5 @@
 import { FaceController } from "@/services/face";
-import { FaceName, Photo } from "@/services/views";
+import { FaceName, FaceNameFull, Photo } from "@/services/views";
 import { MapLoader, useApiClient, ValueLoader } from "folke-service-helpers";
 import { computed, makeObservable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
@@ -8,9 +8,12 @@ class FaceNamesStore {
   constructor(
     public galleryId: number,
     private namesLoader: ValueLoader<FaceName[], [number]>,
-    private nameLoader: MapLoader<FaceName, [number, number]>,
-    private namePhotosLoader: MapLoader<Photo[], [number, number, (string | null)?, (string | null)?]>,
-    private faceController: FaceController
+    private nameLoader: MapLoader<FaceNameFull, [number, number]>,
+    private namePhotosLoader: MapLoader<
+      Photo[],
+      [number, number, (string | null)?, (string | null)?]
+    >,
+    public faceController: FaceController
   ) {
     makeObservable(this, {
       names: computed,
@@ -29,8 +32,20 @@ class FaceNamesStore {
     this.namePhotosLoader.cache.clear();
   }
 
-  getPhotosByName(id: number) {
-    return this.namePhotosLoader.getValue(this.galleryId, id, null, null);
+  /**
+   * Récupère les photos associées à un nom de visage, optionnellement filtrées par plage de dates (YYYY-MM-DD).
+   */
+  getPhotosByName(
+    id: number,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
+    return this.namePhotosLoader.getValue(
+      this.galleryId,
+      id,
+      startDate ?? null,
+      endDate ?? null
+    );
   }
 
   getFaceNameThumbnailUrl(id: number) {

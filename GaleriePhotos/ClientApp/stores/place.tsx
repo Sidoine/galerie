@@ -2,18 +2,18 @@ import { Href, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { usePlacesStore } from "./places";
 import { createContext, useCallback, useContext, useMemo } from "react";
+import { PaginatedPhotosStore } from "./paginated-photos";
 import {
   BreadCrumb,
   PhotoContainer,
   PhotoContainerStore,
 } from "./photo-container";
 import { PlaceType } from "@/services/enums";
-import { Photo, Place } from "@/services/views";
+import { Place } from "@/services/views";
 import PlacesMap from "@/components/places-map";
 import { Text } from "react-native";
 
 const emptyPhotoContainer: PhotoContainer[] = [];
-const emptyPhotoList: Photo[] = [];
 
 const PlaceStoreContext = createContext<PhotoContainerStore | null>(null);
 
@@ -33,6 +33,18 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   const router = useRouter();
   const placesStore = usePlacesStore();
   const place = placeId ? placesStore.getPlace(placeId) : null;
+  const containerType: "place" | "year" | "month" =
+    month !== undefined ? "month" : year !== undefined ? "year" : "place";
+  const container =
+    containerType === "place"
+      ? place
+      : containerType === "year"
+      ? placeId && year
+        ? placesStore.getPlaceYear(placeId, year)
+        : null
+      : placeId && year && month
+      ? placesStore.getPlaceMonth(placeId, year, month)
+      : null;
   const getPhotoLink = useCallback(
     (photoId: number): Href => {
       return {
@@ -72,12 +84,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     ? placesStore.getPlacePhotoCount(placeId, year, month)
     : 0;
   const tooManyPhotos = 100;
-  const photoList =
-    (photoCount !== null && photoCount < tooManyPhotos) || month !== undefined
-      ? placeId
-        ? placesStore.getPlacePhotos(placeId, year, month)
-        : emptyPhotoList
-      : emptyPhotoList;
+
   let childType: "places" | "years" | "months" | "none" = "none";
   let containersList: PhotoContainer[] | null = emptyPhotoContainer;
   if (place) {
@@ -286,39 +293,60 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
       ),
     [containersList, navigateToChildContainer, place]
   );
+
+  const loadPhotos = useCallback(
+    async (startDate?: string | null, endDate?: string | null) => {
+      if (!placeId) return null;
+      return await placesStore.placeController.getPlacePhotos(
+        placeId,
+        year,
+        month,
+        startDate,
+        endDate
+      );
+    },
+    [placeId, placesStore, year, month]
+  );
+
+  const paginatedPhotosStore = useMemo(() => {
+    const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
+    return new PaginatedPhotosStore(container, loadPhotos, sortOrder);
+  }, [container, loadPhotos, order]);
+
   const placeStore = useMemo<PhotoContainerStore>(() => {
     return {
       navigateToPhoto,
       navigateToContainer,
       navigateToParentContainer,
       hasParent: !!place?.parentId,
-      photoList,
       containersList,
       sort,
       order: order,
       breadCrumbs,
-      container: place || null,
+      container: container,
       navigateToChildContainer,
       getPhotoLink,
       setCover,
       childContainersHeader,
       getChildContainerLink,
+      paginatedPhotosStore,
     };
   }, [
     navigateToPhoto,
     navigateToContainer,
     navigateToParentContainer,
-    place,
-    photoList,
+    place?.parentId,
     containersList,
     sort,
     order,
     breadCrumbs,
+    container,
     navigateToChildContainer,
     getPhotoLink,
     setCover,
     childContainersHeader,
     getChildContainerLink,
+    paginatedPhotosStore,
   ]);
   return (
     <PlaceStoreContext.Provider value={placeStore}>

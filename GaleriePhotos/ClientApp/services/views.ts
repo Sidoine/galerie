@@ -17,6 +17,10 @@ export interface Directory {
 export interface DirectoryFull {
     parent: Directory | null;
 
+    minDate: string;
+
+    maxDate: string;
+
     id: number;
 
     visibility: number;
@@ -140,6 +144,28 @@ export interface Place {
     coverPhotoId: string | null;
 }
 
+export interface PlaceFull {
+    minDate: string;
+
+    maxDate: string;
+
+    id: number;
+
+    name: string;
+
+    latitude: number;
+
+    longitude: number;
+
+    numberOfPhotos: number;
+
+    type: enums.PlaceType;
+
+    parentId: number | null;
+
+    coverPhotoId: string | null;
+}
+
 export interface Year {
     id: number;
 
@@ -151,6 +177,34 @@ export interface Year {
 }
 
 export interface Month {
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
+}
+
+export interface YearFull {
+    minDate: string;
+
+    maxDate: string;
+
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
+}
+
+export interface MonthFull {
+    minDate: string;
+
+    maxDate: string;
+
     id: number;
 
     name: string;
@@ -239,6 +293,20 @@ export interface UnnamedFacesSampleRequest {
 }
 
 export interface FaceName {
+    id: number;
+
+    name: string;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
+}
+
+export interface FaceNameFull {
+    minDate: string;
+
+    maxDate: string;
+
     id: number;
 
     name: string;

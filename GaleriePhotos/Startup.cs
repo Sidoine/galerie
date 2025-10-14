@@ -90,6 +90,7 @@ namespace GaleriePhotos
             services.AddHttpClient<PlaceService>();
             services.AddScoped<GeocodingService>();
             services.AddHttpClient<GeocodingService>();
+            services.AddScoped<DirectoryService>();
             services.AddHostedService<PlaceLocationBackgroundService>();
             services.AddHostedService<GalleryScanBackgroundService>();
 

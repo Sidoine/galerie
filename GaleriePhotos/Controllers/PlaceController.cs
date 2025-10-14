@@ -71,9 +71,11 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<PlaceViewModel>> GetPlaceById(int id)
+        public async Task<ActionResult<PlaceFullViewModel>> GetPlaceById(int id)
         {
-            return Ok(await placeService.GetPlaceByIdAsync(id));
+            var place = await placeService.GetPlaceByIdAsync(id);
+            if (place == null) return NotFound();
+            return Ok(place);
         }
             
         [HttpGet("{id}/photos")]
@@ -121,6 +123,22 @@ namespace Galerie.Server.Controllers
         public async Task<ActionResult<MonthViewModel[]>> GetPlaceMonths(int id, int year)
         {
             return Ok(await placeService.GetPlaceMonthsAsync(id, year));
+        }
+
+        [HttpGet("{id}/years/{year}")]
+        public async Task<ActionResult<YearFullViewModel>> GetPlaceYear(int id, int year)
+        {
+            var result = await placeService.GetPlaceYearAsync(id, year);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/years/{year}/months/{month}")]
+        public async Task<ActionResult<MonthFullViewModel>> GetPlaceMonth(int id, int year, int month)
+        {
+            var result = await placeService.GetPlaceMonthAsync(id, year, month);
+            if (result == null) return NotFound();
+            return Ok(result);
         }
 
         [HttpPost("{placeId}/photos/{photoId}")]

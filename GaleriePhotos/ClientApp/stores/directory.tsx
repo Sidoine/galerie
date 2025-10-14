@@ -4,6 +4,7 @@ import { Href, useRouter } from "expo-router";
 import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
 import { DirectoryFull } from "@/services/views";
+import { PaginatedPhotosStore } from "./paginated-photos";
 import { Text } from "react-native";
 
 const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);
@@ -104,9 +105,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   }, [directoriesStore.infoLoader, directory, galleryId]);
 
   const hasParent = directory?.parent != null;
-  const photoList = directoryId
-    ? directoriesStore.contentLoader.getValue(directoryId, null, null)
-    : null;
+
   const containersList = directoryId
     ? directoriesStore.subDirectoriesLoader.getValue(directoryId)
     : null;
@@ -137,13 +136,31 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [directoriesStore]
   );
 
+  // Mémoïse la fonction loadPhotos pour pagination/date-range
+  const loadPhotos = useCallback(
+    async (startDate?: string | null, endDate?: string | null) => {
+      if (!directoryId) return null;
+      return await directoriesStore.directoryService.getPhotos(
+        directoryId,
+        startDate ?? null,
+        endDate ?? null
+      );
+    },
+    [directoryId, directoriesStore.directoryService]
+  );
+
+  // Instance unique du store paginé (réinitialisé si le conteneur change)
+  const paginatedPhotosStore = useMemo(() => {
+    const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
+    return new PaginatedPhotosStore(directory, loadPhotos, sortOrder);
+  }, [directory, loadPhotos, order]);
+
   const directoryStore = useMemo<PhotoContainerStore>(
     () => ({
       navigateToPhoto,
       navigateToContainer,
       navigateToParentContainer,
       hasParent,
-      photoList,
       containersList,
       sort,
       order,
@@ -155,13 +172,13 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       setParentCover,
       childContainersHeader: <Text>Albums</Text>,
       getChildContainerLink,
+      paginatedPhotosStore,
     }),
     [
       navigateToPhoto,
       navigateToContainer,
       navigateToParentContainer,
       hasParent,
-      photoList,
       containersList,
       sort,
       order,
@@ -172,6 +189,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       setCover,
       setParentCover,
       getChildContainerLink,
+      paginatedPhotosStore,
     ]
   );
 

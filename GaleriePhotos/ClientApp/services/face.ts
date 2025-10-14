@@ -26,7 +26,7 @@ export class FaceController {
     }
 
     getName = (galleryId: number, id: number) => {
-        return this.client.fetchJson<views.FaceName>(`api/gallery/${galleryId}/faces/names/${id}`, "GET", undefined);
+        return this.client.fetchJson<views.FaceNameFull>(`api/gallery/${galleryId}/faces/names/${id}`, "GET", undefined);
     }
 
     getNames = (galleryId: number) => {

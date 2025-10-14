@@ -1,4 +1,5 @@
 import { Photo } from "@/services/views";
+import { PhotoContainerFull } from "@/stores/photo-container";
 
 export interface DateGroupedPhoto {
   date: string;
@@ -76,26 +77,25 @@ function formatDateGroupTitle(dateKey: string, isDay: boolean): string {
  * Determines the optimal grouping strategy based on photo count and date range
  */
 export function determineGroupingStrategy(
-  photos: Photo[]
+  photosOrContainer: PhotoContainerFull | null
 ): "day" | "month" | "none" {
-  if (photos.length <= 20) return "none";
-
-  if (photos.length === 0) return "none";
-
-  // Calculate date range
-  const dates = photos
-    .map((p) => new Date(p.dateTime))
-    .sort((a, b) => a.getTime() - b.getTime());
-  const daysDiff = Math.ceil(
-    (dates[dates.length - 1].getTime() - dates[0].getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
-
-  // If photos span more than 90 days, group by month
-  if (daysDiff > 90) return "month";
-
-  // Otherwise group by day
-  return "day";
+  if (!photosOrContainer) return "none";
+  const { numberOfPhotos, minDate, maxDate } = photosOrContainer;
+  if (!numberOfPhotos || numberOfPhotos === 0) return "none";
+  if (numberOfPhotos <= 20) return "none";
+  if (!minDate || !maxDate) return "day"; // fallback: sans plage fiable, regrouper par jour (plus précis)
+  try {
+    const start = new Date(minDate);
+    const end = new Date(maxDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "day";
+    const daysDiff = Math.ceil(
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysDiff > 90) return "month";
+    return "day";
+  } catch {
+    return "day";
+  }
 }
 
 /**
