@@ -14,8 +14,9 @@ import { FaceNameStoreProvider, useFaceNameStore } from "@/stores/face-name";
 import { FaceNamesStoreProvider } from "@/stores/face-names";
 import { PlacesStoreProvider } from "@/stores/places";
 import { PlaceStoreProvider, usePlaceStore } from "@/stores/place";
+import Icon from "@/components/Icon";
 
-const LayoutContent = observer(function LayoutContent() {
+const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768 && Platform.OS === "web";
@@ -48,6 +49,14 @@ const LayoutContent = observer(function LayoutContent() {
         options={{
           title: "Albums",
           headerTitle: () => <BreadCrumbs store={directoryStore} />,
+          drawerIcon: ({ color, size }) => (
+            <Icon
+              set="mci"
+              name="folder-multiple-image"
+              color={color}
+              size={size}
+            />
+          ),
         }}
       />
       <Drawer.Screen
@@ -72,6 +81,9 @@ const LayoutContent = observer(function LayoutContent() {
         options={{
           title: "Lieux",
           headerTitle: () => <BreadCrumbs store={placeStore} />,
+          drawerIcon: ({ color, size }) => (
+            <Icon set="ion" name="map" color={color} size={size} />
+          ),
         }}
       />
       <Drawer.Screen
@@ -90,7 +102,15 @@ const LayoutContent = observer(function LayoutContent() {
           drawerItemStyle: { display: "none" },
         }}
       />
-      <Drawer.Screen name="face-names/index" options={{ title: "Visages" }} />
+      <Drawer.Screen
+        name="face-names/index"
+        options={{
+          title: "Visages",
+          drawerIcon: ({ color, size }) => (
+            <Icon set="mci" name="face-recognition" color={color} size={size} />
+          ),
+        }}
+      />
       <Drawer.Screen
         name="face-names/[faceNameId]/photos/[photoId]"
         options={{
@@ -110,18 +130,29 @@ const LayoutContent = observer(function LayoutContent() {
       <Drawer.Protected guard={membersStore.administrator}>
         <Drawer.Screen
           name="dashboard"
-          options={{ title: "Tableau de bord" }}
+          options={{
+            title: "Tableau de bord",
+            drawerIcon: ({ color, size }) => (
+              <Icon set="mci" name="view-dashboard" color={color} size={size} />
+            ),
+          }}
         />
         <Drawer.Screen
           name="settings"
-          options={{ title: "Paramètres", headerShown: false }}
+          options={{
+            title: "Paramètres",
+            headerShown: false,
+            drawerIcon: ({ color, size }) => (
+              <Icon set="mci" name="cog" color={color} size={size} />
+            ),
+          }}
         />
       </Drawer.Protected>
     </Drawer>
   );
 });
 
-export default function Layout() {
+export default function GalleryLayout() {
   const { galleryId, directoryId, order, faceNameId, placeId, year, month } =
     useGlobalSearchParams<{
       galleryId: string;
@@ -158,7 +189,7 @@ export default function Layout() {
                           month={month ? Number(month) : undefined}
                           order={order}
                         >
-                          <LayoutContent />
+                          <GalleryLayoutContent />
                         </PlaceStoreProvider>
                       </FaceNameStoreProvider>
                     </DirectoryStoreProvider>
