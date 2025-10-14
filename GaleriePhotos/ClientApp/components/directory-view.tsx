@@ -428,7 +428,6 @@ export const DirectoryView = observer(function DirectoryView({
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         getItemType={getItemType}
-        estimatedItemSize={120}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.3}
         removeClippedSubviews
