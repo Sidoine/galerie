@@ -9,23 +9,11 @@ const GalleryPage = observer(function GalleryPage() {
   const galleryStore = useGalleryStore();
 
   return (
-    <View style={styles.container}>
+    <>
       <GallerySearchBar />
-      <View style={styles.directoryWrapper}>
-        <DirectoryView store={galleryStore} />
-      </View>
-    </View>
+      <DirectoryView store={galleryStore} />
+    </>
   );
 });
 
 export default GalleryPage;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 16,
-  },
-  directoryWrapper: {
-    flex: 1,
-  },
-});

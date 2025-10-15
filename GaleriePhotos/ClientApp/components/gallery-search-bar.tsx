@@ -64,7 +64,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginTop: 16,
+    marginTop: 8,
+    marginBottom: 4,
   },
   inputWrapper: {
     flex: 1,

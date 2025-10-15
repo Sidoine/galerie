@@ -16,7 +16,7 @@ import { PlacesStoreProvider } from "@/stores/places";
 import { PlaceStoreProvider, usePlaceStore } from "@/stores/place";
 import Icon from "@/components/Icon";
 import { GalleryStoreProvider, useGalleryStore } from "@/stores/gallery";
-import { SearchStoreProvider } from "@/stores/search";
+import { SearchStoreProvider, useSearchStore } from "@/stores/search";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -27,6 +27,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
   const faceNameStore = useFaceNameStore();
   const directoryStore = useDirectoryStore();
   const galleryStore = useGalleryStore();
+  const searchStore = useSearchStore();
 
   return (
     <Drawer
@@ -166,7 +167,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Recherche",
           drawerItemStyle: { display: "none" },
-          headerTitle: () => <BreadCrumbs store={galleryStore} />,
+          headerTitle: () => <BreadCrumbs store={searchStore} />,
           drawerIcon: ({ color, size }) => (
             <Icon set="mci" name="magnify" color={color} size={size} />
           ),
