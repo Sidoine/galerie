@@ -10,7 +10,7 @@ namespace GaleriePhotos.ViewModels
         public string UserId { get; set; }
         public string UserName { get; set; }
         public int DirectoryVisibility { get; set; }
-    public bool IsAdministrator { get; set; }
+        public bool IsAdministrator { get; set; }
 
         public GalleryMemberViewModel(GalleryMember galleryMember)
         {

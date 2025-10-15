@@ -1,13 +1,18 @@
 import { action, makeObservable, observable } from "mobx";
-import { GalleryMember } from "../services/views";
+import { Gallery, GalleryFull } from "../services/views";
 import { MeController } from "../services/me";
 import { createContext, useContext, useMemo } from "react";
-import { useApiClient } from "folke-service-helpers";
+import { MapLoader, useApiClient } from "folke-service-helpers";
+import { GalleryController } from "@/services/gallery";
 
 class GalleriesStore {
-  memberships: GalleryMember[] | null = null;
+  memberships: Gallery[] | null = null;
   loading = false;
-  constructor(private meService: MeController) {
+  constructor(
+    private meService: MeController,
+    private galleryLoader: MapLoader<GalleryFull, [number]>,
+    private galleryService: GalleryController
+  ) {
     makeObservable(this, {
       memberships: observable.ref,
       loading: observable,
@@ -18,7 +23,7 @@ class GalleriesStore {
   }
 
   get(id: number) {
-    return this.memberships?.find((m) => m.galleryId === id) || null;
+    return this.galleryLoader.getValue(id);
   }
 
   setLoading(loading: boolean) {
@@ -40,8 +45,16 @@ class GalleriesStore {
     }
   }
 
-  setResult(memberships: GalleryMember[]) {
+  setResult(memberships: Gallery[]) {
     this.memberships = memberships;
+  }
+
+  loadPhotos(
+    galleryId: number,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
+    return this.galleryService.getPhotos(galleryId, startDate, endDate);
   }
 }
 
@@ -53,10 +66,14 @@ export function GalleriesStoreProvider({
   children: React.ReactNode;
 }) {
   const apiClient = useApiClient();
-  const store = useMemo(
-    () => new GalleriesStore(new MeController(apiClient)),
-    [apiClient]
-  );
+  const store = useMemo(() => {
+    const meController = new MeController(apiClient);
+    const galleryController = new GalleryController(apiClient);
+    const galleryLoader = new MapLoader<GalleryFull, [number]>(
+      galleryController.getById
+    );
+    return new GalleriesStore(meController, galleryLoader, galleryController);
+  }, [apiClient]);
   return (
     <GalleriesStoreContext.Provider value={store}>
       {children}

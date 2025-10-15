@@ -8,6 +8,11 @@ export interface DateRange {
   endDate: string | null;
 }
 
+export type LoadPhotosFunction = (
+  startDate?: string | null,
+  endDate?: string | null
+) => Promise<ApiResponse<Photo[]> | null>;
+
 /**
  * Store for handling paginated photo loading with date-based chunks
  */
@@ -23,10 +28,7 @@ export class PaginatedPhotosStore {
 
   constructor(
     private container: PhotoContainerFull | null,
-    private loadPhotosFunction: (
-      startDate?: string | null,
-      endDate?: string | null
-    ) => Promise<ApiResponse<Photo[]> | null>,
+    private loadPhotosFunction: LoadPhotosFunction,
     sortOrder: "asc" | "desc" = "desc"
   ) {
     makeObservable<typeof this, "addPhotos">(this, {

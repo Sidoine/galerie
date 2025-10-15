@@ -11,6 +11,9 @@ using System.Text;
 using System.Text.Json;
 using System.Net;
 using System.Security.Claims;
+using System;
+using Galerie.Server.ViewModels;
+using GaleriePhotos.Services;
 
 namespace GaleriePhotos.Controllers
 {
@@ -18,15 +21,64 @@ namespace GaleriePhotos.Controllers
     public class GalleryController : Controller
     {
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly GalleryService galleryService;
 
-        public GalleryController(ApplicationDbContext applicationDbContext)
+        public GalleryController(ApplicationDbContext applicationDbContext, GalleryService galleryService)
         {
             this.applicationDbContext = applicationDbContext;
+            this.galleryService = galleryService;
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<GalleryFullViewModel>> GetById(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var gallery = await applicationDbContext.Galleries
+                .Where(g => g.Id == id && g.Members.Any(m => m.UserId == userId))
+                .Select(x => new GalleryFullViewModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    NumberOfPhotos = applicationDbContext.Photos
+                        .Where(d => d.Directory.GalleryId == x.Id)
+                        .Count(),
+                    MinDate = applicationDbContext.Photos
+                        .Where(d => d.Directory.GalleryId == x.Id)
+                        .Min(p => p.DateTime),
+                    MaxDate = applicationDbContext.Photos
+                        .Where(d => d.Directory.GalleryId == x.Id)
+                        .Max(p => p.DateTime),
+                    RootDirectoryId = applicationDbContext.PhotoDirectories.First(d => d.GalleryId == x.Id && (d.PhotoDirectoryType == PhotoDirectoryType.Root || d.Path == "")).Id,
+                    CoverPhotoId = null,
+                })
+                .FirstOrDefaultAsync();
+
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(gallery);
+        }
+
+        [HttpGet("{id}/photos")]
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var gallery = await galleryService.Get(id);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
+            var photos = await applicationDbContext.Photos
+                .Where(d => d.Directory.GalleryId == id && 
+                    (!startDate.HasValue || d.DateTime >= startDate.Value.ToUniversalTime()) &&
+                    (!endDate.HasValue || d.DateTime <= endDate.Value.ToUniversalTime())).ToArrayAsync();
+
+            return Ok(photos.Select(x => new PhotoViewModel(x)).ToArray());
         }
 
         [HttpGet("")]
         [Authorize(Policy = Policies.Administrator)]
-        public async Task<ActionResult<GalleryViewModel[]>> GetAll()
+        public async Task<ActionResult<GallerySettingsViewModel[]>> GetAllSettings()
         {
             var galleries = await applicationDbContext.Galleries
                 .Include(g => g.Members)
@@ -40,14 +92,14 @@ namespace GaleriePhotos.Controllers
                     .Select(gm => gm.User?.UserName ?? "Unknown")
                     .ToArray();
                 
-                return new GalleryViewModel(gallery, administratorNames);
+                return new GallerySettingsViewModel(gallery, administratorNames);
             }).ToArray();
 
             return Ok(galleryViewModels);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GalleryViewModel>> GetById(int id)
+        [HttpGet("{id}/settings")]
+        public async Task<ActionResult<GallerySettingsViewModel>> GetSettingsById(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var gallery = await applicationDbContext.Galleries
@@ -70,12 +122,12 @@ namespace GaleriePhotos.Controllers
                 .Select(gm => gm.User?.UserName ?? "Unknown")
                 .ToArray();
 
-            return Ok(new GalleryViewModel(gallery, administratorNames));
+            return Ok(new GallerySettingsViewModel(gallery, administratorNames));
         }
 
         [HttpPost("")]
         [Authorize(Policy = Policies.Administrator)]
-        public async Task<ActionResult<GalleryViewModel>> Create([FromBody] GalleryCreateViewModel model)
+        public async Task<ActionResult<GallerySettingsViewModel>> Create([FromBody] GalleryCreateViewModel model)
         {
             // Check if user exists
             var user = await applicationDbContext.Users.FindAsync(model.UserId);
@@ -106,13 +158,13 @@ namespace GaleriePhotos.Controllers
 
             // Return the created gallery
             var administratorNames = new[] { user.UserName ?? "Unknown" };
-            var galleryViewModel = new GalleryViewModel(gallery, administratorNames);
+            var galleryViewModel = new GallerySettingsViewModel(gallery, administratorNames);
 
-            return CreatedAtAction(nameof(GetAll), galleryViewModel);
+            return CreatedAtAction(nameof(GetAllSettings), galleryViewModel);
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult<GalleryViewModel>> Update(int id, [FromBody] GalleryPatchViewModel model)
+        public async Task<ActionResult<GallerySettingsViewModel>> Update(int id, [FromBody] GalleryPatchViewModel model)
         {
             var gallery = await applicationDbContext.Galleries
                 .Include(g => g.Members)
@@ -168,7 +220,7 @@ namespace GaleriePhotos.Controllers
                 .Select(gm => gm.User?.UserName ?? "Unknown")
                 .ToArray();
 
-            return Ok(new GalleryViewModel(gallery, administratorNames));
+            return Ok(new GallerySettingsViewModel(gallery, administratorNames));
         }
 
         [HttpPost("{id}/seafile/apikey")]

@@ -66,7 +66,11 @@ public class GalleryMemberController : Controller
             userId,
             viewModel.DirectoryVisibility.IsSet ? viewModel.DirectoryVisibility.Value : 0,
             viewModel.IsAdministrator.IsSet && viewModel.IsAdministrator.Value
-        );
+        )
+        {
+            Gallery = gallery,
+            User = user
+        };
 
         applicationDbContext.GalleryMembers.Add(galleryMember);
         await applicationDbContext.SaveChangesAsync();

@@ -48,9 +48,9 @@ const GalleriesScreen = observer(function GalleryChooser() {
     if (
       memberships &&
       memberships.length === 1 &&
-      galleryId !== String(memberships[0].galleryId)
+      galleryId !== String(memberships[0].id)
     ) {
-      const targetGalleryId = memberships[0].galleryId;
+      const targetGalleryId = memberships[0].id;
       router.navigate({
         pathname: `/(app)/gallery/[galleryId]`,
         params: { galleryId: targetGalleryId },
@@ -70,11 +70,7 @@ const GalleriesScreen = observer(function GalleryChooser() {
   return (
     <View style={styles.container}>
       {memberships.map((m) => (
-        <GalleryItem
-          key={m.galleryId}
-          galleryId={m.galleryId}
-          galleryName={m.galleryName}
-        />
+        <GalleryItem key={m.id} galleryId={m.id} galleryName={m.name} />
       ))}
       {memberships.length === 0 && (
         <Text style={styles.noGalleryText}>

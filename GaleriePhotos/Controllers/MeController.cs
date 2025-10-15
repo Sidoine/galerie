@@ -24,16 +24,20 @@ namespace GaleriePhotos.Controllers
         }
 
 		[HttpGet("galleries")]
-		public async Task<ActionResult<GalleryMemberViewModel[]>> GetMyGalleries()
+		public async Task<ActionResult<GalleryViewModel[]>> GetMyGalleries()
 		{
 			var userId = User.GetUserId();
 			if (userId == null) return Unauthorized();
-			var galleryMembers = await applicationDbContext.GalleryMembers
-				.Include(gm => gm.Gallery)
-				.Include(gm => gm.User)
+			var galleries = await applicationDbContext.GalleryMembers
 				.Where(gm => gm.UserId == userId)
+				.Select(gm => new GalleryViewModel
+				{
+					Id = gm.Gallery.Id,
+					Name = gm.Gallery.Name,
+					RootDirectoryId = applicationDbContext.PhotoDirectories.First(d => d.GalleryId == gm.Gallery.Id && d.PhotoDirectoryType == PhotoDirectoryType.Root).Id
+				})
 				.ToArrayAsync();
-			return Ok(galleryMembers.Select(gm => new GalleryMemberViewModel(gm)).ToArray());
+			return Ok(galleries);
 		}
 		
 

@@ -10,17 +10,26 @@ import {
   PlaceFull,
   Year,
   YearFull,
+  GalleryFull,
+  Gallery,
 } from "@/services/views";
 import { ReactNode } from "react";
 import { PaginatedPhotosStore } from "./paginated-photos";
 
-export type PhotoContainer = Year | Month | Directory | Place | FaceName;
+export type PhotoContainer =
+  | Year
+  | Month
+  | Directory
+  | Place
+  | FaceName
+  | Gallery;
 export type PhotoContainerFull =
   | YearFull
   | MonthFull
   | DirectoryFull
   | PlaceFull
-  | FaceNameFull;
+  | FaceNameFull
+  | GalleryFull;
 
 export interface BreadCrumb {
   id: number;

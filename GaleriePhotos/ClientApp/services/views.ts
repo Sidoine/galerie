@@ -324,7 +324,23 @@ export interface FaceNameSuggestionResponse {
     name: string | null;
 }
 
-export interface Gallery {
+export interface GalleryFull {
+    minDate: string;
+
+    maxDate: string;
+
+    id: number;
+
+    name: string;
+
+    rootDirectoryId: number;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
+}
+
+export interface GallerySettings {
     id: number;
 
     name: string;
@@ -426,6 +442,18 @@ export interface GalleryMemberPatch {
     directoryVisibility?: number | undefined;
 
     isAdministrator?: boolean | undefined;
+}
+
+export interface Gallery {
+    id: number;
+
+    name: string;
+
+    rootDirectoryId: number;
+
+    numberOfPhotos: number;
+
+    coverPhotoId: string | null;
 }
 
 export interface User {

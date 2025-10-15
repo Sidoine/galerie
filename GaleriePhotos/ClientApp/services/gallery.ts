@@ -6,15 +6,19 @@ export class GalleryController {
 	constructor(private client: helpers.ApiClient) {}
 
     create = (model: views.GalleryCreate) => {
-        return this.client.fetchJson<views.Gallery>("api/galleries/", "POST", JSON.stringify(model));
+        return this.client.fetchJson<views.GallerySettings>("api/galleries/", "POST", JSON.stringify(model));
     }
 
-    getAll = () => {
-        return this.client.fetchJson<views.Gallery[]>("api/galleries/", "GET", undefined);
+    getAllSettings = () => {
+        return this.client.fetchJson<views.GallerySettings[]>("api/galleries/", "GET", undefined);
     }
 
     getById = (id: number) => {
-        return this.client.fetchJson<views.Gallery>(`api/galleries/${id}`, "GET", undefined);
+        return this.client.fetchJson<views.GalleryFull>(`api/galleries/${id}`, "GET", undefined);
+    }
+
+    getPhotos = (id: number, startDate?: string | null, endDate?: string | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/galleries/${id}/photos` + helpers.getQueryString({ startDate: startDate, endDate: endDate }), "GET", undefined);
     }
 
     getSeafileApiKey = (id: number, request: views.SeafileApiKeyRequest) => {
@@ -25,8 +29,12 @@ export class GalleryController {
         return this.client.fetchJson<views.SeafileRepositoriesResponse>("api/galleries/seafile/repositories", "POST", JSON.stringify(request));
     }
 
+    getSettingsById = (id: number) => {
+        return this.client.fetchJson<views.GallerySettings>(`api/galleries/${id}/settings`, "GET", undefined);
+    }
+
     update = (id: number, model: views.GalleryPatch) => {
-        return this.client.fetchJson<views.Gallery>(`api/galleries/${id}`, "PATCH", JSON.stringify(model));
+        return this.client.fetchJson<views.GallerySettings>(`api/galleries/${id}`, "PATCH", JSON.stringify(model));
     }
 }
 

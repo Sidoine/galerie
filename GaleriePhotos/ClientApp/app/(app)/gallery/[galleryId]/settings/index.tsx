@@ -12,12 +12,12 @@ import {
 import { useDirectoriesStore } from "@/stores/directories";
 import { GalleryController } from "@/services/gallery";
 import { useApiClient } from "folke-service-helpers";
-import { Gallery, GalleryPatch } from "@/services/views";
+import { GallerySettings, GalleryPatch } from "@/services/views";
 import { DataProviderType } from "@/services/enums";
 import SeafileApiKeyDialog from "@/components/settings/seafile-api-key-dialog"; // sera RN après migration
 import SeafileRepositorySelect from "@/components/settings/seafile-repository-select"; // idem
 
-const GallerySettings = observer(() => {
+const GallerySettingsView = observer(() => {
   const directoriesStore = useDirectoriesStore();
   const apiClient = useApiClient();
   const galleryController = useMemo(
@@ -29,7 +29,7 @@ const GallerySettings = observer(() => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [gallery, setGallery] = useState<Gallery | null>(null);
+  const [gallery, setGallery] = useState<GallerySettings | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -47,7 +47,7 @@ const GallerySettings = observer(() => {
       setLoading(true);
       setError(null);
       try {
-        const result = await galleryController.getById(
+        const result = await galleryController.getSettingsById(
           directoriesStore.galleryId
         );
         if (result.ok) {
@@ -322,7 +322,7 @@ const GallerySettings = observer(() => {
   );
 });
 
-export default GallerySettings;
+export default GallerySettingsView;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },

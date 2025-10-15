@@ -15,6 +15,7 @@ import { FaceNamesStoreProvider } from "@/stores/face-names";
 import { PlacesStoreProvider } from "@/stores/places";
 import { PlaceStoreProvider, usePlaceStore } from "@/stores/place";
 import Icon from "@/components/Icon";
+import { GalleryStoreProvider, useGalleryStore } from "@/stores/gallery";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -24,6 +25,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
   const placeStore = usePlaceStore();
   const faceNameStore = useFaceNameStore();
   const directoryStore = useDirectoryStore();
+  const galleryStore = useGalleryStore();
 
   return (
     <Drawer
@@ -39,9 +41,19 @@ const GalleryLayoutContent = observer(function LayoutContent() {
       <Drawer.Screen
         name="index"
         options={{
-          title: "Albums",
+          title: "Accueil",
+          headerTitle: () => <BreadCrumbs store={galleryStore} />,
+          drawerIcon: ({ color, size }) => (
+            <Icon set="mci" name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="photos/[photoId]"
+        options={{
+          title: "Photo",
+          headerShown: false,
           drawerItemStyle: { display: "none" },
-          headerTitle: () => <BreadCrumbs store={directoryStore} />,
         }}
       />
       <Drawer.Screen
@@ -173,26 +185,33 @@ export default function GalleryLayout() {
               <FaceNamesStoreProvider galleryId={Number(galleryId)}>
                 <PlacesStoreProvider galleryId={Number(galleryId)}>
                   <MembersStoreProvider>
-                    <DirectoryStoreProvider
-                      directoryId={
-                        directoryId ? Number(directoryId) : undefined
-                      }
+                    <GalleryStoreProvider
+                      galleryId={Number(galleryId)}
                       order={order}
                     >
-                      <FaceNameStoreProvider
-                        faceNameId={faceNameId ? Number(faceNameId) : undefined}
+                      <DirectoryStoreProvider
+                        directoryId={
+                          directoryId ? Number(directoryId) : undefined
+                        }
                         order={order}
                       >
-                        <PlaceStoreProvider
-                          placeId={placeId ? Number(placeId) : undefined}
-                          year={year ? Number(year) : undefined}
-                          month={month ? Number(month) : undefined}
+                        <FaceNameStoreProvider
+                          faceNameId={
+                            faceNameId ? Number(faceNameId) : undefined
+                          }
                           order={order}
                         >
-                          <GalleryLayoutContent />
-                        </PlaceStoreProvider>
-                      </FaceNameStoreProvider>
-                    </DirectoryStoreProvider>
+                          <PlaceStoreProvider
+                            placeId={placeId ? Number(placeId) : undefined}
+                            year={year ? Number(year) : undefined}
+                            month={month ? Number(month) : undefined}
+                            order={order}
+                          >
+                            <GalleryLayoutContent />
+                          </PlaceStoreProvider>
+                        </FaceNameStoreProvider>
+                      </DirectoryStoreProvider>
+                    </GalleryStoreProvider>
                   </MembersStoreProvider>
                 </PlacesStoreProvider>
               </FaceNamesStoreProvider>

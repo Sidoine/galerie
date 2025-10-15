@@ -27,7 +27,7 @@ const GalleriesSettingsScreen = observer(function Galleries() {
     [apiClient]
   );
 
-  const [galleries, setGalleries] = useState<views.Gallery[]>([]);
+  const [galleries, setGalleries] = useState<views.GallerySettings[]>([]);
   const [users, setUsers] = useState<views.User[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -47,7 +47,7 @@ const GalleriesSettingsScreen = observer(function Galleries() {
       setLoading(true);
       try {
         const [galleriesResult, usersResult] = await Promise.all([
-          galleryController.getAll(),
+          galleryController.getAllSettings(),
           userController.getAll(),
         ]);
 

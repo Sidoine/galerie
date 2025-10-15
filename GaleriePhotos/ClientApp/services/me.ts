@@ -10,7 +10,7 @@ export class MeController {
     }
 
     getMyGalleries = () => {
-        return this.client.fetchJson<views.GalleryMember[]>("api/me/galleries", "GET", undefined);
+        return this.client.fetchJson<views.Gallery[]>("api/me/galleries", "GET", undefined);
     }
 }
 
