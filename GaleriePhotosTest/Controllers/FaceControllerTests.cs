@@ -71,7 +71,13 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // User is simple member (GetNames requires member, not necessarily admin)
-            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false);
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            {
+                Gallery = gallery,
+                User = appUser
+            };
             context.Add(member);
             await context.SaveChangesAsync();
 
@@ -160,7 +166,13 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Member must be admin for GetFacesByPhoto (requires IsGalleryAdministrator)
-            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true);
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            };
             context.Add(adminMember);
             await context.SaveChangesAsync();
 
@@ -226,7 +238,13 @@ namespace GaleriePhotosTest.Controllers
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
 
-            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true);
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            };
             context.Add(adminMember);
             await context.SaveChangesAsync();
 
@@ -283,7 +301,13 @@ namespace GaleriePhotosTest.Controllers
             context.Photos.Add(photo);
             await context.SaveChangesAsync();
 
-            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true);
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            var adminMember = new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            };
             context.Add(adminMember);
             await context.SaveChangesAsync();
 
@@ -345,7 +369,13 @@ namespace GaleriePhotosTest.Controllers
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
             // Membre non admin
-            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: false));
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
             await context.SaveChangesAsync();
 
             controller.ControllerContext = new ControllerContext
@@ -372,7 +402,13 @@ namespace GaleriePhotosTest.Controllers
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
-            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true));
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
             await context.SaveChangesAsync();
 
             controller.ControllerContext = new ControllerContext
