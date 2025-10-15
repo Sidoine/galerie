@@ -13,6 +13,8 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
 } from "react-native";
 import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
@@ -30,6 +32,7 @@ import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-mod
 import { MaterialIcons } from "@expo/vector-icons";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { useMembersStore } from "@/stores/members";
+import { useIsFocused } from "@react-navigation/native";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -127,6 +130,28 @@ export const DirectoryView = observer(function DirectoryView({
 
   // Photos: utilisation exclusive du paginatedStore (pagination par plage de dates)
   const paginatedPhotos = paginatedStore.photos;
+
+  const isFocused = useIsFocused();
+  const [isAppActive, setIsAppActive] = useState(
+    AppState.currentState === "active"
+  );
+
+  useEffect(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      setIsAppActive(nextState === "active");
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const allowAutoLoad = isFocused && isAppActive;
 
   // Chargement initial si pagination
   useEffect(() => {
@@ -405,10 +430,13 @@ export const DirectoryView = observer(function DirectoryView({
   );
 
   const handleEndReached = useCallback(() => {
+    if (!allowAutoLoad) {
+      return;
+    }
     if (paginatedStore && paginatedStore.shouldLoadMore()) {
       paginatedStore.loadMore();
     }
-  }, [paginatedStore]);
+  }, [allowAutoLoad, paginatedStore]);
 
   // handlers déjà déclarés plus haut
 

@@ -8,6 +8,7 @@ export * from "./geocoding";
 export * from "./me";
 export * from "./photo";
 export * from "./place";
+export * from "./search";
 export * from "./user";
 export * from "./enums";
 export * from "./views";

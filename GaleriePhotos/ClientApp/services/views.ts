@@ -464,6 +464,18 @@ export interface User {
     administrator: boolean;
 }
 
+export interface SearchResultFull {
+    numberOfPhotos: number;
+
+    minDate: string | null;
+
+    maxDate: string | null;
+
+    coverPhotoId: string | null;
+
+    name: string;
+}
+
 export interface UserPatch {
     administrator?: boolean | undefined;
 }

@@ -16,6 +16,7 @@ import { PlacesStoreProvider } from "@/stores/places";
 import { PlaceStoreProvider, usePlaceStore } from "@/stores/place";
 import Icon from "@/components/Icon";
 import { GalleryStoreProvider, useGalleryStore } from "@/stores/gallery";
+import { SearchStoreProvider } from "@/stores/search";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -160,21 +161,49 @@ const GalleryLayoutContent = observer(function LayoutContent() {
           }}
         />
       </Drawer.Protected>
+      <Drawer.Screen
+        name="search/index"
+        options={{
+          title: "Recherche",
+          drawerItemStyle: { display: "none" },
+          headerTitle: () => <BreadCrumbs store={galleryStore} />,
+          drawerIcon: ({ color, size }) => (
+            <Icon set="mci" name="magnify" color={color} size={size} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="search/photos/[photoId]"
+        options={{
+          title: "Photo",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
     </Drawer>
   );
 });
 
 export default function GalleryLayout() {
-  const { galleryId, directoryId, order, faceNameId, placeId, year, month } =
-    useGlobalSearchParams<{
-      galleryId: string;
-      directoryId?: string;
-      faceNameId?: string;
-      placeId?: string;
-      order: "date-asc" | "date-desc";
-      year?: string;
-      month?: string;
-    }>();
+  const {
+    galleryId,
+    directoryId,
+    order,
+    faceNameId,
+    placeId,
+    year,
+    month,
+    query,
+  } = useGlobalSearchParams<{
+    galleryId: string;
+    directoryId?: string;
+    faceNameId?: string;
+    placeId?: string;
+    order: "date-asc" | "date-desc";
+    year?: string;
+    month?: string;
+    query?: string;
+  }>();
 
   return (
     <MeStoreProvider>
@@ -207,7 +236,13 @@ export default function GalleryLayout() {
                             month={month ? Number(month) : undefined}
                             order={order}
                           >
-                            <GalleryLayoutContent />
+                            <SearchStoreProvider
+                              galleryId={Number(galleryId)}
+                              query={query}
+                              order={order}
+                            >
+                              <GalleryLayoutContent />
+                            </SearchStoreProvider>
                           </PlaceStoreProvider>
                         </FaceNameStoreProvider>
                       </DirectoryStoreProvider>

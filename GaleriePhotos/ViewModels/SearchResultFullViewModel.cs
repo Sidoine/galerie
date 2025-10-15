@@ -1,0 +1,13 @@
+using System;
+
+namespace GaleriePhotos.ViewModels
+{
+    public class SearchResultFullViewModel
+    {
+        public int NumberOfPhotos { get; set; }
+        public DateTime? MinDate { get; set; }
+        public DateTime? MaxDate { get; set; }
+        public string? CoverPhotoId { get; set; }
+        public required string Name { get; set; }
+    }
+}
