@@ -459,6 +459,14 @@ export const DirectoryView = observer(function DirectoryView({
           ) : null
         }
       />
+      {paginatedPhotos.length === 0 &&
+        !paginatedStore.isLoading &&
+        directories &&
+        directories.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>Aucune photo trouvée</Text>
+          </View>
+        )}
       <DirectoryBulkLocationModal
         visible={bulkLocationVisible}
         photos={bulkLocationPhotos || []}
@@ -594,6 +602,20 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     fontSize: 14,
+    color: "#666",
+  },
+  emptyState: {
+    position: "absolute",
+    top: 54,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+  },
+  emptyStateText: {
+    fontSize: 18,
     color: "#666",
   },
 });
