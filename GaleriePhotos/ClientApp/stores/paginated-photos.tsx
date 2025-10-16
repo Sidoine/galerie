@@ -75,13 +75,13 @@ export class PaginatedPhotosStore {
     if (densityPerDay < 2 && totalMonths > 12) {
       // Calcul du nombre de mois pour approcher la cible
       let months = Math.ceil(target / Math.max(1, densityPerMonth));
-      months = Math.min(Math.max(months, 1), 12); // min 1 mois, max 1 an
+      months = Math.min(Math.max(months, 1), 2); // min 1 mois, max 2 mois
       return { mode: "months", size: months };
     }
 
     // Mode jours
     let days = Math.ceil(target / Math.max(1, densityPerDay));
-    days = Math.min(Math.max(days, 7), 120); // 1 semaine à 4 mois
+    days = Math.min(Math.max(days, 3), 15); // 3 jours à 15 jours
     return { mode: "days", size: days };
   }
 

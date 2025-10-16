@@ -119,6 +119,11 @@ namespace GaleriePhotos.Services
                     second = int.Parse(digits.Substring(12, 2), CultureInfo.InvariantCulture);
                 }
 
+                if (year < 1900 || year > DateTime.UtcNow.Year + 1)
+                {
+                    return null;
+                }
+
                 return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
             }
             catch
