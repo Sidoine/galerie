@@ -1,6 +1,5 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { View, StyleSheet } from "react-native";
 import { DirectoryView } from "@/components/directory-view";
 import { GallerySearchBar } from "@/components/gallery-search-bar";
 import { useGalleryStore } from "@/stores/gallery";

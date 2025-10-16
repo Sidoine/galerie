@@ -41,7 +41,7 @@ export const DirectoryBulkDateModal = observer(function DirectoryBulkDateModal({
     if (visible) {
       // On tente d'extraire une date depuis le chemin (directoryPath) si fourni
       const dateMatch = directoryPath.match(
-        /(\d{4})[-_/](\d{2})[-_/]?(\d{2})?/
+        /(\d{4})[-_/]?(\d{2})[-_/]?(\d{2})?/
       );
       if (dateMatch) {
         const [, year, month, day] = dateMatch;

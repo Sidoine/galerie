@@ -222,12 +222,28 @@ export interface AlbumWithoutGpsInfo {
     missingGpsPhotoCount: number;
 }
 
+export interface AlbumFilenameDateMismatchInfo {
+    directoryId: number;
+
+    directoryPath: string;
+
+    mismatchedPhotoCount: number;
+
+    firstPhotoId: number;
+}
+
 export interface DashboardStatistics {
     photosWithoutGpsCount: number;
 
     albumsWithPhotosWithoutGpsCount: number;
 
     albumsWithoutGps: AlbumWithoutGpsInfo[];
+
+    photosWithFilenameDateMismatchCount: number;
+
+    albumsWithPhotosWithFilenameDateMismatchCount: number;
+
+    albumsWithFilenameDateMismatch: AlbumFilenameDateMismatchInfo[];
 }
 
 export interface GalleryDirectoryVisibility {

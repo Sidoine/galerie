@@ -210,14 +210,14 @@ function TopActions({
         <DirectoryBulkDateModal
           visible={dateModalVisible}
           photoIds={[photo.id]}
-          directoryPath={""}
+          directoryPath={photo.name}
           onClose={closeDateModal}
         />
       )}
       {locationModalVisible && (
         <DirectoryBulkLocationModal
           visible={locationModalVisible}
-          photos={[photo as unknown as Photo]}
+          photos={[photo]}
           onClose={closeLocationModal}
           overwriteExisting
         />

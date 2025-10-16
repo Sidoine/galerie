@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Claims;
+using System.Threading;
 using Xabe.FFmpeg;
 using Xabe.FFmpeg.Downloader;
 
@@ -26,6 +27,9 @@ namespace GaleriePhotos.Services
         private readonly ApplicationDbContext applicationDbContext;
         private readonly ILogger<PhotoService> logger;
         private readonly DataService dataService;
+
+        private static readonly object ThumbnailSemaphoreLock = new object();
+        private static SemaphoreSlim? thumbnailGenerationSemaphore;
 
         public static Dictionary<string, string> MimeTypes { get; } = new Dictionary<string, string>
         {
@@ -44,6 +48,25 @@ namespace GaleriePhotos.Services
             this.applicationDbContext = applicationDbContext;
             this.logger = logger;
             this.dataService = dataService;
+
+            EnsureThumbnailSemaphore(options.Value.MaxConcurrentThumbnailGenerations);
+        }
+
+        private static void EnsureThumbnailSemaphore(int maxConcurrentGenerations)
+        {
+            var effectiveMax = Math.Max(1, maxConcurrentGenerations);
+            if (thumbnailGenerationSemaphore != null)
+            {
+                return;
+            }
+
+            lock (ThumbnailSemaphoreLock)
+            {
+                if (thumbnailGenerationSemaphore == null)
+                {
+                    thumbnailGenerationSemaphore = new SemaphoreSlim(effectiveMax, effectiveMax);
+                }
+            }
         }
 
         public async Task<PhotoDirectory> GetRootDirectory(Gallery gallery)
@@ -100,21 +123,33 @@ namespace GaleriePhotos.Services
             var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
             if (!await dataProvider.ThumbnailExists(photo))
             {
-                using var imagePath = await dataProvider.GetLocalFileName(photo);
-                if (imagePath == null) return null;
-                using var thumbnailPath = await dataProvider.GetLocalThumbnailFileName(photo);
-                if (IsVideo(photo))
+                var semaphore = thumbnailGenerationSemaphore ?? throw new InvalidOperationException("Thumbnail generation semaphore not initialized.");
+                await semaphore.WaitAsync(); // throttle concurrent thumbnail generation
+                try
                 {
-                    IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(imagePath.Path, thumbnailPath.Path, TimeSpan.FromSeconds(0));
-                    IConversionResult result = await conversion.Start();
+                    if (!await dataProvider.ThumbnailExists(photo))
+                    {
+                        using var imagePath = await dataProvider.GetLocalFileName(photo);
+                        if (imagePath == null) return null;
+                        using var thumbnailPath = await dataProvider.GetLocalThumbnailFileName(photo);
+                        if (IsVideo(photo))
+                        {
+                            IConversion conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(imagePath.Path, thumbnailPath.Path, TimeSpan.FromSeconds(0));
+                            IConversionResult result = await conversion.Start();
+                        }
+                        else
+                        {
+                            using var image = await Image.LoadAsync(imagePath.Path);
+                            image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new Size { Width = 400, Height = 400 } }));
+                            image.Save(thumbnailPath.Path);
+                        }
+                        await thumbnailPath.SaveChanges();
+                    }
                 }
-                else
+                finally
                 {
-                    using var image = await Image.LoadAsync(imagePath.Path);
-                    image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Min, Size = new Size { Width = 400, Height = 400 } }));
-                    image.Save(thumbnailPath.Path);
+                    semaphore.Release();
                 }
-                await thumbnailPath.SaveChanges();
             }
             return await dataProvider.OpenThumbnailRead(photo);
         }

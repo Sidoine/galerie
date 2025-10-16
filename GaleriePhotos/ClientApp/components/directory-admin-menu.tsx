@@ -9,12 +9,10 @@ import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { Photo } from "@/services/views";
 
 interface DirectoryAdminMenuProps {
-  directoryId: number;
   directoryPath: string;
 }
 
 export const DirectoryAdminMenu = observer(function DirectoryAdminMenu({
-  directoryId,
   directoryPath,
 }: DirectoryAdminMenuProps) {
   const membersStore = useMembersStore();
