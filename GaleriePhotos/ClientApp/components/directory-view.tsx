@@ -174,7 +174,6 @@ export const DirectoryView = observer(function DirectoryView({
       return [];
     }
 
-    console.log("Rebuild flatData", albumRows.length, paginatedPhotos.length);
     const items: DirectoryFlatListItem[] = [];
 
     if (albumRows.length > 0) {

@@ -364,10 +364,9 @@ namespace GaleriePhotos.Services
                     Type = p.Type,
                     ParentId = p.ParentId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
-                    NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
-                                context.Photos.Count(ph => ph.PlaceId == p.Id),
-                    MinDate = context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime),
-                    MaxDate = context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime)
+                    NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id),
+                    MinDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow,
+                    MaxDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow
                 })
                 .FirstOrDefaultAsync();
         }

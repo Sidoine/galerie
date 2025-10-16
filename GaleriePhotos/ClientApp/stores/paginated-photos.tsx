@@ -112,7 +112,8 @@ export class PaginatedPhotosStore {
    * @param initial Indique s'il s'agit du premier chargement
    */
   private async loadChunk() {
-    if (this.isLoading || !this.container) return;
+    if (this.isLoading || !this.container || !this.container.numberOfPhotos)
+      return;
     runInAction(() => {
       this.isLoading = true;
       this.error = null;

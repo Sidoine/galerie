@@ -87,22 +87,30 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
 
   const breadCrumbs = useMemo<BreadCrumb[]>(() => {
     const crumbs: BreadCrumb[] = [];
-    let current: DirectoryFull | null = directory;
-    while (current) {
-      crumbs.unshift({
-        id: current.id,
-        name: current.name || "Tous les albums",
-        url:
-          current.parent === null
-            ? `/gallery/${galleryId}`
-            : `/gallery/${galleryId}/directory/${current.id}`,
+
+    crumbs.push({
+      id: 0,
+      name: "Tous les albums",
+      url: `/gallery/${galleryId}/directory`,
+    });
+
+    if (directory?.parent?.name) {
+      crumbs.push({
+        id: directory.parent.id,
+        name: directory.parent.name,
+        url: `/gallery/${galleryId}/directory/${directory.parent.id}`,
       });
-      current = current.parent
-        ? directoriesStore.infoLoader.getValue(current.parent.id)
-        : null;
+    }
+
+    if (directory) {
+      crumbs.push({
+        id: directory.id,
+        name: directory.name || "Tous les albums",
+        url: `/gallery/${galleryId}/directory/${directory.id}`,
+      });
     }
     return crumbs;
-  }, [directoriesStore.infoLoader, directory, galleryId]);
+  }, [directory, galleryId]);
 
   const hasParent = directory?.parent != null;
 
