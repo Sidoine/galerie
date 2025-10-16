@@ -11,9 +11,6 @@ namespace GaleriePhotos.Models
         public DataProviderType DataProvider { get; set; } = DataProviderType.FileSystem;
         public string? SeafileServerUrl { get; set; }
         public string? SeafileApiKey { get; set; }
-        public int? LastScannedDirectoryId { get; set; }
-        public PhotoDirectory? LastScannedDirectory { get; set; }
-
         public Gallery(string name, string rootDirectory, string thumbnailsDirectory, DataProviderType dataProvider = DataProviderType.FileSystem, string? seafileServerUrl = null, string? seafileApiKey = null)
         {
             Name = name;

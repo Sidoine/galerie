@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GaleriePhotos.Services
+namespace GaleriePhotos.Services.Background
 {
     public class PlaceLocationBackgroundService : BackgroundService
     {

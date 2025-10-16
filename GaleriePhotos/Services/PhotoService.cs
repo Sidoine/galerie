@@ -214,7 +214,15 @@ namespace GaleriePhotos.Services
 
                     if (photo.DateTime == default)
                     {
-                        photo.DateTime = await dataProvider.GetFileCreationTimeUtc(photo);
+                        var inferredDate = PhotoFileNameDateHelper.DeduceCaptureDateFromFileName(photo.FileName);
+                        if (inferredDate.HasValue)
+                        {
+                            photo.DateTime = inferredDate.Value;
+                        }
+                        else
+                        {
+                            photo.DateTime = await dataProvider.GetFileCreationTimeUtc(photo);
+                        }
                     }
 
                     applicationDbContext.Photos.Add(photo);
