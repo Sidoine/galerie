@@ -34,6 +34,12 @@ export interface DirectoryFull {
     numberOfSubDirectories: number;
 }
 
+export interface PlaceShort {
+    id: number;
+
+    name: string;
+}
+
 export interface Photo {
     id: number;
 
@@ -46,6 +52,8 @@ export interface Photo {
     directoryId: number;
 
     dateTime: string;
+
+    place: PlaceShort | null;
 }
 
 export interface DirectoryPatch {

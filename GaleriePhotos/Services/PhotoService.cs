@@ -316,7 +316,10 @@ namespace GaleriePhotos.Services
 
         public async Task<Photo[]?> GetDirectoryImages(PhotoDirectory photoDirectory)
         {
-            return await applicationDbContext.Photos.Where(x => x.DirectoryId == photoDirectory.Id).ToArrayAsync();
+            return await applicationDbContext.Photos
+                .Include(x => x.Place)
+                .Where(x => x.DirectoryId == photoDirectory.Id)
+                .ToArrayAsync();
         }
 
         public async Task<PhotoDirectory?> GetPhotoDirectoryAsync(int id)
@@ -326,12 +329,22 @@ namespace GaleriePhotos.Services
 
         public async Task<Photo?> GetPhoto(int id)
         {
-            return await applicationDbContext.Photos.Include(x => x.Directory).ThenInclude(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.Id == id);
+            return await applicationDbContext.Photos
+                .Include(x => x.Place)
+                .Include(x => x.Directory)
+                    .ThenInclude(x => x.Gallery)
+                        .ThenInclude(x => x.Members)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<Photo?> GetPhoto(Guid publicId)
         {
-            return await applicationDbContext.Photos.Include(x => x.Directory).ThenInclude(x => x.Gallery).ThenInclude(x => x.Members).FirstOrDefaultAsync(x => x.PublicId == publicId);
+            return await applicationDbContext.Photos
+                .Include(x => x.Place)
+                .Include(x => x.Directory)
+                    .ThenInclude(x => x.Gallery)
+                        .ThenInclude(x => x.Members)
+                .FirstOrDefaultAsync(x => x.PublicId == publicId);
         }
 
         public async Task<PhotoDirectory[]?> GetSubDirectories(PhotoDirectory photoDirectory)

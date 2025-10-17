@@ -68,6 +68,7 @@ interface PhotosHeaderItem extends BaseItem {
 interface DateHeaderItem extends BaseItem {
   type: "dateHeader";
   title: string;
+  placeNames: string[];
 }
 interface PhotoRowItem extends BaseItem {
   type: "photoRow";
@@ -207,10 +208,18 @@ export const DirectoryView = observer(function DirectoryView({
           order === "date-desc" ? "date-desc" : "date-asc"
         );
         groups.forEach((group) => {
+          const placeNames = Array.from(
+            new Set(
+              group.photos
+                .map((photo) => photo.place?.name?.trim())
+                .filter((name): name is string => !!name && name.length > 0)
+            )
+          );
           items.push({
             id: `date-header-${group.id}`,
             type: "dateHeader",
             title: group.displayTitle,
+            placeNames,
           });
           const rows = splitPhotosIntoRows(group.photos, cols);
           rows.forEach((row, idx) =>
@@ -390,7 +399,18 @@ export const DirectoryView = observer(function DirectoryView({
         case "dateHeader":
           return (
             <View style={styles.dateHeader}>
-              <Text style={styles.dateHeaderText}>{item.title}</Text>
+              <View style={styles.dateHeaderTextWrapper}>
+                <Text style={styles.dateHeaderText}>{item.title}</Text>
+                {item.placeNames.length > 0 && (
+                  <Text
+                    style={styles.dateHeaderPlaces}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.placeNames.join(" • ")}
+                  </Text>
+                )}
+              </View>
               {membersStore.administrator && (
                 <TouchableOpacity
                   accessibilityLabel="Actions sur cette date"
@@ -596,10 +616,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  dateHeaderTextWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    paddingRight: 12,
+    alignItems: "baseline",
+    gap: 8,
+  },
   dateHeaderText: {
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
+  },
+  dateHeaderPlaces: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#666",
   },
   dateHeaderActionBtn: {
     flexDirection: "row",

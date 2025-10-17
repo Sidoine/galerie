@@ -123,6 +123,7 @@ namespace GaleriePhotos.Controllers
         private IQueryable<Photo> BuildSearchQuery(Gallery gallery, string query)
         {
             var photos = applicationDbContext.Photos
+                .Include(p => p.Place)
                 .Include(p => p.Directory)
                 .Where(p => p.Directory.GalleryId == gallery.Id &&
                             p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private &&

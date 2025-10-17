@@ -14,4 +14,20 @@ namespace GaleriePhotos.ViewModels
         public int? ParentId { get; set; }
         public string? CoverPhotoId { get; set; }
     }
+
+    public class PlaceShortViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+
+        public PlaceShortViewModel()
+        {
+        }
+
+        public PlaceShortViewModel(int id, string name)
+        {
+            Id = id;
+            Name = name;
+        }
+    }
 }

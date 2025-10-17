@@ -69,6 +69,7 @@ namespace GaleriePhotos.Controllers
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
             var photos = await applicationDbContext.Photos
+                .Include(p => p.Place)
                 .Where(d => d.Directory.GalleryId == id && 
                     (!startDate.HasValue || d.DateTime >= startDate.Value.ToUniversalTime()) &&
                     (!endDate.HasValue || d.DateTime <= endDate.Value.ToUniversalTime())).ToArrayAsync();

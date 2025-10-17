@@ -215,6 +215,7 @@ namespace GaleriePhotos.Controllers
 
             var query = applicationDbContext.Faces
                 .Include(f => f.Photo)
+                    .ThenInclude(p => p.Place)
                 .Include(f => f.FaceName)
                 .Where(f => f.FaceName != null && f.FaceNameId == id && f.Photo.Directory.GalleryId == galleryId)
                 .Select(f => f.Photo)

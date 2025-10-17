@@ -438,6 +438,7 @@ namespace GaleriePhotos.Services
         private IQueryable<Photo> QueryPlacePhotos(int placeId, int? year, int? month)
         {
             var query = context.Photos
+                            .Include(p => p.Place)
                             .Where(p => p.PlaceId == placeId && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
             if (year != null) query = query.Where(p => p.DateTime.Year == year.Value);
             if (month != null) query = query.Where(p => p.DateTime.Month == month.Value);
