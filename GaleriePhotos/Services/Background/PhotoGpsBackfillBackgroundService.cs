@@ -122,12 +122,6 @@ namespace GaleriePhotos.Services.Background
 
         private async Task TryBackfillGpsAsync(ApplicationDbContext context, Photo photo, CancellationToken cancellationToken)
         {
-            if (photo.DateTime == default)
-            {
-                logger.LogDebug("Skipping photo {PhotoId} because it has no timestamp", photo.Id);
-                return;
-            }
-
             var galleryId = photo.Directory.GalleryId;
             var minDate = photo.DateTime - MaxTimeDifference;
             var maxDate = photo.DateTime + MaxTimeDifference;
@@ -145,9 +139,9 @@ namespace GaleriePhotos.Services.Background
                     p.Longitude,
                     p.DateTime
                 })
-                .ToListAsync(cancellationToken);
+                .ToArrayAsync(cancellationToken);
 
-            if (!candidates.Any())
+            if (candidates.Length == 0)
             {
                 logger.LogDebug("No GPS candidates found for photo {PhotoId} in gallery {GalleryId}", photo.Id, galleryId);
                 return;

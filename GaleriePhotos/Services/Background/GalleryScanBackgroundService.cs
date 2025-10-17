@@ -90,9 +90,7 @@ namespace GaleriePhotos.Services.Background
                 logger.LogInformation("Scanning directory {DirectoryId} ({Path}) for gallery {GalleryId}", nextDirectory.Id, nextDirectory.Path, gallery.Id);
                 try
                 {
-                    // Enumerate to populate DB
-                    await photoService.GetSubDirectories(nextDirectory);
-                    await photoService.GetDirectoryImages(nextDirectory);
+                    await photoService.ScanDirectory(nextDirectory);
 
                     stateMap[gallery.Id] = new GalleryScanState
                     {

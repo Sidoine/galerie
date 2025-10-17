@@ -70,7 +70,7 @@ namespace GaleriePhotosTest.Services
         [Fact(Skip = "Can only be run on PostgreSQL")]
         public void IsPrivate_DetectsPrivatePath()
         {
-            var dir = new PhotoDirectory(Path.Combine(_rootDirectory.Path, "Privé"), 0, null, PhotoDirectoryType.Private) { Gallery = _gallery };
+            var dir = new PhotoDirectory(Path.Combine(_rootDirectory.Path, "Privé"), 0, null, null, PhotoDirectoryType.Private) { Gallery = _gallery };
             Assert.True(_photoService.IsPrivate(dir));
             Assert.False(_photoService.IsPrivate(_rootDirectory));
         }
@@ -97,7 +97,7 @@ namespace GaleriePhotosTest.Services
             {
                 await img.SaveAsJpegAsync(filePath);
             }
-            var creation = new DateTime(2020,1,2,3,4,5, DateTimeKind.Utc);
+            var creation = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
             File.SetCreationTimeUtc(filePath, creation);
 
             var photos = await _photoService.GetDirectoryImages(_rootDirectory);
@@ -123,7 +123,8 @@ namespace GaleriePhotosTest.Services
             {
                 if (Directory.Exists(_tempOriginals)) Directory.Delete(_tempOriginals, true);
                 if (Directory.Exists(_tempThumbs)) Directory.Delete(_tempThumbs, true);
-            } catch { }
+            }
+            catch { }
         }
     }
 }

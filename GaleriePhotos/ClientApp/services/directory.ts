@@ -9,10 +9,6 @@ export class DirectoryController {
         return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
 
-    getGalleryRoot = (galleryId: number) => {
-        return this.client.fetchJson<views.DirectoryFull>(`api/directories/root/${galleryId}`, "GET", undefined);
-    }
-
     getPhotos = (id: number, startDate?: string | null, endDate?: string | null) => {
         return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos` + helpers.getQueryString({ startDate: startDate, endDate: endDate }), "GET", undefined);
     }

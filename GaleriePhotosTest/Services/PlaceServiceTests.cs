@@ -71,7 +71,7 @@ namespace GaleriePhotosTest.Services
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
 
-            var directory = new PhotoDirectory("/test", 0, null) { GalleryId = gallery.Id, Gallery = gallery };
+            var directory = new PhotoDirectory("/test", 0, null, null) { GalleryId = gallery.Id, Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
 
@@ -87,7 +87,7 @@ namespace GaleriePhotosTest.Services
 
             // Assert
             Assert.True(result);
-            
+
             var updatedPhoto = await context.Photos.FindAsync(photo.Id);
             Assert.NotNull(updatedPhoto);
             Assert.Equal(place.Id, updatedPhoto.PlaceId);
@@ -117,7 +117,7 @@ namespace GaleriePhotosTest.Services
         {
             // Arrange
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
-            
+
             // Act
             var place = new Place("Test Place", 48.8566, 2.3522) { Gallery = gallery };
 

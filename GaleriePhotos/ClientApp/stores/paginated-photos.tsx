@@ -122,6 +122,7 @@ export class PaginatedPhotosStore {
     try {
       if (!this.lastLimitDate) return; // rien à faire
       const endDate = new Date(this.lastLimitDate);
+      endDate.setDate(endDate.getDate() + 1); // borne exclusive
       const startDate = new Date(this.lastLimitDate);
 
       // Appliquer la fenêtre de chunk

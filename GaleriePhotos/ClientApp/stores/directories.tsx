@@ -10,7 +10,6 @@ import { action, makeObservable, observable } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class DirectoriesStore {
-  root: DirectoryFull | null = null;
   isInError = false;
 
   constructor(
@@ -28,37 +27,14 @@ class DirectoriesStore {
       patchDirectoryAndClearCache: action,
       patchDirectory: action,
       setParentCover: action,
-      root: observable,
       isInError: observable,
-      setRoot: action,
-      loadRoot: action,
     });
-    this.loadRoot();
   }
 
   photoReloadSuffix = new Map<string, number>();
 
   getDirectory(directoryId: number) {
     return this.infoLoader.getValue(directoryId);
-  }
-
-  public async loadRoot() {
-    this.isInError = false;
-    const result = await this.directoryService.getGalleryRoot(this.galleryId);
-    if (result.ok) {
-      this.setRoot(result.value);
-    } else {
-      this.setRoot(null);
-    }
-  }
-
-  setRoot(root: DirectoryFull | null) {
-    if (root === null) {
-      this.isInError = true;
-    } else {
-      this.root = root;
-      this.isInError = false;
-    }
   }
 
   async patchDirectoryAndClearCache(id: number, patch: DirectoryPatch) {
