@@ -299,6 +299,13 @@ namespace GaleriePhotos.Services
 
             await applicationDbContext.SaveChangesAsync();
 
+            if (photoDirectory.Path == "" && photoDirectory.PhotoDirectoryType != PhotoDirectoryType.Root)
+            {
+                photoDirectory.PhotoDirectoryType = PhotoDirectoryType.Root;
+                applicationDbContext.Update(photoDirectory);
+                await applicationDbContext.SaveChangesAsync();
+            }
+
             if (photoDirectory.CoverPhotoId == null && photos.Count > 0)
             {
                 photoDirectory.CoverPhotoId = photos.First().Id;

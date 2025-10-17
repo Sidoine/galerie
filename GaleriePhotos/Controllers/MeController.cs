@@ -34,7 +34,7 @@ namespace GaleriePhotos.Controllers
 				{
 					Id = gm.Gallery.Id,
 					Name = gm.Gallery.Name,
-					RootDirectoryId = applicationDbContext.PhotoDirectories.First(d => d.GalleryId == gm.Gallery.Id && d.PhotoDirectoryType == PhotoDirectoryType.Root).Id
+					RootDirectoryId = applicationDbContext.PhotoDirectories.First(d => d.GalleryId == gm.Gallery.Id && (d.PhotoDirectoryType == PhotoDirectoryType.Root || d.Path == "")).Id
 				})
 				.ToArrayAsync();
 			return Ok(galleries);
