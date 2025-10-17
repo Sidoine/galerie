@@ -524,7 +524,7 @@ namespace GaleriePhotos.Services
             {
                 // Get the original photo
                 using var imagePath = await dataProvider.GetLocalFileName(photo);
-                if (imagePath == null) return null;
+                if (!imagePath.Exists) return null;
 
                 // Get the face thumbnail path
                 using var faceThumbnailPath = await dataProvider.GetLocalFaceThumbnailFileName(face);

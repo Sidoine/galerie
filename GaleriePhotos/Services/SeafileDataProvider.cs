@@ -208,19 +208,19 @@ namespace GaleriePhotos.Services
 
         private async Task CreateDirectoryAsync(string path)
         {
-            var libraryId = _originalsLibraryId;
+            await CreateDirectoryInternalAsync(_originalsLibraryId, path);
+        }
+
+        private async Task CreateDirectoryInternalAsync(string libraryId, string path)
+        {
             var dirPath = NormalizePath(path);
-            var parentDir = Path.GetDirectoryName(dirPath) ?? "/";
-            var dirName = Path.GetFileName(dirPath);
-
-            var requestData = new
+            
+            
+            var content = new FormUrlEncodedContent(new[]
             {
-                operation = "mkdir",
-                name = dirName
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{libraryId}/dir/?p={Uri.EscapeDataString(parentDir)}", content);
+                new KeyValuePair<string, string>("operation", "mkdir"),
+            });
+            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{libraryId}/dir/?p={Uri.EscapeDataString(dirPath)}", content);
             response.EnsureSuccessStatusCode();
         }
 
@@ -293,7 +293,7 @@ namespace GaleriePhotos.Services
 
         public async Task<IFileName> GetLocalFileName(Photo photo)
         {
-            var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.{Path.GetExtension(photo.FileName)}");
+            var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{Path.GetExtension(photo.FileName)}");
             using var stream = await ReadStreamAsync(_originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName));
             if (stream == null) return new SeafileFileName(localPath, this, _originalsLibraryId, Path.Combine(photo.Directory.Path, photo.FileName), false);
             using var fileStream = File.Create(localPath);
@@ -331,6 +331,11 @@ namespace GaleriePhotos.Services
 
         public async Task<IFileName> GetLocalFaceThumbnailFileName(Face face)
         {
+            if (!await DirectoryExistsInternal(_thumbnailsLibraryId, "faces"))
+            {
+                await CreateDirectoryInternalAsync(_thumbnailsLibraryId, "faces");
+            }
+
             var localPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.jpg");
             var faceThumbnailPath = Path.Combine("faces", GetFaceThumbnailFileName(face));
             using var stream = await ReadStreamAsync(_thumbnailsLibraryId, faceThumbnailPath);
