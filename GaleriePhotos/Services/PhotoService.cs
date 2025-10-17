@@ -167,6 +167,12 @@ namespace GaleriePhotos.Services
             return files.Select(x => Path.GetFileName(x)).Where(x => MimeTypes.ContainsKey(Path.GetExtension(x).ToLowerInvariant())).ToArray();
         }
 
+        public async Task<bool> DirectoryExists(PhotoDirectory photoDirectory)
+        {
+            var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
+            return await dataProvider.DirectoryExists(photoDirectory);
+        }
+
         public async Task ScanDirectory(PhotoDirectory photoDirectory)
         {
             var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);

@@ -67,7 +67,7 @@ namespace GaleriePhotos.Services
             var exists = File.Exists(path);
             return Task.FromResult<IFileName>(new FileSystemFileName(path, exists));
         }
-        
+
         public Task<IFileName> GetLocalThumbnailFileName(Photo photo)
         {
             var path = Path.Combine(Gallery.ThumbnailsDirectory, GetThumbnailFileName(photo));
@@ -105,6 +105,12 @@ namespace GaleriePhotos.Services
             var path = Path.Combine(facesDir, GetFaceThumbnailFileName(face));
             var exists = File.Exists(path);
             return Task.FromResult<IFileName>(new FileSystemFileName(path, exists));
+        }
+
+        public Task<bool> DirectoryExists(PhotoDirectory photoDirectory)
+        {
+            var dirPath = Path.Combine(Gallery.RootDirectory, photoDirectory.Path);
+            return Task.FromResult(Directory.Exists(dirPath));
         }
     }
 }

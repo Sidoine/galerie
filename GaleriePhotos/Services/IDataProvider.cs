@@ -88,6 +88,8 @@ namespace GaleriePhotos.Services
         /// </summary>
         /// <param name="face">The face to get thumbnail filename for.</param>
         Task<IFileName> GetLocalFaceThumbnailFileName(Face face);
+        Task<bool> DirectoryExists(PhotoDirectory photoDirectory);
+
 
         bool IsSetup { get; }
     }

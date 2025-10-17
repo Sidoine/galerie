@@ -129,7 +129,7 @@ namespace GaleriePhotos.Services
             };
             formContent.Add(replaceVariable);
 
-            
+
             var newClient = new HttpClient();
             var contentType = formContent.Headers.ContentType?.ToString() ?? "";
             formContent.Headers.Remove("Content-Type");
@@ -156,7 +156,7 @@ namespace GaleriePhotos.Services
             var filePath = NormalizePath(path);
             var response = await _httpClient.GetAsync($"{_baseApiUrl}/repos/{libraryId}/file/detail/?p={Uri.EscapeDataString(filePath)}");
             return response.IsSuccessStatusCode;
-         }
+        }
 
         private async Task<IEnumerable<string>> GetFilesInternal(string libraryId, string path)
         {
@@ -343,6 +343,11 @@ namespace GaleriePhotos.Services
         public void Dispose()
         {
             _httpClient?.Dispose();
+        }
+
+        public Task<bool> DirectoryExists(PhotoDirectory photoDirectory)
+        {
+            return DirectoryExistsInternal(_originalsLibraryId, photoDirectory.Path);
         }
     }
 }

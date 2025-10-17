@@ -5,7 +5,7 @@ namespace GaleriePhotos.Services.Seafile;
 public class SeafileDirItem
 {
     [JsonPropertyName("modifier_email")]
-    public required string ModifierEmail { get; set; }
+    public string? ModifierEmail { get; set; }
 
     [JsonPropertyName("size")]
     public int Size { get; set; }
