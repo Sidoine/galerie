@@ -5,8 +5,8 @@ import * as views from "./views";
 export class SearchController {
 	constructor(private client: helpers.ApiClient) {}
 
-    getPhotos = (galleryId: number, query?: string, minDate?: string | null, maxDate?: string | null) => {
-        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/search/photos` + helpers.getQueryString({ query: query, minDate: minDate, maxDate: maxDate }), "GET", undefined);
+    getPhotos = (galleryId: number, query?: string, sortOrder?: string, offset?: number, count?: number) => {
+        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/search/photos` + helpers.getQueryString({ query: query, sortOrder: sortOrder, offset: offset, count: count }), "GET", undefined);
     }
 
     getSummary = (galleryId: number, query?: string) => {

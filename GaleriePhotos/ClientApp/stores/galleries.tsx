@@ -51,10 +51,11 @@ class GalleriesStore {
 
   loadPhotos(
     galleryId: number,
-    startDate?: string | null,
-    endDate?: string | null
+    sortOrder: string,
+    offset: number,
+    count: number
   ) {
-    return this.galleryService.getPhotos(galleryId, startDate, endDate);
+    return this.galleryService.getPhotos(galleryId, sortOrder, offset, count);
   }
 }
 

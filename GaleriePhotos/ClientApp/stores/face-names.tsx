@@ -11,7 +11,7 @@ class FaceNamesStore {
     private nameLoader: MapLoader<FaceNameFull, [number, number]>,
     private namePhotosLoader: MapLoader<
       Photo[],
-      [number, number, (string | null)?, (string | null)?]
+      [number, number, string?, number?, number?]
     >,
     public faceController: FaceController
   ) {
@@ -33,18 +33,20 @@ class FaceNamesStore {
   }
 
   /**
-   * Récupère les photos associées à un nom de visage, optionnellement filtrées par plage de dates (YYYY-MM-DD).
+   * Récupère les photos associées à un nom de visage, avec pagination offset-based.
    */
   getPhotosByName(
     id: number,
-    startDate?: string | null,
-    endDate?: string | null
+    sortOrder?: string,
+    offset?: number,
+    count?: number
   ) {
     return this.namePhotosLoader.getValue(
       this.galleryId,
       id,
-      startDate ?? null,
-      endDate ?? null
+      sortOrder,
+      offset,
+      count
     );
   }
 

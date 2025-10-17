@@ -33,8 +33,8 @@ export class FaceController {
         return this.client.fetchJson<views.FaceName[]>(`api/gallery/${galleryId}/faces/names`, "GET", undefined);
     }
 
-    getPhotosByFaceName = (galleryId: number, id: number, startDate?: string | null, endDate?: string | null) => {
-        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/face-names/${id}/photos` + helpers.getQueryString({ startDate: startDate, endDate: endDate }), "GET", undefined);
+    getPhotosByFaceName = (galleryId: number, id: number, sortOrder?: string, offset?: number, count?: number) => {
+        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/face-names/${id}/photos` + helpers.getQueryString({ sortOrder: sortOrder, offset: offset, count: count }), "GET", undefined);
     }
 
     getSimilarFaces = (galleryId: number, model: views.SimilarFacesRequest) => {

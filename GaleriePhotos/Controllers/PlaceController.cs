@@ -79,7 +79,7 @@ namespace Galerie.Server.Controllers
         }
             
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25)
         {
             try
             {
@@ -89,16 +89,18 @@ namespace Galerie.Server.Controllers
                     return NotFound();
                 }
                 
-                // Apply additional date filtering if startDate/endDate are specified
-                if (startDate.HasValue || endDate.HasValue)
-                {
-                    placePhotos = placePhotos.Where(p => 
-                        (!startDate.HasValue || p.DateTime >= startDate.Value) &&
-                        (!endDate.HasValue || p.DateTime <= endDate.Value)
-                    ).ToArray();
-                }
+                // Apply sorting
+                var orderedPhotos = sortOrder == "asc"
+                    ? placePhotos.OrderBy(p => p.DateTime)
+                    : placePhotos.OrderByDescending(p => p.DateTime);
+
+                // Apply pagination
+                var paginatedPhotos = orderedPhotos
+                    .Skip(offset)
+                    .Take(count)
+                    .ToArray();
                 
-                return Ok(placePhotos.Select(x => new PhotoViewModel(x)));
+                return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
             }
             catch (Exception ex)
             {

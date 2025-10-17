@@ -149,14 +149,15 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [directoriesStore]
   );
 
-  // Mémoïse la fonction loadPhotos pour pagination/date-range
+  // Mémoïse la fonction loadPhotos pour pagination offset-based
   const loadPhotos = useCallback(
-    async (startDate?: string | null, endDate?: string | null) => {
+    async (sortOrder: string, offset: number, count: number) => {
       if (!directoryId) return null;
       return await directoriesStore.directoryService.getPhotos(
         directoryId,
-        startDate ?? null,
-        endDate ?? null
+        sortOrder,
+        offset,
+        count
       );
     },
     [directoryId, directoriesStore.directoryService]

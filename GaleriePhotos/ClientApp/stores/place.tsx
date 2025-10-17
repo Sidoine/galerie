@@ -295,14 +295,15 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   );
 
   const loadPhotos = useCallback(
-    async (startDate?: string | null, endDate?: string | null) => {
+    async (sortOrder: string, offset: number, count: number) => {
       if (!placeId) return null;
       return await placesStore.placeController.getPlacePhotos(
         placeId,
         year,
         month,
-        startDate,
-        endDate
+        sortOrder,
+        offset,
+        count
       );
     },
     [placeId, placesStore, year, month]

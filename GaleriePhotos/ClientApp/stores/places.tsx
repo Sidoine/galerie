@@ -24,8 +24,9 @@ class PlacesStore {
         placeId: number,
         year?: number | null,
         month?: number | null,
-        startDate?: string | null,
-        endDate?: string | null
+        sortOrder?: string,
+        offset?: number,
+        count?: number
       ]
     >,
     private placeYearsLoader: MapLoader<Year[], [number]>,
@@ -64,22 +65,23 @@ class PlacesStore {
   }
 
   /**
-   * Récupère les photos d'un lieu, éventuellement filtrées par année, mois et/ou plage de dates (YYYY-MM-DD).
-   * Le loader clé inclut startDate/endDate pour permettre la pagination temporelle.
+   * Récupère les photos d'un lieu, éventuellement filtrées par année, mois avec pagination offset-based.
    */
   getPlacePhotos(
     placeId: number,
     year?: number | null,
     month?: number | null,
-    startDate?: string | null,
-    endDate?: string | null
+    sortOrder?: string,
+    offset?: number,
+    count?: number
   ): Photo[] | null {
     return this.placePhotosLoader.getValue(
       placeId,
       year,
       month,
-      startDate ?? null,
-      endDate ?? null
+      sortOrder,
+      offset,
+      count
     );
   }
 

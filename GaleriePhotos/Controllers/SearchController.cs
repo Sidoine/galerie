@@ -83,7 +83,7 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpGet("photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int galleryId, [FromQuery] string query, DateTime? minDate = null, DateTime? maxDate = null)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int galleryId, [FromQuery] string query, string sortOrder = "asc", int offset = 0, int count = 25)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -103,18 +103,15 @@ namespace GaleriePhotos.Controllers
 
             var photosQuery = BuildSearchQuery(gallery, query);
 
-            if (minDate.HasValue)
-            {
-                photosQuery = photosQuery.Where(p => p.DateTime >= minDate.Value.ToUniversalTime());
-            }
+            // Apply sorting
+            var orderedQuery = sortOrder == "asc"
+                ? photosQuery.OrderBy(p => p.DateTime)
+                : photosQuery.OrderByDescending(p => p.DateTime);
 
-            if (maxDate.HasValue)
-            {
-                photosQuery = photosQuery.Where(p => p.DateTime <= maxDate.Value.ToUniversalTime());
-            }
-
-            var photos = await photosQuery
-                .OrderBy(p => p.DateTime)
+            // Apply pagination
+            var photos = await orderedQuery
+                .Skip(offset)
+                .Take(count)
                 .ToListAsync();
 
             return Ok(photos.Select(p => new PhotoViewModel(p)).ToArray());
