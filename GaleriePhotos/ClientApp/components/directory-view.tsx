@@ -368,7 +368,9 @@ export const DirectoryView = observer(function DirectoryView({
         case "albumsHeader":
           return (
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>{item.title}</View>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionTitle}>{item.title}</Text>
+              </View>
             </View>
           );
         case "albumRow":

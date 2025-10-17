@@ -3,10 +3,10 @@ import { observer } from "mobx-react-lite";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Switch,
+  ImageBackground,
 } from "react-native";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useDirectoryVisibilitiesStore } from "@/stores/directory-visibilities";
@@ -53,69 +53,67 @@ const SubdirectoryCard = observer(
       [directory, directoriesStore]
     );
 
+    const imageSource = directory.coverPhotoId
+      ? { uri: photosStore.getThumbnail(directory.coverPhotoId) }
+      : placeholder;
+
     return (
       <View style={[styles.card, { width: size }]}>
-        <Link href={store.getChildContainerLink(directory.id)} asChild>
-          <View style={styles.imageWrapper}>
-            {directory.coverPhotoId && (
-              <Image
-                source={{
-                  uri: photosStore.getThumbnail(directory.coverPhotoId),
-                }}
-                style={styles.image}
-                resizeMode="cover"
-              />
-            )}
-            {!directory.coverPhotoId && (
-              <Image
-                source={placeholder}
-                style={styles.image}
-                resizeMode="cover"
-              />
+        <ImageBackground
+          source={imageSource}
+          style={[styles.imageBackground, { height: size * 0.75 }]}
+          imageStyle={styles.image}
+        >
+          <View style={styles.overlay}>
+            <Link href={store.getChildContainerLink(directory.id)} asChild>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.overlayPressable}
+              >
+                <Text style={styles.title}>{directory.name}</Text>
+                <View style={styles.subtitleRow}>
+                  {directory.numberOfPhotos > 0 && (
+                    <Text style={styles.metaText}>
+                      {directory.numberOfPhotos} élément
+                      {directory.numberOfPhotos > 1 ? "s" : ""}
+                    </Text>
+                  )}
+                  {isDirectory(directory) &&
+                    directory.numberOfSubDirectories > 0 && (
+                      <Text style={styles.metaText}>
+                        {directory.numberOfSubDirectories} album
+                        {directory.numberOfSubDirectories > 1 ? "s" : ""}
+                      </Text>
+                    )}
+                </View>
+              </TouchableOpacity>
+            </Link>
+            {membersStore.administrator && (
+              <View style={styles.visibilityRow}>
+                {isDirectory(directory) &&
+                  visibilities.map((v) => (
+                    <View key={v.id} style={styles.visibilityItem}>
+                      <Switch
+                        value={(directory.visibility & v.value) > 0}
+                        onValueChange={toggleVisibility(v.value)}
+                      />
+                      <Text style={styles.visibilityIcon}>{v.icon}</Text>
+                    </View>
+                  ))}
+                {store.setParentCover && (
+                  <TouchableOpacity
+                    onPress={handleUseAsParentCover}
+                    style={styles.actionButton}
+                  >
+                    <Text style={styles.actionButtonText}>
+                      Utiliser comme couverture parente
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </View>
-        </Link>
-        <View style={styles.meta}>
-          <Text style={styles.title}>{directory.name}</Text>
-          <View style={styles.subtitleRow}>
-            {directory.numberOfPhotos > 0 && (
-              <Text style={styles.metaText}>
-                {directory.numberOfPhotos} élément
-                {directory.numberOfPhotos > 1 ? "s" : ""}
-              </Text>
-            )}
-            {isDirectory(directory) && directory.numberOfSubDirectories > 0 && (
-              <Text style={styles.metaText}>
-                {directory.numberOfSubDirectories} album
-                {directory.numberOfSubDirectories > 1 ? "s" : ""}
-              </Text>
-            )}
-          </View>
-          {membersStore.administrator && (
-            <View style={styles.visibilityRow}>
-              {isDirectory(directory) &&
-                visibilities.map((v) => (
-                  <View key={v.id} style={styles.visibilityItem}>
-                    <Switch
-                      value={(directory.visibility & v.value) > 0}
-                      onValueChange={toggleVisibility(v.value)}
-                    />
-                    <Text style={styles.visibilityIcon}>{v.icon}</Text>
-                  </View>
-                ))}
-              {store.setParentCover && (
-                <TouchableOpacity
-                  onPress={handleUseAsParentCover}
-                  style={styles.actionButton}
-                >
-                  <Text style={styles.actionButtonText}>
-                    Utiliser comme couverture parente
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </View>
+        </ImageBackground>
       </View>
     );
   }
@@ -125,26 +123,31 @@ export default SubdirectoryCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     overflow: "hidden",
     elevation: 2,
+    backgroundColor: "#000",
   },
-  imageWrapper: {
-    height: 160,
-    backgroundColor: "#eee",
+  imageBackground: {
+    justifyContent: "flex-end",
   },
   image: {
     width: "100%",
     height: "100%",
   },
-  meta: {
-    padding: 10,
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  overlayPressable: {
     gap: 4,
   },
   title: {
     fontSize: 16,
     fontWeight: "600",
+    color: "#fff",
   },
   subtitleRow: {
     flexDirection: "row",
@@ -153,7 +156,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: "#555",
+    color: "#f0f0f0",
   },
   visibilityRow: {
     flexDirection: "row",
@@ -168,7 +171,8 @@ const styles = StyleSheet.create({
   },
   visibilityIcon: {
     fontSize: 10,
-    color: "#333",
+    color: "#fff",
+    marginLeft: 4,
   },
   actionButton: {
     backgroundColor: "#1976d2",
