@@ -64,54 +64,63 @@ const SubdirectoryCard = observer(
           style={[styles.imageBackground, { height: size * 0.75 }]}
           imageStyle={styles.image}
         >
-          <View style={styles.overlay}>
+          <View style={styles.content}>
             <Link href={store.getChildContainerLink(directory.id)} asChild>
               <TouchableOpacity
                 activeOpacity={0.8}
-                style={styles.overlayPressable}
-              >
-                <Text style={styles.title}>{directory.name}</Text>
-                <View style={styles.subtitleRow}>
-                  {directory.numberOfPhotos > 0 && (
-                    <Text style={styles.metaText}>
-                      {directory.numberOfPhotos} élément
-                      {directory.numberOfPhotos > 1 ? "s" : ""}
-                    </Text>
-                  )}
-                  {isDirectory(directory) &&
-                    directory.numberOfSubDirectories > 0 && (
+                style={styles.imagePressable}
+                accessibilityRole="link"
+              />
+            </Link>
+            <View style={styles.overlay}>
+              <Link href={store.getChildContainerLink(directory.id)} asChild>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.overlayPressable}
+                >
+                  <Text style={styles.title}>{directory.name}</Text>
+                  <View style={styles.subtitleRow}>
+                    {directory.numberOfPhotos > 0 && (
                       <Text style={styles.metaText}>
-                        {directory.numberOfSubDirectories} album
-                        {directory.numberOfSubDirectories > 1 ? "s" : ""}
+                        {directory.numberOfPhotos} élément
+                        {directory.numberOfPhotos > 1 ? "s" : ""}
                       </Text>
                     )}
+                    {isDirectory(directory) &&
+                      directory.numberOfSubDirectories > 0 && (
+                        <Text style={styles.metaText}>
+                          {directory.numberOfSubDirectories} album
+                          {directory.numberOfSubDirectories > 1 ? "s" : ""}
+                        </Text>
+                      )}
+                  </View>
+                </TouchableOpacity>
+              </Link>
+              {membersStore.administrator && (
+                <View style={styles.visibilityRow}>
+                  {isDirectory(directory) &&
+                    visibilities.map((v) => (
+                      <View key={v.id} style={styles.visibilityItem}>
+                        <Switch
+                          value={(directory.visibility & v.value) > 0}
+                          onValueChange={toggleVisibility(v.value)}
+                        />
+                        <Text style={styles.visibilityIcon}>{v.icon}</Text>
+                      </View>
+                    ))}
+                  {store.setParentCover && (
+                    <TouchableOpacity
+                      onPress={handleUseAsParentCover}
+                      style={styles.actionButton}
+                    >
+                      <Text style={styles.actionButtonText}>
+                        Utiliser comme couverture parente
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
-            </Link>
-            {membersStore.administrator && (
-              <View style={styles.visibilityRow}>
-                {isDirectory(directory) &&
-                  visibilities.map((v) => (
-                    <View key={v.id} style={styles.visibilityItem}>
-                      <Switch
-                        value={(directory.visibility & v.value) > 0}
-                        onValueChange={toggleVisibility(v.value)}
-                      />
-                      <Text style={styles.visibilityIcon}>{v.icon}</Text>
-                    </View>
-                  ))}
-                {store.setParentCover && (
-                  <TouchableOpacity
-                    onPress={handleUseAsParentCover}
-                    style={styles.actionButton}
-                  >
-                    <Text style={styles.actionButtonText}>
-                      Utiliser comme couverture parente
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
+              )}
+            </View>
           </View>
         </ImageBackground>
       </View>
@@ -130,6 +139,13 @@ const styles = StyleSheet.create({
   },
   imageBackground: {
     justifyContent: "flex-end",
+  },
+  content: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  imagePressable: {
+    flex: 1,
   },
   image: {
     width: "100%",
