@@ -2,16 +2,17 @@ import { Href, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { usePlacesStore } from "./places";
 import { createContext, useCallback, useContext, useMemo } from "react";
-import { PaginatedPhotosStore } from "./paginated-photos";
+import { PaginatedPhotosStore, PhotoResponse } from "./paginated-photos";
 import {
   BreadCrumb,
   PhotoContainer,
   PhotoContainerStore,
 } from "./photo-container";
 import { PlaceType } from "@/services/enums";
-import { Place } from "@/services/views";
+import { Photo, Place } from "@/services/views";
 import PlacesMap from "@/components/places-map";
 import { Text } from "react-native";
+import { ApiResponse } from "folke-service-helpers";
 
 const emptyPhotoContainer: PhotoContainer[] = [];
 
@@ -295,8 +296,12 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   );
 
   const loadPhotos = useCallback(
-    async (sortOrder: string, offset: number, count: number) => {
-      if (!placeId) return null;
+    async (
+      sortOrder: string,
+      offset: number,
+      count: number
+    ): Promise<PhotoResponse<Photo[]>> => {
+      if (!placeId) return { ok: true, value: [] };
       return await placesStore.placeController.getPlacePhotos(
         placeId,
         year,

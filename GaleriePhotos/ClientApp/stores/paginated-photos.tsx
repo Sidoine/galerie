@@ -1,13 +1,22 @@
 import { makeObservable, observable, action, runInAction } from "mobx";
 import { Photo } from "@/services/views";
 import { PhotoContainerFull } from "./photo-container";
-import { ApiResponse } from "folke-service-helpers";
+
+export type PhotoResponse<TD> =
+  | {
+      value: TD;
+      ok: true;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
 
 export type LoadPhotosFunction = (
   sortOrder: string,
   offset: number,
   count: number
-) => Promise<ApiResponse<Photo[]> | null>;
+) => Promise<PhotoResponse<Photo[]> | null>;
 
 /**
  * Store for handling paginated photo loading with offset-based chunks
@@ -58,7 +67,7 @@ export class PaginatedPhotosStore {
    */
   private async loadChunk() {
     if (this.isLoading) return;
-    
+
     runInAction(() => {
       this.isLoading = true;
       this.error = null;

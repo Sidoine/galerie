@@ -487,7 +487,7 @@ export const DirectoryView = observer(function DirectoryView({
         onEndReachedThreshold={0.3}
         removeClippedSubviews
         ListFooterComponent={
-          paginatedStore?.isLoading || store.container === null ? (
+          paginatedStore?.isLoading ? (
             <View style={styles.loadingFooter}>
               <ActivityIndicator size="large" />
               <Text style={styles.loadingText}>Chargement des photos...</Text>
