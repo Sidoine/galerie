@@ -114,13 +114,14 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
   );
 
   const loadPhotos = useCallback(
-    async (startDate?: string | null, endDate?: string | null) => {
+    async (sortOrder: string, offset: number, count: number) => {
       if (!faceNameId) return null;
       return await faceNamesStore.faceController.getPhotosByFaceName(
         faceNamesStore.galleryId,
         faceNameId,
-        startDate,
-        endDate
+        sortOrder,
+        offset,
+        count
       );
     },
     [faceNameId, faceNamesStore]

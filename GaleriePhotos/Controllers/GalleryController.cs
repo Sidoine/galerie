@@ -62,17 +62,26 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
         {
             var gallery = await galleryService.Get(id);
             if (gallery == null) return NotFound();
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
-            var photos = await applicationDbContext.Photos
+            var query = applicationDbContext.Photos
                 .Include(p => p.Place)
-                .Where(d => d.Directory.GalleryId == id && 
-                    (!startDate.HasValue || d.DateTime >= startDate.Value.ToUniversalTime()) &&
-                    (!endDate.HasValue || d.DateTime <= endDate.Value.ToUniversalTime())).ToArrayAsync();
+                .Where(d => d.Directory.GalleryId == id);
+
+            // Apply sorting
+            var orderedQuery = sortOrder == "asc"
+                ? query.OrderBy(p => p.DateTime)
+                : query.OrderByDescending(p => p.DateTime);
+
+            // Apply pagination
+            var photos = await orderedQuery
+                .Skip(offset)
+                .Take(count)
+                .ToArrayAsync();
 
             return Ok(photos.Select(x => new PhotoViewModel(x)).ToArray());
         }

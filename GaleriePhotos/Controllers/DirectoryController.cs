@@ -80,7 +80,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
@@ -94,16 +94,18 @@ namespace Galerie.Server.Controllers
             var photos = await photoService.GetDirectoryImages(directory);
             if (photos == null) return NotFound();
 
-            // Apply date filtering if specified
-            if (startDate.HasValue || endDate.HasValue)
-            {
-                photos = photos.Where(p =>
-                    (!startDate.HasValue || p.DateTime >= startDate.Value) &&
-                    (!endDate.HasValue || p.DateTime <= endDate.Value)
-                ).ToArray();
-            }
+            // Apply sorting
+            var orderedPhotos = sortOrder == "asc" 
+                ? photos.OrderBy(p => p.DateTime) 
+                : photos.OrderByDescending(p => p.DateTime);
 
-            return Ok(photos.Select(x => new PhotoViewModel(x)));
+            // Apply pagination
+            var paginatedPhotos = orderedPhotos
+                .Skip(offset)
+                .Take(count)
+                .ToArray();
+
+            return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
         }
 
         [Authorize(Policy = Policies.Administrator)]

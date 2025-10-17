@@ -104,6 +104,8 @@ export interface PhotoFull {
     faceDetectionStatus: enums.FaceDetectionStatus;
 
     directoryId: number;
+
+    place: PlaceShort | null;
 }
 
 export interface PhotoPatch {

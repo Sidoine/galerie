@@ -51,7 +51,7 @@ class PhotosStore {
     });
   }
 
-  async rotatePhoto(photo: Photo, angle: number) {
+  async rotatePhoto(photo: PhotoFull, angle: number) {
     await this.photoService.rotate(photo.id, { angle });
     this.photoReloadSuffix.set(photo.publicId, Date.now());
     this.imageLoader.cache.clear();
