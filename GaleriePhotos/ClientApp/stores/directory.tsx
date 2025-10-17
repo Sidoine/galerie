@@ -3,9 +3,9 @@ import { createContext, useCallback, useContext, useMemo } from "react";
 import { Href, useRouter } from "expo-router";
 import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
-import { DirectoryFull } from "@/services/views";
 import { PaginatedPhotosStore } from "./paginated-photos";
 import { Text } from "react-native";
+import { useGalleryStore } from "./gallery";
 
 const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);
 
@@ -15,15 +15,19 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   order = "date-asc",
 }: {
   children: React.ReactNode;
-  directoryId: number | undefined;
+  directoryId: number | "index" | undefined;
   order?: "date-asc" | "date-desc";
 }) {
   const router = useRouter();
   const directoriesStore = useDirectoriesStore();
+  const galleryStore = useGalleryStore();
   const galleryId = directoriesStore.galleryId;
+  if (directoryId === "index" || directoryId === undefined) {
+    directoryId = galleryStore.gallery?.rootDirectoryId;
+  }
   const directory = directoryId
     ? directoriesStore.infoLoader.getValue(directoryId)
-    : directoriesStore.root;
+    : null;
   if (directory !== null && directoryId === undefined) {
     directoryId = directory.id;
   }
@@ -87,28 +91,37 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
 
   const breadCrumbs = useMemo<BreadCrumb[]>(() => {
     const crumbs: BreadCrumb[] = [];
-    let current: DirectoryFull | null = directory;
-    while (current) {
-      crumbs.unshift({
-        id: current.id,
-        name: current.name || "Tous les albums",
-        url:
-          current.parent === null
-            ? `/gallery/${galleryId}`
-            : `/gallery/${galleryId}/directory/${current.id}`,
+
+    crumbs.push({
+      id: 0,
+      name: "Tous les albums",
+      url: `/gallery/${galleryId}/directory/index`,
+    });
+
+    if (directory?.parent?.name) {
+      crumbs.push({
+        id: directory.parent.id,
+        name: directory.parent.name,
+        url: `/gallery/${galleryId}/directory/${directory.parent.id}`,
       });
-      current = current.parent
-        ? directoriesStore.infoLoader.getValue(current.parent.id)
-        : null;
+    }
+
+    if (directory) {
+      crumbs.push({
+        id: directory.id,
+        name: directory.name || "Tous les albums",
+        url: `/gallery/${galleryId}/directory/${directory.id}`,
+      });
     }
     return crumbs;
-  }, [directoriesStore.infoLoader, directory, galleryId]);
+  }, [directory, galleryId]);
 
   const hasParent = directory?.parent != null;
 
-  const containersList = directoryId
-    ? directoriesStore.subDirectoriesLoader.getValue(directoryId)
-    : null;
+  const containersList =
+    directoryId && directory
+      ? directoriesStore.subDirectoriesLoader.getValue(directoryId)
+      : null;
 
   const sort = useCallback(
     (by: "date-asc" | "date-desc") => {

@@ -1,6 +1,5 @@
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
-using GaleriePhotos.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GaleriePhotos.Services
+namespace GaleriePhotos.Services.Background
 {
     public class FaceDetectionBackgroundService : BackgroundService
     {

@@ -17,6 +17,7 @@ namespace GaleriePhotos.Data
         public DbSet<Face> Faces { get; set; } = null!;
         public DbSet<FaceName> FaceNames { get; set; } = null!;
         public DbSet<Place> Places { get; set; } = null!;
+    public DbSet<BackgroundServiceState> BackgroundServiceStates { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)
@@ -54,14 +55,11 @@ namespace GaleriePhotos.Data
                     .OnDelete(DeleteBehavior.SetNull);
             });
             
-            // New relationship: Gallery.LastScannedDirectory
-            modelBuilder.Entity<Gallery>(entity =>
+            modelBuilder.Entity<BackgroundServiceState>(entity =>
             {
-                entity.HasOne(g => g.LastScannedDirectory)
-                    .WithMany()
-                    .HasForeignKey(g => g.LastScannedDirectoryId)
-                    .OnDelete(DeleteBehavior.SetNull);
-                entity.HasIndex(g => g.LastScannedDirectoryId);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasMaxLength(128);
+                entity.Property(e => e.State).HasColumnType("jsonb");
             });
             
             // Configure Face entity

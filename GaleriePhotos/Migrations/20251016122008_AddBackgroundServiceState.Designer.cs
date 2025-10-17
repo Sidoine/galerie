@@ -3,6 +3,7 @@ using System;
 using GaleriePhotos.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace GaleriePhotos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251016122008_AddBackgroundServiceState")]
+    partial class AddBackgroundServiceState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -346,9 +349,6 @@ namespace GaleriePhotos.Migrations
                     b.Property<int>("GalleryId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("ParentDirectoryId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("text");
@@ -364,8 +364,6 @@ namespace GaleriePhotos.Migrations
                     b.HasIndex("CoverPhotoId");
 
                     b.HasIndex("GalleryId");
-
-                    b.HasIndex("ParentDirectoryId");
 
                     b.HasIndex("GalleryId", "Path")
                         .IsUnique();
@@ -660,15 +658,9 @@ namespace GaleriePhotos.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GaleriePhotos.Models.PhotoDirectory", "ParentDirectory")
-                        .WithMany()
-                        .HasForeignKey("ParentDirectoryId");
-
                     b.Navigation("CoverPhoto");
 
                     b.Navigation("Gallery");
-
-                    b.Navigation("ParentDirectory");
                 });
 
             modelBuilder.Entity("GaleriePhotos.Models.Place", b =>

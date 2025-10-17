@@ -151,18 +151,29 @@ export const DirectoryView = observer(function DirectoryView({
     };
   }, []);
 
+  // Autorisation de chargement et de rendu des photos uniquement quand l'écran est
+  // effectivement focalisé ET que l'app est active. Cela évite que les images
+  // continuent à se monter/consommer des ressources quand l'utilisateur est sur
+  // un autre onglet / écran.
   const allowAutoLoad = isFocused && isAppActive;
 
   // Chargement initial si pagination
   useEffect(() => {
+    // Empêche le premier chargement si l'écran n'est pas actif.
+    if (!allowAutoLoad) return;
     if (paginatedPhotos.length === 0) {
       paginatedStore.loadInitial();
     }
-  }, [paginatedStore, paginatedPhotos.length]);
+  }, [paginatedStore, paginatedPhotos.length, allowAutoLoad]);
 
   // Construction de la liste plate
   const flatData: DirectoryFlatListItem[] = useMemo(() => {
-    console.log("Rebuild flatData", albumRows.length, paginatedPhotos.length);
+    // Si l'écran est flouté ou l'app inactive, renvoie une liste vide pour que FlashList ne monte pas les images
+    // Cela libère la mémoire GPU et évite les décodages/rafraîchissements.
+    if (!allowAutoLoad) {
+      return [];
+    }
+
     const items: DirectoryFlatListItem[] = [];
 
     if (albumRows.length > 0) {
@@ -229,6 +240,7 @@ export const DirectoryView = observer(function DirectoryView({
     cols,
     groupingStrategy,
     order,
+    allowAutoLoad,
   ]);
 
   // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
@@ -358,10 +370,7 @@ export const DirectoryView = observer(function DirectoryView({
               <View style={styles.sectionTitleRow}>
                 <Text style={styles.sectionTitle}>Photos</Text>
                 {directoryId && (
-                  <DirectoryAdminMenu
-                    directoryId={directoryId}
-                    directoryPath={directoryPath}
-                  />
+                  <DirectoryAdminMenu directoryPath={directoryPath} />
                 )}
               </View>
               <View style={styles.buttonRow}>
@@ -440,6 +449,11 @@ export const DirectoryView = observer(function DirectoryView({
 
   // handlers déjà déclarés plus haut
 
+  // Si l'écran n'est pas focalisé ou l'app inactive on renvoie juste un container vide.
+  if (!allowAutoLoad) {
+    return <View style={{ flex: 1 }} />;
+  }
+
   return (
     <>
       <FlashList
@@ -451,7 +465,7 @@ export const DirectoryView = observer(function DirectoryView({
         onEndReachedThreshold={0.3}
         removeClippedSubviews
         ListFooterComponent={
-          paginatedStore?.isLoading ? (
+          paginatedStore?.isLoading || store.container === null ? (
             <View style={styles.loadingFooter}>
               <ActivityIndicator size="large" />
               <Text style={styles.loadingText}>Chargement des photos...</Text>
@@ -462,7 +476,8 @@ export const DirectoryView = observer(function DirectoryView({
       {paginatedPhotos.length === 0 &&
         !paginatedStore.isLoading &&
         directories &&
-        directories.length === 0 && (
+        directories.length === 0 &&
+        store.container !== null && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>Aucune photo trouvée</Text>
           </View>

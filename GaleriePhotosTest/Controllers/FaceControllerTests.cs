@@ -21,7 +21,7 @@ namespace GaleriePhotosTest.Controllers
 {
     public class TestPhotoService : PhotoService
     {
-        public TestPhotoService(ApplicationDbContext context, DataService dataService) 
+        public TestPhotoService(ApplicationDbContext context, DataService dataService)
             : base(Microsoft.Extensions.Options.Options.Create(new GalerieOptions()), context, new TestLogger<PhotoService>(), dataService)
         {
         }
@@ -86,7 +86,7 @@ namespace GaleriePhotosTest.Controllers
                 HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
             };
 
-            var directory = new PhotoDirectory("Test Directory", 0, null) { Gallery = gallery };
+            var directory = new PhotoDirectory("Test Directory", 0, null, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
 
@@ -105,7 +105,10 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Vector(new float[] { 1.0f, 2.0f }),
-                X = 10, Y = 20, Width = 30, Height = 40,
+                X = 10,
+                Y = 20,
+                Width = 30,
+                Height = 40,
                 FaceNameId = faceNameAlice.Id,
                 FaceName = faceNameAlice
             };
@@ -114,7 +117,10 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Vector(new float[] { 3.0f, 4.0f }),
-                X = 50, Y = 60, Width = 70, Height = 80,
+                X = 50,
+                Y = 60,
+                Width = 70,
+                Height = 80,
                 FaceNameId = faceNameBob.Id,
                 FaceName = faceNameBob
             };
@@ -123,7 +129,10 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Vector(new float[] { 5.0f, 6.0f }),
-                X = 90, Y = 100, Width = 110, Height = 120,
+                X = 90,
+                Y = 100,
+                Width = 110,
+                Height = 120,
                 FaceNameId = faceNameAlice.Id,
                 FaceName = faceNameAlice // Same name as face1
             };
@@ -161,7 +170,7 @@ namespace GaleriePhotosTest.Controllers
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
 
-            var directory = new PhotoDirectory("/test", 0, null) { Gallery = gallery };
+            var directory = new PhotoDirectory("/test", 0, null, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
 
@@ -191,14 +200,20 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo1.Id,
                 Photo = photo1,
                 Embedding = new Vector(new float[] { 1.0f, 2.0f }),
-                X = 10, Y = 20, Width = 30, Height = 40
+                X = 10,
+                Y = 20,
+                Width = 30,
+                Height = 40
             };
             var face2 = new Face
             {
                 PhotoId = photo2.Id,
                 Photo = photo2,
                 Embedding = new Vector(new float[] { 3.0f, 4.0f }),
-                X = 50, Y = 60, Width = 70, Height = 80
+                X = 50,
+                Y = 60,
+                Width = 70,
+                Height = 80
             };
 
             context.Faces.AddRange(face1, face2);
@@ -232,7 +247,7 @@ namespace GaleriePhotosTest.Controllers
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
-            var directory = new PhotoDirectory("/", 0, null) { Gallery = gallery };
+            var directory = new PhotoDirectory("/", 0, null, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
@@ -258,7 +273,10 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Vector(new float[] { 1.0f, 2.0f }),
-                X = 10, Y = 20, Width = 30, Height = 40
+                X = 10,
+                Y = 20,
+                Width = 30,
+                Height = 40
             };
             context.Faces.Add(face);
             await context.SaveChangesAsync();
@@ -269,7 +287,7 @@ namespace GaleriePhotosTest.Controllers
 
             // Assert
             Assert.IsType<OkResult>(result);
-            
+
             // Verify face was updated
             var updatedFace = await context.Faces
                 .Include(f => f.FaceName)
@@ -295,7 +313,7 @@ namespace GaleriePhotosTest.Controllers
 
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
-            var directory = new PhotoDirectory("", 0, null) { Gallery = gallery };
+            var directory = new PhotoDirectory("", 0, null, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             var photo = new Photo("test.jpg") { Directory = directory };
             context.Photos.Add(photo);
@@ -321,7 +339,10 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Vector(new float[] { 0.11f, 0.22f }),
-                X = 1, Y = 2, Width = 3, Height = 4
+                X = 1,
+                Y = 2,
+                Width = 3,
+                Height = 4
             };
             context.Faces.Add(face);
             await context.SaveChangesAsync();
@@ -332,7 +353,7 @@ namespace GaleriePhotosTest.Controllers
             Assert.Null(vm.Name);
         }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact(Skip = "Can only be run on PostgreSQL")]
         public async Task DeleteFace_ReturnsNotFound_WhenGalleryDoesNotExist()
         {
             using var context = GetInMemoryContext();
@@ -353,7 +374,7 @@ namespace GaleriePhotosTest.Controllers
             Assert.IsType<NotFoundResult>(result);
         }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact(Skip = "Can only be run on PostgreSQL")]
         public async Task DeleteFace_ReturnsForbid_WhenUserNotGalleryAdmin()
         {
             using var context = GetInMemoryContext();
@@ -387,7 +408,7 @@ namespace GaleriePhotosTest.Controllers
             Assert.IsType<ForbidResult>(result);
         }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact(Skip = "Can only be run on PostgreSQL")]
         public async Task DeleteFace_ReturnsNoContent_OnSuccess()
         {
             using var context = GetInMemoryContext();
@@ -416,7 +437,7 @@ namespace GaleriePhotosTest.Controllers
                 HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
             };
 
-            var directory = new PhotoDirectory("/", 0, null) { Gallery = gallery };
+            var directory = new PhotoDirectory("/", 0, null, null) { Gallery = gallery };
             context.PhotoDirectories.Add(directory);
             var photo = new Photo("p.jpg") { Directory = directory };
             context.Photos.Add(photo);
@@ -426,7 +447,10 @@ namespace GaleriePhotosTest.Controllers
                 PhotoId = photo.Id,
                 Photo = photo,
                 Embedding = new Pgvector.Vector(new float[] { 0.1f, 0.2f }),
-                X = 1, Y = 2, Width = 3, Height = 4
+                X = 1,
+                Y = 2,
+                Width = 3,
+                Height = 4
             };
             context.Faces.Add(face);
             await context.SaveChangesAsync();

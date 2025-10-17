@@ -30,8 +30,8 @@ namespace GaleriePhotosTest.Controllers
             db.Galleries.Add(gallery);
             await db.SaveChangesAsync();
 
-            var dir1 = new PhotoDirectory("Album1", 0, null) { Gallery = gallery };
-            var dir2 = new PhotoDirectory("Album2", 0, null) { Gallery = gallery };
+            var dir1 = new PhotoDirectory("Album1", 0, null, null) { Gallery = gallery };
+            var dir2 = new PhotoDirectory("Album2", 0, null, dir1.Id) { Gallery = gallery };
             db.PhotoDirectories.AddRange(dir1, dir2);
             await db.SaveChangesAsync();
 

@@ -1,6 +1,6 @@
 import { Drawer } from "expo-router/drawer";
 import { DirectoriesStoreProvider } from "@/stores/directories";
-import { useGlobalSearchParams } from "expo-router";
+import { useGlobalSearchParams, useLocalSearchParams } from "expo-router";
 import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
@@ -221,7 +221,11 @@ export default function GalleryLayout() {
                     >
                       <DirectoryStoreProvider
                         directoryId={
-                          directoryId ? Number(directoryId) : undefined
+                          directoryId
+                            ? directoryId === "index"
+                              ? directoryId
+                              : Number(directoryId)
+                            : undefined
                         }
                         order={order}
                       >

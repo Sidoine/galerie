@@ -26,7 +26,7 @@ namespace GaleriePhotos.Services
         public async Task<(DateTime Min, DateTime Max)> GetPhotoDateRangeAsync(PhotoDirectory directory)
         {
             var query = dbContext.Photos.Where(p => p.DirectoryId == directory.Id);
-            if (!await query.AnyAsync()) return (DateTime.MinValue, DateTime.MaxValue);
+            if (!await query.AnyAsync()) return (DateTime.UtcNow, DateTime.UtcNow);
             var min = await query.MinAsync(p => p.DateTime);
             var max = await query.MaxAsync(p => p.DateTime);
             return (min, max);

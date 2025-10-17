@@ -75,13 +75,13 @@ export class PaginatedPhotosStore {
     if (densityPerDay < 2 && totalMonths > 12) {
       // Calcul du nombre de mois pour approcher la cible
       let months = Math.ceil(target / Math.max(1, densityPerMonth));
-      months = Math.min(Math.max(months, 1), 12); // min 1 mois, max 1 an
+      months = Math.min(Math.max(months, 1), 2); // min 1 mois, max 2 mois
       return { mode: "months", size: months };
     }
 
     // Mode jours
     let days = Math.ceil(target / Math.max(1, densityPerDay));
-    days = Math.min(Math.max(days, 7), 120); // 1 semaine à 4 mois
+    days = Math.min(Math.max(days, 3), 15); // 3 jours à 15 jours
     return { mode: "days", size: days };
   }
 
@@ -112,7 +112,8 @@ export class PaginatedPhotosStore {
    * @param initial Indique s'il s'agit du premier chargement
    */
   private async loadChunk() {
-    if (this.isLoading || !this.container) return;
+    if (this.isLoading || !this.container || !this.container.numberOfPhotos)
+      return;
     runInAction(() => {
       this.isLoading = true;
       this.error = null;
@@ -121,6 +122,7 @@ export class PaginatedPhotosStore {
     try {
       if (!this.lastLimitDate) return; // rien à faire
       const endDate = new Date(this.lastLimitDate);
+      endDate.setDate(endDate.getDate() + 1); // borne exclusive
       const startDate = new Date(this.lastLimitDate);
 
       // Appliquer la fenêtre de chunk

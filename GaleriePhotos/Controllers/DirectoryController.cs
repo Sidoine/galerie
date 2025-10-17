@@ -22,41 +22,13 @@ namespace Galerie.Server.Controllers
     {
         private readonly PhotoService photoService;
         private readonly ApplicationDbContext applicationDbContext;
-        private readonly DataService dataService;
         private readonly DirectoryService directoryService;
 
-        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService, DirectoryService directoryService)
+        public DirectoryController(PhotoService photoService, ApplicationDbContext applicationDbContext, DirectoryService directoryService)
         {
             this.photoService = photoService;
             this.applicationDbContext = applicationDbContext;
-            this.dataService = dataService;
             this.directoryService = directoryService;
-        }
-
-        // New: get root directory for a specific gallery (used when galleryId is in the URL)
-        [HttpGet("root/{galleryId}")]
-        public async Task<ActionResult<DirectoryFullViewModel>> GetGalleryRoot(int galleryId)
-        {
-            var userId = User.GetUserId();
-            if (userId == null) return Unauthorized();
-
-            var isMember = await applicationDbContext.GalleryMembers.AnyAsync(gm => gm.UserId == userId && gm.GalleryId == galleryId);
-            if (!isMember) return Forbid();
-
-            var gallery = await applicationDbContext.Galleries.FindAsync(galleryId);
-
-            if (gallery == null || !dataService.GetDataProvider(gallery).IsSetup) return NotFound();
-
-            var galleryRootDirectory = await photoService.GetRootDirectory(gallery);
-            var (minRoot, maxRoot) = await directoryService.GetPhotoDateRangeAsync(galleryRootDirectory);
-            var rootVm = new DirectoryFullViewModel(galleryRootDirectory, null,
-                await photoService.GetNumberOfPhotos(galleryRootDirectory),
-                await photoService.GetNumberOfSubDirectories(galleryRootDirectory))
-            {
-                MinDate = minRoot,
-                MaxDate = maxRoot
-            };
-            return Ok(rootVm);
         }
 
         [HttpGet("{id}")]
@@ -65,18 +37,20 @@ namespace Galerie.Server.Controllers
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
 
-            // Use new gallery-aware visibility check, fallback to claims-based for administrators
-            if (!User.IsAdministrator() && !photoService.IsDirectoryVisible(User, directory))
+            if (!photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
             }
 
-            var parent = directory.Path != "" ? Path.GetDirectoryName(directory.Path) : null;
-            var parentDirectory = parent != null ? await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Include(x => x.CoverPhoto).FirstOrDefaultAsync(x => x.Path == parent && x.GalleryId == directory.GalleryId) : null;
+            var parentDirectory = directory.ParentDirectoryId != null ?
+                    await applicationDbContext.PhotoDirectories.Include(x => x.Gallery).Include(x => x.CoverPhoto).FirstOrDefaultAsync(x => x.Id == directory.ParentDirectoryId) : null;
+            await photoService.ScanDirectory(directory);
+            var numberOfPhotos = await photoService.GetNumberOfPhotos(directory);
+            var numberOfSubDirectories = await photoService.GetNumberOfSubDirectories(directory);
             var (min, max) = await directoryService.GetPhotoDateRangeAsync(directory);
             var dirVm = new DirectoryFullViewModel(directory, parentDirectory,
-                await photoService.GetNumberOfPhotos(directory),
-                await photoService.GetNumberOfSubDirectories(directory))
+                numberOfPhotos,
+                numberOfSubDirectories)
             {
                 MinDate = min,
                 MaxDate = max
@@ -98,7 +72,7 @@ namespace Galerie.Server.Controllers
 
             var subDirectories = await photoService.GetSubDirectories(directory);
             if (subDirectories == null) return NotFound();
-       
+
             var visible = subDirectories.Where(x => photoService.IsDirectoryVisible(User, x));
             var tasks = visible.Select(async x => new DirectoryViewModel(x, await photoService.GetNumberOfPhotos(x), await photoService.GetNumberOfSubDirectories(x)));
             var results = await Task.WhenAll(tasks);
@@ -119,16 +93,16 @@ namespace Galerie.Server.Controllers
 
             var photos = await photoService.GetDirectoryImages(directory);
             if (photos == null) return NotFound();
-            
+
             // Apply date filtering if specified
             if (startDate.HasValue || endDate.HasValue)
             {
-                photos = photos.Where(p => 
+                photos = photos.Where(p =>
                     (!startDate.HasValue || p.DateTime >= startDate.Value) &&
                     (!endDate.HasValue || p.DateTime <= endDate.Value)
                 ).ToArray();
             }
-            
+
             return Ok(photos.Select(x => new PhotoViewModel(x)));
         }
 
@@ -161,7 +135,7 @@ namespace Galerie.Server.Controllers
             {
                 return Forbid();
             }
-            
+
             var parentDirectory = await photoService.GetParentDirectory(directory);
             if (parentDirectory == null) return BadRequest("No parent directory found");
 

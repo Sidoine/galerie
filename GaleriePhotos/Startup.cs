@@ -1,6 +1,7 @@
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using GaleriePhotos.Services;
+using GaleriePhotos.Services.Background;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -81,6 +82,7 @@ namespace GaleriePhotos
             services.Configure<GalerieOptions>(Configuration.GetSection("Galerie"));
             services.Configure<AdministratorOptions>(Configuration.GetSection("Administrator"));
             services.AddSingleton<DataService>();
+            services.AddSingleton<BackgroundStateService>();
             services.AddScoped<PhotoService>();
             services.AddScoped<SeedingService>();
             services.AddScoped<FaceDetectionService>();
@@ -92,6 +94,8 @@ namespace GaleriePhotos
             services.AddHttpClient<GeocodingService>();
             services.AddScoped<DirectoryService>();
             services.AddHostedService<PlaceLocationBackgroundService>();
+            services.AddHostedService<PhotoCaptureDateBackfillBackgroundService>();
+            services.AddHostedService<PhotoGpsBackfillBackgroundService>();
             services.AddHostedService<GalleryScanBackgroundService>();
 
             services.AddAuthorization(options =>

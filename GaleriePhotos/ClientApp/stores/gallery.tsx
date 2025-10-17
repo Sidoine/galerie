@@ -9,9 +9,14 @@ import {
 } from "./photo-container";
 import { useGalleriesStore } from "./galleries";
 import { PaginatedPhotosStore } from "./paginated-photos";
+import { GalleryFull } from "@/services/views";
 
-// Contexte pour une galerie entière comme conteneur de photos
-const GalleryStoreContext = createContext<PhotoContainerStore | null>(null);
+export interface GalleryStore extends PhotoContainerStore {
+  galleryId: number;
+  gallery: GalleryFull | null;
+}
+
+const GalleryStoreContext = createContext<GalleryStore | null>(null);
 
 const emptyPhotoContainersList: PhotoContainer[] = [];
 
@@ -21,7 +26,7 @@ export const GalleryStoreProvider = observer(function GalleryStoreProvider({
   order = "date-desc",
 }: {
   children: React.ReactNode;
-  galleryId: number | undefined;
+  galleryId: number;
   order?: "date-asc" | "date-desc";
 }) {
   const router = useRouter();
@@ -96,7 +101,7 @@ export const GalleryStoreProvider = observer(function GalleryStoreProvider({
     return new PaginatedPhotosStore(gallery, loadPhotos, sortOrder);
   }, [galleriesStore, gallery, galleryId, order]);
 
-  const galleryStore = useMemo<PhotoContainerStore>(
+  const galleryStore = useMemo<GalleryStore>(
     () => ({
       navigateToPhoto: (photoId: number) => navigateToPhoto(photoId),
       navigateToContainer,
@@ -117,6 +122,8 @@ export const GalleryStoreProvider = observer(function GalleryStoreProvider({
       childContainersHeader: <Text>Albums</Text>,
       getChildContainerLink,
       paginatedPhotosStore,
+      galleryId,
+      gallery,
     }),
     [
       navigateToContainer,
