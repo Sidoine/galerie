@@ -266,5 +266,79 @@ namespace GaleriePhotos.Services
 
             return namedFaces;
         }
+
+        /// <summary>
+        /// Process unnamed faces and automatically assign names based on similarity with named faces.
+        /// Returns the number of faces that were successfully auto-named.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID to process faces for</param>
+        /// <param name="threshold">Similarity threshold for auto-naming (L2 distance)</param>
+        /// <param name="batchSize">Maximum number of faces to process in one call</param>
+        /// <returns>Number of faces that were auto-named</returns>
+        public async Task<int> AutoNameSimilarFacesAsync(int galleryId, float threshold = 0.6f, int batchSize = 10)
+        {
+            try
+            {
+                // Get unnamed faces from the gallery
+                var unnamedFaces = await applicationDbContext.Faces
+                    .Include(f => f.Photo)
+                        .ThenInclude(p => p.Directory)
+                    .Where(f => f.FaceNameId == null && f.Photo.Directory.GalleryId == galleryId)
+                    .OrderBy(f => f.Id)
+                    .Take(batchSize)
+                    .ToListAsync();
+
+                if (!unnamedFaces.Any())
+                {
+                    logger.LogDebug("No unnamed faces found for gallery {GalleryId}", galleryId);
+                    return 0;
+                }
+
+                int namedCount = 0;
+
+                foreach (var unnamedFace in unnamedFaces)
+                {
+                    try
+                    {
+                        // Find the most similar named face
+                        var suggestedName = await applicationDbContext.Faces
+                            .Include(f => f.FaceName)
+                            .Where(f => f.FaceNameId != null 
+                                && f.Photo.Directory.GalleryId == galleryId 
+                                && f.Embedding.L2Distance(unnamedFace.Embedding) < threshold)
+                            .OrderBy(f => f.Embedding.L2Distance(unnamedFace.Embedding))
+                            .Select(f => f.FaceName)
+                            .FirstOrDefaultAsync();
+
+                        if (suggestedName != null)
+                        {
+                            unnamedFace.FaceNameId = suggestedName.Id;
+                            unnamedFace.NamedAt = DateTime.UtcNow;
+                            namedCount++;
+                            
+                            logger.LogInformation("Auto-assigned name '{Name}' to face {FaceId} in gallery {GalleryId}", 
+                                suggestedName.Name, unnamedFace.Id, galleryId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error processing unnamed face {FaceId} for auto-naming", unnamedFace.Id);
+                    }
+                }
+
+                if (namedCount > 0)
+                {
+                    await applicationDbContext.SaveChangesAsync();
+                    logger.LogInformation("Successfully auto-named {Count} faces in gallery {GalleryId}", namedCount, galleryId);
+                }
+
+                return namedCount;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in AutoNameSimilarFacesAsync for gallery {GalleryId}", galleryId);
+                return 0;
+            }
+        }
     }
 }

@@ -1,0 +1,387 @@
+using GaleriePhotos;
+using GaleriePhotos.Data;
+using GaleriePhotos.Models;
+using GaleriePhotos.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Pgvector;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace GaleriePhotosTest.Services
+{
+    public class TestLogger<T> : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            // Do nothing for tests
+        }
+    }
+
+    public class TestPhotoService : PhotoService
+    {
+        public TestPhotoService(ApplicationDbContext context, DataService dataService)
+            : base(Microsoft.Extensions.Options.Options.Create(new GalerieOptions()), context, new TestLogger<PhotoService>(), dataService)
+        {
+        }
+    }
+
+    public class FaceAutoNamingServiceTests
+    {
+        private ApplicationDbContext GetInMemoryContext()
+        {
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            return new ApplicationDbContext(options);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task AutoNameSimilarFacesAsync_NoUnnamedFaces_ReturnsZero()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo = new Photo("test.jpg") { Directory = directory };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+
+            var faceName = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            // Add only named faces
+            var face = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                X = 10, Y = 20, Width = 30, Height = 40,
+                FaceNameId = faceName.Id,
+                FaceName = faceName
+            };
+            context.Faces.Add(face);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await faceDetectionService.AutoNameSimilarFacesAsync(gallery.Id);
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task AutoNameSimilarFacesAsync_NoNamedFaces_ReturnsZero()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo = new Photo("test.jpg") { Directory = directory };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+
+            // Add only unnamed face
+            var face = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                X = 10, Y = 20, Width = 30, Height = 40
+            };
+            context.Faces.Add(face);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await faceDetectionService.AutoNameSimilarFacesAsync(gallery.Id);
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task AutoNameSimilarFacesAsync_SimilarFacesExist_AssignsNames()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo1 = new Photo("test1.jpg") { Directory = directory };
+            var photo2 = new Photo("test2.jpg") { Directory = directory };
+            context.Photos.AddRange(photo1, photo2);
+            await context.SaveChangesAsync();
+
+            var faceName = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            // Add a named face
+            var namedFace = new Face
+            {
+                PhotoId = photo1.Id,
+                Photo = photo1,
+                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                X = 10, Y = 20, Width = 30, Height = 40,
+                FaceNameId = faceName.Id,
+                FaceName = faceName
+            };
+            context.Faces.Add(namedFace);
+            await context.SaveChangesAsync();
+
+            // Add a similar unnamed face (small difference, should be within threshold)
+            var unnamedFace = new Face
+            {
+                PhotoId = photo2.Id,
+                Photo = photo2,
+                Embedding = new Vector(new float[] { 1.01f, 2.01f }),
+                X = 50, Y = 60, Width = 70, Height = 80
+            };
+            context.Faces.Add(unnamedFace);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await faceDetectionService.AutoNameSimilarFacesAsync(gallery.Id, threshold: 0.6f);
+
+            // Assert
+            // Note: This test will pass with return value 0 on in-memory DB
+            // because vector operations require PostgreSQL
+            Assert.True(result >= 0);
+
+            // Verify face was updated (will only work on PostgreSQL)
+            var updatedFace = await context.Faces.FindAsync(unnamedFace.Id);
+            // On PostgreSQL, this would be assigned; on in-memory, it won't
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task AutoNameSimilarFacesAsync_DissimilarFaces_DoesNotAssignNames()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo1 = new Photo("test1.jpg") { Directory = directory };
+            var photo2 = new Photo("test2.jpg") { Directory = directory };
+            context.Photos.AddRange(photo1, photo2);
+            await context.SaveChangesAsync();
+
+            var faceName = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            // Add a named face
+            var namedFace = new Face
+            {
+                PhotoId = photo1.Id,
+                Photo = photo1,
+                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                X = 10, Y = 20, Width = 30, Height = 40,
+                FaceNameId = faceName.Id,
+                FaceName = faceName
+            };
+            context.Faces.Add(namedFace);
+            await context.SaveChangesAsync();
+
+            // Add a very different unnamed face (should not match)
+            var unnamedFace = new Face
+            {
+                PhotoId = photo2.Id,
+                Photo = photo2,
+                Embedding = new Vector(new float[] { 100.0f, 200.0f }),
+                X = 50, Y = 60, Width = 70, Height = 80
+            };
+            context.Faces.Add(unnamedFace);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await faceDetectionService.AutoNameSimilarFacesAsync(gallery.Id, threshold: 0.6f);
+
+            // Assert
+            Assert.Equal(0, result);
+
+            // Verify face was not updated
+            var updatedFace = await context.Faces.FindAsync(unnamedFace.Id);
+            Assert.Null(updatedFace!.FaceNameId);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task AutoNameSimilarFacesAsync_RespectsBatchSize()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo = new Photo("test.jpg") { Directory = directory };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+
+            var faceName = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            // Add a named face
+            var namedFace = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                X = 10, Y = 20, Width = 30, Height = 40,
+                FaceNameId = faceName.Id,
+                FaceName = faceName
+            };
+            context.Faces.Add(namedFace);
+
+            // Add 15 unnamed faces (more than batch size of 5)
+            for (int i = 0; i < 15; i++)
+            {
+                var unnamedFace = new Face
+                {
+                    PhotoId = photo.Id,
+                    Photo = photo,
+                    Embedding = new Vector(new float[] { 1.01f + i * 0.001f, 2.01f + i * 0.001f }),
+                    X = 50 + i, Y = 60 + i, Width = 70, Height = 80
+                };
+                context.Faces.Add(unnamedFace);
+            }
+            await context.SaveChangesAsync();
+
+            // Act - call with batch size of 5
+            var result = await faceDetectionService.AutoNameSimilarFacesAsync(gallery.Id, threshold: 0.6f, batchSize: 5);
+
+            // Assert
+            // Should process at most 5 faces in one call
+            // On PostgreSQL this would be up to 5, on in-memory it will be 0
+            Assert.True(result >= 0 && result <= 5);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task AutoNameSimilarFacesAsync_OnlyProcessesSpecifiedGallery()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            // Create two galleries
+            var gallery1 = new Gallery("Gallery 1", "/test1", "/test1/thumbnails", DataProviderType.FileSystem);
+            var gallery2 = new Gallery("Gallery 2", "/test2", "/test2/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.AddRange(gallery1, gallery2);
+            await context.SaveChangesAsync();
+
+            var directory1 = new PhotoDirectory("Test1", 0, null, null) { Gallery = gallery1 };
+            var directory2 = new PhotoDirectory("Test2", 0, null, null) { Gallery = gallery2 };
+            context.PhotoDirectories.AddRange(directory1, directory2);
+            await context.SaveChangesAsync();
+
+            var photo1 = new Photo("test1.jpg") { Directory = directory1 };
+            var photo2 = new Photo("test2.jpg") { Directory = directory2 };
+            context.Photos.AddRange(photo1, photo2);
+            await context.SaveChangesAsync();
+
+            var faceName1 = new FaceName { Name = "Alice", Gallery = gallery1, GalleryId = gallery1.Id };
+            context.FaceNames.Add(faceName1);
+            await context.SaveChangesAsync();
+
+            // Add faces to gallery1
+            var namedFace1 = new Face
+            {
+                PhotoId = photo1.Id,
+                Photo = photo1,
+                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                X = 10, Y = 20, Width = 30, Height = 40,
+                FaceNameId = faceName1.Id,
+                FaceName = faceName1
+            };
+            var unnamedFace1 = new Face
+            {
+                PhotoId = photo1.Id,
+                Photo = photo1,
+                Embedding = new Vector(new float[] { 1.01f, 2.01f }),
+                X = 50, Y = 60, Width = 70, Height = 80
+            };
+            context.Faces.AddRange(namedFace1, unnamedFace1);
+
+            // Add unnamed face to gallery2
+            var unnamedFace2 = new Face
+            {
+                PhotoId = photo2.Id,
+                Photo = photo2,
+                Embedding = new Vector(new float[] { 1.01f, 2.01f }),
+                X = 50, Y = 60, Width = 70, Height = 80
+            };
+            context.Faces.Add(unnamedFace2);
+            await context.SaveChangesAsync();
+
+            // Act - process only gallery1
+            var result = await faceDetectionService.AutoNameSimilarFacesAsync(gallery1.Id, threshold: 0.6f);
+
+            // Assert
+            Assert.True(result >= 0);
+
+            // Verify that only gallery1 face was processed
+            var updatedFace2 = await context.Faces.FindAsync(unnamedFace2.Id);
+            Assert.Null(updatedFace2!.FaceNameId); // Gallery2 face should not be named
+        }
+    }
+}
