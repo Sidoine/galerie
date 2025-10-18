@@ -30,6 +30,8 @@ namespace GaleriePhotos.Models
         
         public int? FaceNameId { get; set; }
         
+        public int? AutoNamedFromFaceId { get; set; }
+        
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime? NamedAt { get; set; }
@@ -37,5 +39,6 @@ namespace GaleriePhotos.Models
         // Navigation properties
         public required Photo Photo { get; set; }
         public FaceName? FaceName { get; set; }
+        public Face? AutoNamedFromFace { get; set; }
     }
 }

@@ -301,23 +301,22 @@ namespace GaleriePhotos.Services
                     try
                     {
                         // Find the most similar named face
-                        var suggestedName = await applicationDbContext.Faces
-                            .Include(f => f.FaceName)
+                        var mostSimilarFace = await applicationDbContext.Faces
                             .Where(f => f.FaceNameId != null 
                                 && f.Photo.Directory.GalleryId == galleryId 
                                 && f.Embedding.L2Distance(unnamedFace.Embedding) < threshold)
                             .OrderBy(f => f.Embedding.L2Distance(unnamedFace.Embedding))
-                            .Select(f => f.FaceName)
                             .FirstOrDefaultAsync();
 
-                        if (suggestedName != null)
+                        if (mostSimilarFace != null)
                         {
-                            unnamedFace.FaceNameId = suggestedName.Id;
+                            unnamedFace.FaceNameId = mostSimilarFace.FaceNameId;
+                            unnamedFace.AutoNamedFromFaceId = mostSimilarFace.Id;
                             unnamedFace.NamedAt = DateTime.UtcNow;
                             namedCount++;
                             
-                            logger.LogInformation("Auto-assigned name '{Name}' to face {FaceId} in gallery {GalleryId}", 
-                                suggestedName.Name, unnamedFace.Id, galleryId);
+                            logger.LogInformation("Auto-assigned name '{Name}' to face {FaceId} from reference face {ReferenceFaceId} in gallery {GalleryId}", 
+                                mostSimilarFace.FaceName?.Name, unnamedFace.Id, mostSimilarFace.Id, galleryId);
                         }
                     }
                     catch (Exception ex)

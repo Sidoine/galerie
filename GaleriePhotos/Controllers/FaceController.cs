@@ -87,6 +87,7 @@ namespace GaleriePhotos.Controllers
                 Name = null,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
+                AutoNamedFromFaceId = f.AutoNamedFromFaceId,
             }).ToArray();
 
             return Ok(result);
@@ -113,6 +114,7 @@ namespace GaleriePhotos.Controllers
                 Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
+                AutoNamedFromFaceId = f.AutoNamedFromFaceId,
             }).ToArray();
 
             return Ok(result);
@@ -147,6 +149,7 @@ namespace GaleriePhotos.Controllers
                 Name = f.FaceName?.Name,
                 CreatedAt = f.CreatedAt,
                 NamedAt = f.NamedAt,
+                AutoNamedFromFaceId = f.AutoNamedFromFaceId,
             }).ToArray();
 
             return Ok(result);
@@ -352,6 +355,89 @@ namespace GaleriePhotos.Controllers
             await applicationDbContext.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Gets random pairs of auto-named faces with their reference faces for verification.
+        /// Used in the dashboard to verify the relevance of auto-naming parameters.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID</param>
+        /// <param name="count">Number of random pairs to return (default: 10, max: 50)</param>
+        /// <returns>List of auto-named face pairs</returns>
+        [HttpGet("{galleryId}/faces/auto-named-pairs")]
+        public async Task<ActionResult<AutoNamedFacePairViewModel[]>> GetAutoNamedFacePairs(int galleryId, [FromQuery] int count = 10)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            if (count <= 0) count = 10;
+            if (count > 50) count = 50;
+
+            // Get all auto-named faces with their reference faces
+            var autoNamedFaces = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                .Include(f => f.FaceName)
+                .Include(f => f.AutoNamedFromFace)
+                    .ThenInclude(rf => rf!.Photo)
+                .Where(f => f.AutoNamedFromFaceId != null && f.Photo.Directory.GalleryId == galleryId)
+                .OrderBy(f => Guid.NewGuid()) // Random order
+                .Take(count)
+                .ToListAsync();
+
+            var result = autoNamedFaces.Select(f => new AutoNamedFacePairViewModel
+            {
+                FaceId = f.Id,
+                PhotoId = f.PhotoId,
+                Name = f.FaceName?.Name,
+                X = f.X,
+                Y = f.Y,
+                Width = f.Width,
+                Height = f.Height,
+                NamedAt = f.NamedAt,
+                ReferenceFaceId = f.AutoNamedFromFace!.Id,
+                ReferencePhotoId = f.AutoNamedFromFace.PhotoId,
+                ReferenceX = f.AutoNamedFromFace.X,
+                ReferenceY = f.AutoNamedFromFace.Y,
+                ReferenceWidth = f.AutoNamedFromFace.Width,
+                ReferenceHeight = f.AutoNamedFromFace.Height
+            }).ToArray();
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Removes the auto-assigned name from a face (undo auto-naming operation).
+        /// This keeps the face but removes its name and reference to the model face.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID</param>
+        /// <param name="faceId">Face ID to remove auto-naming from</param>
+        [HttpPost("{galleryId}/faces/{faceId}/undo-auto-name")]
+        public async Task<ActionResult> UndoAutoNaming(int galleryId, int faceId)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            // Get the face and ensure it belongs to the gallery and was auto-named
+            var face = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                    .ThenInclude(p => p.Directory)
+                .Where(f => f.Id == faceId 
+                    && f.Photo.Directory.GalleryId == galleryId 
+                    && f.AutoNamedFromFaceId != null)
+                .FirstOrDefaultAsync();
+
+            if (face == null) return NotFound("Face not found or was not auto-named");
+
+            // Remove the auto-naming
+            face.FaceNameId = null;
+            face.AutoNamedFromFaceId = null;
+            face.NamedAt = null;
+
+            await applicationDbContext.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }
