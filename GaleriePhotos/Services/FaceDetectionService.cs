@@ -44,7 +44,7 @@ namespace GaleriePhotos.Services
             try
             {
                 logger.LogInformation("Processing photo {PhotoId} for face detection", photo.Id);
-                
+
                 // Check if photo is an image (not video)
                 if (PhotoService.IsVideo(photo))
                 {
@@ -86,7 +86,7 @@ namespace GaleriePhotos.Services
                 }
 
                 var dataProvider = dataService.GetDataProvider(photoDirectory.Gallery);
-                
+
                 // Open the photo file
                 using var fileStream = await dataProvider.OpenFileRead(photo);
                 if (fileStream == null)
@@ -101,9 +101,9 @@ namespace GaleriePhotos.Services
                 // Load the image
                 using var image = await Image.LoadAsync<Rgb24>(fileStream);
                 image.Mutate(x => x.AutoOrient());
-                
+
                 logger.LogInformation("Face detection processing photo {PhotoId}", photo.Id);
-                
+
                 // Placeholder - in actual implementation, this would detect faces and create Face entities
                 var detectedFaces = faceDetector.DetectFaces(image);
                 foreach (var detectedFace in detectedFaces)
@@ -127,7 +127,7 @@ namespace GaleriePhotos.Services
                         };
                         await applicationDbContext.Faces.AddAsync(face);
                         await applicationDbContext.SaveChangesAsync(); // Save to get the face ID
-                        
+
                         // Generate thumbnail for the face
                         try
                         {
@@ -167,7 +167,7 @@ namespace GaleriePhotos.Services
             }
 
             // Find similar unnamed faces using cosine similarity
-            var unnamedFaces = await applicationDbContext.Faces.FromSql($@"SELECT f.""Id"", f.""CreatedAt"", f.""Embedding"", f.""FaceNameId"", f.""Height"", f.""NamedAt"", f.""PhotoId"", f.""Width"", f.""X"", f.""Y"", f.""Embedding"" AS c
+            var unnamedFaces = await applicationDbContext.Faces.FromSql($@"SELECT f.* AS c
     FROM ""Faces"" AS f
     LEFT JOIN ""FaceNames"" AS f0 ON f.""FaceNameId"" = f0.""Id""
 	LEFT JOIN ""Photos"" AS ph ON f.""PhotoId"" = ph.""Id""
@@ -206,7 +206,7 @@ namespace GaleriePhotos.Services
                 // Find or create the FaceName
                 var faceName = await applicationDbContext.FaceNames
                     .FirstOrDefaultAsync(fn => fn.Name == name && fn.GalleryId == gallery.Id);
-                
+
                 if (faceName == null)
                 {
                     faceName = new FaceName { Name = name, Gallery = gallery, GalleryId = gallery.Id };
@@ -219,7 +219,7 @@ namespace GaleriePhotos.Services
 
                 await applicationDbContext.SaveChangesAsync();
                 logger.LogInformation("Assigned name '{Name}' to face {FaceId}", name, faceId);
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -302,8 +302,8 @@ namespace GaleriePhotos.Services
                     {
                         // Find the most similar named face
                         var mostSimilarFace = await applicationDbContext.Faces
-                            .Where(f => f.FaceNameId != null 
-                                && f.Photo.Directory.GalleryId == galleryId 
+                            .Where(f => f.FaceNameId != null
+                                && f.Photo.Directory.GalleryId == galleryId
                                 && f.Embedding.L2Distance(unnamedFace.Embedding) < threshold)
                             .OrderBy(f => f.Embedding.L2Distance(unnamedFace.Embedding))
                             .FirstOrDefaultAsync();
@@ -314,8 +314,8 @@ namespace GaleriePhotos.Services
                             unnamedFace.AutoNamedFromFaceId = mostSimilarFace.Id;
                             unnamedFace.NamedAt = DateTime.UtcNow;
                             namedCount++;
-                            
-                            logger.LogInformation("Auto-assigned name '{Name}' to face {FaceId} from reference face {ReferenceFaceId} in gallery {GalleryId}", 
+
+                            logger.LogInformation("Auto-assigned name '{Name}' to face {FaceId} from reference face {ReferenceFaceId} in gallery {GalleryId}",
                                 mostSimilarFace.FaceName?.Name, unnamedFace.Id, mostSimilarFace.Id, galleryId);
                         }
                     }
