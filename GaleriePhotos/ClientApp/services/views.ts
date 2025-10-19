@@ -242,6 +242,12 @@ export interface AlbumFilenameDateMismatchInfo {
     firstPhotoId: number;
 }
 
+export interface AutoNamedFaceSampleInfo {
+    faceId: number;
+
+    autoNamedFromFaceId: number;
+}
+
 export interface DashboardStatistics {
     photosWithoutGpsCount: number;
 
@@ -254,6 +260,10 @@ export interface DashboardStatistics {
     albumsWithPhotosWithFilenameDateMismatchCount: number;
 
     albumsWithFilenameDateMismatch: AlbumFilenameDateMismatchInfo[];
+
+    autoNamedFacesCount: number;
+
+    autoNamedFaceSamples: AutoNamedFaceSampleInfo[];
 }
 
 export interface GalleryDirectoryVisibility {
@@ -312,6 +322,8 @@ export interface Face {
     createdAt: string;
 
     namedAt: string | null;
+
+    autoNamedFromFaceId: number | null;
 }
 
 export interface UnnamedFacesSampleRequest {
@@ -348,6 +360,36 @@ export interface FaceNameSuggestionRequest {
 
 export interface FaceNameSuggestionResponse {
     name: string | null;
+}
+
+export interface AutoNamedFacePair {
+    faceId: number;
+
+    photoId: number;
+
+    name: string | null;
+
+    x: number;
+
+    y: number;
+
+    width: number;
+
+    height: number;
+
+    namedAt: string | null;
+
+    referenceFaceId: number;
+
+    referencePhotoId: number;
+
+    referenceX: number;
+
+    referenceY: number;
+
+    referenceWidth: number;
+
+    referenceHeight: number;
 }
 
 export interface GalleryFull {

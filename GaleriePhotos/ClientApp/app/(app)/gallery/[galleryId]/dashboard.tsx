@@ -17,11 +17,12 @@ import {
 import { useMeStore } from "@/stores/me";
 import { useApiClient } from "folke-service-helpers";
 import { palette, radius } from "@/stores/theme";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import PhotosWithoutGpsCard from "@/components/dashboard/PhotosWithoutGpsCard";
 import PhotosDateMismatchCard from "@/components/dashboard/PhotosDateMismatchCard";
 import AlbumsWithoutGpsList from "@/components/dashboard/AlbumsWithoutGpsList";
 import AlbumsWithDateMismatchList from "@/components/dashboard/AlbumsWithDateMismatchList";
+import AutoNamedFacesCard from "@/components/dashboard/AutoNamedFacesCard";
+import FaceThumbnail from "@/components/face-thumbnail";
 
 const DashboardScreen = observer(function DashboardScreen() {
   const router = useRouter();
@@ -36,6 +37,7 @@ const DashboardScreen = observer(function DashboardScreen() {
   const [showAlbumsWithoutGps, setShowAlbumsWithoutGps] = useState(false);
   const [showAlbumsWithDateMismatch, setShowAlbumsWithDateMismatch] =
     useState(false);
+  const [showAutoNamedFaces, setShowAutoNamedFaces] = useState(false);
 
   const dashboardController = useMemo(
     () => new DashboardController(apiClient),
@@ -94,6 +96,15 @@ const DashboardScreen = observer(function DashboardScreen() {
     setShowAlbumsWithoutGps(false);
     setShowAlbumsWithDateMismatch((previous) => !previous);
   }, [albumsWithDateMismatch.length]);
+
+  const toggleAutoNamedFacesVisibility = useCallback(() => {
+    if (!statistics?.autoNamedFaceSamples.length) {
+      return;
+    }
+    setShowAlbumsWithoutGps(false);
+    setShowAlbumsWithDateMismatch(false);
+    setShowAutoNamedFaces((prev) => !prev);
+  }, [statistics]);
 
   useEffect(() => {
     loadStatistics();
@@ -159,8 +170,6 @@ const DashboardScreen = observer(function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <DashboardHeader title="Tableau de bord" />
-
       {statistics && (
         <View style={styles.statisticsContainer}>
           <PhotosWithoutGpsCard
@@ -174,6 +183,12 @@ const DashboardScreen = observer(function DashboardScreen() {
             hasAlbums={albumsWithDateMismatch.length > 0}
             expanded={showAlbumsWithDateMismatch}
             onToggle={toggleDateMismatchAlbumsVisibility}
+          />
+          <AutoNamedFacesCard
+            totalCount={statistics.autoNamedFacesCount}
+            hasSamples={statistics.autoNamedFaceSamples.length > 0}
+            expanded={showAutoNamedFaces}
+            onToggle={toggleAutoNamedFacesVisibility}
           />
           {albumsWithoutGps.length > 0 && showAlbumsWithoutGps ? (
             <AlbumsWithoutGpsList
@@ -190,6 +205,28 @@ const DashboardScreen = observer(function DashboardScreen() {
               }
               onOpenPhoto={openFirstMismatchPhoto}
             />
+          ) : null}
+          {statistics.autoNamedFaceSamples.length > 0 && showAutoNamedFaces ? (
+            <View style={styles.samplesContainer}>
+              <Text style={styles.sectionTitle}>Visages auto-nommés</Text>
+              <Text style={styles.sampleInfo}>
+                {statistics.autoNamedFaceSamples.length} paires affichées
+              </Text>
+              {statistics.autoNamedFaceSamples.map((sample) => (
+                <View key={sample.faceId.toString()} style={styles.sampleItem}>
+                  <Text style={styles.sampleText}>
+                    <FaceThumbnail
+                      galleryId={String(galleryId)}
+                      face={{ id: sample.faceId }}
+                    />{" "}
+                    <FaceThumbnail
+                      galleryId={String(galleryId)}
+                      face={{ id: sample.autoNamedFromFaceId }}
+                    />
+                  </Text>
+                </View>
+              ))}
+            </View>
           ) : null}
         </View>
       )}
@@ -230,6 +267,31 @@ const styles = StyleSheet.create({
   },
   statisticsContainer: {
     gap: 16,
+  },
+  samplesContainer: {
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: palette.textPrimary,
+    marginBottom: 12,
+  },
+  sampleInfo: {
+    fontSize: 14,
+    color: palette.textSecondary,
+    fontStyle: "italic",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  sampleItem: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  sampleText: {
+    fontSize: 14,
+    color: palette.textPrimary,
   },
 });
 

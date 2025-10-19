@@ -112,6 +112,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     padding: 8,
+    color: theme.palette.textPrimary,
     marginRight: 8,
   },
   closeTxt: {

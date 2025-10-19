@@ -1,6 +1,6 @@
 import { Drawer } from "expo-router/drawer";
 import { DirectoriesStoreProvider } from "@/stores/directories";
-import { useGlobalSearchParams, useLocalSearchParams } from "expo-router";
+import { useGlobalSearchParams } from "expo-router";
 import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
@@ -17,6 +17,7 @@ import { PlaceStoreProvider, usePlaceStore } from "@/stores/place";
 import Icon from "@/components/Icon";
 import { GalleryStoreProvider, useGalleryStore } from "@/stores/gallery";
 import { SearchStoreProvider, useSearchStore } from "@/stores/search";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -146,6 +147,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
           name="dashboard"
           options={{
             title: "Tableau de bord",
+            headerTitle: () => <DashboardHeader title="Tableau de bord" />,
             drawerIcon: ({ color, size }) => (
               <Icon set="mci" name="view-dashboard" color={color} size={size} />
             ),

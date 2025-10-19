@@ -131,6 +131,21 @@ namespace GaleriePhotos.Controllers
                     ))
                     .ToList()
             };
+            // Faces automatically named from other detected faces
+            var autoNamedFacesQuery = from f in applicationDbContext.Faces
+                                      join p in applicationDbContext.Photos on f.PhotoId equals p.Id
+                                      where f.AutoNamedFromFaceId.HasValue
+                                          && p.Directory.GalleryId == galleryId
+                                          && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
+                                          && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash
+                                      select new { f.Id, AutoNamedFromFaceId = f.AutoNamedFromFaceId!.Value };
+            var autoNamedFacesCount = await autoNamedFacesQuery.CountAsync();
+            var autoNamedFaceSamples = await autoNamedFacesQuery
+                .Take(limit)
+                .Select(x => new AutoNamedFaceSampleInfoViewModel(x.Id, x.AutoNamedFromFaceId))
+                .ToListAsync();
+            statistics.AutoNamedFacesCount = autoNamedFacesCount;
+            statistics.AutoNamedFaceSamples = autoNamedFaceSamples;
 
             return Ok(statistics);
         }

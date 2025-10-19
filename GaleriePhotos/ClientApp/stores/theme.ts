@@ -8,13 +8,13 @@ export const palette = {
   danger: "#d32f2f",
   warning: "#ff9800",
   success: "#2e7d32",
-  surface: "#222",
+  surface: "#ddd",
   surfaceAlt: "#333",
   surfaceElevated: "#1e1e1e",
-  background: "#111",
+  background: "#fff",
   border: "#444",
-  textPrimary: "#fff",
-  textSecondary: "#bbb",
+  textPrimary: "#111",
+  textSecondary: "#333",
   textMuted: "#888",
 };
 

@@ -13,6 +13,7 @@ namespace GaleriePhotos.ViewModels
         public string? Name { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? NamedAt { get; set; }
+        public int? AutoNamedFromFaceId { get; set; }
     }
 
     public class FaceAssignNameViewModel
@@ -39,5 +40,24 @@ namespace GaleriePhotos.ViewModels
     public class FaceNameSuggestionResponseViewModel
     {
         public string? Name { get; set; }
+    }
+
+    public class AutoNamedFacePairViewModel
+    {
+        public int FaceId { get; set; }
+        public int PhotoId { get; set; }
+        public string? Name { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Width { get; set; }
+        public float Height { get; set; }
+        public DateTime? NamedAt { get; set; }
+        
+        public int ReferenceFaceId { get; set; }
+        public int ReferencePhotoId { get; set; }
+        public float ReferenceX { get; set; }
+        public float ReferenceY { get; set; }
+        public float ReferenceWidth { get; set; }
+        public float ReferenceHeight { get; set; }
     }
 }

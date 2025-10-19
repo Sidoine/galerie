@@ -87,6 +87,7 @@ namespace GaleriePhotos
             services.AddScoped<SeedingService>();
             services.AddScoped<FaceDetectionService>();
             services.AddHostedService<FaceDetectionBackgroundService>();
+            services.AddHostedService<FaceAutoNamingBackgroundService>();
             services.AddScoped<GalleryService>();
             services.AddScoped<PlaceService>();
             services.AddHttpClient<PlaceService>();

@@ -21,6 +21,11 @@ namespace GaleriePhotos.ViewModels
 
         // Aggregated list of albums ordered by descending count of photos with a date mismatch
         public List<AlbumFilenameDateMismatchInfoViewModel> AlbumsWithFilenameDateMismatch { get; set; } = new();
+
+        // Total number of faces automatically named from other detected faces
+        public int AutoNamedFacesCount { get; set; }
+        // Sample of face pairs where AutoNamedFromFace is set
+        public List<AutoNamedFaceSampleInfoViewModel> AutoNamedFaceSamples { get; set; } = new();
     }
 
     public class AlbumWithoutGpsInfoViewModel

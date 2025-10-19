@@ -13,6 +13,10 @@ export class FaceController {
         return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}`, "DELETE", undefined);
     }
 
+    getAutoNamedFacePairs = (galleryId: number, count?: number) => {
+        return this.client.fetchJson<views.AutoNamedFacePair[]>(`api/gallery/${galleryId}/faces/auto-named-pairs` + helpers.getQueryString({ count: count }), "GET", undefined);
+    }
+
     getFaceNameThumbnail = (galleryId: number, faceNameId: number) => {
         return this.client.fetch(`api/gallery/${galleryId}/face-names/${faceNameId}/thumbnail`, "GET", undefined);
     }
@@ -47,6 +51,10 @@ export class FaceController {
 
     suggestName = (galleryId: number, faceId: number, model: views.FaceNameSuggestionRequest) => {
         return this.client.fetchJson<views.FaceNameSuggestionResponse>(`api/gallery/${galleryId}/faces/${faceId}/suggest-name`, "POST", JSON.stringify(model));
+    }
+
+    undoAutoNaming = (galleryId: number, faceId: number) => {
+        return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/undo-auto-name`, "POST", undefined);
     }
 }
 
