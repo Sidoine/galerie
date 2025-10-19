@@ -408,6 +408,7 @@ namespace GaleriePhotos.Services
         {
             if (photo.Directory.PhotoDirectoryType != PhotoDirectoryType.Private || photo.Directory.ParentDirectoryId == null) return;
             var publicPath = await GetPhotoDirectoryAsync(photo.Directory.ParentDirectoryId.Value);
+            if (publicPath == null) throw new InvalidOperationException("Le répertoire parent n'existe pas.");
             var dataProvider = dataService.GetDataProvider(photo.Directory.Gallery);
             await dataProvider.MoveFile(publicPath, photo);
         }
