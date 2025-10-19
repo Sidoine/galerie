@@ -50,7 +50,7 @@ export class PlaceController {
     }
 
     mergeDuplicatePlaces = (galleryId: number) => {
-        return this.client.fetchJson<number>(`api/places/gallery/${galleryId}/merge-duplicates`, "POST", undefined);
+        return this.client.fetchJson<number>(`api/places/gallery/${galleryId}/merge-duplicates`, "GET", undefined);
     }
 
     setPlaceCover = (placeId: number, photoId: number) => {

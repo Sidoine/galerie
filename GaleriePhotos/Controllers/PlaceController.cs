@@ -77,7 +77,7 @@ namespace Galerie.Server.Controllers
             if (place == null) return NotFound();
             return Ok(place);
         }
-            
+
         [HttpGet("{id}/photos")]
         public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25)
         {
@@ -88,7 +88,7 @@ namespace Galerie.Server.Controllers
                 {
                     return NotFound();
                 }
-                
+
                 // Apply sorting
                 var orderedPhotos = sortOrder == "asc"
                     ? placePhotos.OrderBy(p => p.DateTime)
@@ -99,7 +99,7 @@ namespace Galerie.Server.Controllers
                     .Skip(offset)
                     .Take(count)
                     .ToArray();
-                
+
                 return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
             }
             catch (Exception ex)
@@ -183,7 +183,7 @@ namespace Galerie.Server.Controllers
             }
         }
 
-        [HttpPost("gallery/{galleryId}/merge-duplicates")]
+        [HttpGet("gallery/{galleryId}/merge-duplicates")]
         [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult<int>> MergeDuplicatePlaces(int galleryId)
         {
