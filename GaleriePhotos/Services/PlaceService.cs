@@ -540,6 +540,14 @@ namespace GaleriePhotos.Services
             };
         }
 
+        /// <summary>
+        /// Merges duplicate places within a gallery. Places are considered duplicates if they have
+        /// the same name, parent, and type. This is useful for cleaning up databases that contain
+        /// duplicate places created with older versions that used zoom level 14 (neighborhood level)
+        /// instead of zoom level 10 (city level) in OpenStreetMap queries.
+        /// </summary>
+        /// <param name="galleryId">The ID of the gallery to merge places in</param>
+        /// <returns>The number of duplicate places that were merged</returns>
         public async Task<int> MergeDuplicatePlacesAsync(int galleryId)
         {
             var mergedCount = 0;
