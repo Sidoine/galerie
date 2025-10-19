@@ -2,7 +2,9 @@
 // Ici c'est la version web basée sur react-leaflet. L'import générique `import PlacesMap from "./places-map.web"` est
 // actuellement utilisé explicitement dans `places-map-view.tsx`. Pour une résolution automatique par plateforme,
 // on pourrait renommer ce fichier en `places-map.web.tsx` (déjà le cas) et importer simplement `./places-map`.
+import { useMemo } from "react";
 import { TileLayer, Marker, Popup, MapContainer } from "react-leaflet";
+import type { LatLngBoundsExpression } from "leaflet";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { theme } from "@/stores/theme";
 import { PlacesMapProps } from "./places-map-props";
@@ -13,17 +15,49 @@ function PlacesMap({
   onClickPhotos,
   onClickPlace,
 }: PlacesMapProps) {
-  // Calculate map bounds to show all places
-  const latitudes = placesToShow.map((p) => p.latitude);
-  const longitudes = placesToShow.map((p) => p.longitude);
-  const centerLat = (Math.min(...latitudes) + Math.max(...latitudes)) / 2;
-  const centerLng = (Math.min(...longitudes) + Math.max(...longitudes)) / 2;
+  // Pre-compute map center + bounds and guard against empty datasets, otherwise Leaflet receives NaN
+  const { center, bounds, zoom } = useMemo(() => {
+    if (!placesToShow || placesToShow.length === 0) {
+      return {
+        center: [20, 0] as [number, number],
+        bounds: undefined,
+        zoom: selectedCountry ? 5 : 2,
+      };
+    }
+
+    const latitudes = placesToShow.map((p) => p.latitude);
+    const longitudes = placesToShow.map((p) => p.longitude);
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+
+    const latSpread = maxLat - minLat;
+    const lngSpread = maxLng - minLng;
+    const latPadding = latSpread === 0 ? 1 : latSpread * 0.15;
+    const lngPadding = lngSpread === 0 ? 1 : lngSpread * 0.15;
+
+    const computedBounds: LatLngBoundsExpression = [
+      [Math.max(-90, minLat - latPadding), Math.max(-180, minLng - lngPadding)],
+      [Math.min(90, maxLat + latPadding), Math.min(180, maxLng + lngPadding)],
+    ];
+
+    return {
+      center: [centerLat, centerLng] as [number, number],
+      bounds: computedBounds,
+      zoom: selectedCountry ? 6 : 3,
+    };
+  }, [placesToShow, selectedCountry]);
 
   return (
     <MapContainer
       key={selectedCountry?.id || "countries"} // Force re-render when switching views
-      center={[centerLat, centerLng]}
-      zoom={selectedCountry ? 6 : 2} // Zoom in more for cities, out for countries
+      center={center}
+      zoom={zoom}
+      bounds={bounds}
       style={{ height: 512, width: "100%" }}
       scrollWheelZoom={true}
     >

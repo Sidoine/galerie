@@ -1,0 +1,8 @@
+{
+  "name": "galerie-playwright",
+  "packageManager": "yarn@4.9.2",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.8.1"
+  }
+}

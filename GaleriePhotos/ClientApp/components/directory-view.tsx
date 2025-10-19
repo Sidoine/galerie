@@ -366,11 +366,21 @@ export const DirectoryView = observer(function DirectoryView({
     ({ item }) => {
       switch (item.type) {
         case "albumsHeader":
-          return (
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionTitle}>{item.title}</Text>
+          if (
+            typeof item.title === "string" ||
+            typeof item.title === "number"
+          ) {
+            return (
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Text style={styles.sectionTitle}>{item.title}</Text>
+                </View>
               </View>
+            );
+          }
+          return (
+            <View style={[styles.sectionHeader, styles.sectionHeaderCustom]}>
+              <View style={styles.sectionCustomContent}>{item.title}</View>
             </View>
           );
         case "albumRow":
@@ -578,6 +588,11 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: 12,
     paddingVertical: 8,
+    width: "100%",
+  },
+  sectionHeaderCustom: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   sectionTitleRow: {
     flexDirection: "row",
@@ -591,6 +606,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
+  },
+  sectionCustomContent: {
+    width: "100%",
   },
   sortButton: {
     backgroundColor: "#e0e0e0",

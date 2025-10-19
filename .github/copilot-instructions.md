@@ -102,6 +102,20 @@ docker build -t galerie .
 docker run --rm -p 5000:5000 --env DATABASE_URL=postgres://user:pass@host:port/db galerie
 ```
 
+### Playwright Tests
+
+In order to tests the front-end application with Playwright, use the following commands:
+
+```bash
+# Navigate to frontend directory
+cd Playwright
+
+# Run Playwright tests
+yarn playwright test
+```
+
+Any bug fix or new feature should ideally be covered by tests.
+
 ## Code Patterns and Conventions
 
 ### Backend Patterns
@@ -243,7 +257,7 @@ The TypeScript services are auto-generated from C# controllers and should not be
 
 ## Important Notes
 
-- The application reads media files directly from the file system
+- The application reads media files directly from the file system or from Seafile
 - Directory structure represents the album hierarchy
 - Database stores metadata and user permissions, not the files themselves
 - Thumbnails are generated on-demand and cached on disk
