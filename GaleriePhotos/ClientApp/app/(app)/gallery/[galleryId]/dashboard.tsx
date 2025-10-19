@@ -17,12 +17,12 @@ import {
 import { useMeStore } from "@/stores/me";
 import { useApiClient } from "folke-service-helpers";
 import { palette, radius } from "@/stores/theme";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import PhotosWithoutGpsCard from "@/components/dashboard/PhotosWithoutGpsCard";
 import PhotosDateMismatchCard from "@/components/dashboard/PhotosDateMismatchCard";
 import AlbumsWithoutGpsList from "@/components/dashboard/AlbumsWithoutGpsList";
 import AlbumsWithDateMismatchList from "@/components/dashboard/AlbumsWithDateMismatchList";
 import AutoNamedFacesCard from "@/components/dashboard/AutoNamedFacesCard";
+import FaceThumbnail from "@/components/face-thumbnail";
 
 const DashboardScreen = observer(function DashboardScreen() {
   const router = useRouter();
@@ -170,8 +170,6 @@ const DashboardScreen = observer(function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <DashboardHeader title="Tableau de bord" />
-
       {statistics && (
         <View style={styles.statisticsContainer}>
           <PhotosWithoutGpsCard
@@ -217,8 +215,14 @@ const DashboardScreen = observer(function DashboardScreen() {
               {statistics.autoNamedFaceSamples.map((sample) => (
                 <View key={sample.faceId.toString()} style={styles.sampleItem}>
                   <Text style={styles.sampleText}>
-                    Visage #{sample.faceId} ← Visage #
-                    {sample.autoNamedFromFaceId}
+                    <FaceThumbnail
+                      galleryId={String(galleryId)}
+                      face={{ id: sample.faceId }}
+                    />{" "}
+                    <FaceThumbnail
+                      galleryId={String(galleryId)}
+                      face={{ id: sample.autoNamedFromFaceId }}
+                    />
                   </Text>
                 </View>
               ))}

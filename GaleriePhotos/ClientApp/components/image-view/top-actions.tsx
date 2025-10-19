@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
-import { PhotoFull, Photo } from "@/services/views";
+import { PhotoFull } from "@/services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useMembersStore } from "@/stores/members";
 import { FaceDetectionStatus } from "@/services/enums";
@@ -173,7 +173,7 @@ function TopActions({
           onPress={onClose}
           style={styles.iconButton}
         >
-          <Icon name="arrow-back" set="ion" size={22} />
+          <Icon name="arrow-back" set="ion" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
       <View style={styles.rightGroup}>
@@ -184,9 +184,19 @@ function TopActions({
             style={styles.iconButton}
           >
             {showFaces ? (
-              <Icon name="emoticon-happy-outline" set="mci" size={22} />
+              <Icon
+                name="emoticon-happy-outline"
+                set="mci"
+                size={22}
+                color="#fff"
+              />
             ) : (
-              <Icon name="emoticon-neutral-outline" set="mci" size={22} />
+              <Icon
+                name="emoticon-neutral-outline"
+                set="mci"
+                size={22}
+                color="#fff"
+              />
             )}
           </TouchableOpacity>
         )}
@@ -195,14 +205,14 @@ function TopActions({
           onPress={onDetailsToggle}
           style={styles.iconButton}
         >
-          <Icon name="information-outline" set="mci" size={22} />
+          <Icon name="information-outline" set="mci" size={22} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={openMenu}
           style={styles.iconButton}
         >
-          <Icon name="dots-vertical" set="mci" size={24} />
+          <Icon name="dots-vertical" set="mci" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
       <ActionMenu visible={menuVisible} onClose={closeMenu} items={items} />

@@ -40,7 +40,7 @@ type IconProps =
  */
 export function Icon({
   size = 20,
-  color = "#fff",
+  color = "#111",
   style,
   ...props
 }: IconProps) {

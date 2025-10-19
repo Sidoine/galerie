@@ -9,7 +9,6 @@ import React, {
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -25,6 +24,7 @@ import { observer } from "mobx-react-lite";
 import { useMembersStore } from "@/stores/members";
 import { ZoomedFaceImage } from "./zoomed-face-image";
 import { usePhotosStore } from "@/stores/photos";
+import FaceThumbnail from "./face-thumbnail";
 
 interface SuggestedFacesProps {
   max?: number;
@@ -246,13 +246,9 @@ function SuggestedFaceThumbnail({
   onAssigned: () => void;
   onReject: () => void;
 }) {
-  const faceThumbnailUrl = `/api/gallery/${galleryId}/faces/${face.id}/thumbnail`;
-
   return (
     <TouchableOpacity onPress={onPress}>
-      <View style={[styles.faceWrapper]}>
-        <Image source={{ uri: faceThumbnailUrl }} style={styles.faceImage} />
-      </View>
+      <FaceThumbnail galleryId={String(galleryId)} face={face} />
     </TouchableOpacity>
   );
 }

@@ -52,7 +52,7 @@ export function FaceSelector({
           {displayLabel}
         </Text>
         <View style={styles.iconButton}>
-          <Icon name="pencil" set="mci" size={16} />
+          <Icon name="pencil" set="mci" size={16} color="#fff" />
         </View>
       </TouchableOpacity>
     );

@@ -17,6 +17,7 @@ import { ZoomedFaceImage } from "@/components/zoomed-face-image";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useFaceNamesStore } from "@/stores/face-names";
 import { useMembersStore } from "@/stores/members";
+import FaceThumbnail from "./face-thumbnail";
 
 interface UnnamedFacesProps {
   count?: number;
@@ -97,14 +98,7 @@ export const UnnamedFaces = observer(function UnnamedFaces({
         <View style={styles.facesRow}>
           {faces?.map((f) => (
             <TouchableOpacity key={f.id} onPress={() => setSelectedFace(f)}>
-              <View style={styles.faceWrapper}>
-                <Image
-                  source={{
-                    uri: `/api/gallery/${galleryId}/faces/${f.id}/thumbnail`,
-                  }}
-                  style={styles.faceImage}
-                />
-              </View>
+              <FaceThumbnail galleryId={String(galleryId)} face={f} />
             </TouchableOpacity>
           ))}
         </View>
@@ -158,15 +152,7 @@ const styles = StyleSheet.create({
   refreshText: { fontSize: 14 },
   error: { color: "#b00020", marginBottom: 4 },
   facesRow: { flexDirection: "row" },
-  faceWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    overflow: "hidden",
-    marginRight: 8,
-    backgroundColor: "#f0f0f0",
-  },
-  faceImage: { width: "100%", height: "100%" },
+
   modalBackdrop: {
     position: "absolute",
     top: 0,
