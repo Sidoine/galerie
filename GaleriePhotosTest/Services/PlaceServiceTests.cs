@@ -128,6 +128,73 @@ namespace GaleriePhotosTest.Services
             Assert.True(place.CreatedAt > DateTime.MinValue);
         }
 
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task MergeDuplicatePlacesAsync_MergesDuplicates_WhenDuplicatesExist()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("/test", 0, null, null) { GalleryId = gallery.Id, Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            // Create duplicate places with the same name and parent
+            var place1 = new Place("Paris", 48.8566, 2.3522) { GalleryId = gallery.Id, Gallery = gallery, Type = PlaceType.City };
+            var place2 = new Place("Paris", 48.8567, 2.3523) { GalleryId = gallery.Id, Gallery = gallery, Type = PlaceType.City };
+            var place3 = new Place("Paris", 48.8568, 2.3524) { GalleryId = gallery.Id, Gallery = gallery, Type = PlaceType.City };
+            context.Places.AddRange(place1, place2, place3);
+            await context.SaveChangesAsync();
+
+            // Create photos assigned to different duplicate places
+            var photo1 = new Photo("test1.jpg") { Directory = directory, PlaceId = place1.Id };
+            var photo2 = new Photo("test2.jpg") { Directory = directory, PlaceId = place2.Id };
+            var photo3 = new Photo("test3.jpg") { Directory = directory, PlaceId = place3.Id };
+            context.Photos.AddRange(photo1, photo2, photo3);
+            await context.SaveChangesAsync();
+
+            // Act
+            var mergedCount = await placeService.MergeDuplicatePlacesAsync(gallery.Id);
+
+            // Assert
+            Assert.Equal(2, mergedCount); // Should merge 2 duplicates into 1
+
+            // Verify only one place remains
+            var remainingPlaces = await context.Places.Where(p => p.GalleryId == gallery.Id && p.Name == "Paris").ToListAsync();
+            Assert.Single(remainingPlaces);
+
+            // Verify all photos are assigned to the remaining place
+            var photosWithPlace = await context.Photos.Where(p => p.PlaceId != null).ToListAsync();
+            Assert.Equal(3, photosWithPlace.Count);
+            Assert.All(photosWithPlace, p => Assert.Equal(remainingPlaces[0].Id, p.PlaceId));
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task MergeDuplicatePlacesAsync_DoesNotMergeDifferentPlaces_WhenNoDuplicates()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            // Create different places (not duplicates)
+            var place1 = new Place("Paris", 48.8566, 2.3522) { GalleryId = gallery.Id, Gallery = gallery };
+            var place2 = new Place("Lyon", 45.7640, 4.8357) { GalleryId = gallery.Id, Gallery = gallery };
+            context.Places.AddRange(place1, place2);
+            await context.SaveChangesAsync();
+
+            // Act
+            var mergedCount = await placeService.MergeDuplicatePlacesAsync(gallery.Id);
+
+            // Assert
+            Assert.Equal(0, mergedCount); // Should not merge different places
+
+            // Verify both places remain
+            var remainingPlaces = await context.Places.Where(p => p.GalleryId == gallery.Id).ToListAsync();
+            Assert.Equal(2, remainingPlaces.Count);
+        }
+
         public void Dispose()
         {
             context.Dispose();

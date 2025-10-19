@@ -142,7 +142,7 @@ namespace GaleriePhotos.Services
         {
             try
             {
-                var url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude.ToString(CultureInfo.InvariantCulture)}&lon={longitude.ToString(CultureInfo.InvariantCulture)}&zoom=14&addressdetails=1";
+                var url = $"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude.ToString(CultureInfo.InvariantCulture)}&lon={longitude.ToString(CultureInfo.InvariantCulture)}&zoom=10&addressdetails=1";
                 
                 httpClient.DefaultRequestHeaders.Clear();
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "GaleriePhotos/1.0 (https://github.com/Sidoine/galerie)");
@@ -538,6 +538,91 @@ namespace GaleriePhotos.Services
                 MinDate = min,
                 MaxDate = max
             };
+        }
+
+        /// <summary>
+        /// Merges duplicate places within a gallery. Places are considered duplicates if they have
+        /// the same name, parent, and type. This is useful for cleaning up databases that contain
+        /// duplicate places created with older versions that used zoom level 14 (neighborhood level)
+        /// instead of zoom level 10 (city level) in OpenStreetMap queries.
+        /// </summary>
+        /// <param name="galleryId">The ID of the gallery to merge places in</param>
+        /// <returns>The number of duplicate places that were merged</returns>
+        public async Task<int> MergeDuplicatePlacesAsync(int galleryId)
+        {
+            var mergedCount = 0;
+
+            try
+            {
+                // Find duplicate places: same name and same parent within the same gallery
+                var duplicateGroups = await context.Places
+                    .Where(p => p.GalleryId == galleryId)
+                    .GroupBy(p => new { p.Name, p.ParentId, p.Type })
+                    .Where(g => g.Count() > 1)
+                    .Select(g => new
+                    {
+                        g.Key.Name,
+                        g.Key.ParentId,
+                        g.Key.Type,
+                        Places = g.OrderBy(p => p.Id).ToList()
+                    })
+                    .ToListAsync();
+
+                logger.LogInformation("Found {Count} duplicate place groups in gallery {GalleryId}", duplicateGroups.Count, galleryId);
+
+                foreach (var group in duplicateGroups)
+                {
+                    // Keep the first place (oldest by ID), merge others into it
+                    var keepPlace = group.Places.First();
+                    var duplicatePlaces = group.Places.Skip(1).ToList();
+
+                    logger.LogInformation("Merging {Count} duplicate places named '{Name}' into place ID {PlaceId}",
+                        duplicatePlaces.Count, group.Name, keepPlace.Id);
+
+                    foreach (var duplicatePlace in duplicatePlaces)
+                    {
+                        // Move all photos from duplicate to the kept place
+                        var photos = await context.Photos
+                            .Where(p => p.PlaceId == duplicatePlace.Id)
+                            .ToListAsync();
+
+                        foreach (var photo in photos)
+                        {
+                            photo.PlaceId = keepPlace.Id;
+                        }
+
+                        // Move any child places from duplicate to the kept place
+                        var childPlaces = await context.Places
+                            .Where(p => p.ParentId == duplicatePlace.Id)
+                            .ToListAsync();
+
+                        foreach (var childPlace in childPlaces)
+                        {
+                            childPlace.ParentId = keepPlace.Id;
+                        }
+
+                        // If the kept place doesn't have a cover photo but the duplicate does, use it
+                        if (keepPlace.CoverPhotoId == null && duplicatePlace.CoverPhotoId != null)
+                        {
+                            keepPlace.CoverPhotoId = duplicatePlace.CoverPhotoId;
+                        }
+
+                        // Delete the duplicate place
+                        context.Places.Remove(duplicatePlace);
+                        mergedCount++;
+                    }
+                }
+
+                await context.SaveChangesAsync();
+                logger.LogInformation("Successfully merged {Count} duplicate places in gallery {GalleryId}", mergedCount, galleryId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error merging duplicate places in gallery {GalleryId}", galleryId);
+                throw;
+            }
+
+            return mergedCount;
         }
     }
 }
