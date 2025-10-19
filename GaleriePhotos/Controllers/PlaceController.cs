@@ -182,5 +182,21 @@ namespace Galerie.Server.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        [HttpPost("gallery/{galleryId}/merge-duplicates")]
+        [Authorize(Policy = Policies.Administrator)]
+        public async Task<ActionResult<int>> MergeDuplicatePlaces(int galleryId)
+        {
+            try
+            {
+                var mergedCount = await placeService.MergeDuplicatePlacesAsync(galleryId);
+                return Ok(new { mergedCount, message = $"Successfully merged {mergedCount} duplicate places" });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error merging duplicate places for gallery {GalleryId}", galleryId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }
