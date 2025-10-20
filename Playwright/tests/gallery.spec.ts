@@ -1,9 +1,11 @@
-// @ts-nocheck
 import { test, expect } from "@playwright/test";
-import { registerApiMocks } from "./helpers/apiMocks";
+import type { Locator } from "@playwright/test";
+import { registerApiMocks } from "./helpers/apiMocks.ts";
 
 const galleryId = 1;
 const rootDirectoryId = 10;
+const totalPhotos = 60;
+const FACE_DETECTION_COMPLETED = 2;
 
 const mockUser = {
   id: "user-1",
@@ -16,7 +18,7 @@ const mockGalleries = [
     id: galleryId,
     name: "Famille 2024",
     rootDirectoryId,
-    numberOfPhotos: 2,
+    numberOfPhotos: totalPhotos,
     coverPhotoId: "cover-1",
   },
 ];
@@ -27,36 +29,40 @@ const mockGalleryFull = {
   id: galleryId,
   name: "Famille 2024",
   rootDirectoryId,
-  numberOfPhotos: 2,
+  numberOfPhotos: totalPhotos,
   coverPhotoId: null,
 };
 
-const mockPhotos = [
-  {
-    id: 101,
-    publicId: "photo-101",
-    name: "Coucher de soleil",
+const mockPhotos = Array.from({ length: totalPhotos }, (_, index) => {
+  const id = 101 + index;
+  const day = Math.min(index + 1, 28);
+  const date = new Date(Date.UTC(2024, 0, day, 12, 0, 0));
+  return {
+    id,
+    publicId: `photo-${id}`,
+    name: `Photo ${index + 1}`,
     video: false,
     directoryId: rootDirectoryId,
-    dateTime: "2024-08-14T19:30:00Z",
-    place: {
-      id: 1,
-      name: "Paris",
+    dateTime: date.toISOString(),
+    place: null,
+  };
+});
+
+const mockPhotoDetailsById = Object.fromEntries(
+  mockPhotos.map((photo, index, array) => [
+    photo.id,
+    {
+      ...photo,
+      nextId: index < array.length - 1 ? array[index + 1]!.id : null,
+      previousId: index > 0 ? array[index - 1]!.id : null,
+      latitude: null,
+      longitude: null,
+      camera: null,
+      private: false,
+      faceDetectionStatus: FACE_DETECTION_COMPLETED,
     },
-  },
-  {
-    id: 102,
-    publicId: "photo-102",
-    name: "Randonnée",
-    video: false,
-    directoryId: rootDirectoryId,
-    dateTime: "2024-07-01T09:15:00Z",
-    place: {
-      id: 2,
-      name: "Alpes",
-    },
-  },
-];
+  ])
+);
 
 const mockMembers = [
   {
@@ -80,6 +86,42 @@ const mockVisibilities = [
   },
 ];
 
+async function getScrollContainerInfo(locator: Locator) {
+  return locator.evaluate((node) => {
+    const SCROLL_EPSILON = 1;
+    let current: HTMLElement | null = node.parentElement;
+
+    while (current) {
+      const style = window.getComputedStyle(current);
+      const overflowY = style.overflowY;
+      const hasScrollableContent =
+        current.scrollHeight - current.clientHeight > SCROLL_EPSILON;
+
+      if (
+        hasScrollableContent &&
+        (overflowY === "auto" ||
+          overflowY === "scroll" ||
+          overflowY === "overlay")
+      ) {
+        return {
+          scrollTop: current.scrollTop,
+          tagName: current.tagName,
+          id: current.id,
+          className: current.className,
+        };
+      }
+      current = current.parentElement;
+    }
+
+    return {
+      scrollTop: window.scrollY,
+      tagName: "WINDOW",
+      id: "",
+      className: "",
+    };
+  });
+}
+
 test.describe("Gallery page", () => {
   test.beforeEach(async ({ page }) => {
     await registerApiMocks(page, {
@@ -90,6 +132,7 @@ test.describe("Gallery page", () => {
       galleryPhotos: mockPhotos,
       members: mockMembers,
       visibilities: mockVisibilities,
+      photoDetailsById: mockPhotoDetailsById,
     });
   });
 
@@ -102,7 +145,7 @@ test.describe("Gallery page", () => {
     await expect(page.getByText("Photos", { exact: true })).toBeVisible();
 
     const photoLinks = page.locator('a[href*="/photos/"]');
-    await expect(photoLinks).toHaveCount(mockPhotos.length);
+    await expect(photoLinks.first()).toBeVisible();
   });
 
   test("navigates to search results", async ({ page }) => {
@@ -121,5 +164,44 @@ test.describe("Gallery page", () => {
     await page.getByText("Plus ancien en premier").click();
 
     await page.waitForURL(`**/gallery/${galleryId}?order=date-asc`);
+  });
+
+  test("restores scroll position after closing a photo", async ({ page }) => {
+    await page.goto(`/gallery/${galleryId}`);
+
+    const targetIndex = 24;
+    const targetPhoto = mockPhotos[targetIndex]!;
+    const targetLocator = page.locator(`a[href*="/photos/${targetPhoto.id}"]`);
+
+    await targetLocator.scrollIntoViewIfNeeded();
+    await expect(targetLocator).toBeVisible();
+
+    const scrollBefore = await getScrollContainerInfo(targetLocator);
+    expect(scrollBefore.scrollTop).toBeGreaterThan(0);
+
+    await targetLocator.click();
+
+    const backButton = page.getByRole("button", {
+      name: "Retour à la galerie",
+    });
+    await expect(backButton).toBeVisible();
+
+    await backButton.click();
+    await expect(backButton).toBeHidden();
+    await expect(page).toHaveURL(new RegExp(`/gallery/${galleryId}(\\?.*)?$`));
+
+    await expect(targetLocator).toBeVisible();
+
+    const scrollAfter = await getScrollContainerInfo(targetLocator);
+
+    expect(scrollAfter.tagName).toBe(scrollBefore.tagName);
+    if (scrollBefore.id || scrollAfter.id) {
+      expect(scrollAfter.id).toBe(scrollBefore.id);
+    }
+
+    const scrollDelta = Math.abs(
+      scrollAfter.scrollTop - scrollBefore.scrollTop
+    );
+    expect(scrollDelta).toBeLessThanOrEqual(5);
   });
 });

@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 const JSON_HEADERS = { "content-type": "application/json" };
 
 function respond(route, body, status = 200) {
@@ -20,6 +18,7 @@ export async function registerApiMocks(page, config) {
     members = [],
     visibilities = [],
     places = {},
+    photoDetailsById = {},
   } = config;
 
   await page.addInitScript(() => {
@@ -144,6 +143,14 @@ export async function registerApiMocks(page, config) {
       const key = `${placeId}-${year}`;
       const months = places.monthsByPlaceYear?.[key] ?? [];
       return respond(route, months);
+    }
+
+    const photoDetailsMatch = pathname.match(/^\/api\/photos\/(\d+)$/);
+    if (method === "GET" && photoDetailsMatch) {
+      const photoId = Number(photoDetailsMatch[1]);
+      const photoDetails =
+        photoDetailsById?.[photoId] ?? photoDetailsById?.get?.(photoId) ?? null;
+      return respond(route, photoDetails);
     }
 
     const placeMonthMatch = pathname.match(

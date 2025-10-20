@@ -28,6 +28,8 @@ export class PaginatedPhotosStore {
   error: string | null = null;
   private sortOrder: "asc" | "desc";
   private readonly pageSize = 25;
+  lastScrollOffset = 0;
+  pendingScrollRestoration = false;
 
   constructor(
     private container: PhotoContainerFull | null,
@@ -42,6 +44,9 @@ export class PaginatedPhotosStore {
       loadInitial: action,
       loadMore: action,
       addPhotos: action,
+      pendingScrollRestoration: observable,
+      requestScrollRestoration: action,
+      clearScrollRestoration: action,
     });
     this.sortOrder = sortOrder;
   }
@@ -115,6 +120,8 @@ export class PaginatedPhotosStore {
     this.isLoading = false;
     this.hasMore = true;
     this.error = null;
+    this.lastScrollOffset = 0;
+    this.pendingScrollRestoration = false;
   }
 
   /**
@@ -122,5 +129,13 @@ export class PaginatedPhotosStore {
    */
   shouldLoadMore(): boolean {
     return !this.isLoading && this.hasMore;
+  }
+
+  requestScrollRestoration() {
+    this.pendingScrollRestoration = true;
+  }
+
+  clearScrollRestoration() {
+    this.pendingScrollRestoration = false;
   }
 }

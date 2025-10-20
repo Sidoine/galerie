@@ -55,8 +55,20 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   );
 
   const navigateToContainer = useCallback(() => {
-    router.push(`/gallery/${galleryId}/directory/${directoryId}`);
-  }, [galleryId, directoryId, router]);
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace({
+      pathname: "/gallery/[galleryId]/directory/[directoryId]",
+      params: {
+        galleryId,
+        directoryId: directoryId ?? 0,
+        order,
+      },
+    });
+  }, [galleryId, directoryId, order, router]);
 
   const getChildContainerLink = useCallback(
     (containerId: number): Href => {

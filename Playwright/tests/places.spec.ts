@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { test, expect } from "@playwright/test";
-import { registerApiMocks } from "./helpers/apiMocks";
+import { registerApiMocks } from "./helpers/apiMocks.ts";
 
 const galleryId = 1;
 const rootDirectoryId = 10;

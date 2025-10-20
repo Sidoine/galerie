@@ -5,6 +5,7 @@ import React, {
   ReactNode,
   useEffect,
   useState,
+  useRef,
 } from "react";
 import {
   StyleSheet,
@@ -15,8 +16,11 @@ import {
   ActivityIndicator,
   AppState,
   AppStateStatus,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from "react-native";
 import { FlashList, ListRenderItem } from "@shopify/flash-list";
+import type { FlashListRef } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
 import ImageCard from "./image-card";
@@ -136,6 +140,8 @@ export const DirectoryView = observer(function DirectoryView({
   const [isAppActive, setIsAppActive] = useState(
     AppState.currentState === "active"
   );
+  const listRef = useRef<FlashListRef<DirectoryFlatListItem> | null>(null);
+  const shouldRestoreScroll = useRef(false);
 
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
@@ -169,12 +175,6 @@ export const DirectoryView = observer(function DirectoryView({
 
   // Construction de la liste plate
   const flatData: DirectoryFlatListItem[] = useMemo(() => {
-    // Si l'écran est flouté ou l'app inactive, renvoie une liste vide pour que FlashList ne monte pas les images
-    // Cela libère la mémoire GPU et évite les décodages/rafraîchissements.
-    if (!allowAutoLoad) {
-      return [];
-    }
-
     const items: DirectoryFlatListItem[] = [];
 
     if (albumRows.length > 0) {
@@ -249,7 +249,6 @@ export const DirectoryView = observer(function DirectoryView({
     cols,
     groupingStrategy,
     order,
-    allowAutoLoad,
   ]);
 
   // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
@@ -479,16 +478,68 @@ export const DirectoryView = observer(function DirectoryView({
     }
   }, [allowAutoLoad, paginatedStore]);
 
-  // handlers déjà déclarés plus haut
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      paginatedStore.lastScrollOffset = Math.max(
+        0,
+        event.nativeEvent.contentOffset.y
+      );
+    },
+    [paginatedStore]
+  );
 
-  // Si l'écran n'est pas focalisé ou l'app inactive on renvoie juste un container vide.
-  if (!allowAutoLoad) {
-    return <View style={{ flex: 1 }} />;
-  }
+  useEffect(() => {
+    const needsRestore =
+      shouldRestoreScroll.current || paginatedStore.pendingScrollRestoration;
+
+    if (!isFocused) {
+      if (paginatedStore.lastScrollOffset > 0) {
+        shouldRestoreScroll.current = true;
+      }
+      return;
+    }
+
+    if (!needsRestore) {
+      return;
+    }
+
+    if (!listRef.current) {
+      return;
+    }
+
+    if (flatData.length === 0) {
+      return;
+    }
+
+    const offset = paginatedStore.lastScrollOffset;
+    if (offset <= 0) {
+      shouldRestoreScroll.current = false;
+      if (paginatedStore.pendingScrollRestoration) {
+        paginatedStore.clearScrollRestoration();
+      }
+      return;
+    }
+
+    const raf = requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ offset, animated: false });
+      shouldRestoreScroll.current = false;
+      if (paginatedStore.pendingScrollRestoration) {
+        paginatedStore.clearScrollRestoration();
+      }
+    });
+
+    return () => cancelAnimationFrame(raf);
+  }, [
+    flatData,
+    isFocused,
+    paginatedStore,
+    paginatedStore.pendingScrollRestoration,
+  ]);
 
   return (
     <>
       <FlashList
+        ref={listRef}
         data={flatData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
@@ -496,6 +547,8 @@ export const DirectoryView = observer(function DirectoryView({
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.3}
         removeClippedSubviews
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         ListFooterComponent={
           paginatedStore?.isLoading ? (
             <View style={styles.loadingFooter}>
