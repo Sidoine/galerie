@@ -154,19 +154,4 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-  photoDateBadge: {
-    position: "relative",
-    left: 0,
-    top: -32,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  photoDateBadgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
 });

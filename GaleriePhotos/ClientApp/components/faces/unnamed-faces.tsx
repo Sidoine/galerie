@@ -99,6 +99,7 @@ export const UnnamedFaces = observer(function UnnamedFaces({
               setSelectedFace(null);
               load();
             }}
+            title="Assigner le visage"
           />
         )}
       </Modal>

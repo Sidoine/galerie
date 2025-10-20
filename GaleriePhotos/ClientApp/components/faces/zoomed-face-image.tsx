@@ -1,6 +1,6 @@
 import { Face } from "@/services/views";
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Image, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Image, ActivityIndicator, StyleSheet, Text } from "react-native";
 import { usePhotosStore } from "@/stores/photos";
 import { observer } from "mobx-react-lite";
 
@@ -84,6 +84,14 @@ export const ZoomedFaceImage = observer(function ZoomedFaceImage({
     };
   }, [imageSize, containerSize, face.x, face.y, face.width, face.height]);
 
+  const photoDateLabel = photo?.dateTime
+    ? new Date(photo.dateTime).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+    : undefined;
+
   return (
     <View
       style={styles.previewImageContainer}
@@ -99,6 +107,11 @@ export const ZoomedFaceImage = observer(function ZoomedFaceImage({
           />
           {/* Rectangle englobant */}
           <View pointerEvents="none" style={boxStyle} />
+        </View>
+      )}
+      {photoDateLabel && (
+        <View style={styles.photoDateBadge} pointerEvents="none">
+          <Text style={styles.photoDateBadgeText}>{photoDateLabel}</Text>
         </View>
       )}
     </View>
@@ -124,5 +137,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     inset: 0,
     overflow: "hidden",
+  },
+  photoDateBadge: {
+    position: "relative",
+    left: 0,
+    bottom: -130,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  photoDateBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });

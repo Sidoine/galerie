@@ -4,7 +4,6 @@ import { observer } from "mobx-react-lite";
 import { Face } from "@/services/views";
 import { useAssignFace } from "./assign-face-context";
 import { useFaceNamesStore } from "@/stores/face-names";
-import { usePhotosStore } from "@/stores/photos";
 import { ZoomedFaceImage } from "./zoomed-face-image";
 import { styles } from "./suggested-faces.styles";
 
@@ -27,16 +26,6 @@ export const FacePhotoPreview = observer(function FacePhotoPreview({
   const [assignError, setAssignError] = useState<string | null>(null);
   const assignCtx = useAssignFace();
   const faceNamesStore = useFaceNamesStore();
-  const photosStore = usePhotosStore();
-  const photo = photosStore.imageLoader.getValue(face.photoId);
-  const photoDateLabel = photo?.dateTime
-    ? new Date(photo.dateTime).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-    : undefined;
-
   const handleAssign = async () => {
     if (assigning) return;
     setAssigning(true);
@@ -60,11 +49,7 @@ export const FacePhotoPreview = observer(function FacePhotoPreview({
       <View style={[styles.modal, styles.previewModal]}>
         <Text style={styles.modalTitle}>Visage</Text>
         <ZoomedFaceImage face={face} />
-        {photoDateLabel && (
-          <View style={styles.photoDateBadge} pointerEvents="none">
-            <Text style={styles.photoDateBadgeText}>{photoDateLabel}</Text>
-          </View>
-        )}
+
         {assignError && <Text style={styles.error}>{assignError}</Text>}
         <View style={styles.previewActionsRow}>
           <TouchableOpacity

@@ -14,6 +14,7 @@ export interface RejectFaceModalProps {
   onClose: () => void;
   onDeleted: () => void;
   onRenamed: () => void;
+  title?: string;
 }
 
 export const RejectFaceModal = observer(function RejectFaceModal({
@@ -22,6 +23,7 @@ export const RejectFaceModal = observer(function RejectFaceModal({
   onClose,
   onDeleted,
   onRenamed,
+  title = "Rejeter le visage",
 }: RejectFaceModalProps) {
   const apiClient = useApiClient();
   const faceController = useMemo(
@@ -49,7 +51,7 @@ export const RejectFaceModal = observer(function RejectFaceModal({
   return (
     <View style={styles.modalBackdrop}>
       <View style={styles.modal}>
-        <Text style={styles.modalTitle}>Rejeter le visage</Text>
+        <Text style={styles.modalTitle}>{title}</Text>
         <ZoomedFaceImage face={face} />
         <View style={styles.modalSection}>
           <Text style={styles.sectionHeader}>Associer à un autre nom</Text>
