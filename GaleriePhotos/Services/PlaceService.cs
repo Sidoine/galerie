@@ -352,6 +352,26 @@ namespace GaleriePhotos.Services
 
         public async Task<PlaceFullViewModel?> GetPlaceByIdAsync(int placeId)
         {
+            var result = await context.Places
+                .Include(x => x.CoverPhoto)
+                .Where(x => x.Id == placeId)
+                .Select(p => new PlaceFullViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    Type = p.Type,
+                    ParentId = p.ParentId,
+                    CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
+                    NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id),
+                    MinDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow,
+                    MaxDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow
+                })
+                .FirstOrDefaultAsync();
+
+            if (result == null || result.CoverPhotoId != null) return result;
+
             var place = await context.Places
                 .Include(x => x.CoverPhoto)
                 .FirstOrDefaultAsync(x => x.Id == placeId);
@@ -381,23 +401,12 @@ namespace GaleriePhotos.Services
                     place.CoverPhotoId = candidatePhoto.Id;
                     place.CoverPhoto = candidatePhoto;
                     await context.SaveChangesAsync();
+                    result.CoverPhotoId = candidatePhoto.PublicId.ToString();
                     logger.LogInformation("Automatically assigned cover photo {PhotoId} to place {PlaceId}", candidatePhoto.Id, placeId);
                 }
             }
 
-            return new PlaceFullViewModel
-            {
-                Id = place.Id,
-                Name = place.Name,
-                Latitude = place.Latitude,
-                Longitude = place.Longitude,
-                Type = place.Type,
-                ParentId = place.ParentId,
-                CoverPhotoId = place.CoverPhoto != null ? place.CoverPhoto.PublicId.ToString() : null,
-                NumberOfPhotos = await context.Photos.CountAsync(ph => ph.PlaceId == place.Id),
-                MinDate = await context.Photos.AnyAsync(x => x.PlaceId == place.Id) ? await context.Photos.Where(ph => ph.PlaceId == place.Id).MinAsync(ph => ph.DateTime) : DateTime.UtcNow,
-                MaxDate = await context.Photos.AnyAsync(x => x.PlaceId == place.Id) ? await context.Photos.Where(ph => ph.PlaceId == place.Id).MaxAsync(ph => ph.DateTime) : DateTime.UtcNow
-            };
+            return result;
         }
 
         public async Task<YearViewModel[]> GetPlaceYearsAsync(int placeId)
