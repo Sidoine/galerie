@@ -352,7 +352,7 @@ namespace GaleriePhotos.Services
 
         public async Task<PlaceFullViewModel?> GetPlaceByIdAsync(int placeId)
         {
-            return await context.Places
+            var result = await context.Places
                 .Include(x => x.CoverPhoto)
                 .Where(x => x.Id == placeId)
                 .Select(p => new PlaceFullViewModel
@@ -369,6 +369,44 @@ namespace GaleriePhotos.Services
                     MaxDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow
                 })
                 .FirstOrDefaultAsync();
+
+            if (result == null || result.CoverPhotoId != null) return result;
+
+            var place = await context.Places
+                .Include(x => x.CoverPhoto)
+                .FirstOrDefaultAsync(x => x.Id == placeId);
+
+            if (place == null)
+            {
+                return null;
+            }
+
+            // If no cover photo is set, automatically assign one
+            if (place.CoverPhotoId == null)
+            {
+                // Video extensions to exclude
+                var videoExtensions = new[] { ".mp4", ".mpg", ".webm" };
+                
+                var candidatePhoto = await context.Photos
+                    .Include(p => p.Directory)
+                    .Where(p => p.PlaceId == placeId)
+                    .Where(p => p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private)
+                    .Where(p => p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
+                    .Where(p => !videoExtensions.Any(ext => EF.Functions.ILike(p.FileName, "%" + ext)))
+                    .OrderBy(p => p.DateTime)
+                    .FirstOrDefaultAsync();
+
+                if (candidatePhoto != null)
+                {
+                    place.CoverPhotoId = candidatePhoto.Id;
+                    place.CoverPhoto = candidatePhoto;
+                    await context.SaveChangesAsync();
+                    result.CoverPhotoId = candidatePhoto.PublicId.ToString();
+                    logger.LogInformation("Automatically assigned cover photo {PhotoId} to place {PlaceId}", candidatePhoto.Id, placeId);
+                }
+            }
+
+            return result;
         }
 
         public async Task<YearViewModel[]> GetPlaceYearsAsync(int placeId)
