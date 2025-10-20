@@ -379,6 +379,7 @@ namespace GaleriePhotos.Services
                 if (candidatePhoto != null)
                 {
                     place.CoverPhotoId = candidatePhoto.Id;
+                    place.CoverPhoto = candidatePhoto;
                     await context.SaveChangesAsync();
                     logger.LogInformation("Automatically assigned cover photo {PhotoId} to place {PlaceId}", candidatePhoto.Id, placeId);
                 }
