@@ -57,8 +57,11 @@ export default observer(function ImageView({
     if (previousPhoto) navigateToPhoto(previousPhoto.id);
   }, [navigateToPhoto, photoIndex, paginatedPhotosStore.photos]);
   const handleClose = useCallback(() => {
-    if (photo) navigateToContainer();
-  }, [navigateToContainer, photo]);
+    if (photo) {
+      paginatedPhotosStore.requestScrollRestoration();
+      navigateToContainer();
+    }
+  }, [navigateToContainer, paginatedPhotosStore, photo]);
 
   // isVideo / imgUri déjà calculés plus bas, on les remonte pour usage dans les gestes
   const imgUri = photo?.publicId

@@ -82,7 +82,13 @@ export const SearchStoreProvider = observer(function SearchStoreProvider({
 
   const navigateToContainer = useCallback(() => {
     if (!galleryId) return;
-    router.push({
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace({
       pathname: "/(app)/gallery/[galleryId]/search",
       params: { galleryId, query, order },
     });

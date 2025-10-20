@@ -170,6 +170,7 @@ function TopActions({
       <View style={styles.leftGroup}>
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel="Retour à la galerie"
           onPress={onClose}
           style={styles.iconButton}
         >

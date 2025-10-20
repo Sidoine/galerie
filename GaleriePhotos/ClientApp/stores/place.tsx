@@ -12,7 +12,6 @@ import { PlaceType } from "@/services/enums";
 import { Photo, Place } from "@/services/views";
 import PlacesMap from "@/components/places-map";
 import { Text } from "react-native";
-import { ApiResponse } from "folke-service-helpers";
 
 const emptyPhotoContainer: PhotoContainer[] = [];
 
@@ -69,7 +68,12 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     [router, getPhotoLink]
   );
   const navigateToContainer = useCallback(() => {
-    router.push({
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace({
       pathname: "/gallery/[galleryId]/places/[placeId]",
       params: {
         galleryId: placesStore.galleryId,

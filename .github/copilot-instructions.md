@@ -111,7 +111,7 @@ In order to tests the front-end application with Playwright, use the following c
 cd Playwright
 
 # Run Playwright tests
-yarn playwright test
+yarn playwright test --reporter=list
 ```
 
 Any bug fix or new feature should ideally be covered by tests.
