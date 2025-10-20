@@ -195,6 +195,157 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(2, remainingPlaces.Count);
         }
 
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task GetPlaceByIdAsync_AutomaticallyAssignsCover_WhenNoCoverExists()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("/test", 0, null, null) { GalleryId = gallery.Id, Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var place = new Place("Test Place", 48.8566, 2.3522) { GalleryId = gallery.Id, Gallery = gallery };
+            context.Places.Add(place);
+            await context.SaveChangesAsync();
+
+            // Add photos to the place
+            var photo1 = new Photo("test1.jpg") { Directory = directory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-2) };
+            var photo2 = new Photo("test2.jpg") { Directory = directory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-1) };
+            context.Photos.AddRange(photo1, photo2);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await placeService.GetPlaceByIdAsync(place.Id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.CoverPhotoId);
+            
+            // Verify the place was updated in the database
+            var updatedPlace = await context.Places.FindAsync(place.Id);
+            Assert.NotNull(updatedPlace);
+            Assert.NotNull(updatedPlace.CoverPhotoId);
+            Assert.Equal(photo1.Id, updatedPlace.CoverPhotoId); // Should be the earliest photo
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task GetPlaceByIdAsync_DoesNotAssignVideoCover_WhenOnlyVideosExist()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("/test", 0, null, null) { GalleryId = gallery.Id, Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var place = new Place("Test Place", 48.8566, 2.3522) { GalleryId = gallery.Id, Gallery = gallery };
+            context.Places.Add(place);
+            await context.SaveChangesAsync();
+
+            // Add only video files to the place
+            var video1 = new Photo("test1.mp4") { Directory = directory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-2) };
+            var video2 = new Photo("test2.webm") { Directory = directory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-1) };
+            context.Photos.AddRange(video1, video2);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await placeService.GetPlaceByIdAsync(place.Id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.CoverPhotoId); // Should remain null since only videos exist
+            
+            // Verify the place was not updated in the database
+            var updatedPlace = await context.Places.FindAsync(place.Id);
+            Assert.NotNull(updatedPlace);
+            Assert.Null(updatedPlace.CoverPhotoId);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task GetPlaceByIdAsync_SkipsPrivatePhotos_WhenAssigningCover()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var publicDirectory = new PhotoDirectory("/test/public", 0, null, null) { GalleryId = gallery.Id, Gallery = gallery };
+            var privateDirectory = new PhotoDirectory("/test/private", 0, null, null, PhotoDirectoryType.Private) { GalleryId = gallery.Id, Gallery = gallery };
+            context.PhotoDirectories.AddRange(publicDirectory, privateDirectory);
+            await context.SaveChangesAsync();
+
+            var place = new Place("Test Place", 48.8566, 2.3522) { GalleryId = gallery.Id, Gallery = gallery };
+            context.Places.Add(place);
+            await context.SaveChangesAsync();
+
+            // Add photos to the place - private photo first chronologically
+            var privatePhoto = new Photo("private.jpg") { Directory = privateDirectory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-2) };
+            var publicPhoto = new Photo("public.jpg") { Directory = publicDirectory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-1) };
+            context.Photos.AddRange(privatePhoto, publicPhoto);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await placeService.GetPlaceByIdAsync(place.Id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.CoverPhotoId);
+            
+            // Verify the public photo was chosen, not the private one
+            var updatedPlace = await context.Places.FindAsync(place.Id);
+            Assert.NotNull(updatedPlace);
+            Assert.NotNull(updatedPlace.CoverPhotoId);
+            Assert.Equal(publicPhoto.Id, updatedPlace.CoverPhotoId); // Should be the public photo
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task GetPlaceByIdAsync_DoesNotChangeCover_WhenCoverAlreadyExists()
+        {
+            // Arrange
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbs");
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            var directory = new PhotoDirectory("/test", 0, null, null) { GalleryId = gallery.Id, Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var existingCoverPhoto = new Photo("existing.jpg") { Directory = directory, DateTime = DateTime.UtcNow.AddDays(-3) };
+            context.Photos.Add(existingCoverPhoto);
+            await context.SaveChangesAsync();
+
+            var place = new Place("Test Place", 48.8566, 2.3522) 
+            { 
+                GalleryId = gallery.Id, 
+                Gallery = gallery,
+                CoverPhotoId = existingCoverPhoto.Id
+            };
+            context.Places.Add(place);
+            await context.SaveChangesAsync();
+
+            // Add another photo that would be selected if auto-assignment ran
+            var photo = new Photo("newer.jpg") { Directory = directory, PlaceId = place.Id, DateTime = DateTime.UtcNow.AddDays(-1) };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await placeService.GetPlaceByIdAsync(place.Id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.CoverPhotoId);
+            
+            // Verify the cover photo was not changed
+            var updatedPlace = await context.Places.FindAsync(place.Id);
+            Assert.NotNull(updatedPlace);
+            Assert.Equal(existingCoverPhoto.Id, updatedPlace.CoverPhotoId); // Should still be the existing cover
+        }
+
         public void Dispose()
         {
             context.Dispose();

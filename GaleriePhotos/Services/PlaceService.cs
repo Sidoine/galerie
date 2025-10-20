@@ -352,23 +352,51 @@ namespace GaleriePhotos.Services
 
         public async Task<PlaceFullViewModel?> GetPlaceByIdAsync(int placeId)
         {
-            return await context.Places
+            var place = await context.Places
                 .Include(x => x.CoverPhoto)
-                .Where(x => x.Id == placeId)
-                .Select(p => new PlaceFullViewModel
+                .FirstOrDefaultAsync(x => x.Id == placeId);
+
+            if (place == null)
+            {
+                return null;
+            }
+
+            // If no cover photo is set, automatically assign one
+            if (place.CoverPhotoId == null)
+            {
+                // Video extensions to exclude
+                var videoExtensions = new[] { ".mp4", ".mpg", ".webm" };
+                
+                var candidatePhoto = await context.Photos
+                    .Include(p => p.Directory)
+                    .Where(p => p.PlaceId == placeId)
+                    .Where(p => p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private)
+                    .Where(p => p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
+                    .Where(p => !videoExtensions.Any(ext => EF.Functions.ILike(p.FileName, "%" + ext)))
+                    .OrderBy(p => p.DateTime)
+                    .FirstOrDefaultAsync();
+
+                if (candidatePhoto != null)
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Latitude = p.Latitude,
-                    Longitude = p.Longitude,
-                    Type = p.Type,
-                    ParentId = p.ParentId,
-                    CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
-                    NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id),
-                    MinDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow,
-                    MaxDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow
-                })
-                .FirstOrDefaultAsync();
+                    place.CoverPhotoId = candidatePhoto.Id;
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Automatically assigned cover photo {PhotoId} to place {PlaceId}", candidatePhoto.Id, placeId);
+                }
+            }
+
+            return new PlaceFullViewModel
+            {
+                Id = place.Id,
+                Name = place.Name,
+                Latitude = place.Latitude,
+                Longitude = place.Longitude,
+                Type = place.Type,
+                ParentId = place.ParentId,
+                CoverPhotoId = place.CoverPhoto != null ? place.CoverPhoto.PublicId.ToString() : null,
+                NumberOfPhotos = await context.Photos.CountAsync(ph => ph.PlaceId == place.Id),
+                MinDate = await context.Photos.AnyAsync(x => x.PlaceId == place.Id) ? await context.Photos.Where(ph => ph.PlaceId == place.Id).MinAsync(ph => ph.DateTime) : DateTime.UtcNow,
+                MaxDate = await context.Photos.AnyAsync(x => x.PlaceId == place.Id) ? await context.Photos.Where(ph => ph.PlaceId == place.Id).MaxAsync(ph => ph.DateTime) : DateTime.UtcNow
+            };
         }
 
         public async Task<YearViewModel[]> GetPlaceYearsAsync(int placeId)
