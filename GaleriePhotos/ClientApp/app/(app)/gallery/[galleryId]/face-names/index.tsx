@@ -13,7 +13,7 @@ import { FaceName } from "../../../../../services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useRouter } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";
-import { UnnamedFaces } from "@/components/unnamed-faces";
+import { UnnamedFaces } from "@/components/faces/unnamed-faces";
 
 const FaceNamesScreen = observer(function FaceNames() {
   const { galleryId } = useDirectoriesStore();

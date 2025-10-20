@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "../Icon";
 import { Face } from "@/services/views";
-import FaceNameInput from "../face-name-input";
+import FaceNameInput from "../faces/face-name-input";
 
 /**
  * Composant permettant d'afficher et modifier le nom associé à un visage.

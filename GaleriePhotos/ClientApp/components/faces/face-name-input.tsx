@@ -8,7 +8,7 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import Icon from "./Icon";
+import Icon from "../Icon";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useFaceNamesStore } from "@/stores/face-names";
 

@@ -22,7 +22,7 @@ import PhotosDateMismatchCard from "@/components/dashboard/PhotosDateMismatchCar
 import AlbumsWithoutGpsList from "@/components/dashboard/AlbumsWithoutGpsList";
 import AlbumsWithDateMismatchList from "@/components/dashboard/AlbumsWithDateMismatchList";
 import AutoNamedFacesCard from "@/components/dashboard/AutoNamedFacesCard";
-import FaceThumbnail from "@/components/face-thumbnail";
+import FaceThumbnail from "@/components/faces/face-thumbnail";
 
 const DashboardScreen = observer(function DashboardScreen() {
   const router = useRouter();

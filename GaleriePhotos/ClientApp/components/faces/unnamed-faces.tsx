@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
   Modal,
   StyleSheet,
 } from "react-native";
@@ -12,12 +11,11 @@ import { observer } from "mobx-react-lite";
 import { Face } from "@/services/views";
 import { useApiClient } from "folke-service-helpers";
 import { FaceController } from "@/services/face";
-import FaceNameInput from "@/components/face-name-input";
-import { ZoomedFaceImage } from "@/components/zoomed-face-image";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useFaceNamesStore } from "@/stores/face-names";
 import { useMembersStore } from "@/stores/members";
 import FaceThumbnail from "./face-thumbnail";
+import { RejectFaceModal } from "./reject-face-modal";
 
 interface UnnamedFacesProps {
   count?: number;
@@ -38,8 +36,6 @@ export const UnnamedFaces = observer(function UnnamedFaces({
   const [faces, setFaces] = useState<Face[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFace, setSelectedFace] = useState<Face | null>(null);
-  const [busyAssign, setBusyAssign] = useState(false);
-  const [assignError, setAssignError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!galleryId) return;
@@ -60,27 +56,6 @@ export const UnnamedFaces = observer(function UnnamedFaces({
   useEffect(() => {
     load();
   }, [load]);
-
-  const handleAssign = async (face: Face, name: string) => {
-    if (busyAssign) return;
-    setBusyAssign(true);
-    setAssignError(null);
-    try {
-      const resp = await faceController.assignName(Number(galleryId), face.id, {
-        name,
-      });
-      if (!resp.ok) setAssignError("Erreur assignation");
-      else {
-        faceNamesStore.clearCache();
-        setSelectedFace(null);
-        load();
-      }
-    } catch (e: unknown) {
-      setAssignError(e instanceof Error ? e.message : "Erreur assignation");
-    } finally {
-      setBusyAssign(false);
-    }
-  };
 
   if (!membersStore.administrator) return null;
   if (faces && faces.length === 0) return null;
@@ -110,29 +85,21 @@ export const UnnamedFaces = observer(function UnnamedFaces({
         onRequestClose={() => setSelectedFace(null)}
       >
         {selectedFace && (
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modal}>
-              <Text style={styles.modalTitle}>Assigner un nom</Text>
-              <ZoomedFaceImage face={selectedFace} />
-              {assignError && <Text style={styles.error}>{assignError}</Text>}
-              <FaceNameInput
-                faceId={selectedFace.id}
-                initialName={""}
-                autoSuggest
-                onAssigned={(n) => {
-                  handleAssign(selectedFace, n);
-                }}
-                onCancel={() => setSelectedFace(null)}
-              />
-              <TouchableOpacity
-                style={styles.closeModalBtn}
-                onPress={() => setSelectedFace(null)}
-                disabled={busyAssign}
-              >
-                <Text style={styles.closeModalText}>Fermer</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <RejectFaceModal
+            face={selectedFace}
+            galleryId={Number(galleryId)}
+            onClose={() => setSelectedFace(null)}
+            onDeleted={() => {
+              faceNamesStore.clearCache();
+              setSelectedFace(null);
+              load();
+            }}
+            onRenamed={() => {
+              faceNamesStore.clearCache();
+              setSelectedFace(null);
+              load();
+            }}
+          />
         )}
       </Modal>
     </View>
@@ -152,33 +119,6 @@ const styles = StyleSheet.create({
   refreshText: { fontSize: 14 },
   error: { color: "#b00020", marginBottom: 4 },
   facesRow: { flexDirection: "row" },
-
-  modalBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  modal: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    width: 320,
-    maxWidth: "100%",
-  },
-  modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 4 },
-  closeModalBtn: {
-    marginTop: 4,
-    alignSelf: "flex-end",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  closeModalText: { color: "#1976d2", fontWeight: "600" },
 });
 
 export default UnnamedFaces;

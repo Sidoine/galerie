@@ -1,6 +1,6 @@
 import React from "react";
 import { DirectoryView } from "@/components/directory-view";
-import SuggestedFaces from "@/components/suggested-faces";
+import SuggestedFaces from "@/components/faces/suggested-faces";
 import { View } from "react-native";
 import { useFaceNameStore } from "@/stores/face-name";
 
