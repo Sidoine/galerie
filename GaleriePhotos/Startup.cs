@@ -96,7 +96,6 @@ namespace GaleriePhotos
             services.AddScoped<DirectoryService>();
             services.AddHostedService<PlaceLocationBackgroundService>();
             services.AddHostedService<PhotoCaptureDateBackfillBackgroundService>();
-            services.AddHostedService<PhotoGpsBackfillBackgroundService>();
             services.AddHostedService<GalleryScanBackgroundService>();
 
             services.AddAuthorization(options =>

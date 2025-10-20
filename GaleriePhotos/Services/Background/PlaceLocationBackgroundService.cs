@@ -13,16 +13,21 @@ namespace GaleriePhotos.Services.Background
 {
     public class PlaceLocationBackgroundService : BackgroundService
     {
+        private const string ServiceStateId = "place-location-background";
+
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<PlaceLocationBackgroundService> logger;
+        private readonly BackgroundStateService backgroundStateService;
         private readonly TimeSpan ProcessingInterval = TimeSpan.FromMinutes(5); // Process every 5 minutes
 
         public PlaceLocationBackgroundService(
             IServiceProvider serviceProvider,
-            ILogger<PlaceLocationBackgroundService> logger)
+            ILogger<PlaceLocationBackgroundService> logger,
+            BackgroundStateService backgroundStateService)
         {
             this.serviceProvider = serviceProvider;
             this.logger = logger;
+            this.backgroundStateService = backgroundStateService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -55,15 +60,36 @@ namespace GaleriePhotos.Services.Background
 
             try
             {
-                // Find photos that have GPS location but no place assigned
-                var photosWithoutPlace = await context.Photos
+                var state = await backgroundStateService.GetStateEntityAsync<PlaceLocationState>(
+                    context,
+                    ServiceStateId,
+                    cancellationToken);
+
+                var baseQuery = context.Photos
                     .Where(p => p.Latitude.HasValue && p.Longitude.HasValue && (p.Latitude != 0 || p.Longitude != 0) && p.PlaceId == null && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
                         && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
                     .Include(p => p.Directory)
                     .ThenInclude(d => d.Gallery)
-                    .OrderBy(x => x.Id)
-                    .Take(10) // Process 10 photos at a time to avoid overwhelming the system
+                    .OrderBy(x => x.Id);
+
+                IQueryable<Photo> filteredQuery = baseQuery;
+
+                if (state.LastProcessedPhotoId.HasValue)
+                {
+                    filteredQuery = filteredQuery.Where(p => p.Id > state.LastProcessedPhotoId.Value);
+                }
+
+                var photosWithoutPlace = await filteredQuery
+                    .Take(50) // Process 50 photos at a time to avoid overwhelming the system
                     .ToListAsync(cancellationToken);
+
+                if (!photosWithoutPlace.Any() && state.LastProcessedPhotoId.HasValue)
+                {
+                    // Restart from the beginning once we reach the end of the queue.
+                    photosWithoutPlace = await baseQuery
+                        .Take(50)
+                        .ToListAsync(cancellationToken);
+                }
 
                 if (!photosWithoutPlace.Any())
                 {
@@ -108,6 +134,9 @@ namespace GaleriePhotos.Services.Background
                         logger.LogError(ex, "Error processing photo {PhotoId} for place location", photo.Id);
                     }
 
+                    state.LastProcessedPhotoId = photo.Id;
+                    await backgroundStateService.SaveStateAsync(context, ServiceStateId, state, cancellationToken);
+
                     // Small delay between photos to be respectful to OpenStreetMap API
                     await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 }
@@ -116,6 +145,11 @@ namespace GaleriePhotos.Services.Background
             {
                 logger.LogError(ex, "Error in ProcessPhotosWithoutPlaceAsync");
             }
+        }
+
+        private sealed class PlaceLocationState
+        {
+            public int? LastProcessedPhotoId { get; set; }
         }
     }
 }

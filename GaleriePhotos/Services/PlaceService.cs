@@ -51,6 +51,22 @@ namespace GaleriePhotos.Services
         {
             try
             {
+                const double coordinateTolerance = 0.00001;
+
+                // Reuse an existing place if a photo already matches the requested coordinates
+                var placeFromExistingPhoto = await context.Photos
+                    .Where(p => p.PlaceId != null)
+                    .Where(p => p.Place != null && p.Place.GalleryId == galleryId)
+                    .Where(p => p.Latitude.HasValue && Math.Abs(p.Latitude.Value - latitude) < coordinateTolerance)
+                    .Where(p => p.Longitude.HasValue && Math.Abs(p.Longitude.Value - longitude) < coordinateTolerance)
+                    .Select(p => p.Place)
+                    .FirstOrDefaultAsync();
+
+                if (placeFromExistingPhoto != null)
+                {
+                    return placeFromExistingPhoto;
+                }
+
                 // Get place data from OpenStreetMap first
                 var osmPlaceData = await GetPlaceDataFromOpenStreetMapAsync(latitude, longitude);
                 if (osmPlaceData == null)

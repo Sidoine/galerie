@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useRouter, useGlobalSearchParams } from "expo-router";
@@ -33,6 +34,7 @@ const DashboardScreen = observer(function DashboardScreen() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAlbumsWithoutGps, setShowAlbumsWithoutGps] = useState(false);
   const [showAlbumsWithDateMismatch, setShowAlbumsWithDateMismatch] =
@@ -54,32 +56,46 @@ const DashboardScreen = observer(function DashboardScreen() {
     [statistics]
   );
 
-  const loadStatistics = useCallback(async () => {
-    if (!galleryId) return;
+  const loadStatistics = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!galleryId) return;
 
-    try {
-      setShowAlbumsWithoutGps(false);
-      setShowAlbumsWithDateMismatch(false);
-      setLoading(true);
-      setError(null);
-      const response = await dashboardController.getStatistics(
-        Number(galleryId)
-      );
-      if (response.ok) {
-        setStatistics(response.value);
-      } else {
-        setError(
-          response.message ||
-            "Impossible de charger les statistiques du tableau de bord"
+      const silent = options?.silent ?? false;
+
+      try {
+        setShowAlbumsWithoutGps(false);
+        setShowAlbumsWithDateMismatch(false);
+        setShowAutoNamedFaces(false);
+        if (silent) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+        setError(null);
+        const response = await dashboardController.getStatistics(
+          Number(galleryId)
         );
+        if (response.ok) {
+          setStatistics(response.value);
+        } else {
+          setError(
+            response.message ||
+              "Impossible de charger les statistiques du tableau de bord"
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard statistics:", err);
+        setError("Erreur de connexion au serveur");
+      } finally {
+        if (silent) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      console.error("Failed to load dashboard statistics:", err);
-      setError("Erreur de connexion au serveur");
-    } finally {
-      setLoading(false);
-    }
-  }, [dashboardController, galleryId]);
+    },
+    [dashboardController, galleryId]
+  );
 
   const toggleAlbumsVisibility = useCallback(() => {
     if (!albumsWithoutGps.length) {
@@ -138,6 +154,10 @@ const DashboardScreen = observer(function DashboardScreen() {
     [galleryId, router]
   );
 
+  const handleRefresh = useCallback(() => {
+    loadStatistics({ silent: true });
+  }, [loadStatistics]);
+
   if (!meStore.administrator) {
     return (
       <View style={styles.container}>
@@ -161,7 +181,10 @@ const DashboardScreen = observer(function DashboardScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadStatistics}>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => loadStatistics()}
+        >
           <Text style={styles.retryButtonText}>Réessayer</Text>
         </TouchableOpacity>
       </View>
@@ -169,7 +192,17 @@ const DashboardScreen = observer(function DashboardScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[palette.primary]}
+          tintColor={palette.primary}
+        />
+      }
+    >
       {statistics && (
         <View style={styles.statisticsContainer}>
           <PhotosWithoutGpsCard

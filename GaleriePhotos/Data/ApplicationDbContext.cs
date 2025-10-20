@@ -38,6 +38,7 @@ namespace GaleriePhotos.Data
                 entity.HasIndex(x => x.PlaceId).IsUnique(false);
                 entity.HasIndex(x => x.DateTime);
                 entity.HasIndex(x => new { x.DateTime, x.PlaceId });
+                entity.HasIndex(x => new { x.Latitude, x.Longitude }).HasMethod("gist");
                 
                 entity.HasOne(e => e.Place)
                     .WithMany()
