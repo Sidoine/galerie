@@ -55,11 +55,6 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   );
 
   const navigateToContainer = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
     router.replace({
       pathname: "/gallery/[galleryId]/directory/[directoryId]",
       params: {

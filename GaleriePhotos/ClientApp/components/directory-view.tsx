@@ -168,10 +168,8 @@ export const DirectoryView = observer(function DirectoryView({
   useEffect(() => {
     // Empêche le premier chargement si l'écran n'est pas actif.
     if (!allowAutoLoad) return;
-    if (paginatedPhotos.length === 0) {
-      paginatedStore.loadInitial();
-    }
-  }, [paginatedStore, paginatedPhotos.length, allowAutoLoad]);
+    paginatedStore.loadMore();
+  }, [paginatedStore, allowAutoLoad]);
 
   // Construction de la liste plate
   const flatData: DirectoryFlatListItem[] = useMemo(() => {

@@ -41,7 +41,6 @@ export class PaginatedPhotosStore {
       isLoading: observable,
       hasMore: observable,
       error: observable,
-      loadInitial: action,
       loadMore: action,
       addPhotos: action,
       pendingScrollRestoration: observable,
@@ -49,14 +48,12 @@ export class PaginatedPhotosStore {
       clearScrollRestoration: action,
     });
     this.sortOrder = sortOrder;
-  }
-
-  /**
-   * Load initial batch of photos
-   */
-  async loadInitial() {
-    this.reset();
-    await this.loadChunk();
+    this.photos = [];
+    this.isLoading = false;
+    this.hasMore = true;
+    this.error = null;
+    this.lastScrollOffset = 0;
+    this.pendingScrollRestoration = false;
   }
 
   /**
@@ -113,15 +110,6 @@ export class PaginatedPhotosStore {
     const existingIds = new Set(this.photos.map((p) => p.id));
     const uniqueNewPhotos = newPhotos.filter((p) => !existingIds.has(p.id));
     this.photos.push(...uniqueNewPhotos);
-  }
-
-  private reset() {
-    this.photos = [];
-    this.isLoading = false;
-    this.hasMore = true;
-    this.error = null;
-    this.lastScrollOffset = 0;
-    this.pendingScrollRestoration = false;
   }
 
   /**

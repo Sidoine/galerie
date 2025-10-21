@@ -50,11 +50,6 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
   const navigateToContainer = useCallback(() => {
     if (!faceNameId) return;
 
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
     router.replace({
       pathname: "/gallery/[galleryId]/face-names/[faceNameId]",
       params: {

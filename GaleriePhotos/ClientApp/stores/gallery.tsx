@@ -49,11 +49,6 @@ export const GalleryStoreProvider = observer(function GalleryStoreProvider({
   );
 
   const navigateToContainer = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
     router.replace({
       pathname: "/gallery/[galleryId]",
       params: { galleryId: galleryId ?? 0, order },

@@ -42,5 +42,9 @@
     "skipLibCheck": true,
     "noEmit": true,
     "allowImportingTsExtensions": true
+    // "paths": {
+    //   "@services/*": ["../GaleriePhotos/ClientApp/services/*"]
+    // }
   }
+  // "include": ["./tests/**/*.ts", "../GaleriePhotos/ClientApp/services/*.ts"]
 }

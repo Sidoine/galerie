@@ -48,7 +48,7 @@ const mockPhotos = Array.from({ length: totalPhotos }, (_, index) => {
   };
 });
 
-const mockPhotoDetailsById = Object.fromEntries(
+const galleryPhotoDetailsById = Object.fromEntries(
   mockPhotos.map((photo, index, array) => [
     photo.id,
     {
@@ -122,8 +122,93 @@ async function getScrollContainerInfo(locator: Locator) {
   });
 }
 
+const childDirectoryId = 20;
+const childAlbumName = "Vacances Bretagne";
+
+const childDirectoryPhotos = Array.from({ length: 3 }, (_, index) => {
+  const id = 1001 + index;
+  const day = index + 1;
+  const date = new Date(Date.UTC(2024, 5, day, 14, 30, 0));
+  return {
+    id,
+    publicId: `child-photo-${id}`,
+    name: `Photo enfant ${index + 1}`,
+    video: false,
+    directoryId: childDirectoryId,
+    dateTime: date.toISOString(),
+    place: null,
+  };
+});
+
+const childPhotoDetailsById = Object.fromEntries(
+  childDirectoryPhotos.map((photo, index, array) => [
+    photo.id,
+    {
+      ...photo,
+      nextId: index < array.length - 1 ? array[index + 1]!.id : null,
+      previousId: index > 0 ? array[index - 1]!.id : null,
+      latitude: null,
+      longitude: null,
+      camera: null,
+      private: false,
+      faceDetectionStatus: FACE_DETECTION_COMPLETED,
+    },
+  ])
+);
+
+const rootDirectorySummary = {
+  id: rootDirectoryId,
+  visibility: 1,
+  name: "Tous les albums",
+  coverPhotoId: null,
+  numberOfPhotos: totalPhotos,
+  numberOfSubDirectories: 1,
+};
+
+const childDirectorySummary = {
+  id: childDirectoryId,
+  visibility: 1,
+  name: childAlbumName,
+  coverPhotoId: null,
+  numberOfPhotos: childDirectoryPhotos.length,
+  numberOfSubDirectories: 0,
+};
+
+const mockRootDirectoryFull = {
+  ...rootDirectorySummary,
+  parent: null,
+  minDate: mockPhotos[0]!.dateTime,
+  maxDate: mockPhotos[mockPhotos.length - 1]!.dateTime,
+};
+
+const mockChildDirectoryFull = {
+  ...childDirectorySummary,
+  parent: rootDirectorySummary,
+  minDate: childDirectoryPhotos[0]!.dateTime,
+  maxDate: childDirectoryPhotos[childDirectoryPhotos.length - 1]!.dateTime,
+};
+
+const mockDirectories = {
+  infoById: {
+    [rootDirectoryId]: mockRootDirectoryFull,
+    [childDirectoryId]: mockChildDirectoryFull,
+  },
+  subDirectoriesById: {
+    [rootDirectoryId]: [childDirectorySummary],
+    [childDirectoryId]: [],
+  },
+  photosByDirectoryId: {
+    [rootDirectoryId]: mockPhotos,
+    [childDirectoryId]: childDirectoryPhotos,
+  },
+};
+
 test.describe("Gallery page", () => {
   test.beforeEach(async ({ page }) => {
+    const photoDetailsById = {
+      ...galleryPhotoDetailsById,
+      ...childPhotoDetailsById,
+    };
     await registerApiMocks(page, {
       galleryId,
       user: mockUser,
@@ -132,7 +217,8 @@ test.describe("Gallery page", () => {
       galleryPhotos: mockPhotos,
       members: mockMembers,
       visibilities: mockVisibilities,
-      photoDetailsById: mockPhotoDetailsById,
+      photoDetailsById,
+      directories: mockDirectories,
     });
   });
 
@@ -203,5 +289,76 @@ test.describe("Gallery page", () => {
       scrollAfter.scrollTop - scrollBefore.scrollTop
     );
     expect(scrollDelta).toBeLessThanOrEqual(5);
+  });
+
+  test("keeps child album context after closing a photo", async ({ page }) => {
+    await page.goto(`/gallery/${galleryId}`);
+
+    const drawerToggle = page
+      .getByRole("button", { name: /drawer|menu|navigation/i })
+      .first();
+    if (await drawerToggle.isVisible()) {
+      await drawerToggle.click();
+    }
+
+    const albumLinks = page.getByRole("link", { name: /Album/ });
+    const albumButtons = page.getByRole("button", { name: /Album/ });
+    const albumText = page.getByText("Albums", { exact: true });
+
+    let albumsEntry;
+    if ((await albumLinks.count()) > 0) {
+      albumsEntry = albumLinks.first();
+    } else if ((await albumButtons.count()) > 0) {
+      albumsEntry = albumButtons.first();
+    } else {
+      albumsEntry = albumText.first();
+    }
+
+    await expect(albumsEntry).toBeVisible();
+    await albumsEntry.click();
+
+    await page.waitForURL(`**/gallery/${galleryId}/directory`);
+
+    const childAlbumLink = page
+      .locator(`a[href*="/directory/${childDirectoryId}"]`)
+      .first();
+    await expect(childAlbumLink).toBeVisible();
+    await childAlbumLink.click();
+
+    await page.waitForURL(
+      new RegExp(`/gallery/${galleryId}/directory/${childDirectoryId}(\\?.*)?$`)
+    );
+
+    await page.waitForResponse(
+      (response) =>
+        response
+          .url()
+          .includes(`/api/directories/${childDirectoryId}/photos`) &&
+        response.request().method() === "GET"
+    );
+
+    const firstPhotoId = childDirectoryPhotos[0]!.id;
+
+    const firstPhotoLink = page
+      .locator(
+        `a[href*="/directory/${childDirectoryId}/photos/${firstPhotoId}"]`
+      )
+      .last();
+    await expect(firstPhotoLink).toBeVisible();
+    await firstPhotoLink.click();
+
+    await page.waitForURL(
+      `**/gallery/${galleryId}/directory/${childDirectoryId}/photos/${firstPhotoId}?order=date-asc`
+    );
+
+    const closeButton = page.getByRole("button", {
+      name: "Retour à la galerie",
+    });
+    await expect(closeButton).toBeVisible();
+    await closeButton.click();
+
+    await expect(page).toHaveURL(
+      new RegExp(`/gallery/${galleryId}/directory/${childDirectoryId}(\\?.*)?$`)
+    );
   });
 });

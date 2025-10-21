@@ -1,14 +1,43 @@
+import type { Page, Route } from "@playwright/test";
+
 const JSON_HEADERS = { "content-type": "application/json" };
 
-function respond(route, body, status = 200) {
+type AnyRecord = {
+  [key: string]: any;
+  [key: number]: any;
+};
+
+interface DirectoryMocksConfig {
+  infoById?: AnyRecord;
+  subDirectoriesById?: AnyRecord;
+  photosByDirectoryId?: AnyRecord;
+}
+
+interface RegisterApiMocksConfig {
+  galleryId: number;
+  user?: unknown;
+  galleries?: unknown[];
+  gallery?: unknown;
+  galleryPhotos?: unknown[];
+  members?: unknown[];
+  visibilities?: unknown[];
+  places?: AnyRecord;
+  photoDetailsById?: AnyRecord;
+  directories?: DirectoryMocksConfig;
+}
+
+function respond(route: Route, body: unknown, status = 200) {
   route.fulfill({ status, headers: JSON_HEADERS, body: JSON.stringify(body) });
 }
 
-function respondText(route, body, status = 200) {
+function respondText(route: Route, body: string, status = 200) {
   route.fulfill({ status, headers: JSON_HEADERS, body });
 }
 
-export async function registerApiMocks(page, config) {
+export async function registerApiMocks(
+  page: Page,
+  config: RegisterApiMocksConfig
+) {
   const {
     galleryId,
     user,
@@ -19,7 +48,14 @@ export async function registerApiMocks(page, config) {
     visibilities = [],
     places = {},
     photoDetailsById = {},
+    directories = {},
   } = config;
+
+  const {
+    infoById: directoryInfoById = {},
+    subDirectoriesById = {},
+    photosByDirectoryId = {},
+  } = directories;
 
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -28,7 +64,7 @@ export async function registerApiMocks(page, config) {
     );
   });
 
-  await page.route("**/api/**", async (route) => {
+  await page.route("**/api/**", async (route: Route) => {
     const request = route.request();
     const method = request.method();
     const url = new URL(request.url());
@@ -148,8 +184,7 @@ export async function registerApiMocks(page, config) {
     const photoDetailsMatch = pathname.match(/^\/api\/photos\/(\d+)$/);
     if (method === "GET" && photoDetailsMatch) {
       const photoId = Number(photoDetailsMatch[1]);
-      const photoDetails =
-        photoDetailsById?.[photoId] ?? photoDetailsById?.get?.(photoId) ?? null;
+      const photoDetails = photoDetailsById?.[photoId] ?? null;
       return respond(route, photoDetails);
     }
 
@@ -163,6 +198,34 @@ export async function registerApiMocks(page, config) {
       const key = `${placeId}-${year}-${month}`;
       const entry = places.placeMonth?.[key] ?? null;
       return respond(route, entry);
+    }
+
+    const directoryDetailsMatch = pathname.match(/^\/api\/directories\/(\d+)$/);
+    if (method === "GET" && directoryDetailsMatch) {
+      const directoryId = Number(directoryDetailsMatch[1]);
+      const directory = directoryInfoById[directoryId] ?? null;
+      return respond(route, directory);
+    }
+
+    const directoryChildrenMatch = pathname.match(
+      /^\/api\/directories\/(\d+)\/directories$/
+    );
+    if (method === "GET" && directoryChildrenMatch) {
+      const directoryId = Number(directoryChildrenMatch[1]);
+      const directoriesList = subDirectoriesById[directoryId] ?? [];
+      return respond(route, directoriesList);
+    }
+
+    const directoryPhotosMatch = pathname.match(
+      /^\/api\/directories\/(\d+)\/photos$/
+    );
+    if (method === "GET" && directoryPhotosMatch) {
+      const directoryId = Number(directoryPhotosMatch[1]);
+      const photos = photosByDirectoryId[directoryId] ?? [];
+      const offset = Number(searchParams.get("offset") ?? "0");
+      const count = Number(searchParams.get("count") ?? photos.length);
+      const slice = photos.slice(offset, offset + count);
+      return respond(route, slice);
     }
 
     if (method === "POST" && pathname.startsWith("/api/")) {

@@ -68,11 +68,6 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     [router, getPhotoLink]
   );
   const navigateToContainer = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
     router.replace({
       pathname: "/gallery/[galleryId]/places/[placeId]",
       params: {
