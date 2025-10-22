@@ -164,6 +164,8 @@ namespace GaleriePhotos.Services.Background
 
             photo.Latitude = closest.Latitude;
             photo.Longitude = closest.Longitude;
+            context.Photos.Update(photo);
+            await context.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
                 "Copied GPS data to photo {PhotoId} from candidate {CandidatePhotoId} with time difference {TimeDifference}",

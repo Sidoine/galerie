@@ -1,549 +1,549 @@
 import * as enums from "./enums";
 
 export interface Directory {
-  id: number;
+    id: number;
 
-  visibility: number;
+    visibility: number;
 
-  name: string;
+    name: string;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  numberOfSubDirectories: number;
+    numberOfSubDirectories: number;
 }
 
 export interface DirectoryFull {
-  parent: Directory | null;
+    parent: Directory | null;
 
-  minDate: string;
+    minDate: string;
 
-  maxDate: string;
+    maxDate: string;
 
-  id: number;
+    id: number;
 
-  visibility: number;
+    visibility: number;
 
-  name: string;
+    name: string;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  numberOfSubDirectories: number;
+    numberOfSubDirectories: number;
 }
 
 export interface PlaceShort {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 }
 
 export interface Photo {
-  id: number;
+    id: number;
 
-  publicId: string;
+    publicId: string;
 
-  name: string;
+    name: string;
 
-  video: boolean;
+    video: boolean;
 
-  directoryId: number;
+    directoryId: number;
 
-  dateTime: string;
+    dateTime: string;
 
-  place: PlaceShort | null;
+    place: PlaceShort | null;
 }
 
 export interface DirectoryPatch {
-  visibility?: number | undefined;
+    visibility?: number | undefined;
 
-  coverPhotoId?: number | undefined;
+    coverPhotoId?: number | undefined;
 }
 
 export interface AddressGeocodeRequest {
-  address: string;
+    address: string;
 }
 
 export interface AddressGeocodeResponse {
-  latitude: number | null;
+    latitude: number | null;
 
-  longitude: number | null;
+    longitude: number | null;
 
-  formattedAddress: string | null;
+    formattedAddress: string | null;
 
-  success: boolean;
+    success: boolean;
 
-  error: string | null;
+    error: string | null;
 }
 
 export interface PhotoFull {
-  id: number;
+    id: number;
 
-  publicId: string;
+    publicId: string;
 
-  name: string;
+    name: string;
 
-  nextId: number | null;
+    nextId: number | null;
 
-  previousId: number | null;
+    previousId: number | null;
 
-  dateTime: string;
+    dateTime: string;
 
-  latitude: number | null;
+    latitude: number | null;
 
-  longitude: number | null;
+    longitude: number | null;
 
-  camera: string | null;
+    camera: string | null;
 
-  video: boolean;
+    video: boolean;
 
-  private: boolean;
+    private: boolean;
 
-  faceDetectionStatus: enums.FaceDetectionStatus;
+    faceDetectionStatus: enums.FaceDetectionStatus;
 
-  directoryId: number;
+    directoryId: number;
 
-  place: PlaceShort | null;
+    place: PlaceShort | null;
 }
 
 export interface PhotoPatch {
-  visible?: boolean | undefined;
+    visible?: boolean | undefined;
 }
 
 export interface PhotoAccess {
-  private: boolean;
+    private: boolean;
 }
 
 export interface PhotoRotate {
-  angle: number;
+    angle: number;
 }
 
 export interface PhotoBulkUpdateLocation {
-  photoIds: number[];
+    photoIds: number[];
 
-  latitude: number;
+    latitude: number;
 
-  longitude: number;
+    longitude: number;
 
-  overwriteExisting: boolean;
+    overwriteExisting: boolean;
 }
 
 export interface PhotoBulkUpdateDate {
-  photoIds: number[];
+    photoIds: number[];
 
-  dateTime: string;
+    dateTime: string;
 }
 
 export interface Place {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  latitude: number;
+    latitude: number;
 
-  longitude: number;
+    longitude: number;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  type: enums.PlaceType;
+    type: enums.PlaceType;
 
-  parentId: number | null;
+    parentId: number | null;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface PlaceFull {
-  minDate: string;
+    minDate: string;
 
-  maxDate: string;
+    maxDate: string;
 
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  latitude: number;
+    latitude: number;
 
-  longitude: number;
+    longitude: number;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  type: enums.PlaceType;
+    type: enums.PlaceType;
 
-  parentId: number | null;
+    parentId: number | null;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface Year {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface Month {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface YearFull {
-  minDate: string;
+    minDate: string;
 
-  maxDate: string;
+    maxDate: string;
 
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface MonthFull {
-  minDate: string;
+    minDate: string;
 
-  maxDate: string;
+    maxDate: string;
 
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface AlbumWithoutGpsInfo {
-  directoryId: number;
+    directoryId: number;
 
-  directoryPath: string;
+    directoryPath: string;
 
-  missingGpsPhotoCount: number;
+    missingGpsPhotoCount: number;
 }
 
 export interface AlbumFilenameDateMismatchInfo {
-  directoryId: number;
+    directoryId: number;
 
-  directoryPath: string;
+    directoryPath: string;
 
-  mismatchedPhotoCount: number;
+    mismatchedPhotoCount: number;
 
-  firstPhotoId: number;
+    firstPhotoId: number;
 }
 
 export interface AutoNamedFaceSampleInfo {
-  faceId: number;
+    faceId: number;
 
-  autoNamedFromFaceId: number;
+    autoNamedFromFaceId: number;
 }
 
 export interface DashboardStatistics {
-  photosWithoutGpsCount: number;
+    photosWithoutGpsCount: number;
 
-  albumsWithPhotosWithoutGpsCount: number;
+    albumsWithPhotosWithoutGpsCount: number;
 
-  albumsWithoutGps: AlbumWithoutGpsInfo[];
+    albumsWithoutGps: AlbumWithoutGpsInfo[];
 
-  photosWithFilenameDateMismatchCount: number;
+    photosWithFilenameDateMismatchCount: number;
 
-  albumsWithPhotosWithFilenameDateMismatchCount: number;
+    albumsWithPhotosWithFilenameDateMismatchCount: number;
 
-  albumsWithFilenameDateMismatch: AlbumFilenameDateMismatchInfo[];
+    albumsWithFilenameDateMismatch: AlbumFilenameDateMismatchInfo[];
 
-  autoNamedFacesCount: number;
+    autoNamedFacesCount: number;
 
-  autoNamedFaceSamples: AutoNamedFaceSampleInfo[];
+    autoNamedFaceSamples: AutoNamedFaceSampleInfo[];
 }
 
 export interface GalleryDirectoryVisibility {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  icon: string;
+    icon: string;
 
-  value: number;
+    value: number;
 
-  galleryId: number;
+    galleryId: number;
 }
 
 export interface GalleryDirectoryVisibilityCreate {
-  name: string;
+    name: string;
 
-  icon: string;
+    icon: string;
 
-  value: number;
+    value: number;
 }
 
 export interface GalleryDirectoryVisibilityPatch {
-  name: string | null;
+    name: string | null;
 
-  icon: string | null;
+    icon: string | null;
 
-  value: number | null;
+    value: number | null;
 }
 
 export interface FaceAssignName {
-  name: string;
+    name: string;
 }
 
 export interface SimilarFacesRequest {
-  name: string;
+    name: string;
 
-  limit: number;
+    limit: number;
 }
 
 export interface Face {
-  id: number;
+    id: number;
 
-  photoId: number;
+    photoId: number;
 
-  x: number;
+    x: number;
 
-  y: number;
+    y: number;
 
-  width: number;
+    width: number;
 
-  height: number;
+    height: number;
 
-  name: string | null;
+    name: string | null;
 
-  createdAt: string;
+    createdAt: string;
 
-  namedAt: string | null;
+    namedAt: string | null;
 
-  autoNamedFromFaceId: number | null;
+    autoNamedFromFaceId: number | null;
 }
 
 export interface UnnamedFacesSampleRequest {
-  count: number;
+    count: number;
 }
 
 export interface FaceName {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface FaceNameFull {
-  minDate: string;
+    minDate: string;
 
-  maxDate: string;
+    maxDate: string;
 
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface FaceNameSuggestionRequest {
-  threshold: number;
+    threshold: number;
 }
 
 export interface FaceNameSuggestionResponse {
-  name: string | null;
+    name: string | null;
 }
 
 export interface AutoNamedFacePair {
-  faceId: number;
+    faceId: number;
 
-  photoId: number;
+    photoId: number;
 
-  name: string | null;
+    name: string | null;
 
-  x: number;
+    x: number;
 
-  y: number;
+    y: number;
 
-  width: number;
+    width: number;
 
-  height: number;
+    height: number;
 
-  namedAt: string | null;
+    namedAt: string | null;
 
-  referenceFaceId: number;
+    referenceFaceId: number;
 
-  referencePhotoId: number;
+    referencePhotoId: number;
 
-  referenceX: number;
+    referenceX: number;
 
-  referenceY: number;
+    referenceY: number;
 
-  referenceWidth: number;
+    referenceWidth: number;
 
-  referenceHeight: number;
+    referenceHeight: number;
 }
 
 export interface GalleryFull {
-  minDate: string;
+    minDate: string;
 
-  maxDate: string;
+    maxDate: string;
 
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  rootDirectoryId: number;
+    rootDirectoryId: number;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface GallerySettings {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  rootDirectory: string;
+    rootDirectory: string;
 
-  thumbnailsDirectory: string | null;
+    thumbnailsDirectory: string | null;
 
-  dataProvider: enums.DataProviderType;
+    dataProvider: enums.DataProviderType;
 
-  seafileServerUrl: string | null;
+    seafileServerUrl: string | null;
 
-  seafileApiKey: string | null;
+    seafileApiKey: string | null;
 
-  administratorNames: string[];
+    administratorNames: string[];
 }
 
 export interface GalleryCreate {
-  name: string;
+    name: string;
 
-  rootDirectory: string;
+    rootDirectory: string;
 
-  thumbnailsDirectory: string;
+    thumbnailsDirectory: string;
 
-  dataProvider: enums.DataProviderType;
+    dataProvider: enums.DataProviderType;
 
-  seafileServerUrl: string | null;
+    seafileServerUrl: string | null;
 
-  seafileApiKey: string | null;
+    seafileApiKey: string | null;
 
-  userId: string;
+    userId: string;
 }
 
 export interface GalleryPatch {
-  name: string | null;
+    name: string | null;
 
-  rootDirectory: string | null;
+    rootDirectory: string | null;
 
-  thumbnailsDirectory: string | null;
+    thumbnailsDirectory: string | null;
 
-  dataProvider: enums.DataProviderType | null;
+    dataProvider: enums.DataProviderType | null;
 
-  seafileServerUrl: string | null;
+    seafileServerUrl: string | null;
 
-  seafileApiKey: string | null;
+    seafileApiKey: string | null;
 }
 
 export interface SeafileApiKeyRequest {
-  username: string;
+    username: string;
 
-  password: string;
+    password: string;
 }
 
 export interface SeafileApiKeyResponse {
-  apiKey: string;
+    apiKey: string;
 }
 
 export interface SeafileRepositoriesRequest {
-  apiKey: string;
+    apiKey: string;
 
-  serverUrl: string;
+    serverUrl: string;
 }
 
 export interface SeafileRepository {
-  id: string;
+    id: string;
 
-  name: string;
+    name: string;
 
-  size: number;
+    size: number;
 
-  permission: string;
+    permission: string;
 
-  encrypted: boolean;
+    encrypted: boolean;
 
-  owner: string;
+    owner: string;
 }
 
 export interface SeafileRepositoriesResponse {
-  repositories: SeafileRepository[];
+    repositories: SeafileRepository[];
 }
 
 export interface GalleryMember {
-  id: number;
+    id: number;
 
-  galleryId: number;
+    galleryId: number;
 
-  galleryName: string;
+    galleryName: string;
 
-  userId: string;
+    userId: string;
 
-  userName: string;
+    userName: string;
 
-  directoryVisibility: number;
+    directoryVisibility: number;
 
-  isAdministrator: boolean;
+    isAdministrator: boolean;
 }
 
 export interface GalleryMemberPatch {
-  directoryVisibility?: number | undefined;
+    directoryVisibility?: number | undefined;
 
-  isAdministrator?: boolean | undefined;
+    isAdministrator?: boolean | undefined;
 }
 
 export interface Gallery {
-  id: number;
+    id: number;
 
-  name: string;
+    name: string;
 
-  rootDirectoryId: number;
+    rootDirectoryId: number;
 
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 }
 
 export interface User {
-  id: string;
+    id: string;
 
-  name: string;
+    name: string;
 
-  administrator: boolean;
+    administrator: boolean;
 }
 
 export interface SearchResultFull {
-  numberOfPhotos: number;
+    numberOfPhotos: number;
 
-  minDate: string | null;
+    minDate: string | null;
 
-  maxDate: string | null;
+    maxDate: string | null;
 
-  coverPhotoId: string | null;
+    coverPhotoId: string | null;
 
-  name: string;
+    name: string;
 }
 
 export interface UserPatch {
-  administrator?: boolean | undefined;
+    administrator?: boolean | undefined;
 }
