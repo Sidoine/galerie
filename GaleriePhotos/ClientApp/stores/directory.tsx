@@ -191,7 +191,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       getPhotoLink,
       setCover,
       setParentCover,
-      childContainersHeader: "Albums",
+      childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
     }),
