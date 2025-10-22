@@ -119,7 +119,7 @@ export const GalleryStoreProvider = observer(function GalleryStoreProvider({
       container: gallery,
       navigateToChildContainer,
       getPhotoLink,
-      childContainersHeader: <Text>Albums</Text>,
+      childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
       galleryId,

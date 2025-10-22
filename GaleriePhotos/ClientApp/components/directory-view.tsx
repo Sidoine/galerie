@@ -26,7 +26,6 @@ import { Photo } from "@/services/views";
 import ImageCard from "./image-card";
 import SubdirectoryCard from "./subdirectory-card";
 import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
-import { DirectoryAdminMenu } from "./directory-admin-menu";
 import {
   determineGroupingStrategy,
   groupPhotosByDate,
@@ -66,9 +65,6 @@ interface AlbumRowItem extends BaseItem {
   type: "albumRow";
   items: PhotoContainer[];
 }
-interface PhotosHeaderItem extends BaseItem {
-  type: "photosHeader";
-}
 interface DateHeaderItem extends BaseItem {
   type: "dateHeader";
   title: string;
@@ -86,7 +82,6 @@ interface LoadingItem extends BaseItem {
 type DirectoryFlatListItem =
   | AlbumsHeaderItem
   | AlbumRowItem
-  | PhotosHeaderItem
   | DateHeaderItem
   | PhotoRowItem
   | LoadingItem;
@@ -98,8 +93,6 @@ export const DirectoryView = observer(function DirectoryView({
 }: DirectoryViewProps) {
   const membersStore = useMembersStore();
   // Get directory info for admin menu
-  const directoryId = store.container?.id;
-  const directoryPath = store.breadCrumbs.map((crumb) => crumb.name).join("/");
   let { width } = useWindowDimensions();
   if (width > 768) {
     // The left drawer takes 279px
@@ -187,8 +180,6 @@ export const DirectoryView = observer(function DirectoryView({
     }
 
     if (paginatedPhotos.length > 0) {
-      items.push({ id: "photos-header", type: "photosHeader" });
-
       if (!shouldGroupPhotos) {
         const rows = splitPhotosIntoRows(paginatedPhotos, cols);
         rows.forEach((row, idx) =>
@@ -316,6 +307,7 @@ export const DirectoryView = observer(function DirectoryView({
   );
   const [groupActionsVisible, setGroupActionsVisible] = useState(false);
   const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
+  const [sortMenuVisible, setSortMenuVisible] = useState(false);
 
   const openGroupMenu = useCallback((groupId: string) => {
     setCurrentGroupId(groupId);
@@ -359,10 +351,14 @@ export const DirectoryView = observer(function DirectoryView({
     setBulkLocationPhotos(null);
   }, []);
 
+  const openSortMenu = useCallback(() => setSortMenuVisible(true), []);
+  const closeSortMenu = useCallback(() => setSortMenuVisible(false), []);
+
   const renderItem: ListRenderItem<DirectoryFlatListItem> = useCallback(
     ({ item }) => {
       switch (item.type) {
         case "albumsHeader":
+          if (item.title == null) return null;
           if (
             typeof item.title === "string" ||
             typeof item.title === "number"
@@ -382,29 +378,6 @@ export const DirectoryView = observer(function DirectoryView({
           );
         case "albumRow":
           return <AlbumRow items={item.items} />;
-        case "photosHeader":
-          return (
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionTitle}>Photos</Text>
-                {directoryId && (
-                  <DirectoryAdminMenu directoryPath={directoryPath} />
-                )}
-              </View>
-              <View style={styles.buttonRow}>
-                <SortButton
-                  selected={order === "date-desc"}
-                  label="Plus récent en premier"
-                  onPress={handleSortDateDesc}
-                />
-                <SortButton
-                  selected={order !== "date-desc"}
-                  label="Plus ancien en premier"
-                  onPress={handleSortDateAsc}
-                />
-              </View>
-            </View>
-          );
         case "dateHeader":
           return (
             <View style={styles.dateHeader}>
@@ -445,17 +418,7 @@ export const DirectoryView = observer(function DirectoryView({
           return null;
       }
     },
-    [
-      AlbumRow,
-      PhotoRow,
-      directoryId,
-      directoryPath,
-      order,
-      handleSortDateDesc,
-      handleSortDateAsc,
-      openGroupMenu,
-      membersStore.administrator,
-    ]
+    [AlbumRow, PhotoRow, openGroupMenu, membersStore.administrator]
   );
 
   const keyExtractor = useCallback(
@@ -565,6 +528,16 @@ export const DirectoryView = observer(function DirectoryView({
             <Text style={styles.emptyStateText}>Aucune photo trouvée</Text>
           </View>
         )}
+      {paginatedPhotos.length > 0 && (
+        <TouchableOpacity
+          style={styles.sortFloatingButton}
+          onPress={openSortMenu}
+          accessibilityLabel="Ouvrir les options de tri"
+          accessibilityRole="button"
+        >
+          <MaterialIcons name="sort" size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
       <DirectoryBulkLocationModal
         visible={bulkLocationVisible}
         photos={bulkLocationPhotos || []}
@@ -590,30 +563,29 @@ export const DirectoryView = observer(function DirectoryView({
               ]
             : [])()}
       />
+      <ActionMenu
+        visible={sortMenuVisible}
+        onClose={closeSortMenu}
+        items={[
+          {
+            label: "Plus récent en premier",
+            onPress: handleSortDateDesc,
+            icon: (
+              <MaterialIcons name="expand-more" size={18} color="#1976d2" />
+            ),
+          },
+          {
+            label: "Plus ancien en premier",
+            onPress: handleSortDateAsc,
+            icon: (
+              <MaterialIcons name="expand-less" size={18} color="#1976d2" />
+            ),
+          },
+        ]}
+      />
     </>
   );
 });
-
-const SortButton = ({
-  label,
-  onPress,
-  selected,
-}: {
-  label: string;
-  onPress: () => void;
-  selected: boolean;
-}) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={[styles.sortButton, selected && styles.sortButtonSelected]}
-  >
-    <Text
-      style={[styles.sortButtonText, selected && styles.sortButtonTextSelected]}
-    >
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
 
 const styles = StyleSheet.create({
   rowContainer: {
@@ -628,13 +600,6 @@ const styles = StyleSheet.create({
   },
   itemWrapperLast: {
     marginRight: 0,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    flexGrow: 0,
-    flexShrink: 0,
-    gap: 4,
-    flexWrap: "wrap",
   },
   sectionHeader: {
     paddingHorizontal: 12,
@@ -661,27 +626,13 @@ const styles = StyleSheet.create({
   sectionCustomContent: {
     width: "100%",
   },
-  sortButton: {
-    backgroundColor: "#e0e0e0",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-  },
-  sortButtonSelected: {
-    backgroundColor: "#1976d2",
-  },
-  sortButtonText: {
-    color: "#333",
-  },
-  sortButtonTextSelected: {
-    color: "white",
-  },
   photosSection: {
     flex: 1,
   },
   dateHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 8,
+    paddingTop: 12,
+    paddingBottom: 0,
     backgroundColor: "#f5f5f5",
     flexDirection: "row",
     alignItems: "center",
@@ -695,7 +646,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateHeaderText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
     color: "#333",
   },
@@ -735,5 +686,21 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     color: "#666",
+  },
+  sortFloatingButton: {
+    position: "absolute",
+    right: -10,
+    bottom: "25%",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#1976d2",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
 });

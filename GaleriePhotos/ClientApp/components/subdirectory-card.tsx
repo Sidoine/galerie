@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { observer } from "mobx-react-lite";
 import {
   View,
@@ -7,7 +7,9 @@ import {
   StyleSheet,
   Switch,
   ImageBackground,
+  Pressable,
 } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useDirectoryVisibilitiesStore } from "@/stores/directory-visibilities";
 import { useMembersStore } from "@/stores/members";
@@ -36,6 +38,8 @@ const SubdirectoryCard = observer(
     const visibilitiesStore = useDirectoryVisibilitiesStore();
     const membersStore = useMembersStore();
     const visibilities = visibilitiesStore.visibilities;
+    const [isHovering, setIsHovering] = useState(false);
+    const [adminPanelExpanded, setAdminPanelExpanded] = useState(false);
 
     const handleUseAsParentCover = useCallback(async () => {
       if (store.setParentCover) await store.setParentCover(directory.id);
@@ -56,9 +60,27 @@ const SubdirectoryCard = observer(
     const imageSource = directory.coverPhotoId
       ? { uri: photosStore.getThumbnail(directory.coverPhotoId) }
       : placeholder;
+    const isAdmin = membersStore.administrator;
+    const adminControlsVisible = isAdmin && (isHovering || adminPanelExpanded);
+
+    const handleMouseEnter = useCallback(() => {
+      setIsHovering(true);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+      setIsHovering(false);
+    }, []);
+
+    const handleToggleAdminPanel = useCallback(() => {
+      setAdminPanelExpanded((current) => !current);
+    }, []);
 
     return (
-      <View style={[styles.card, { width: size }]}>
+      <Pressable
+        style={[styles.card, { width: size }]}
+        onHoverIn={handleMouseEnter}
+        onHoverOut={handleMouseLeave}
+      >
         <ImageBackground
           source={imageSource}
           style={[styles.imageBackground, { height: size * 0.75 }]}
@@ -72,31 +94,62 @@ const SubdirectoryCard = observer(
                 accessibilityRole="link"
               />
             </Link>
-            <View style={styles.overlay}>
-              <Link href={store.getChildContainerLink(directory.id)} asChild>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.overlayPressable}
-                >
-                  <Text style={styles.title}>{directory.name}</Text>
-                  <View style={styles.subtitleRow}>
-                    {directory.numberOfPhotos > 0 && (
-                      <Text style={styles.metaText}>
-                        {directory.numberOfPhotos} élément
-                        {directory.numberOfPhotos > 1 ? "s" : ""}
-                      </Text>
-                    )}
-                    {isDirectory(directory) &&
-                      directory.numberOfSubDirectories > 0 && (
+            <View
+              style={[
+                styles.overlay,
+                { minHeight: adminControlsVisible ? 100 : 60 },
+              ]}
+            >
+              <View style={styles.overlayTop}>
+                <Link href={store.getChildContainerLink(directory.id)} asChild>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={styles.overlayPressable}
+                  >
+                    <Text style={styles.title}>{directory.name}</Text>
+                    <View style={styles.subtitleRow}>
+                      {directory.numberOfPhotos > 0 && (
                         <Text style={styles.metaText}>
-                          {directory.numberOfSubDirectories} album
-                          {directory.numberOfSubDirectories > 1 ? "s" : ""}
+                          {directory.numberOfPhotos} élément
+                          {directory.numberOfPhotos > 1 ? "s" : ""}
                         </Text>
                       )}
+                      {isDirectory(directory) &&
+                        directory.numberOfSubDirectories > 0 && (
+                          <Text style={styles.metaText}>
+                            {directory.numberOfSubDirectories} album
+                            {directory.numberOfSubDirectories > 1 ? "s" : ""}
+                          </Text>
+                        )}
+                    </View>
+                  </TouchableOpacity>
+                </Link>
+                {isAdmin && (
+                  <View style={styles.adminControlsArea}>
+                    <TouchableOpacity
+                      onPress={handleToggleAdminPanel}
+                      style={[
+                        styles.adminToggleButton,
+                        adminControlsVisible && styles.adminToggleButtonActive,
+                      ]}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        adminControlsVisible
+                          ? "Masquer les options administrateur"
+                          : "Afficher les options administrateur"
+                      }
+                    >
+                      <MaterialIcons
+                        name={adminControlsVisible ? "close" : "settings"}
+                        size={18}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
-              </Link>
-              {membersStore.administrator && (
+                )}
+              </View>
+              {adminControlsVisible && (
                 <View style={styles.visibilityRow}>
                   {isDirectory(directory) &&
                     visibilities.map((v) => (
@@ -123,7 +176,7 @@ const SubdirectoryCard = observer(
             </View>
           </View>
         </ImageBackground>
-      </View>
+      </Pressable>
     );
   }
 );
@@ -156,6 +209,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 12,
     gap: 8,
+    transitionProperty: "min-height",
+    transitionDuration: "200ms",
+  },
+  overlayTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   overlayPressable: {
     gap: 4,
@@ -178,8 +237,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 4,
+    marginTop: 8,
     alignContent: "center",
+    alignSelf: "stretch",
   },
   visibilityItem: {
     flexDirection: "row",
@@ -200,5 +260,24 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     textAlign: "center",
+  },
+  adminControlsArea: {
+    gap: 8,
+    alignItems: "flex-end",
+    alignSelf: "stretch",
+  },
+  adminToggleButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  adminToggleButtonActive: {
+    backgroundColor: "rgba(25, 118, 210, 0.9)",
+    borderColor: "transparent",
   },
 });

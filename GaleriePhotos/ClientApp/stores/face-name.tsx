@@ -146,7 +146,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       container: faceName,
       navigateToChildContainer,
       getPhotoLink,
-      childContainersHeader: <Text>??</Text>,
+      childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
     };
