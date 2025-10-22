@@ -10,5 +10,6 @@ namespace GaleriePhotos.Models
     {
         // Navigation properties
         public ICollection<GalleryMember> GalleryMemberships { get; set; } = new List<GalleryMember>();
+        public ICollection<GalleryRecentSearch> RecentSearches { get; set; } = new List<GalleryRecentSearch>();
     }
 }

@@ -25,5 +25,6 @@ namespace GaleriePhotos.Models
         public ICollection<GalleryMember> Members { get; set; } = new List<GalleryMember>();
         public ICollection<Photo> Photos { get; set; } = new List<Photo>();
         public ICollection<PhotoDirectory> PhotoDirectories { get; set; } = new List<PhotoDirectory>();
+        public ICollection<GalleryRecentSearch> RecentSearches { get; set; } = new List<GalleryRecentSearch>();
     }
 }

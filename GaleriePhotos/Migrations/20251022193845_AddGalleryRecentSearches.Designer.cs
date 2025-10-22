@@ -13,8 +13,8 @@ using Pgvector;
 namespace GaleriePhotos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251020105939_AddPhotoGPSIndex")]
-    partial class AddPhotoGPSIndex
+    [Migration("20251022193845_AddGalleryRecentSearches")]
+    partial class AddGalleryRecentSearches
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -278,6 +278,41 @@ namespace GaleriePhotos.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("GalleryMembers");
+                });
+
+            modelBuilder.Entity("GaleriePhotos.Models.GalleryRecentSearch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GalleryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("GalleryId", "UserId", "CreatedAtUtc");
+
+                    b.HasIndex("GalleryId", "UserId", "Query")
+                        .IsUnique();
+
+                    b.ToTable("GalleryRecentSearches");
                 });
 
             modelBuilder.Entity("GaleriePhotos.Models.Photo", b =>
@@ -641,6 +676,25 @@ namespace GaleriePhotos.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("GaleriePhotos.Models.GalleryRecentSearch", b =>
+                {
+                    b.HasOne("GaleriePhotos.Models.Gallery", "Gallery")
+                        .WithMany("RecentSearches")
+                        .HasForeignKey("GalleryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GaleriePhotos.Models.ApplicationUser", "User")
+                        .WithMany("RecentSearches")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Gallery");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("GaleriePhotos.Models.Photo", b =>
                 {
                     b.HasOne("GaleriePhotos.Models.PhotoDirectory", "Directory")
@@ -766,6 +820,8 @@ namespace GaleriePhotos.Migrations
             modelBuilder.Entity("GaleriePhotos.Models.ApplicationUser", b =>
                 {
                     b.Navigation("GalleryMemberships");
+
+                    b.Navigation("RecentSearches");
                 });
 
             modelBuilder.Entity("GaleriePhotos.Models.FaceName", b =>
@@ -780,6 +836,8 @@ namespace GaleriePhotos.Migrations
                     b.Navigation("PhotoDirectories");
 
                     b.Navigation("Photos");
+
+                    b.Navigation("RecentSearches");
                 });
 
             modelBuilder.Entity("GaleriePhotos.Models.Place", b =>

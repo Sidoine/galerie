@@ -5,8 +5,16 @@ import * as views from "./views";
 export class SearchController {
 	constructor(private client: helpers.ApiClient) {}
 
+    addRecentSearch = (galleryId: number, request: views.RecentSearchCreate) => {
+        return this.client.fetchJson<views.RecentSearch[]>(`api/gallery/${galleryId}/search/recent`, "POST", JSON.stringify(request));
+    }
+
     getPhotos = (galleryId: number, query?: string, sortOrder?: string, offset?: number, count?: number) => {
         return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/search/photos` + helpers.getQueryString({ query: query, sortOrder: sortOrder, offset: offset, count: count }), "GET", undefined);
+    }
+
+    getRecentSearches = (galleryId: number) => {
+        return this.client.fetchJson<views.RecentSearch[]>(`api/gallery/${galleryId}/search/recent`, "GET", undefined);
     }
 
     getSummary = (galleryId: number, query?: string) => {

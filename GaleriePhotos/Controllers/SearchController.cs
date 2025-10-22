@@ -42,6 +42,130 @@ namespace GaleriePhotos.Controllers
             this.galleryService = galleryService;
         }
 
+        [HttpGet("recent")]
+        public async Task<ActionResult<RecentSearchViewModel[]>> GetRecentSearches(int galleryId)
+        {
+            var gallery = await galleryService.Get(galleryId);
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            if (!User.IsGalleryMember(gallery))
+            {
+                return Forbid();
+            }
+
+            var userId = User.GetUserId();
+            if (userId == null)
+            {
+                return Forbid();
+            }
+
+            var recentSearches = await applicationDbContext.GalleryRecentSearches
+                .Where(rs => rs.GalleryId == galleryId && rs.UserId == userId)
+                .OrderByDescending(rs => rs.CreatedAtUtc)
+                .Take(10)
+                .Select(rs => new RecentSearchViewModel
+                {
+                    Query = rs.Query,
+                    CreatedAtUtc = rs.CreatedAtUtc,
+                })
+                .ToArrayAsync();
+
+            return Ok(recentSearches);
+        }
+
+        [HttpPost("recent")]
+        public async Task<ActionResult<RecentSearchViewModel[]>> AddRecentSearch(int galleryId, [FromBody] RecentSearchCreateViewModel request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Query))
+            {
+                return BadRequest("La requête de recherche ne peut pas être vide.");
+            }
+
+            var gallery = await galleryService.Get(galleryId);
+            if (gallery == null)
+            {
+                return NotFound();
+            }
+
+            if (!User.IsGalleryMember(gallery))
+            {
+                return Forbid();
+            }
+
+            var userId = User.GetUserId();
+            if (userId == null)
+            {
+                return Forbid();
+            }
+
+            var user = await applicationDbContext.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return Forbid();
+            }
+
+            var normalizedQuery = request.Query.Trim();
+            if (normalizedQuery.Length > 256)
+            {
+                normalizedQuery = normalizedQuery.Substring(0, 256);
+            }
+
+            var existing = await applicationDbContext.GalleryRecentSearches
+                .FirstOrDefaultAsync(rs => rs.GalleryId == galleryId && rs.UserId == userId && rs.Query == normalizedQuery);
+
+            var now = DateTime.UtcNow;
+
+            if (existing != null)
+            {
+                existing.CreatedAtUtc = now;
+                applicationDbContext.GalleryRecentSearches.Update(existing);
+            }
+            else
+            {
+                var recentSearch = new GalleryRecentSearch
+                {
+                    GalleryId = galleryId,
+                    UserId = userId,
+                    Query = normalizedQuery,
+                    CreatedAtUtc = now,
+                    Gallery = gallery,
+                    User = user,
+                };
+
+                applicationDbContext.GalleryRecentSearches.Add(recentSearch);
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+
+            var overflow = await applicationDbContext.GalleryRecentSearches
+                .Where(rs => rs.GalleryId == galleryId && rs.UserId == userId)
+                .OrderByDescending(rs => rs.CreatedAtUtc)
+                .Skip(10)
+                .ToListAsync();
+
+            if (overflow.Count > 0)
+            {
+                applicationDbContext.GalleryRecentSearches.RemoveRange(overflow);
+                await applicationDbContext.SaveChangesAsync();
+            }
+
+            var recentSearches = await applicationDbContext.GalleryRecentSearches
+                .Where(rs => rs.GalleryId == galleryId && rs.UserId == userId)
+                .OrderByDescending(rs => rs.CreatedAtUtc)
+                .Take(10)
+                .Select(rs => new RecentSearchViewModel
+                {
+                    Query = rs.Query,
+                    CreatedAtUtc = rs.CreatedAtUtc,
+                })
+                .ToArrayAsync();
+
+            return Ok(recentSearches);
+        }
+
         [HttpGet("summary")]
         public async Task<ActionResult<SearchResultFullViewModel>> GetSummary(int galleryId, [FromQuery] string query)
         {
@@ -66,7 +190,7 @@ namespace GaleriePhotos.Controllers
             var count = await photosQuery.CountAsync();
             if (count == 0)
             {
-                return Ok(new SearchResultFullViewModel { NumberOfPhotos = 0, MinDate = null, MaxDate = null, Name = query, CoverPhotoId = null  });
+                return Ok(new SearchResultFullViewModel { NumberOfPhotos = 0, MinDate = null, MaxDate = null, Name = query, CoverPhotoId = null });
             }
 
             var minDate = await photosQuery.MinAsync(p => p.DateTime);

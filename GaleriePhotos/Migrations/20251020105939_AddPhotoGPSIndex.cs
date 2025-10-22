@@ -13,8 +13,7 @@ namespace GaleriePhotos.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Photos_Latitude_Longitude",
                 table: "Photos",
-                columns: new[] { "Latitude", "Longitude" })
-                .Annotation("Npgsql:IndexMethod", "gist");
+                columns: new[] { "Latitude", "Longitude" });
         }
 
         /// <inheritdoc />

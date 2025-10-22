@@ -17,7 +17,8 @@ namespace GaleriePhotos.Data
         public DbSet<Face> Faces { get; set; } = null!;
         public DbSet<FaceName> FaceNames { get; set; } = null!;
         public DbSet<Place> Places { get; set; } = null!;
-    public DbSet<BackgroundServiceState> BackgroundServiceStates { get; set; } = null!;
+        public DbSet<BackgroundServiceState> BackgroundServiceStates { get; set; } = null!;
+        public DbSet<GalleryRecentSearch> GalleryRecentSearches { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)
@@ -27,7 +28,7 @@ namespace GaleriePhotos.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            
+
             // Configure pgvector extension
             modelBuilder.HasPostgresExtension("vector");
 
@@ -38,8 +39,8 @@ namespace GaleriePhotos.Data
                 entity.HasIndex(x => x.PlaceId).IsUnique(false);
                 entity.HasIndex(x => x.DateTime);
                 entity.HasIndex(x => new { x.DateTime, x.PlaceId });
-                entity.HasIndex(x => new { x.Latitude, x.Longitude }).HasMethod("gist");
-                
+                entity.HasIndex(x => new { x.Latitude, x.Longitude });
+
                 entity.HasOne(e => e.Place)
                     .WithMany()
                     .HasForeignKey(e => e.PlaceId)
@@ -55,14 +56,41 @@ namespace GaleriePhotos.Data
                     .HasForeignKey(e => e.CoverPhotoId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
-            
+
             modelBuilder.Entity<BackgroundServiceState>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasMaxLength(128);
                 entity.Property(e => e.State).HasColumnType("jsonb");
             });
-            
+
+            modelBuilder.Entity<GalleryRecentSearch>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Query)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.CreatedAtUtc)
+                    .IsRequired();
+
+                entity.HasIndex(e => new { e.GalleryId, e.UserId, e.CreatedAtUtc });
+
+                entity.HasIndex(e => new { e.GalleryId, e.UserId, e.Query })
+                    .IsUnique();
+
+                entity.HasOne(e => e.Gallery)
+                    .WithMany(g => g.RecentSearches)
+                    .HasForeignKey(e => e.GalleryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.RecentSearches)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             // Configure Face entity
             modelBuilder.Entity<Face>(entity =>
             {
@@ -84,7 +112,7 @@ namespace GaleriePhotos.Data
                 .HasMethod("ivfflat")
                 .HasOperators("vector_l2_ops");
             });
-            
+
             // Configure FaceName entity
             modelBuilder.Entity<FaceName>(entity =>
             {
@@ -92,7 +120,7 @@ namespace GaleriePhotos.Data
                 entity.Property(e => e.Name).IsRequired();
                 entity.HasIndex(e => new { e.GalleryId, e.Name }).IsUnique();
             });
-            
+
             // Configure Place entity
             modelBuilder.Entity<Place>(entity =>
             {
@@ -105,12 +133,12 @@ namespace GaleriePhotos.Data
                 entity.HasIndex(e => e.ParentId);
                 entity.HasIndex(e => e.Type);
                 entity.HasIndex(e => e.CoverPhotoId);
-                
+
                 entity.HasOne(e => e.Gallery)
                     .WithMany()
                     .HasForeignKey(e => e.GalleryId)
                     .OnDelete(DeleteBehavior.Cascade);
-                    
+
                 // Self-referencing relationship for parent-child hierarchy
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
