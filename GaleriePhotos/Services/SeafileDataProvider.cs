@@ -56,21 +56,21 @@ namespace GaleriePhotos.Services
         public async Task MoveFile(PhotoDirectory destinationDirectory, Photo photo)
         {
             var sourcePath = Path.Combine(photo.Directory.Path, photo.FileName);
-            var destinationPath = Path.Combine(destinationDirectory.Path, photo.FileName);
             var sourceFilePath = NormalizePath(sourcePath);
-            var destFilePath = NormalizePath(destinationPath);
+            var destFilePath = NormalizePath(destinationDirectory.Path);
 
-            var requestData = new
+            var requestData = new FormUrlEncodedContent(
+            [
+                new KeyValuePair<string, string>("operation", "move"),
+                new KeyValuePair<string, string>("dst_repo", _originalsLibraryId),
+                new KeyValuePair<string, string>("dst_dir", destFilePath ?? "/"),
+            ]);
+
+            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{_originalsLibraryId}/file/?p={Uri.EscapeDataString(sourceFilePath)}", requestData);
+            if (response.StatusCode != System.Net.HttpStatusCode.MovedPermanently)
             {
-                operation = "move",
-                dst_repo = _originalsLibraryId,
-                dst_dir = Path.GetDirectoryName(destFilePath) ?? "/",
-                file_names = new[] { Path.GetFileName(sourceFilePath) }
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{_originalsLibraryId}/fileops/", content);
-            response.EnsureSuccessStatusCode();
+                throw new Exception($"Moving file failed {response.StatusCode}, {response.ReasonPhrase}");
+            }
         }
 
         /// <inheritdoc />
@@ -214,8 +214,8 @@ namespace GaleriePhotos.Services
         private async Task CreateDirectoryInternalAsync(string libraryId, string path)
         {
             var dirPath = NormalizePath(path);
-            
-            
+
+
             var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("operation", "mkdir"),
@@ -360,15 +360,14 @@ namespace GaleriePhotos.Services
             var oldPath = NormalizePath(photoDirectory.Path);
             var parentPath = Path.GetDirectoryName(oldPath);
             var normalizedParentPath = NormalizePath(parentPath ?? "/");
-            
-            var requestData = new
-            {
-                operation = "rename",
-                newname = newName
-            };
 
-            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{_originalsLibraryId}/dir/?p={Uri.EscapeDataString(oldPath)}", content);
+            var requestData = new FormUrlEncodedContent(
+            [
+                new KeyValuePair<string, string>("operation", "rename"),
+                new KeyValuePair<string, string>("newname", newName)
+            ]);
+
+            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{_originalsLibraryId}/dir/?p={Uri.EscapeDataString(oldPath)}", requestData);
             response.EnsureSuccessStatusCode();
         }
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,11 +17,12 @@ import { DirectoryController } from "@/services/directory";
 import { PhotoMove, Directory } from "@/services/views";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useDirectoriesStore } from "@/stores/directories";
+import { useGalleryStore } from "@/stores/gallery";
 
 interface PhotoMoveModalProps {
   visible: boolean;
   photoIds: number[];
-  rootDirectoryId: number;
   onClose: () => void;
   onSuccess?: () => void;
 }
@@ -29,50 +30,27 @@ interface PhotoMoveModalProps {
 export const PhotoMoveModal = observer(function PhotoMoveModal({
   visible,
   photoIds,
-  rootDirectoryId,
   onClose,
   onSuccess,
 }: PhotoMoveModalProps) {
-  const [directories, setDirectories] = useState<Directory[]>([]);
+  const directoriesStore = useDirectoriesStore();
+  const galleryStore = useGalleryStore();
+  const [loading, setLoading] = useState(false);
+  const rootDirectoryId = galleryStore.gallery?.rootDirectoryId;
+  const directories = rootDirectoryId
+    ? directoriesStore.subDirectoriesLoader.getValue(rootDirectoryId)
+    : null;
   const [selectedDirectoryId, setSelectedDirectoryId] = useState<number | null>(
     null
   );
-  const [loading, setLoading] = useState(false);
-  const [loadingDirectories, setLoadingDirectories] = useState(false);
   const apiClient = useApiClient();
+  const photoService = useMemo(
+    () => new PhotoController(apiClient),
+    [apiClient]
+  );
   const selectedPhotosStore = useSelectedPhotosStore();
 
-  useEffect(() => {
-    if (visible && rootDirectoryId) {
-      loadDirectories();
-    } else {
-      setDirectories([]);
-      setSelectedDirectoryId(null);
-    }
-  }, [visible, rootDirectoryId, loadDirectories]);
-
-  const loadDirectories = useCallback(async () => {
-    try {
-      setLoadingDirectories(true);
-      const directoryService = new DirectoryController(apiClient);
-      const response = await directoryService.getSubdirectories(
-        rootDirectoryId
-      );
-
-      if (response.ok && response.value) {
-        setDirectories(response.value);
-      } else {
-        Alert.alert("Erreur", "Impossible de charger les albums");
-      }
-    } catch (error) {
-      console.error("Error loading directories:", error);
-      Alert.alert("Erreur", "Une erreur est survenue lors du chargement");
-    } finally {
-      setLoadingDirectories(false);
-    }
-  }, [apiClient, rootDirectoryId]);
-
-  const handleMove = async () => {
+  const handleMove = useCallback(async () => {
     if (selectedDirectoryId === null) {
       Alert.alert("Erreur", "Veuillez sélectionner un album de destination");
       return;
@@ -85,7 +63,6 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
 
     try {
       setLoading(true);
-      const photoService = new PhotoController(apiClient);
       const moveData: PhotoMove = {
         photoIds,
         targetDirectoryId: selectedDirectoryId,
@@ -96,7 +73,9 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
       if (response.ok) {
         Alert.alert(
           "Succès",
-          `${photoIds.length} photo${photoIds.length > 1 ? "s" : ""} déplacée${photoIds.length > 1 ? "s" : ""} avec succès`
+          `${photoIds.length} photo${photoIds.length > 1 ? "s" : ""} déplacée${
+            photoIds.length > 1 ? "s" : ""
+          } avec succès`
         );
         selectedPhotosStore.clearSelection();
         onSuccess?.();
@@ -113,13 +92,23 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    apiClient,
+    onClose,
+    onSuccess,
+    photoIds,
+    selectedDirectoryId,
+    selectedPhotosStore,
+  ]);
 
   const renderDirectoryItem = ({ item }: { item: Directory }) => {
     const isSelected = selectedDirectoryId === item.id;
     return (
       <TouchableOpacity
-        style={[styles.directoryItem, isSelected && styles.directoryItemSelected]}
+        style={[
+          styles.directoryItem,
+          isSelected && styles.directoryItemSelected,
+        ]}
         onPress={() => setSelectedDirectoryId(item.id)}
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
@@ -130,13 +119,16 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
             size={24}
             color={isSelected ? "#007aff" : "#666"}
           />
-          <Text style={[styles.directoryName, isSelected && styles.directoryNameSelected]}>
-            {item.path.split("/").pop() || item.path}
+          <Text
+            style={[
+              styles.directoryName,
+              isSelected && styles.directoryNameSelected,
+            ]}
+          >
+            {item.name}
           </Text>
         </View>
-        {isSelected && (
-          <MaterialIcons name="check" size={24} color="#007aff" />
-        )}
+        {isSelected && <MaterialIcons name="check" size={24} color="#007aff" />}
       </TouchableOpacity>
     );
   };
@@ -161,10 +153,11 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
           </View>
 
           <Text style={styles.subtitle}>
-            {photoIds.length} photo{photoIds.length > 1 ? "s" : ""} sélectionnée{photoIds.length > 1 ? "s" : ""}
+            {photoIds.length} photo{photoIds.length > 1 ? "s" : ""} sélectionnée
+            {photoIds.length > 1 ? "s" : ""}
           </Text>
 
-          {loadingDirectories ? (
+          {!directories ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#007aff" />
               <Text style={styles.loadingText}>Chargement des albums...</Text>
