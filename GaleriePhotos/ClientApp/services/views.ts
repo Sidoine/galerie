@@ -140,6 +140,12 @@ export interface PhotoBulkUpdateDate {
     dateTime: string;
 }
 
+export interface PhotoMove {
+    photoIds: number[];
+
+    targetDirectoryId: number;
+}
+
 export interface Place {
     id: number;
 

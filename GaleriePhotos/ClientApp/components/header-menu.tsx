@@ -1,7 +1,8 @@
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
+import { PhotoMoveModal } from "./modals/photo-move-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { useCallback, useState } from "react";
@@ -12,6 +13,7 @@ function HeaderMenu() {
   const [bulkDateModalVisible, setBulkDateModalVisible] = useState(false);
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
     useState(false);
+  const [moveModalVisible, setMoveModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
@@ -36,6 +38,18 @@ function HeaderMenu() {
 
   const handleCloseBulkLocationModal = useCallback(() => {
     setBulkLocationModalVisible(false);
+  }, []);
+
+  const handleOpenMoveModal = useCallback(() => {
+    setMoveModalVisible(true);
+  }, []);
+
+  const handleCloseMoveModal = useCallback(() => {
+    setMoveModalVisible(false);
+  }, []);
+
+  const handleMoveSuccess = useCallback(() => {
+    // Could refresh the view here if needed
   }, []);
 
   const handleClearSelection = useCallback(() => {
@@ -65,15 +79,27 @@ function HeaderMenu() {
   return (
     <>
       {hasSelection && (
-        <TouchableOpacity
-          onPress={handleOpenSelectionMenu}
-          style={styles.selectionMenuButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel="Options pour les photos sélectionnées"
-        >
-          <Text style={styles.selectionCount}>{selectedPhotosStore.count}</Text>
-          <MaterialIcons name="more-vert" size={24} color="#007aff" />
-        </TouchableOpacity>
+        <View style={styles.selectionActions}>
+          <TouchableOpacity
+            onPress={handleOpenMoveModal}
+            style={styles.moveButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Déplacer vers un album"
+          >
+            <MaterialIcons name="drive-file-move" size={24} color="#007aff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleOpenSelectionMenu}
+            style={styles.selectionMenuButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Options pour les photos sélectionnées"
+          >
+            <Text style={styles.selectionCount}>
+              {selectedPhotosStore.count}
+            </Text>
+            <MaterialIcons name="more-vert" size={24} color="#007aff" />
+          </TouchableOpacity>
+        </View>
       )}
       <ActionMenu
         visible={selectionMenuVisible}
@@ -91,6 +117,12 @@ function HeaderMenu() {
         photos={selectedPhotosStore.photos}
         onClose={handleCloseBulkLocationModal}
       />
+      <PhotoMoveModal
+        visible={moveModalVisible}
+        photoIds={selectedPhotosStore.photoIds}
+        onClose={handleCloseMoveModal}
+        onSuccess={handleMoveSuccess}
+      />
     </>
   );
 }
@@ -98,12 +130,20 @@ function HeaderMenu() {
 export default observer(HeaderMenu);
 
 const styles = StyleSheet.create({
+  selectionActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  moveButton: {
+    padding: 4,
+    marginRight: 4,
+  },
   selectionMenuButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     padding: 4,
-    marginLeft: 8,
   },
   selectionCount: {
     fontSize: 16,
