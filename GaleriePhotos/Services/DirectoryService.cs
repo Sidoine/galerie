@@ -58,10 +58,6 @@ namespace GaleriePhotos.Services
             // Update all child directories' paths recursively
             await UpdateChildDirectoriesPathsAsync(directory, oldPath, newPath);
             
-            // Update all photos' paths in this directory
-            var photos = await dbContext.Photos.Where(p => p.DirectoryId == directory.Id).ToListAsync();
-            // Photos don't need path updates as their FileName is relative to the directory
-            
             await dbContext.SaveChangesAsync();
         }
 
@@ -74,7 +70,11 @@ namespace GaleriePhotos.Services
             foreach (var child in childDirectories)
             {
                 var oldChildPath = child.Path;
-                child.Path = child.Path.Replace(oldBasePath, newBasePath);
+                // Replace only at the beginning of the path
+                if (child.Path.StartsWith(oldBasePath))
+                {
+                    child.Path = newBasePath + child.Path.Substring(oldBasePath.Length);
+                }
                 await UpdateChildDirectoriesPathsAsync(child, oldChildPath, child.Path);
             }
         }

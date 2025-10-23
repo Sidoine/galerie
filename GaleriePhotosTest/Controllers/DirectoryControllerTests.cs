@@ -365,7 +365,11 @@ public class DirectoryRenameTests
         });
         await context.SaveChangesAsync();
 
-        var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+        var parentDirectory = new PhotoDirectory("Parent", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(parentDirectory);
+        await context.SaveChangesAsync();
+
+        var directory = new PhotoDirectory("Parent/TestDir", 0, null, parentDirectory.Id) { Gallery = gallery, ParentDirectory = parentDirectory };
         context.PhotoDirectories.Add(directory);
         await context.SaveChangesAsync();
 
@@ -382,5 +386,42 @@ public class DirectoryRenameTests
         // Test with slash
         var result3 = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "path/traversal" });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result3);
+
+        // Test with asterisk
+        var result4 = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "bad*name" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result4);
+
+        // Test with dot
+        var result5 = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "bad.name" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result5);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task RenameDirectory_ReturnsBadRequest_WhenTryingToRenameRootDirectory()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var rootDirectory = new PhotoDirectory("RootDir", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(rootDirectory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.RenameDirectory(rootDirectory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "NewName" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
     }
 }

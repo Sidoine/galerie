@@ -169,9 +169,12 @@ namespace Galerie.Server.Controllers
             }
 
             // Validate that the name doesn't contain path separators or other invalid characters
-            if (model.Name.Contains('/') || model.Name.Contains('\\') || model.Name.Contains(".."))
+            var invalidChars = Path.GetInvalidFileNameChars();
+            if (model.Name.Contains('/') || model.Name.Contains('\\') || model.Name.Contains("..") || 
+                model.Name.Contains('*') || model.Name.Contains('.') || 
+                model.Name.IndexOfAny(invalidChars) >= 0)
             {
-                return BadRequest("Le nom ne peut pas contenir de séparateurs de chemin ou '..'");
+                return BadRequest("Le nom ne peut pas contenir de caractères invalides");
             }
 
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -182,23 +185,17 @@ namespace Galerie.Server.Controllers
                 return Forbid();
             }
 
+            // Do not allow renaming the root directory
+            if (directory.ParentDirectoryId == null)
+            {
+                return BadRequest("Impossible de renommer le répertoire racine");
+            }
+
             // Check if a sibling directory with the same name already exists
             if (directory.ParentDirectoryId != null)
             {
                 var siblings = await applicationDbContext.PhotoDirectories
                     .Where(d => d.ParentDirectoryId == directory.ParentDirectoryId && d.Id != directory.Id)
-                    .ToListAsync();
-                
-                if (siblings.Any(s => Path.GetFileName(s.Path) == model.Name.Trim()))
-                {
-                    return BadRequest("Un répertoire avec ce nom existe déjà au même emplacement");
-                }
-            }
-            else
-            {
-                // Root level directory - check other root directories
-                var siblings = await applicationDbContext.PhotoDirectories
-                    .Where(d => d.GalleryId == directory.GalleryId && d.ParentDirectoryId == null && d.Id != directory.Id)
                     .ToListAsync();
                 
                 if (siblings.Any(s => Path.GetFileName(s.Path) == model.Name.Trim()))
