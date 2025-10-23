@@ -4,7 +4,6 @@ import { Href, useRouter } from "expo-router";
 import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
 import { PaginatedPhotosStore } from "./paginated-photos";
-import { Text } from "react-native";
 import { useGalleryStore } from "./gallery";
 
 const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);

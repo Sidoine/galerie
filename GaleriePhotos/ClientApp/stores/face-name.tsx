@@ -8,7 +8,6 @@ import {
   PhotoContainerStore,
 } from "./photo-container";
 import { PaginatedPhotosStore } from "./paginated-photos";
-import { Text } from "react-native";
 
 const noContainer: PhotoContainer[] = [];
 
