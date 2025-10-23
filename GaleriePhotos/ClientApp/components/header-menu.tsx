@@ -2,8 +2,10 @@ import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
+import { PhotoMoveModal } from "./modals/photo-move-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
+import { useGalleryStore } from "@/stores/gallery";
 import { useCallback, useState } from "react";
 import { observer } from "mobx-react-lite";
 
@@ -12,7 +14,9 @@ function HeaderMenu() {
   const [bulkDateModalVisible, setBulkDateModalVisible] = useState(false);
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
     useState(false);
+  const [moveModalVisible, setMoveModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
+  const galleryStore = useGalleryStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
     setSelectionMenuVisible(true);
@@ -38,6 +42,18 @@ function HeaderMenu() {
     setBulkLocationModalVisible(false);
   }, []);
 
+  const handleOpenMoveModal = useCallback(() => {
+    setMoveModalVisible(true);
+  }, []);
+
+  const handleCloseMoveModal = useCallback(() => {
+    setMoveModalVisible(false);
+  }, []);
+
+  const handleMoveSuccess = useCallback(() => {
+    // Could refresh the view here if needed
+  }, []);
+
   const handleClearSelection = useCallback(() => {
     selectedPhotosStore.clearSelection();
   }, [selectedPhotosStore]);
@@ -45,6 +61,11 @@ function HeaderMenu() {
   const hasSelection = selectedPhotosStore.count > 0;
 
   const selectionMenuItems: ActionMenuItem[] = [
+    {
+      label: "Déplacer vers un album",
+      onPress: handleOpenMoveModal,
+      icon: <MaterialIcons name="drive-file-move" size={18} color="#1976d2" />,
+    },
     {
       label: "Changer la date",
       onPress: handleOpenBulkDateModal,
@@ -90,6 +111,13 @@ function HeaderMenu() {
         visible={bulkLocationModalVisible}
         photos={selectedPhotosStore.photos}
         onClose={handleCloseBulkLocationModal}
+      />
+      <PhotoMoveModal
+        visible={moveModalVisible}
+        photoIds={selectedPhotosStore.photoIds}
+        rootDirectoryId={galleryStore.gallery?.rootDirectoryId ?? 0}
+        onClose={handleCloseMoveModal}
+        onSuccess={handleMoveSuccess}
       />
     </>
   );
