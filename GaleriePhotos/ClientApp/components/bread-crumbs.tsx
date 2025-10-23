@@ -49,7 +49,9 @@ function BreadCrumbs({ store }: { store: PhotoContainerStore }) {
 
   const handleCloseBulkDate = useCallback(() => {
     setBulkDateModalVisible(false);
-  }, []);
+    // Clear selection after modal closes (whether save succeeds or user cancels)
+    selectionStore.clearSelection();
+  }, [selectionStore]);
 
   const handleOpenBulkLocation = useCallback(() => {
     setBulkLocationModalVisible(true);
@@ -57,7 +59,9 @@ function BreadCrumbs({ store }: { store: PhotoContainerStore }) {
 
   const handleCloseBulkLocation = useCallback(() => {
     setBulkLocationModalVisible(false);
-  }, []);
+    // Clear selection after modal closes (whether save succeeds or user cancels)
+    selectionStore.clearSelection();
+  }, [selectionStore]);
 
   // Get selected photos from the paginated store
   const paginatedPhotos = store.paginatedPhotosStore?.photos || [];
