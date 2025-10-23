@@ -56,5 +56,9 @@ export class FaceController {
     undoAutoNaming = (galleryId: number, faceId: number) => {
         return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/undo-auto-name`, "POST", undefined);
     }
+
+    updateFaceName = (galleryId: number, faceNameId: number, model: views.FaceNameUpdate) => {
+        return this.client.fetch(`api/gallery/${galleryId}/face-names/${faceNameId}`, "PATCH", JSON.stringify(model));
+    }
 }
 

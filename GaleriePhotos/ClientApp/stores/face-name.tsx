@@ -133,6 +133,16 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     return new PaginatedPhotosStore(faceName, loadPhotos, sortOrder);
   }, [faceName, loadPhotos, order]);
 
+  const renameContainer = useCallback(
+    async (newName: string) => {
+      if (!faceNameId) return;
+      await faceNamesStore.updateFaceName(faceNameId, newName);
+      // Invalidate to refresh the container data
+      faceNamesStore.clearCache();
+    },
+    [faceNameId, faceNamesStore]
+  );
+
   const faceNameStore = useMemo<PhotoContainerStore>(() => {
     return {
       navigateToPhoto,
@@ -149,6 +159,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
+      renameContainer,
     };
   }, [
     navigateToPhoto,
@@ -162,6 +173,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     getPhotoLink,
     getChildContainerLink,
     paginatedPhotosStore,
+    renameContainer,
   ]);
   return (
     <FaceNameStoreContext.Provider value={faceNameStore}>

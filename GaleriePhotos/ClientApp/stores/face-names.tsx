@@ -73,6 +73,19 @@ class FaceNamesStore {
     this.namesLoader.invalidate();
     return response.ok;
   }
+
+  async updateFaceName(faceNameId: number, newName: string) {
+    const response = await this.faceController.updateFaceName(
+      this.galleryId,
+      faceNameId,
+      { name: newName }
+    );
+    if (response.ok) {
+      this.namesLoader.invalidate();
+      this.nameLoader.invalidate();
+    }
+    return response.ok;
+  }
 }
 
 const FaceNamesStoreContext = createContext<FaceNamesStore | null>(null);

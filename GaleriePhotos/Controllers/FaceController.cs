@@ -439,5 +439,46 @@ namespace GaleriePhotos.Controllers
 
             return Ok();
         }
+
+        /// <summary>
+        /// Met à jour le nom d'un visage (FaceName). Réservé aux administrateurs de la galerie.
+        /// </summary>
+        /// <param name="galleryId">Identifiant de la galerie</param>
+        /// <param name="faceNameId">Identifiant du nom de visage</param>
+        /// <param name="model">Nouveau nom</param>
+        [HttpPatch("{galleryId}/face-names/{faceNameId}")]
+        public async Task<ActionResult> UpdateFaceName(int galleryId, int faceNameId, [FromBody] FaceNameUpdateViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                return BadRequest("Le nom ne peut pas être vide");
+            }
+
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            // Récupère le FaceName en s'assurant qu'il appartient bien à la galerie
+            var faceName = await applicationDbContext.FaceNames
+                .Where(fn => fn.Id == faceNameId && fn.GalleryId == galleryId)
+                .FirstOrDefaultAsync();
+
+            if (faceName == null) return NotFound();
+
+            // Vérifie qu'il n'existe pas déjà un autre FaceName avec ce nom dans la galerie
+            var existingFaceName = await applicationDbContext.FaceNames
+                .Where(fn => fn.GalleryId == galleryId && fn.Name == model.Name.Trim() && fn.Id != faceNameId)
+                .FirstOrDefaultAsync();
+
+            if (existingFaceName != null)
+            {
+                return BadRequest("Un nom de visage avec ce nom existe déjà dans cette galerie");
+            }
+
+            faceName.Name = model.Name.Trim();
+            await applicationDbContext.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 }

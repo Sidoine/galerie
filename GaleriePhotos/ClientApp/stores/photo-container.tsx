@@ -58,6 +58,7 @@ export interface PhotoContainerStore {
   paginatedPhotosStore: PaginatedPhotosStore;
   setCover?(photoId: number): Promise<void>;
   setParentCover?(containerId: number): Promise<void>;
+  renameContainer?(newName: string): Promise<void>;
   childContainersHeader: ReactNode;
   getChildContainerLink(containerId: number): Href;
 }
