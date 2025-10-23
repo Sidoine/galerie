@@ -43,15 +43,15 @@ class SelectedPhotosStore {
   }
 
   selectPhotos(photos: Photo[]) {
-    photos.forEach((photo) => {
+    for (const photo of photos) {
       this.selectedPhotos.set(photo.id, photo);
-    });
+    }
   }
 
   deselectPhotos(photoIds: number[]) {
-    photoIds.forEach((photoId) => {
+    for (const photoId of photoIds) {
       this.selectedPhotos.delete(photoId);
-    });
+    }
   }
 
   isSelected(photoId: number): boolean {

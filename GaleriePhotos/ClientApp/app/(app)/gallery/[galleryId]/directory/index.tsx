@@ -1,6 +1,6 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { DirectoryView } from "@/components/directory-view";
+import { DirectoryView } from "@/components/container-view/directory-view";
 import { useDirectoryStore } from "@/stores/directory";
 
 function DirectoriesScreen() {
