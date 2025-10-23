@@ -136,8 +136,6 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     async (newName: string) => {
       if (!faceNameId) return;
       await faceNamesStore.updateFaceName(faceNameId, newName);
-      // Invalidate to refresh the container data
-      faceNamesStore.clearCache();
     },
     [faceNameId, faceNamesStore]
   );

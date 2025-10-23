@@ -1,7 +1,7 @@
 import { FaceController } from "@/services/face";
 import { FaceName, FaceNameFull, Photo } from "@/services/views";
 import { MapLoader, useApiClient, ValueLoader } from "folke-service-helpers";
-import { computed, makeObservable } from "mobx";
+import { action, computed, makeObservable, runInAction } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class FaceNamesStore {
@@ -17,6 +17,7 @@ class FaceNamesStore {
   ) {
     makeObservable(this, {
       names: computed,
+      clearCache: action,
     });
   }
 
@@ -29,6 +30,7 @@ class FaceNamesStore {
   }
 
   clearCache() {
+    this.nameLoader.cache.clear();
     this.namePhotosLoader.cache.clear();
   }
 
@@ -81,8 +83,10 @@ class FaceNamesStore {
       { name: newName }
     );
     if (response.ok) {
-      this.namesLoader.invalidate();
-      this.nameLoader.invalidate();
+      runInAction(() => {
+        this.namesLoader.invalidate();
+        this.nameLoader.cache.clear();
+      });
     }
     return response.ok;
   }

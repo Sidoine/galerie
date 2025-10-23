@@ -51,6 +51,7 @@ export const EditNameModal = observer(function EditNameModal({
       Alert.alert("Erreur", "Une erreur est survenue lors de la mise à jour");
     } finally {
       setLoading(false);
+      onClose();
     }
   };
 
