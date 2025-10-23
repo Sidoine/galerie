@@ -2,7 +2,6 @@ import React, {
   useCallback,
   useMemo,
   memo,
-  ReactNode,
   useEffect,
   useState,
   useRef,
@@ -30,12 +29,14 @@ import {
   determineGroupingStrategy,
   groupPhotosByDate,
   splitPhotosIntoRows,
-} from "./photo-date-grouping";
-import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
+} from "../photo-date-grouping";
 import { MaterialIcons } from "@expo/vector-icons";
-import { ActionMenu, ActionMenuItem } from "./action-menu";
-import { useMembersStore } from "@/stores/members";
+import { ActionMenu } from "../action-menu";
 import { useIsFocused } from "@react-navigation/native";
+import { DirectoryFlatListItem, gap } from "./item-types";
+import DateHeader from "./date-header";
+import { AlbumRow } from "./album-row";
+import { PhotoRow } from "./photo-row";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -49,49 +50,9 @@ function splitInRows<T>(data: T[], cols: number): T[][] {
   return rows;
 }
 
-// -----------------------------
-// Types d'items pour la FlashList plate
-// -----------------------------
-interface BaseItem {
-  id: string;
-  type: string;
-}
-
-interface AlbumsHeaderItem extends BaseItem {
-  type: "albumsHeader";
-  title: ReactNode;
-}
-interface AlbumRowItem extends BaseItem {
-  type: "albumRow";
-  items: PhotoContainer[];
-}
-interface DateHeaderItem extends BaseItem {
-  type: "dateHeader";
-  title: string;
-  placeNames: string[];
-}
-interface PhotoRowItem extends BaseItem {
-  type: "photoRow";
-  items: Photo[];
-  groupId: string;
-}
-interface LoadingItem extends BaseItem {
-  type: "loading";
-}
-
-type DirectoryFlatListItem =
-  | AlbumsHeaderItem
-  | AlbumRowItem
-  | DateHeaderItem
-  | PhotoRowItem
-  | LoadingItem;
-
-const gap = 4;
-
 export const DirectoryView = observer(function DirectoryView({
   store,
 }: DirectoryViewProps) {
-  const membersStore = useMembersStore();
   // Get directory info for admin menu
   let { width } = useWindowDimensions();
   if (width > 768) {
@@ -209,6 +170,7 @@ export const DirectoryView = observer(function DirectoryView({
             type: "dateHeader",
             title: group.displayTitle,
             placeNames,
+            photoIds: group.photos.map((photo) => photo.id),
           });
           const rows = splitPhotosIntoRows(group.photos, cols);
           rows.forEach((row, idx) =>
@@ -240,116 +202,13 @@ export const DirectoryView = observer(function DirectoryView({
     order,
   ]);
 
-  // Composant de ligne optimisé (évite de recréer des closures pour chaque item)
-  // Rendu d'une ligne d'albums
-  const AlbumRow = useMemo(
-    () =>
-      memo(function AlbumRow({ items }: { items: PhotoContainer[] }) {
-        return (
-          <View style={styles.rowContainer}>
-            {items.map((subDir, i) => (
-              <View
-                key={subDir.id}
-                style={[
-                  styles.itemWrapper,
-                  i === items.length - 1 && styles.itemWrapperLast,
-                ]}
-              >
-                <SubdirectoryCard
-                  directory={subDir}
-                  size={columnWidth * 2 + gap}
-                  store={store}
-                />
-              </View>
-            ))}
-          </View>
-        );
-      }),
-    [columnWidth, store]
-  );
-
-  // Rendu d'une ligne de photos
-  const PhotoRow = useMemo(
-    () =>
-      memo(function PhotoRow({ items }: { items: Photo[] }) {
-        return (
-          <View style={styles.rowContainer}>
-            {items.map((photo, i) => (
-              <View
-                key={photo.id}
-                style={[
-                  styles.itemWrapper,
-                  i === items.length - 1 && styles.itemWrapperLast,
-                ]}
-              >
-                <ImageCard photo={photo} size={columnWidth} store={store} />
-              </View>
-            ))}
-          </View>
-        );
-      }),
-    [columnWidth, store]
-  );
-
   const handleSortDateDesc = useCallback(
     () => store.sort("date-desc"),
     [store]
   );
   const handleSortDateAsc = useCallback(() => store.sort("date-asc"), [store]);
 
-  // -----------------------------
-  // Gestion des actions de groupe par date (bulk GPS)
-  // (déclaré avant renderItem pour éviter use-before-definition)
-  // -----------------------------
-  const [bulkLocationVisible, setBulkLocationVisible] = useState(false);
-  const [bulkLocationPhotos, setBulkLocationPhotos] = useState<Photo[] | null>(
-    null
-  );
-  const [groupActionsVisible, setGroupActionsVisible] = useState(false);
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [sortMenuVisible, setSortMenuVisible] = useState(false);
-
-  const openGroupMenu = useCallback((groupId: string) => {
-    setCurrentGroupId(groupId);
-    setGroupActionsVisible(true);
-  }, []);
-  const closeGroupMenu = useCallback(() => {
-    setGroupActionsVisible(false);
-    setCurrentGroupId(null);
-  }, []);
-
-  const openBulkLocationForGroup = useCallback(
-    (groupId: string) => {
-      // Récupérer toutes les photos dont la groupId correspond
-      // On reconstruit les groupes de la même manière que lors de la création de flatData
-      let photosInGroup: Photo[] = [];
-      if (!shouldGroupPhotos) {
-        if (groupId === "all") {
-          photosInGroup = paginatedPhotos;
-        }
-      } else {
-        const groups = groupPhotosByDate(
-          paginatedPhotos,
-          groupingStrategy === "day",
-          order === "date-desc" ? "date-desc" : "date-asc"
-        );
-        const group = groups.find((g) => g.id === groupId);
-        if (group) {
-          photosInGroup = group.photos;
-        }
-      }
-      if (photosInGroup.length > 0) {
-        setBulkLocationPhotos(photosInGroup);
-        setBulkLocationVisible(true);
-      }
-    },
-    [shouldGroupPhotos, paginatedPhotos, groupingStrategy, order]
-  );
-
-  const closeBulkLocation = useCallback(() => {
-    setBulkLocationVisible(false);
-    setBulkLocationPhotos(null);
-  }, []);
 
   const openSortMenu = useCallback(() => setSortMenuVisible(true), []);
   const closeSortMenu = useCallback(() => setSortMenuVisible(false), []);
@@ -377,37 +236,23 @@ export const DirectoryView = observer(function DirectoryView({
             </View>
           );
         case "albumRow":
-          return <AlbumRow items={item.items} />;
-        case "dateHeader":
           return (
-            <View style={styles.dateHeader}>
-              <View style={styles.dateHeaderTextWrapper}>
-                <Text style={styles.dateHeaderText}>{item.title}</Text>
-                {item.placeNames.length > 0 && (
-                  <Text
-                    style={styles.dateHeaderPlaces}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {item.placeNames.join(" • ")}
-                  </Text>
-                )}
-              </View>
-              {membersStore.administrator && (
-                <TouchableOpacity
-                  accessibilityLabel="Actions sur cette date"
-                  style={styles.dateHeaderActionBtn}
-                  onPress={() =>
-                    openGroupMenu(item.id.replace("date-header-", ""))
-                  }
-                >
-                  <MaterialIcons name="more-vert" size={20} color="#1976d2" />
-                </TouchableOpacity>
-              )}
-            </View>
+            <AlbumRow
+              items={item.items}
+              store={store}
+              columnWidth={columnWidth}
+            />
           );
+        case "dateHeader":
+          return <DateHeader item={item} store={store} />;
         case "photoRow":
-          return <PhotoRow items={item.items} />;
+          return (
+            <PhotoRow
+              items={item.items}
+              store={store}
+              columnWidth={columnWidth}
+            />
+          );
         case "loading":
           return (
             <View style={styles.loadingFooter}>
@@ -418,7 +263,7 @@ export const DirectoryView = observer(function DirectoryView({
           return null;
       }
     },
-    [AlbumRow, PhotoRow, openGroupMenu, membersStore.administrator]
+    [columnWidth, store]
   );
 
   const keyExtractor = useCallback(
@@ -538,31 +383,6 @@ export const DirectoryView = observer(function DirectoryView({
           <MaterialIcons name="sort" size={24} color="#fff" />
         </TouchableOpacity>
       )}
-      <DirectoryBulkLocationModal
-        visible={bulkLocationVisible}
-        photos={bulkLocationPhotos || []}
-        onClose={closeBulkLocation}
-      />
-      <ActionMenu
-        visible={groupActionsVisible}
-        onClose={closeGroupMenu}
-        items={((): ActionMenuItem[] =>
-          currentGroupId
-            ? [
-                {
-                  label: "Changer la localisation (GPS)",
-                  onPress: () => openBulkLocationForGroup(currentGroupId),
-                  icon: (
-                    <MaterialIcons
-                      name="my-location"
-                      size={18}
-                      color="#1976d2"
-                    />
-                  ),
-                },
-              ]
-            : [])()}
-      />
       <ActionMenu
         visible={sortMenuVisible}
         onClose={closeSortMenu}
@@ -628,41 +448,6 @@ const styles = StyleSheet.create({
   },
   photosSection: {
     flex: 1,
-  },
-  dateHeader: {
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 0,
-    backgroundColor: "#f5f5f5",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  dateHeaderTextWrapper: {
-    flex: 1,
-    flexDirection: "row",
-    paddingRight: 12,
-    alignItems: "baseline",
-    gap: 8,
-  },
-  dateHeaderText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#333",
-  },
-  dateHeaderPlaces: {
-    marginTop: 2,
-    fontSize: 12,
-    color: "#666",
-  },
-  dateHeaderActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "#e3f2fd",
-    borderRadius: 16,
   },
   loadingFooter: {
     paddingVertical: 20,

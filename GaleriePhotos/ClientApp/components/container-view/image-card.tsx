@@ -1,5 +1,13 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, Platform, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Pressable,
+} from "react-native";
 import { observer } from "mobx-react-lite";
 import { Photo } from "@/services/views";
 import { usePhotosStore } from "@/stores/photos";
@@ -37,21 +45,15 @@ const ImageCard = observer(function ImageCard({
   );
 
   const handleLongPress = useCallback(() => {
-    if (Platform.OS !== "web") {
-      selectedPhotosStore.selectPhoto(photo);
-    }
+    selectedPhotosStore.selectPhoto(photo);
   }, [selectedPhotosStore, photo]);
 
   const handleMouseEnter = useCallback(() => {
-    if (Platform.OS === "web") {
-      setIsHovered(true);
-    }
+    setIsHovered(true);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    if (Platform.OS === "web") {
-      setIsHovered(false);
-    }
+    setIsHovered(false);
   }, []);
 
   // On mobile, always show checkbox if any photo is selected
@@ -90,16 +92,11 @@ const ImageCard = observer(function ImageCard({
 
       {showCheckbox && (
         <TouchableOpacity
-          style={[
-            styles.checkbox,
-            isSelected && styles.checkboxSelected,
-          ]}
+          style={[styles.checkbox, isSelected && styles.checkboxSelected]}
           onPress={handleCheckboxPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          {isSelected && (
-            <MaterialIcons name="check" size={18} color="#fff" />
-          )}
+          {isSelected && <MaterialIcons name="check" size={18} color="#fff" />}
         </TouchableOpacity>
       )}
 

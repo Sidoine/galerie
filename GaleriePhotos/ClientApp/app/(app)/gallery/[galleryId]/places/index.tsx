@@ -1,4 +1,4 @@
-import { DirectoryView } from "@/components/directory-view";
+import { DirectoryView } from "@/components/container-view/directory-view";
 import { usePlaceStore } from "@/stores/place";
 
 export default function PlacesMapScreen() {

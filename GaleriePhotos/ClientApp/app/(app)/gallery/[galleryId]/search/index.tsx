@@ -1,5 +1,5 @@
 import React from "react";
-import { DirectoryView } from "@/components/directory-view";
+import { DirectoryView } from "@/components/container-view/directory-view";
 import { useSearchStore } from "@/stores/search";
 import { GallerySearchBar } from "@/components/gallery-search-bar";
 
