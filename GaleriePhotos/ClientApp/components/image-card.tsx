@@ -28,7 +28,7 @@ const ImageCard = observer(function ImageCard({
   const isSelected = selectionStore.isSelected(photo.id);
   const showCheckbox = isHovered || isSelected || selectionStore.hasSelection;
 
-  const handleCheckboxPress = useCallback((e: any) => {
+  const handleCheckboxPress = useCallback((e: { preventDefault: () => void; stopPropagation: () => void }) => {
     e.preventDefault();
     e.stopPropagation();
     selectionStore.toggleSelection(photo.id);
@@ -42,6 +42,7 @@ const ImageCard = observer(function ImageCard({
   const containerProps = Platform.OS === 'web' ? {
     onMouseEnter: () => setIsHovered(true),
     onMouseLeave: () => setIsHovered(false),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any : {};
 
   return (
