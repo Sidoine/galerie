@@ -18,6 +18,7 @@ import Icon from "@/components/Icon";
 import { GalleryStoreProvider, useGalleryStore } from "@/stores/gallery";
 import { SearchStoreProvider, useSearchStore } from "@/stores/search";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { PhotoSelectionProvider } from "@/stores/photo-selection";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -248,7 +249,9 @@ export default function GalleryLayout() {
                               query={query}
                               order={order}
                             >
-                              <GalleryLayoutContent />
+                              <PhotoSelectionProvider>
+                                <GalleryLayoutContent />
+                              </PhotoSelectionProvider>
                             </SearchStoreProvider>
                           </PlaceStoreProvider>
                         </FaceNameStoreProvider>
