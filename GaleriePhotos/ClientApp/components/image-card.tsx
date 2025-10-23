@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   playIcon: {
     position: "absolute",
     top: 8,
-    right: 8,
+    left: 8,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
     borderRadius: 12,
     width: 24,
