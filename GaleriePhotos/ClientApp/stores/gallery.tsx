@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { Href, useRouter } from "expo-router";
-import { Text } from "react-native";
 import {
   PhotoContainerStore,
   BreadCrumb,

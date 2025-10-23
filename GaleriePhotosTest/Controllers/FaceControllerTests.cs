@@ -459,6 +459,211 @@ namespace GaleriePhotosTest.Controllers
             Assert.IsType<NoContentResult>(result);
             Assert.False(context.Faces.Any());
         }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task UpdateFaceName_ReturnsNotFound_WhenGalleryDoesNotExist()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService)
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext { User = BuildUser("user-x", globalAdmin: true) }
+                }
+            };
+
+            var result = await controller.UpdateFaceName(12345, 1, new FaceNameUpdateViewModel { Name = "NewName" });
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task UpdateFaceName_ReturnsForbid_WhenUserNotGalleryAdmin()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "user-not-admin";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            // Membre non admin
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var result = await controller.UpdateFaceName(gallery.Id, 999, new FaceNameUpdateViewModel { Name = "NewName" });
+            Assert.IsType<ForbidResult>(result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task UpdateFaceName_ReturnsNotFound_WhenFaceNameDoesNotExist()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "admin-user";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var result = await controller.UpdateFaceName(gallery.Id, 999, new FaceNameUpdateViewModel { Name = "NewName" });
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task UpdateFaceName_ReturnsBadRequest_WhenNameIsEmpty()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "admin-user";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var faceName = new FaceName { Name = "OldName", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            var result = await controller.UpdateFaceName(gallery.Id, faceName.Id, new FaceNameUpdateViewModel { Name = "   " });
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task UpdateFaceName_ReturnsBadRequest_WhenNameAlreadyExists()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "admin-user";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var faceName1 = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            var faceName2 = new FaceName { Name = "Bob", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.AddRange(faceName1, faceName2);
+            await context.SaveChangesAsync();
+
+            var result = await controller.UpdateFaceName(gallery.Id, faceName1.Id, new FaceNameUpdateViewModel { Name = "Bob" });
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact(Skip = "Can only be run on PostgreSQL")]
+        public async Task UpdateFaceName_ReturnsOk_OnSuccess()
+        {
+            using var context = GetInMemoryContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = "admin-user";
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var faceName = new FaceName { Name = "OldName", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            var result = await controller.UpdateFaceName(gallery.Id, faceName.Id, new FaceNameUpdateViewModel { Name = "NewName" });
+            Assert.IsType<OkResult>(result);
+
+            // Verify FaceName was updated
+            var updatedFaceName = await context.FaceNames.FindAsync(faceName.Id);
+            Assert.NotNull(updatedFaceName);
+            Assert.Equal("NewName", updatedFaceName.Name);
+        }
     }
 
     // Simple test logger implementation

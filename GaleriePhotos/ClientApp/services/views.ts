@@ -392,6 +392,10 @@ export interface AutoNamedFacePair {
     referenceHeight: number;
 }
 
+export interface FaceNameUpdate {
+    name: string;
+}
+
 export interface GalleryFull {
     minDate: string;
 
