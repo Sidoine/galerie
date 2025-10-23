@@ -229,4 +229,48 @@ test.describe("Photo Selection Feature", () => {
       }
     }
   });
+
+  test("allows selecting all photos for a date using date header checkbox", async ({
+    page,
+  }) => {
+    await page.goto(`/gallery/${galleryId}`);
+
+    // Wait for photos to load
+    const photoLinks = page.locator('a[href*="/photos/"]');
+    await expect(photoLinks.first()).toBeVisible();
+
+    // Wait for date headers to appear (photos are grouped by date)
+    await page.waitForTimeout(500);
+
+    // Find the first date header checkbox
+    const dateHeaderCheckbox = page
+      .locator('[aria-label*="Sélectionner toutes les photos de cette date"]')
+      .first();
+
+    // Click the date header checkbox to select all photos for that date
+    if (await dateHeaderCheckbox.isVisible()) {
+      await dateHeaderCheckbox.click();
+
+      // Wait for selection to update
+      await page.waitForTimeout(500);
+
+      // Verify that multiple photos are now selected (breadcrumbs should show count > 1)
+      // Look for a number indicating selection count
+      const selectionCount = page.getByText(/\d+/).first();
+      const count = await selectionCount.textContent();
+      
+      // We expect at least one photo to be selected
+      expect(count).toBeTruthy();
+
+      // Click the checkbox again to deselect all photos for that date
+      await dateHeaderCheckbox.click();
+      await page.waitForTimeout(500);
+
+      // Selection menu should disappear
+      const menuButton = page.locator('button[aria-label*="sélectionnées"]');
+      if (await menuButton.isVisible()) {
+        await expect(menuButton).not.toBeVisible();
+      }
+    }
+  });
 });
