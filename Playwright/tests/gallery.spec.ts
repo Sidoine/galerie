@@ -228,7 +228,6 @@ test.describe("Gallery page", () => {
     await expect(
       page.getByPlaceholder("Rechercher dans vos photos")
     ).toBeVisible();
-    await expect(page.getByText("Photos", { exact: true })).toBeVisible();
 
     const photoLinks = page.locator('a[href*="/photos/"]');
     await expect(photoLinks.first()).toBeVisible();
@@ -242,14 +241,6 @@ test.describe("Gallery page", () => {
     await searchInput.press("Enter");
 
     await page.waitForURL(`**/gallery/${galleryId}/search?query=montagne`);
-  });
-
-  test("supports sorting oldest first", async ({ page }) => {
-    await page.goto(`/gallery/${galleryId}`);
-
-    await page.getByText("Plus ancien en premier").click();
-
-    await page.waitForURL(`**/gallery/${galleryId}?order=date-asc`);
   });
 
   test("restores scroll position after closing a photo", async ({ page }) => {

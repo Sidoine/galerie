@@ -8,15 +8,15 @@ import { EditNameModal } from "@/components/modals/edit-name-modal";
 
 function BreadCrumbs({ store }: { store: PhotoContainerStore }) {
   const [editModalVisible, setEditModalVisible] = useState(false);
-  
+
   const handleOpenEditModal = useCallback(() => {
     setEditModalVisible(true);
   }, []);
-  
+
   const handleCloseEditModal = useCallback(() => {
     setEditModalVisible(false);
   }, []);
-  
+
   const handleSaveName = useCallback(
     async (newName: string) => {
       if (store.renameContainer) {
@@ -27,28 +27,30 @@ function BreadCrumbs({ store }: { store: PhotoContainerStore }) {
   );
 
   if (!store.breadCrumbs) return <Text>Galerie photo</Text>;
-  
+
   const lastCrumb = store.breadCrumbs[store.breadCrumbs.length - 1];
   const currentName = lastCrumb?.name || "";
-  
+
   return (
     <>
       <View style={styles.container}>
-        {store.breadCrumbs.map((crumb, index) => (
-          <Link key={index} href={crumb.url} style={[styles.text]}>
-            <Text style={{ color: "#007aff" }}>{crumb.name}</Text>
-            {index < store.breadCrumbs.length - 1 && <Text> &gt;</Text>}
-          </Link>
-        ))}
-        {store.renameContainer && (
-          <TouchableOpacity
-            onPress={handleOpenEditModal}
-            style={styles.editButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <MaterialIcons name="edit" size={20} color="#007aff" />
-          </TouchableOpacity>
-        )}
+        <View style={styles.breadcrumbsRow}>
+          {store.breadCrumbs.map((crumb, index) => (
+            <Link key={index} href={crumb.url} style={[styles.text]}>
+              <Text style={{ color: "#007aff" }}>{crumb.name}</Text>
+              {index < store.breadCrumbs.length - 1 && <Text> &gt;</Text>}
+            </Link>
+          ))}
+          {store.renameContainer && (
+            <TouchableOpacity
+              onPress={handleOpenEditModal}
+              style={styles.editButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialIcons name="edit" size={20} color="#007aff" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       {store.renameContainer && (
         <EditNameModal
@@ -69,7 +71,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 8,
     alignItems: "center",
+    justifyContent: "space-between",
     height: "100%",
+  },
+  breadcrumbsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
   },
   text: {
     fontSize: 20,
