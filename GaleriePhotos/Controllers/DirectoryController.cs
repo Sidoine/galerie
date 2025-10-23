@@ -108,12 +108,17 @@ namespace Galerie.Server.Controllers
             return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
         }
 
-        [Authorize(Policy = Policies.Administrator)]
         [HttpPatch("{id}")]
         public async Task<ActionResult> Patch(int id, [FromBody] DirectoryPatchViewModel viewModel)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
+            
+            if (!User.IsGalleryAdministrator(directory.Gallery))
+            {
+                return Forbid();
+            }
+
             if (viewModel.Visibility.IsSet)
             {
                 directory.Visibility = viewModel.Visibility.Value;

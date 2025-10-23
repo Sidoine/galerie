@@ -33,6 +33,11 @@ namespace Galerie.Server.Controllers
             this.dataService = dataService;
         }
 
+        /// <summary>
+        /// Gets the full image for a photo by its public ID.
+        /// NOTE: This endpoint allows anonymous access for public sharing via the publicId (GUID) which acts as a secret token.
+        /// This is a design decision to enable photo sharing without authentication, but anyone with the URL can access the photo.
+        /// </summary>
         [HttpGet("{publicId}/image")]
         [AllowAnonymous]
         public async Task<IActionResult> GetImage(Guid publicId)
@@ -45,6 +50,11 @@ namespace Galerie.Server.Controllers
             return File(bytes, photoService.GetMimeType(photo), photo.FileName);
         }
 
+        /// <summary>
+        /// Gets the thumbnail for a photo by its public ID.
+        /// NOTE: This endpoint allows anonymous access for public sharing via the publicId (GUID) which acts as a secret token.
+        /// This is a design decision to enable photo sharing without authentication, but anyone with the URL can access the photo.
+        /// </summary>
         [HttpGet("{publicId}/thumbnail")]
         [AllowAnonymous]
         public async Task<IActionResult> GetThumbnail(Guid publicId)

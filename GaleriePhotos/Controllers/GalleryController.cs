@@ -236,8 +236,11 @@ namespace GaleriePhotos.Controllers
         [HttpPost("{id}/seafile/apikey")]
         public async Task<ActionResult<SeafileApiKeyResponse>> GetSeafileApiKey(int id, [FromBody] SeafileApiKeyRequest request)
         {
-            var gallery = await applicationDbContext.Galleries.FirstOrDefaultAsync(g => g.Id == id);
+            var gallery = await applicationDbContext.Galleries
+                .Include(g => g.Members)
+                .FirstOrDefaultAsync(g => g.Id == id);
             if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
             if (gallery.DataProvider != DataProviderType.Seafile) return BadRequest("Gallery is not configured for Seafile");
             if (string.IsNullOrEmpty(gallery.SeafileServerUrl)) return BadRequest("Seafile server URL is not set on gallery");
 
@@ -268,8 +271,11 @@ namespace GaleriePhotos.Controllers
         }
 
         [HttpPost("seafile/repositories")]
+        [Authorize]
         public async Task<ActionResult<SeafileRepositoriesResponse>> GetSeafileRepositories([FromBody] SeafileRepositoriesRequest request)
         {
+            // This endpoint doesn't access gallery data directly, but requires authentication
+            // It's used during gallery configuration to list available repositories
             var serverUrl = request.ServerUrl?.TrimEnd('/');
             if (string.IsNullOrEmpty(serverUrl)) return BadRequest("Seafile server URL is not set");
             if (string.IsNullOrWhiteSpace(request.ApiKey)) return BadRequest("API key is required");
