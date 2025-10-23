@@ -56,6 +56,12 @@ class DirectoriesStore {
     this.subDirectoriesLoader.cache.clear();
   }
 
+  async renameDirectory(directoryId: number, newName: string) {
+    await this.directoryService.renameDirectory(directoryId, { name: newName });
+    this.infoLoader.cache.clear();
+    this.subDirectoriesLoader.cache.clear();
+  }
+
   clearCache() {
     this.contentLoader.cache.clear();
     this.subDirectoriesLoader.cache.clear();

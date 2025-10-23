@@ -90,6 +90,12 @@ namespace GaleriePhotos.Services
         Task<IFileName> GetLocalFaceThumbnailFileName(Face face);
         Task<bool> DirectoryExists(PhotoDirectory photoDirectory);
 
+        /// <summary>
+        /// Renames a directory.
+        /// </summary>
+        /// <param name="photoDirectory">The directory to rename.</param>
+        /// <param name="newName">The new name for the directory.</param>
+        Task RenameDirectory(PhotoDirectory photoDirectory, string newName);
 
         bool IsSetup { get; }
     }

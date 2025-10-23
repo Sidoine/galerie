@@ -155,6 +155,14 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [directoriesStore]
   );
 
+  const renameContainer = useCallback(
+    async (newName: string) => {
+      if (!directoryId) return;
+      await directoriesStore.renameDirectory(directoryId, newName);
+    },
+    [directoryId, directoriesStore]
+  );
+
   // Mémoïse la fonction loadPhotos pour pagination offset-based
   const loadPhotos = useCallback(
     async (sortOrder: string, offset: number, count: number) => {
@@ -190,6 +198,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       getPhotoLink,
       setCover,
       setParentCover,
+      renameContainer,
       childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
@@ -208,6 +217,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       getPhotoLink,
       setCover,
       setParentCover,
+      renameContainer,
       getChildContainerLink,
       paginatedPhotosStore,
     ]

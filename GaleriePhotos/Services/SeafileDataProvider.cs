@@ -354,5 +354,22 @@ namespace GaleriePhotos.Services
         {
             return DirectoryExistsInternal(_originalsLibraryId, photoDirectory.Path);
         }
+
+        public async Task RenameDirectory(PhotoDirectory photoDirectory, string newName)
+        {
+            var oldPath = NormalizePath(photoDirectory.Path);
+            var parentPath = Path.GetDirectoryName(oldPath);
+            var normalizedParentPath = NormalizePath(parentPath ?? "/");
+            
+            var requestData = new
+            {
+                operation = "rename",
+                newname = newName
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{_baseApiUrl}/repos/{_originalsLibraryId}/dir/?p={Uri.EscapeDataString(oldPath)}", content);
+            response.EnsureSuccessStatusCode();
+        }
     }
 }

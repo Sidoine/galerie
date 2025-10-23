@@ -62,6 +62,10 @@ export interface DirectoryPatch {
     coverPhotoId?: number | undefined;
 }
 
+export interface DirectoryRename {
+    name: string;
+}
+
 export interface AddressGeocodeRequest {
     address: string;
 }
@@ -152,6 +156,8 @@ export interface Place {
     parentId: number | null;
 
     coverPhotoId: string | null;
+
+    galleryId: number;
 }
 
 export interface PlaceFull {
@@ -174,6 +180,8 @@ export interface PlaceFull {
     parentId: number | null;
 
     coverPhotoId: string | null;
+
+    galleryId: number;
 }
 
 export interface Year {
