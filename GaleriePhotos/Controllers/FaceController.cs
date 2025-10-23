@@ -101,6 +101,10 @@ namespace GaleriePhotos.Controllers
         [HttpPost("{galleryId}/faces/unnamed-sample")]
         public async Task<ActionResult<FaceViewModel[]>> GetUnnamedFacesSample(int galleryId, [FromBody] UnnamedFacesSampleRequestViewModel model)
         {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
             var unnamedFaces = await faceDetectionService.GetUnnamedFacesSampleAsync(galleryId, model.Count);
             
             var result = unnamedFaces.Select(f => new FaceViewModel

@@ -13,6 +13,7 @@ namespace GaleriePhotos.ViewModels
         public PlaceType Type { get; set; }
         public int? ParentId { get; set; }
         public string? CoverPhotoId { get; set; }
+        public int GalleryId { get; set; }
     }
 
     public class PlaceShortViewModel

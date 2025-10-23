@@ -355,6 +355,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    GalleryId = p.GalleryId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     // Count all photos in cities within this country
                     NumberOfPhotos = context.Photos.Count(ph => ph.Place != null && ph.Place.ParentId == p.Id) +
@@ -379,6 +380,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    GalleryId = p.GalleryId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id),
                     MinDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow,
@@ -452,6 +454,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    GalleryId = p.GalleryId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })
@@ -474,6 +477,7 @@ namespace GaleriePhotos.Services
                     Longitude = p.Longitude,
                     Type = p.Type,
                     ParentId = p.ParentId,
+                    GalleryId = p.GalleryId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
                     NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id)
                 })

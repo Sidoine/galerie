@@ -1,9 +1,11 @@
 using Galerie.Server.ViewModels;
+using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using GaleriePhotos.Services;
 using GaleriePhotos.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,11 +20,13 @@ namespace Galerie.Server.Controllers
     {
         private readonly PlaceService placeService;
         private readonly ILogger<PlaceController> logger;
+        private readonly GalleryService galleryService;
 
-        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger)
+        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService)
         {
             this.placeService = placeService;
             this.logger = logger;
+            this.galleryService = galleryService;
         }
 
         [HttpGet("gallery/{galleryId}/countries")]
@@ -30,6 +34,10 @@ namespace Galerie.Server.Controllers
         {
             try
             {
+                var gallery = await galleryService.Get(galleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryMember(gallery)) return Forbid();
+
                 var countries = await placeService.GetCountriesByGalleryAsync(galleryId);
                 return Ok(countries);
             }
@@ -45,6 +53,10 @@ namespace Galerie.Server.Controllers
         {
             try
             {
+                var gallery = await galleryService.Get(galleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryMember(gallery)) return Forbid();
+
                 var cities = await placeService.GetCitiesByCountryAsync(countryId, galleryId);
                 return Ok(cities);
             }
@@ -60,6 +72,10 @@ namespace Galerie.Server.Controllers
         {
             try
             {
+                var gallery = await galleryService.Get(galleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryMember(gallery)) return Forbid();
+
                 var places = await placeService.GetPlacesByGalleryAsync(galleryId);
                 return Ok(places);
             }
@@ -75,6 +91,11 @@ namespace Galerie.Server.Controllers
         {
             var place = await placeService.GetPlaceByIdAsync(id);
             if (place == null) return NotFound();
+            
+            var gallery = await galleryService.Get(place.GalleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
             return Ok(place);
         }
 
@@ -83,6 +104,13 @@ namespace Galerie.Server.Controllers
         {
             try
             {
+                var place = await placeService.GetPlaceByIdAsync(id);
+                if (place == null) return NotFound();
+                
+                var gallery = await galleryService.Get(place.GalleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryMember(gallery)) return Forbid();
+
                 var placePhotos = await placeService.GetPlacePhotosAsync(id, year, month);
                 if (placePhotos == null)
                 {
@@ -112,24 +140,52 @@ namespace Galerie.Server.Controllers
         [HttpGet("{id}/photos/count")]
         public async Task<ActionResult<int>> GetPlacePhotoCount(int id, int? year, int? month)
         {
+            var place = await placeService.GetPlaceByIdAsync(id);
+            if (place == null) return NotFound();
+            
+            var gallery = await galleryService.Get(place.GalleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
             return Ok(await placeService.GetPlaceNumberOfPhotosAsync(id, year, month));
         }
 
         [HttpGet("{id}/years")]
         public async Task<ActionResult<YearViewModel[]>> GetPlaceYears(int id)
         {
+            var place = await placeService.GetPlaceByIdAsync(id);
+            if (place == null) return NotFound();
+            
+            var gallery = await galleryService.Get(place.GalleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
             return Ok(await placeService.GetPlaceYearsAsync(id));
         }
 
         [HttpGet("{id}/years/{year}/monthes")]
         public async Task<ActionResult<MonthViewModel[]>> GetPlaceMonths(int id, int year)
         {
+            var place = await placeService.GetPlaceByIdAsync(id);
+            if (place == null) return NotFound();
+            
+            var gallery = await galleryService.Get(place.GalleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
             return Ok(await placeService.GetPlaceMonthsAsync(id, year));
         }
 
         [HttpGet("{id}/years/{year}")]
         public async Task<ActionResult<YearFullViewModel>> GetPlaceYear(int id, int year)
         {
+            var place = await placeService.GetPlaceByIdAsync(id);
+            if (place == null) return NotFound();
+            
+            var gallery = await galleryService.Get(place.GalleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
             var result = await placeService.GetPlaceYearAsync(id, year);
             if (result == null) return NotFound();
             return Ok(result);
@@ -138,17 +194,30 @@ namespace Galerie.Server.Controllers
         [HttpGet("{id}/years/{year}/months/{month}")]
         public async Task<ActionResult<MonthFullViewModel>> GetPlaceMonth(int id, int year, int month)
         {
+            var place = await placeService.GetPlaceByIdAsync(id);
+            if (place == null) return NotFound();
+            
+            var gallery = await galleryService.Get(place.GalleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryMember(gallery)) return Forbid();
+
             var result = await placeService.GetPlaceMonthAsync(id, year, month);
             if (result == null) return NotFound();
             return Ok(result);
         }
 
         [HttpPost("{placeId}/photos/{photoId}")]
-        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult> AssignPhotoToPlace(int placeId, int photoId)
         {
             try
             {
+                var place = await placeService.GetPlaceByIdAsync(placeId);
+                if (place == null) return NotFound();
+                
+                var gallery = await galleryService.Get(place.GalleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
                 var success = await placeService.AssignPhotoToPlaceAsync(photoId, placeId);
                 if (!success)
                 {
@@ -164,11 +233,17 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpPost("{placeId}/cover/{photoId}")]
-        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult> SetPlaceCover(int placeId, int photoId)
         {
             try
             {
+                var place = await placeService.GetPlaceByIdAsync(placeId);
+                if (place == null) return NotFound();
+                
+                var gallery = await galleryService.Get(place.GalleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
                 var success = await placeService.SetPlaceCoverAsync(placeId, photoId);
                 if (!success)
                 {
@@ -184,11 +259,14 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("gallery/{galleryId}/merge-duplicates")]
-        [Authorize(Policy = Policies.Administrator)]
         public async Task<ActionResult<int>> MergeDuplicatePlaces(int galleryId)
         {
             try
             {
+                var gallery = await galleryService.Get(galleryId);
+                if (gallery == null) return NotFound();
+                if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
                 var mergedCount = await placeService.MergeDuplicatePlacesAsync(galleryId);
                 return Ok(new { mergedCount, message = $"Successfully merged {mergedCount} duplicate places" });
             }
