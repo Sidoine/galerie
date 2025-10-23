@@ -168,6 +168,12 @@ namespace Galerie.Server.Controllers
                 return BadRequest("Le nom ne peut pas être vide");
             }
 
+            // Validate that the name doesn't contain path separators or other invalid characters
+            if (model.Name.Contains('/') || model.Name.Contains('\\') || model.Name.Contains(".."))
+            {
+                return BadRequest("Le nom ne peut pas contenir de séparateurs de chemin ou '..'");
+            }
+
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
 

@@ -345,4 +345,42 @@ public class DirectoryRenameTests
         var result = await controller.RenameDirectory(directory1.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "Dir2" });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
     }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task RenameDirectory_ReturnsBadRequest_WhenNameContainsPathSeparators()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(directory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        // Test with forward slash
+        var result1 = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "../malicious" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result1);
+
+        // Test with backslash
+        var result2 = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "..\\malicious" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result2);
+
+        // Test with slash
+        var result3 = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "path/traversal" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result3);
+    }
 }
