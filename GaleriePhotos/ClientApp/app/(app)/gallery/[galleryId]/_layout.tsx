@@ -18,6 +18,7 @@ import Icon from "@/components/Icon";
 import { GalleryStoreProvider, useGalleryStore } from "@/stores/gallery";
 import { SearchStoreProvider, useSearchStore } from "@/stores/search";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { SelectedPhotosStoreProvider } from "@/stores/selected-photos";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -217,43 +218,45 @@ export default function GalleryLayout() {
               <FaceNamesStoreProvider galleryId={Number(galleryId)}>
                 <PlacesStoreProvider galleryId={Number(galleryId)}>
                   <MembersStoreProvider>
-                    <GalleryStoreProvider
-                      galleryId={Number(galleryId)}
-                      order={order}
-                    >
-                      <DirectoryStoreProvider
-                        directoryId={
-                          directoryId
-                            ? directoryId === "index"
-                              ? directoryId
-                              : Number(directoryId)
-                            : undefined
-                        }
+                    <SelectedPhotosStoreProvider>
+                      <GalleryStoreProvider
+                        galleryId={Number(galleryId)}
                         order={order}
                       >
-                        <FaceNameStoreProvider
-                          faceNameId={
-                            faceNameId ? Number(faceNameId) : undefined
+                        <DirectoryStoreProvider
+                          directoryId={
+                            directoryId
+                              ? directoryId === "index"
+                                ? directoryId
+                                : Number(directoryId)
+                              : undefined
                           }
                           order={order}
                         >
-                          <PlaceStoreProvider
-                            placeId={placeId ? Number(placeId) : undefined}
-                            year={year ? Number(year) : undefined}
-                            month={month ? Number(month) : undefined}
+                          <FaceNameStoreProvider
+                            faceNameId={
+                              faceNameId ? Number(faceNameId) : undefined
+                            }
                             order={order}
                           >
-                            <SearchStoreProvider
-                              galleryId={Number(galleryId)}
-                              query={query}
+                            <PlaceStoreProvider
+                              placeId={placeId ? Number(placeId) : undefined}
+                              year={year ? Number(year) : undefined}
+                              month={month ? Number(month) : undefined}
                               order={order}
                             >
-                              <GalleryLayoutContent />
-                            </SearchStoreProvider>
-                          </PlaceStoreProvider>
-                        </FaceNameStoreProvider>
-                      </DirectoryStoreProvider>
-                    </GalleryStoreProvider>
+                              <SearchStoreProvider
+                                galleryId={Number(galleryId)}
+                                query={query}
+                                order={order}
+                              >
+                                <GalleryLayoutContent />
+                              </SearchStoreProvider>
+                            </PlaceStoreProvider>
+                          </FaceNameStoreProvider>
+                        </DirectoryStoreProvider>
+                      </GalleryStoreProvider>
+                    </SelectedPhotosStoreProvider>
                   </MembersStoreProvider>
                 </PlacesStoreProvider>
               </FaceNamesStoreProvider>
