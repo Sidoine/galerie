@@ -36,6 +36,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { useMembersStore } from "@/stores/members";
 import { useIsFocused } from "@react-navigation/native";
+import { useSelectedPhotosStore } from "@/stores/selected-photos";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -69,6 +70,7 @@ interface DateHeaderItem extends BaseItem {
   type: "dateHeader";
   title: string;
   placeNames: string[];
+  photoIds: number[];
 }
 interface PhotoRowItem extends BaseItem {
   type: "photoRow";
@@ -92,6 +94,7 @@ export const DirectoryView = observer(function DirectoryView({
   store,
 }: DirectoryViewProps) {
   const membersStore = useMembersStore();
+  const selectedPhotosStore = useSelectedPhotosStore();
   // Get directory info for admin menu
   let { width } = useWindowDimensions();
   if (width > 768) {
@@ -209,6 +212,7 @@ export const DirectoryView = observer(function DirectoryView({
             type: "dateHeader",
             title: group.displayTitle,
             placeNames,
+            photoIds: group.photos.map((photo) => photo.id),
           });
           const rows = splitPhotosIntoRows(group.photos, cols);
           rows.forEach((row, idx) =>
@@ -354,6 +358,22 @@ export const DirectoryView = observer(function DirectoryView({
   const openSortMenu = useCallback(() => setSortMenuVisible(true), []);
   const closeSortMenu = useCallback(() => setSortMenuVisible(false), []);
 
+  const handleDateCheckboxToggle = useCallback(
+    (photoIds: number[]) => {
+      if (selectedPhotosStore.areAllSelected(photoIds)) {
+        // If all are selected, deselect them
+        selectedPhotosStore.deselectPhotos(photoIds);
+      } else {
+        // If none or some are selected, select all
+        const photosToSelect = paginatedPhotos.filter((photo) =>
+          photoIds.includes(photo.id)
+        );
+        selectedPhotosStore.selectPhotos(photosToSelect);
+      }
+    },
+    [selectedPhotosStore, paginatedPhotos]
+  );
+
   const renderItem: ListRenderItem<DirectoryFlatListItem> = useCallback(
     ({ item }) => {
       switch (item.type) {
@@ -378,7 +398,11 @@ export const DirectoryView = observer(function DirectoryView({
           );
         case "albumRow":
           return <AlbumRow items={item.items} />;
-        case "dateHeader":
+        case "dateHeader": {
+          const allSelected = selectedPhotosStore.areAllSelected(item.photoIds);
+          const someSelected =
+            !allSelected && selectedPhotosStore.areSomeSelected(item.photoIds);
+
           return (
             <View style={styles.dateHeader}>
               <View style={styles.dateHeaderTextWrapper}>
@@ -395,17 +419,29 @@ export const DirectoryView = observer(function DirectoryView({
               </View>
               {membersStore.administrator && (
                 <TouchableOpacity
-                  accessibilityLabel="Actions sur cette date"
-                  style={styles.dateHeaderActionBtn}
-                  onPress={() =>
-                    openGroupMenu(item.id.replace("date-header-", ""))
-                  }
+                  accessibilityLabel="Sélectionner toutes les photos de cette date"
+                  style={[
+                    styles.dateHeaderCheckbox,
+                    allSelected && styles.dateHeaderCheckboxSelected,
+                  ]}
+                  onPress={() => handleDateCheckboxToggle(item.photoIds)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <MaterialIcons name="more-vert" size={20} color="#1976d2" />
+                  {allSelected && (
+                    <MaterialIcons name="check" size={18} color="#fff" />
+                  )}
+                  {someSelected && (
+                    <MaterialIcons
+                      name="remove"
+                      size={18}
+                      color="rgba(255, 255, 255, 0.7)"
+                    />
+                  )}
                 </TouchableOpacity>
               )}
             </View>
           );
+        }
         case "photoRow":
           return <PhotoRow items={item.items} />;
         case "loading":
@@ -418,7 +454,14 @@ export const DirectoryView = observer(function DirectoryView({
           return null;
       }
     },
-    [AlbumRow, PhotoRow, openGroupMenu, membersStore.administrator]
+    [
+      AlbumRow,
+      PhotoRow,
+      openGroupMenu,
+      membersStore.administrator,
+      selectedPhotosStore,
+      handleDateCheckboxToggle,
+    ]
   );
 
   const keyExtractor = useCallback(
@@ -655,14 +698,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  dateHeaderActionBtn: {
-    flexDirection: "row",
+  dateHeaderCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#1976d2",
+    backgroundColor: "transparent",
+    justifyContent: "center",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "#e3f2fd",
-    borderRadius: 16,
+    marginRight: 8,
+  },
+  dateHeaderCheckboxSelected: {
+    backgroundColor: "#1976d2",
+    borderColor: "#1976d2",
   },
   loadingFooter: {
     paddingVertical: 20,

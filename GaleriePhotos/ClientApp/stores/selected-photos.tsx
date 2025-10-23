@@ -17,6 +17,8 @@ class SelectedPhotosStore {
       selectPhoto: action,
       deselectPhoto: action,
       clearSelection: action,
+      selectPhotos: action,
+      deselectPhotos: action,
     });
   }
 
@@ -40,8 +42,28 @@ class SelectedPhotosStore {
     this.selectedPhotos.clear();
   }
 
+  selectPhotos(photos: Photo[]) {
+    photos.forEach((photo) => {
+      this.selectedPhotos.set(photo.id, photo);
+    });
+  }
+
+  deselectPhotos(photoIds: number[]) {
+    photoIds.forEach((photoId) => {
+      this.selectedPhotos.delete(photoId);
+    });
+  }
+
   isSelected(photoId: number): boolean {
     return this.selectedPhotos.has(photoId);
+  }
+
+  areAllSelected(photoIds: number[]): boolean {
+    return photoIds.every((id) => this.selectedPhotos.has(id));
+  }
+
+  areSomeSelected(photoIds: number[]): boolean {
+    return photoIds.some((id) => this.selectedPhotos.has(id));
   }
 
   get count(): number {
