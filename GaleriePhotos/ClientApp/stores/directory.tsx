@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useMemo } from "react";
 import { Href, useRouter } from "expo-router";
 import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
-import { PaginatedPhotosStore } from "./paginated-photos";
+import { LoadPhotosFunction, PaginatedPhotosStore } from "./paginated-photos";
 import { useGalleryStore } from "./gallery";
 
 const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);
@@ -112,10 +112,10 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       });
     }
 
-    if (directory) {
+    if (directory && directory.parent) {
       crumbs.push({
         id: directory.id,
-        name: directory.name || "Tous les albums",
+        name: directory.name,
         url: `/gallery/${galleryId}/directory/${directory.id}`,
       });
     }
@@ -155,10 +155,22 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [directoriesStore]
   );
 
+  const renameContainer = useCallback(
+    async (newName: string) => {
+      if (!directoryId) return;
+      await directoriesStore.renameDirectory(directoryId, newName);
+    },
+    [directoryId, directoriesStore]
+  );
+
   // Mémoïse la fonction loadPhotos pour pagination offset-based
-  const loadPhotos = useCallback(
+  const loadPhotos = useCallback<LoadPhotosFunction>(
     async (sortOrder: string, offset: number, count: number) => {
       if (!directoryId) return null;
+
+      // Don't load photos if at root level
+      // We consider that these photos are not in any album
+      if (directory?.parent == null) return { ok: true, value: [] };
       return await directoriesStore.directoryService.getPhotos(
         directoryId,
         sortOrder,
@@ -166,7 +178,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
         count
       );
     },
-    [directoryId, directoriesStore.directoryService]
+    [directoryId, directory?.parent, directoriesStore.directoryService]
   );
 
   // Instance unique du store paginé (réinitialisé si le conteneur change)
@@ -190,6 +202,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       getPhotoLink,
       setCover,
       setParentCover,
+      renameContainer: directory?.parent ? renameContainer : undefined,
       childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
@@ -208,6 +221,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       getPhotoLink,
       setCover,
       setParentCover,
+      renameContainer,
       getChildContainerLink,
       paginatedPhotosStore,
     ]

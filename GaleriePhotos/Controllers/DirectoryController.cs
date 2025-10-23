@@ -154,5 +154,60 @@ namespace Galerie.Server.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Renames a directory (album).
+        /// </summary>
+        /// <param name="id">Directory ID</param>
+        /// <param name="model">New name</param>
+        /// <returns>Success or error</returns>
+        [HttpPatch("{id}/rename")]
+        public async Task<ActionResult> RenameDirectory(int id, [FromBody] DirectoryRenameViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                return BadRequest("Le nom ne peut pas être vide");
+            }
+
+            // Validate that the name doesn't contain path separators or other invalid characters
+            var invalidChars = Path.GetInvalidFileNameChars();
+            if (model.Name.Contains('/') || model.Name.Contains('\\') || 
+                model.Name.Contains('*') || model.Name.Contains('.') || 
+                model.Name.IndexOfAny(invalidChars) >= 0)
+            {
+                return BadRequest("Le nom ne peut pas contenir de caractères invalides");
+            }
+
+            var directory = await photoService.GetPhotoDirectoryAsync(id);
+            if (directory == null) return NotFound();
+
+            if (!User.IsGalleryAdministrator(directory.Gallery))
+            {
+                return Forbid();
+            }
+
+            // Do not allow renaming the root directory
+            if (directory.ParentDirectoryId == null)
+            {
+                return BadRequest("Impossible de renommer le répertoire racine");
+            }
+
+            // Check if a sibling directory with the same name already exists
+            if (directory.ParentDirectoryId != null)
+            {
+                var siblings = await applicationDbContext.PhotoDirectories
+                    .Where(d => d.ParentDirectoryId == directory.ParentDirectoryId && d.Id != directory.Id)
+                    .ToListAsync();
+                
+                if (siblings.Any(s => Path.GetFileName(s.Path) == model.Name.Trim()))
+                {
+                    return BadRequest("Un répertoire avec ce nom existe déjà au même emplacement");
+                }
+            }
+
+            await directoryService.RenameDirectoryAsync(directory, model.Name.Trim());
+
+            return Ok();
+        }
+
     }
 }

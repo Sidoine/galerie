@@ -112,5 +112,14 @@ namespace GaleriePhotos.Services
             var dirPath = Path.Combine(Gallery.RootDirectory, photoDirectory.Path);
             return Task.FromResult(Directory.Exists(dirPath));
         }
+
+        public Task RenameDirectory(PhotoDirectory photoDirectory, string newName)
+        {
+            var oldPath = Path.Combine(Gallery.RootDirectory, photoDirectory.Path);
+            var parentPath = Path.GetDirectoryName(oldPath);
+            var newPath = Path.Combine(parentPath ?? Gallery.RootDirectory, newName);
+            Directory.Move(oldPath, newPath);
+            return Task.CompletedTask;
+        }
     }
 }

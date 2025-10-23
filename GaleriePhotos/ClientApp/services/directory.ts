@@ -21,6 +21,10 @@ export class DirectoryController {
         return this.client.fetch(`api/directories/${id}`, "PATCH", JSON.stringify(viewModel));
     }
 
+    renameDirectory = (id: number, model: views.DirectoryRename) => {
+        return this.client.fetch(`api/directories/${id}/rename`, "PATCH", JSON.stringify(model));
+    }
+
     setParentCover = (id: number) => {
         return this.client.fetch(`api/directories/${id}/set-parent-cover`, "POST", undefined);
     }
