@@ -671,5 +671,50 @@ namespace GaleriePhotos.Services
 
             await applicationDbContext.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// Moves a list of photos to a target directory by updating their directory reference
+        /// and physically moving the files on the file system
+        /// </summary>
+        public async Task MovePhotosToDirectory(int[] photoIds, int targetDirectoryId)
+        {
+            if (photoIds.Length == 0) return;
+
+            var targetDirectory = await applicationDbContext.PhotoDirectories
+                .Include(x => x.Gallery)
+                .FirstOrDefaultAsync(x => x.Id == targetDirectoryId);
+            
+            if (targetDirectory == null)
+                throw new InvalidOperationException("Le répertoire cible n'existe pas.");
+
+            var photos = await applicationDbContext.Photos
+                .Include(p => p.Directory)
+                    .ThenInclude(d => d.Gallery)
+                .Where(p => photoIds.Contains(p.Id))
+                .ToListAsync();
+
+            // Ensure all photos belong to the same gallery as the target directory
+            if (photos.Any(p => p.Directory.GalleryId != targetDirectory.GalleryId))
+                throw new InvalidOperationException("Toutes les photos doivent appartenir à la même galerie que le répertoire cible.");
+
+            var dataProvider = dataService.GetDataProvider(targetDirectory.Gallery);
+
+            foreach (var photo in photos)
+            {
+                // Skip if photo is already in the target directory
+                if (photo.DirectoryId == targetDirectoryId)
+                    continue;
+
+                // Move the file physically
+                await dataProvider.MoveFile(targetDirectory, photo);
+
+                // Update the database reference
+                photo.Directory = targetDirectory;
+                photo.DirectoryId = targetDirectory.Id;
+                applicationDbContext.Update(photo);
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+        }
     }
 }

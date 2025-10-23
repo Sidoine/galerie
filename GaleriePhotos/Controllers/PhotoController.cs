@@ -147,5 +147,23 @@ namespace Galerie.Server.Controllers
             await photoService.BulkUpdatePhotosDate(viewModel.PhotoIds, viewModel.DateTime);
             return Ok();
         }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPost("move")]
+        public async Task<ActionResult> MovePhotos([FromBody] PhotoMoveViewModel viewModel)
+        {
+            if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
+                return BadRequest("Aucune photo spécifiée");
+
+            try
+            {
+                await photoService.MovePhotosToDirectory(viewModel.PhotoIds, viewModel.TargetDirectoryId);
+                return Ok();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
