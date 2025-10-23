@@ -170,7 +170,7 @@ namespace Galerie.Server.Controllers
 
             // Validate that the name doesn't contain path separators or other invalid characters
             var invalidChars = Path.GetInvalidFileNameChars();
-            if (model.Name.Contains('/') || model.Name.Contains('\\') || model.Name.Contains("..") || 
+            if (model.Name.Contains('/') || model.Name.Contains('\\') || 
                 model.Name.Contains('*') || model.Name.Contains('.') || 
                 model.Name.IndexOfAny(invalidChars) >= 0)
             {

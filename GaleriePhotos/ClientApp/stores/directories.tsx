@@ -6,7 +6,7 @@ import {
   DirectoryFull,
 } from "../services/views";
 import { DirectoryController } from "../services/services";
-import { action, makeObservable, observable } from "mobx";
+import { action, makeObservable, observable, runInAction } from "mobx";
 import { createContext, useContext, useMemo } from "react";
 
 class DirectoriesStore {
@@ -58,8 +58,10 @@ class DirectoriesStore {
 
   async renameDirectory(directoryId: number, newName: string) {
     await this.directoryService.renameDirectory(directoryId, { name: newName });
-    this.infoLoader.cache.clear();
-    this.subDirectoriesLoader.cache.clear();
+    runInAction(() => {
+      this.infoLoader.cache.clear();
+      this.subDirectoriesLoader.cache.clear();
+    });
   }
 
   clearCache() {

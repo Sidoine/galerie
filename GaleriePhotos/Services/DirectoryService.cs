@@ -73,7 +73,7 @@ namespace GaleriePhotos.Services
                 // Replace only at the beginning of the path
                 if (child.Path.StartsWith(oldBasePath))
                 {
-                    child.Path = newBasePath + child.Path.Substring(oldBasePath.Length);
+                    child.Path = string.Concat(newBasePath, child.Path.AsSpan(oldBasePath.Length));
                 }
                 await UpdateChildDirectoriesPathsAsync(child, oldChildPath, child.Path);
             }
