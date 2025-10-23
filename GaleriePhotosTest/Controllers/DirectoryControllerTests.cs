@@ -200,3 +200,149 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }
+
+public class DirectoryRenameTests
+{
+    private ApplicationDbContext GetInMemoryContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        return new ApplicationDbContext(options);
+    }
+
+    private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId)
+        };
+        if (globalAdmin)
+        {
+            claims.Add(new Claim(GaleriePhotos.Models.Claims.Administrator, true.ToString()));
+        }
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        return new ClaimsPrincipal(identity);
+    }
+
+    private Galerie.Server.Controllers.DirectoryController CreateController(ApplicationDbContext context, string userId, bool isGlobalAdmin)
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new GalerieOptions());
+        var logger = new TestLogger<GaleriePhotos.Services.PhotoService>();
+        var dataService = new GaleriePhotos.Services.DataService();
+        var photoService = new GaleriePhotos.Services.PhotoService(options, context, logger, dataService);
+        var directoryService = new GaleriePhotos.Services.DirectoryService(context, dataService);
+        
+        var controller = new Galerie.Server.Controllers.DirectoryController(photoService, context, directoryService)
+        {
+            ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = BuildUser(userId, isGlobalAdmin) }
+            }
+        };
+        
+        return controller;
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task RenameDirectory_ReturnsNotFound_WhenDirectoryDoesNotExist()
+    {
+        using var context = GetInMemoryContext();
+        var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
+
+        var result = await controller.RenameDirectory(999, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "NewName" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task RenameDirectory_ReturnsForbid_WhenUserNotGalleryAdmin()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "user-not-admin";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(directory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "NewName" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.ForbidResult>(result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task RenameDirectory_ReturnsBadRequest_WhenNameIsEmpty()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(directory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.RenameDirectory(directory.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "   " });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task RenameDirectory_ReturnsBadRequest_WhenSiblingWithSameNameExists()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var parentDirectory = new PhotoDirectory("Parent", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(parentDirectory);
+        await context.SaveChangesAsync();
+
+        var directory1 = new PhotoDirectory("Parent/Dir1", 0, null, parentDirectory.Id) { Gallery = gallery, ParentDirectory = parentDirectory };
+        var directory2 = new PhotoDirectory("Parent/Dir2", 0, null, parentDirectory.Id) { Gallery = gallery, ParentDirectory = parentDirectory };
+        context.PhotoDirectories.AddRange(directory1, directory2);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.RenameDirectory(directory1.Id, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "Dir2" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
+    }
+}
