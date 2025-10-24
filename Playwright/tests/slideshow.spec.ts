@@ -215,4 +215,50 @@ test.describe("Slideshow feature", () => {
     // Controls should be visible again
     await expect(closeButton).toBeVisible();
   });
+
+  test("displays speed control button in slideshow", async ({ page }) => {
+    await page.goto(`/gallery/${galleryId}/slideshow?order=date-asc`);
+
+    // Wait for slideshow to load
+    await page.waitForTimeout(1000);
+
+    // Check for speed button
+    const speedButton = page.getByLabel(/Vitesse du diaporama/);
+    await expect(speedButton).toBeVisible();
+  });
+
+  test("cycles through speed options when speed button is clicked", async ({
+    page,
+  }) => {
+    await page.goto(`/gallery/${galleryId}/slideshow?order=date-asc`);
+
+    // Wait for slideshow to load
+    await page.waitForTimeout(1000);
+
+    // Get speed button
+    const speedButton = page.getByLabel(/Vitesse du diaporama/);
+    
+    // Should start with 10s
+    await expect(speedButton).toHaveAccessibleName("Vitesse du diaporama: 10s");
+
+    // Click to cycle to 30s
+    await speedButton.click();
+    await page.waitForTimeout(300);
+    await expect(speedButton).toHaveAccessibleName("Vitesse du diaporama: 30s");
+
+    // Click to cycle to pause
+    await speedButton.click();
+    await page.waitForTimeout(300);
+    await expect(speedButton).toHaveAccessibleName("Vitesse du diaporama: ⏸");
+
+    // Click to cycle to 5s
+    await speedButton.click();
+    await page.waitForTimeout(300);
+    await expect(speedButton).toHaveAccessibleName("Vitesse du diaporama: 5s");
+
+    // Click to cycle back to 10s
+    await speedButton.click();
+    await page.waitForTimeout(300);
+    await expect(speedButton).toHaveAccessibleName("Vitesse du diaporama: 10s");
+  });
 });

@@ -3,15 +3,25 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Platform,
   Pressable,
+  Text,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { MaterialIcons } from "@expo/vector-icons";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { usePhotosStore } from "@/stores/photos";
 import VideoPlayer from "./image-view/video-player";
+
+// Speed intervals in milliseconds
+const SPEED_OPTIONS = [5000, 10000, 30000, 0] as const; // 0 means paused
+const SPEED_LABELS = ["5s", "10s", "30s", "⏸"] as const;
 
 export const DiaporamaScreen = observer(function DiaporamaScreen({
   store,
@@ -24,14 +34,35 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showControls, setShowControls] = useState(true);
-  const controlsTimeoutRef = useRef<number | null>(null);
-  const autoAdvanceTimeoutRef = useRef<number | null>(null);
+  const [speedIndex, setSpeedIndex] = useState(1); // Default to 10s
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Opacity values for fade transition
+  const currentOpacity = useSharedValue(1);
+  const nextOpacity = useSharedValue(0);
 
   const currentPhoto = photos[currentIndex];
+  const nextPhoto = photos[(currentIndex + 1) % photos.length];
+  
   const imgUri = currentPhoto?.publicId
     ? photosStore.getImage(currentPhoto.publicId)
     : undefined;
+  const nextImgUri = nextPhoto?.publicId
+    ? photosStore.getImage(nextPhoto.publicId)
+    : undefined;
   const isVideo = currentPhoto?.video;
+
+  const currentSpeed = SPEED_OPTIONS[speedIndex];
+
+  // Animated styles for fade transition - must be called before any conditional returns
+  const currentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: currentOpacity.value,
+  }));
+
+  const nextAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: nextOpacity.value,
+  }));
 
   const hideControlsAfterDelay = useCallback(() => {
     if (controlsTimeoutRef.current) {
@@ -48,8 +79,24 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
   }, [hideControlsAfterDelay]);
 
   const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % photos.length);
-  }, [photos.length]);
+    // Start fade out transition
+    currentOpacity.value = withTiming(0, {
+      duration: 500,
+      easing: Easing.inOut(Easing.ease),
+    });
+    nextOpacity.value = withTiming(1, {
+      duration: 500,
+      easing: Easing.inOut(Easing.ease),
+    });
+
+    // Change photo after a short delay
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % photos.length);
+      // Reset opacities for next transition
+      currentOpacity.value = 1;
+      nextOpacity.value = 0;
+    }, 500);
+  }, [photos.length, currentOpacity, nextOpacity]);
 
   const handleInteraction = useCallback(() => {
     showControlsTemporarily();
@@ -65,22 +112,32 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
     store.navigateToContainer();
   }, [store]);
 
-  // Auto-advance every 10 seconds
+  const handleSpeedChange = useCallback(() => {
+    setSpeedIndex((prev) => (prev + 1) % SPEED_OPTIONS.length);
+    showControlsTemporarily();
+  }, [showControlsTemporarily]);
+
+  // Auto-advance based on selected speed
   useEffect(() => {
     if (autoAdvanceTimeoutRef.current) {
       clearTimeout(autoAdvanceTimeoutRef.current);
     }
 
+    // Don't auto-advance if paused (speed is 0)
+    if (currentSpeed === 0) {
+      return;
+    }
+
     autoAdvanceTimeoutRef.current = setTimeout(() => {
       goToNext();
-    }, 10000);
+    }, currentSpeed);
 
     return () => {
       if (autoAdvanceTimeoutRef.current) {
         clearTimeout(autoAdvanceTimeoutRef.current);
       }
     };
-  }, [currentIndex, goToNext]);
+  }, [currentIndex, goToNext, currentSpeed]);
 
   // Show controls initially then hide after 5 seconds
   useEffect(() => {
@@ -127,15 +184,40 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
             onPrevious={() => {}}
           />
         ) : (
-          <Image
-            source={{ uri: imgUri }}
-            style={styles.media}
-            resizeMode="contain"
-          />
+          <>
+            <Animated.Image
+              source={{ uri: imgUri }}
+              style={[styles.media, currentAnimatedStyle]}
+              resizeMode="contain"
+            />
+            {nextImgUri && !nextPhoto?.video && (
+              <Animated.Image
+                source={{ uri: nextImgUri }}
+                style={[styles.media, styles.nextImage, nextAnimatedStyle]}
+                resizeMode="contain"
+              />
+            )}
+          </>
         )}
       </View>
       {showControls && (
         <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={handleSpeedChange}
+            style={styles.speedButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel={`Vitesse du diaporama: ${SPEED_LABELS[speedIndex]}`}
+            accessibilityRole="button"
+          >
+            <View style={styles.speedButtonContent}>
+              <MaterialIcons 
+                name={currentSpeed === 0 ? "pause" : "timer"} 
+                size={24} 
+                color="#fff" 
+              />
+              <Text style={styles.speedText}>{SPEED_LABELS[speedIndex]}</Text>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleClose}
             style={styles.closeButton}
@@ -170,6 +252,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  nextImage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
   topBar: {
     position: "absolute",
     top: 0,
@@ -181,6 +268,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     justifyContent: "flex-end",
+    gap: 16,
+  },
+  speedButton: {
+    padding: 8,
+  },
+  speedButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  speedText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   closeButton: {
     padding: 8,
