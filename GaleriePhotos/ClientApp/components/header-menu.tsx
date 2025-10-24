@@ -6,7 +6,7 @@ import { PhotoMoveModal } from "./modals/photo-move-modal";
 import { AlbumCreateModal } from "./modals/album-create-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { useMembersStore } from "@/stores/members";
 import { useRouter } from "expo-router";
@@ -14,6 +14,9 @@ import { Directory } from "@/services/views";
 import { useGalleryStore } from "@/stores/gallery";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { Link } from "expo-router";
+import { useApiClient } from "folke-service-helpers";
+import { PhotoController } from "@/services/photo";
+import { Alert } from "react-native";
 
 function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const router = useRouter();
@@ -25,6 +28,11 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
+  const apiClient = useApiClient();
+  const photoService = useMemo(
+    () => new PhotoController(apiClient),
+    [apiClient]
+  );
 
   const handleOpenSelectionMenu = useCallback(() => {
     setSelectionMenuVisible(true);
@@ -83,6 +91,73 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     selectedPhotosStore.clearSelection();
   }, [selectedPhotosStore]);
 
+  const handleDeleteFromAlbum = useCallback(async () => {
+    if (selectedPhotosStore.photoIds.length === 0) {
+      Alert.alert("Erreur", "Aucune photo sélectionnée");
+      return;
+    }
+
+    Alert.alert(
+      "Supprimer de l'album",
+      `Déplacer ${selectedPhotosStore.count} photo${
+        selectedPhotosStore.count > 1 ? "s" : ""
+      } vers la racine de la galerie ?`,
+      [
+        {
+          text: "Annuler",
+          style: "cancel",
+        },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await photoService.deleteFromAlbum({
+                photoIds: selectedPhotosStore.photoIds,
+              });
+
+              if (response.ok) {
+                Alert.alert(
+                  "Succès",
+                  `${selectedPhotosStore.count} photo${
+                    selectedPhotosStore.count > 1 ? "s" : ""
+                  } déplacée${
+                    selectedPhotosStore.count > 1 ? "s" : ""
+                  } vers la racine`
+                );
+                selectedPhotosStore.clearSelection();
+                // Navigate to root directory
+                if (galleryStore.gallery?.rootDirectoryId) {
+                  router.push({
+                    pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
+                    params: {
+                      directoryId: galleryStore.gallery.rootDirectoryId.toString(),
+                      galleryId: galleryStore.galleryId.toString(),
+                    },
+                  });
+                }
+              } else {
+                Alert.alert(
+                  "Erreur",
+                  "Une erreur est survenue lors de la suppression"
+                );
+              }
+            } catch (error) {
+              console.error("Error deleting photos from album:", error);
+              Alert.alert("Erreur", "Une erreur est survenue");
+            }
+          },
+        },
+      ]
+    );
+  }, [
+    selectedPhotosStore,
+    photoService,
+    galleryStore.gallery?.rootDirectoryId,
+    galleryStore.galleryId,
+    router,
+  ]);
+
   const hasSelection = selectedPhotosStore.count > 0;
   const { administrator } = useMembersStore();
 
@@ -96,6 +171,11 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
       label: "Changer la position (GPS)",
       onPress: handleOpenBulkLocationModal,
       icon: <MaterialIcons name="my-location" size={18} color="#1976d2" />,
+    },
+    {
+      label: "Supprimer de l'album",
+      onPress: handleDeleteFromAlbum,
+      icon: <MaterialIcons name="delete-outline" size={18} color="#d32f2f" />,
     },
     {
       label: `Désélectionner tout (${selectedPhotosStore.count})`,
