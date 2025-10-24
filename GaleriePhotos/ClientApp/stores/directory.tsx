@@ -78,6 +78,17 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [galleryId, order]
   );
 
+  const getSlideshowLink = useCallback((): Href => {
+    return {
+      pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]/slideshow",
+      params: {
+        galleryId,
+        directoryId: directoryId ?? 0,
+        order,
+      },
+    };
+  }, [galleryId, directoryId, order]);
+
   const navigateToChildContainer = useCallback(
     (containerId: number) => {
       router.push(getChildContainerLink(containerId));
@@ -206,6 +217,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
+      getSlideshowLink,
     }),
     [
       navigateToPhoto,
@@ -224,6 +236,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       renameContainer,
       getChildContainerLink,
       paginatedPhotosStore,
+      getSlideshowLink,
     ]
   );
 

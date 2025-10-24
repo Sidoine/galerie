@@ -156,6 +156,19 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     [childType, placesStore.galleryId, placeId, year]
   );
 
+  const getSlideshowLink = useCallback((): Href => {
+    return {
+      pathname: "/(app)/gallery/[galleryId]/places/[placeId]/slideshow",
+      params: {
+        galleryId: placesStore.galleryId,
+        placeId: placeId ?? 0,
+        order,
+        year,
+        month,
+      },
+    };
+  }, [placesStore.galleryId, placeId, order, year, month]);
+
   const navigateToChildContainer = useCallback(
     (containerId: number) => {
       router.push(getChildContainerLink(containerId));
@@ -335,6 +348,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
       childContainersHeader,
       getChildContainerLink,
       paginatedPhotosStore,
+      getSlideshowLink,
     };
   }, [
     navigateToPhoto,
@@ -352,6 +366,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     childContainersHeader,
     getChildContainerLink,
     paginatedPhotosStore,
+    getSlideshowLink,
   ]);
   return (
     <PlaceStoreContext.Provider value={placeStore}>

@@ -7,8 +7,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { useCallback, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { PhotoContainerStore } from "@/stores/photo-container";
+import { Link } from "expo-router";
 
-function HeaderMenu() {
+function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
   const [bulkDateModalVisible, setBulkDateModalVisible] = useState(false);
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
@@ -78,6 +80,18 @@ function HeaderMenu() {
 
   return (
     <>
+      {store && store.paginatedPhotosStore.photos.length > 0 && (
+        <Link href={store.getSlideshowLink()} asChild>
+          <TouchableOpacity
+            style={styles.slideshowButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Lancer le diaporama"
+            accessibilityRole="button"
+          >
+            <MaterialIcons name="slideshow" size={24} color="#007aff" />
+          </TouchableOpacity>
+        </Link>
+      )}
       {hasSelection && (
         <View style={styles.selectionActions}>
           <TouchableOpacity
@@ -130,6 +144,10 @@ function HeaderMenu() {
 export default observer(HeaderMenu);
 
 const styles = StyleSheet.create({
+  slideshowButton: {
+    padding: 4,
+    marginRight: 4,
+  },
   selectionActions: {
     flexDirection: "row",
     alignItems: "center",

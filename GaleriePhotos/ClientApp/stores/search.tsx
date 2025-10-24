@@ -116,6 +116,13 @@ export const SearchStoreProvider = observer(function SearchStoreProvider({
     [galleryId, order, query]
   );
 
+  const getSlideshowLink = useCallback((): Href => {
+    return {
+      pathname: "/(app)/gallery/[galleryId]/search/slideshow",
+      params: { galleryId: galleryId ?? 0, query, order },
+    };
+  }, [galleryId, query, order]);
+
   const navigateToChildContainer = useCallback((containerId: number) => {
     void containerId;
   }, []);
@@ -186,6 +193,7 @@ export const SearchStoreProvider = observer(function SearchStoreProvider({
       childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
+      getSlideshowLink,
     }),
     [
       navigateToPhoto,
@@ -200,6 +208,7 @@ export const SearchStoreProvider = observer(function SearchStoreProvider({
       getChildContainerLink,
       paginatedPhotosStore,
       galleryId,
+      getSlideshowLink,
     ]
   );
 
