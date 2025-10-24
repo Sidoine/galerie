@@ -96,11 +96,12 @@ export const AlbumCreateModal = observer(function AlbumCreateModal({
   }, [
     albumName,
     galleryId,
-    onClose,
-    onSuccess,
     photoIds,
-    selectedPhotosStore,
     directoryService,
+    selectedPhotosStore,
+    directoriesStore,
+    onSuccess,
+    onClose,
   ]);
 
   const handleClose = useCallback(() => {

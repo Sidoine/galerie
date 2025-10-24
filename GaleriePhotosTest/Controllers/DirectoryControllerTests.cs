@@ -475,7 +475,7 @@ public class DirectoryCreateTests
         using var context = GetInMemoryContext();
         var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
 
-        var result = await controller.CreateDirectory(999, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum" });
+        var result = await controller.CreateDirectory(999, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundObjectResult>(result.Result);
     }
 
@@ -504,7 +504,7 @@ public class DirectoryCreateTests
 
         var controller = CreateController(context, userId, isGlobalAdmin: false);
 
-        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum" });
+        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.ForbidResult>(result.Result);
     }
 
@@ -533,7 +533,7 @@ public class DirectoryCreateTests
 
         var controller = CreateController(context, userId, isGlobalAdmin: false);
 
-        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "   " });
+        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "   ", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result.Result);
     }
 
@@ -566,7 +566,7 @@ public class DirectoryCreateTests
 
         var controller = CreateController(context, userId, isGlobalAdmin: false);
 
-        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "ExistingAlbum" });
+        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "ExistingAlbum", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result.Result);
     }
 
@@ -596,19 +596,19 @@ public class DirectoryCreateTests
         var controller = CreateController(context, userId, isGlobalAdmin: false);
 
         // Test with forward slash
-        var result1 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "../malicious" });
+        var result1 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "../malicious", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result1.Result);
 
         // Test with backslash
-        var result2 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "..\\malicious" });
+        var result2 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "..\\malicious", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result2.Result);
 
         // Test with asterisk
-        var result3 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "bad*name" });
+        var result3 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "bad*name", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result3.Result);
 
         // Test with dot
-        var result4 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "bad.name" });
+        var result4 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "bad.name", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result4.Result);
     }
 }
