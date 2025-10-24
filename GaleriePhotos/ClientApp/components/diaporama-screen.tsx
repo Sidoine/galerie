@@ -95,6 +95,21 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
     };
   }, [hideControlsAfterDelay]);
 
+  // Handle mouse move on web
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleMouseMove = () => {
+      showControlsTemporarily();
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [showControlsTemporarily]);
+
   if (!currentPhoto || photos.length === 0) {
     return null;
   }
