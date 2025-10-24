@@ -118,7 +118,7 @@ namespace GaleriePhotosTest.Controllers
             };
 
             // Act
-            var result = await controller.MovePhotos(viewModel);
+            var result = await controller.MovePhotos(_targetDirectory.GalleryId, viewModel);
 
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);
