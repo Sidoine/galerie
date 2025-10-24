@@ -95,8 +95,8 @@ namespace Galerie.Server.Controllers
             if (photos == null) return NotFound();
 
             // Apply sorting
-            var orderedPhotos = sortOrder == "asc" 
-                ? photos.OrderBy(p => p.DateTime) 
+            var orderedPhotos = sortOrder == "asc"
+                ? photos.OrderBy(p => p.DateTime)
                 : photos.OrderByDescending(p => p.DateTime);
 
             // Apply pagination
@@ -113,7 +113,7 @@ namespace Galerie.Server.Controllers
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
-            
+
             if (!User.IsGalleryAdministrator(directory.Gallery))
             {
                 return Forbid();
@@ -170,8 +170,8 @@ namespace Galerie.Server.Controllers
 
             // Validate that the name doesn't contain path separators or other invalid characters
             var invalidChars = Path.GetInvalidFileNameChars();
-            if (model.Name.Contains('/') || model.Name.Contains('\\') || 
-                model.Name.Contains('*') || model.Name.Contains('.') || 
+            if (model.Name.Contains('/') || model.Name.Contains('\\') ||
+                model.Name.Contains('*') || model.Name.Contains('.') ||
                 model.Name.IndexOfAny(invalidChars) >= 0)
             {
                 return BadRequest("Le nom ne peut pas contenir de caractères invalides");
@@ -181,7 +181,7 @@ namespace Galerie.Server.Controllers
             var gallery = await applicationDbContext.Galleries
                 .Include(g => g.Members)
                 .FirstOrDefaultAsync(g => g.Id == galleryId);
-            
+
             if (gallery == null) return NotFound("Galerie introuvable");
 
             if (!User.IsGalleryAdministrator(gallery))
@@ -192,29 +192,29 @@ namespace Galerie.Server.Controllers
             // Get the root directory
             var rootDirectory = await applicationDbContext.PhotoDirectories
                 .FirstOrDefaultAsync(d => d.GalleryId == galleryId && d.ParentDirectoryId == null);
-            
+
             if (rootDirectory == null) return NotFound("Répertoire racine introuvable");
 
             // Check if a directory with the same name already exists at root
             var existingDirectory = await applicationDbContext.PhotoDirectories
                 .Where(d => d.ParentDirectoryId == rootDirectory.Id)
                 .ToListAsync();
-            
+
             if (existingDirectory.Any(d => Path.GetFileName(d.Path) == model.Name.Trim()))
             {
                 return BadRequest("Un album avec ce nom existe déjà");
             }
 
             // Create the new directory
-            var newPath = string.IsNullOrEmpty(rootDirectory.Path) 
-                ? model.Name.Trim() 
+            var newPath = string.IsNullOrEmpty(rootDirectory.Path)
+                ? model.Name.Trim()
                 : Path.Combine(rootDirectory.Path, model.Name.Trim());
-            
+
             var newDirectory = new PhotoDirectory(newPath, 0, null, rootDirectory.Id)
             {
                 Gallery = gallery
             };
-            
+
             applicationDbContext.PhotoDirectories.Add(newDirectory);
             await applicationDbContext.SaveChangesAsync();
 
@@ -226,7 +226,7 @@ namespace Galerie.Server.Controllers
             {
                 try
                 {
-                    await photoService.MovePhotosToDirectory(model.PhotoIds, newDirectory.Id);
+                    await photoService.MovePhotosToDirectory(galleryId, model.PhotoIds, newDirectory.Id);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -239,7 +239,7 @@ namespace Galerie.Server.Controllers
 
             var numberOfPhotos = await photoService.GetNumberOfPhotos(newDirectory);
             var numberOfSubDirectories = await photoService.GetNumberOfSubDirectories(newDirectory);
-            
+
             return Ok(new DirectoryViewModel(newDirectory, numberOfPhotos, numberOfSubDirectories));
         }
 
@@ -259,8 +259,8 @@ namespace Galerie.Server.Controllers
 
             // Validate that the name doesn't contain path separators or other invalid characters
             var invalidChars = Path.GetInvalidFileNameChars();
-            if (model.Name.Contains('/') || model.Name.Contains('\\') || 
-                model.Name.Contains('*') || model.Name.Contains('.') || 
+            if (model.Name.Contains('/') || model.Name.Contains('\\') ||
+                model.Name.Contains('*') || model.Name.Contains('.') ||
                 model.Name.IndexOfAny(invalidChars) >= 0)
             {
                 return BadRequest("Le nom ne peut pas contenir de caractères invalides");
@@ -286,7 +286,7 @@ namespace Galerie.Server.Controllers
                 var siblings = await applicationDbContext.PhotoDirectories
                     .Where(d => d.ParentDirectoryId == directory.ParentDirectoryId && d.Id != directory.Id)
                     .ToListAsync();
-                
+
                 if (siblings.Any(s => Path.GetFileName(s.Path) == model.Name.Trim()))
                 {
                     return BadRequest("Un répertoire avec ce nom existe déjà au même emplacement");

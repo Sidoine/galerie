@@ -6,6 +6,7 @@ import {
 } from "@/stores/authentication";
 import { MyApiClientProvider } from "@/stores/api-client";
 import { Platform } from "react-native";
+import { AlertProvider } from "@/components/alert";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 if (Platform.OS === "web") require("@/stores/leaflet");
@@ -37,7 +38,9 @@ export default function RootLayout() {
   return (
     <AuthenticationStoreProvider>
       <MyApiClientProvider>
-        <RootLayoutContent />
+        <AlertProvider>
+          <RootLayoutContent />
+        </AlertProvider>
       </MyApiClientProvider>
     </AuthenticationStoreProvider>
   );

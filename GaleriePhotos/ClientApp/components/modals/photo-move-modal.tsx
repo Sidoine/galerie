@@ -67,7 +67,10 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
         targetDirectoryId: selectedDirectoryId,
       };
 
-      const response = await photoService.movePhotos(moveData);
+      const response = await photoService.movePhotos(
+        galleryStore.galleryId,
+        moveData
+      );
 
       if (response.ok) {
         Alert.alert(

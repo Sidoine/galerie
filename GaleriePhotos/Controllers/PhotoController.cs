@@ -24,13 +24,15 @@ namespace Galerie.Server.Controllers
         private readonly PhotoService photoService;
         private readonly ApplicationDbContext applicationDbContext;
         private readonly DataService dataService;
+        private readonly GalleryService galleryService;
 
-        public PhotoController(IOptions<GalerieOptions> options, PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService)
+        public PhotoController(IOptions<GalerieOptions> options, PhotoService photoService, ApplicationDbContext applicationDbContext, DataService dataService, GalleryService galleryService)
         {
             this.options = options;
             this.photoService = photoService;
             this.applicationDbContext = applicationDbContext;
             this.dataService = dataService;
+            this.galleryService = galleryService;
         }
 
         /// <summary>
@@ -149,33 +151,19 @@ namespace Galerie.Server.Controllers
         }
 
         [Authorize(Policy = Policies.Administrator)]
-        [HttpPost("move")]
-        public async Task<ActionResult> MovePhotos([FromBody] PhotoMoveViewModel viewModel)
+        [HttpPost("galleries/{galleryId}/move")]
+        public async Task<ActionResult> MovePhotos(int galleryId, [FromBody] PhotoMoveViewModel viewModel)
         {
             if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
                 return BadRequest("Aucune photo spécifiée");
 
-            try
-            {
-                await photoService.MovePhotosToDirectory(viewModel.PhotoIds, viewModel.TargetDirectoryId);
-                return Ok();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        [Authorize(Policy = Policies.Administrator)]
-        [HttpPost("delete-from-album")]
-        public async Task<ActionResult> DeleteFromAlbum([FromBody] PhotoDeleteFromAlbumViewModel viewModel)
-        {
-            if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
-                return BadRequest("Aucune photo spécifiée");
+            var gallery = await galleryService.Get(galleryId);
+            if (gallery == null) return NotFound("Galerie introuvable");
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
 
             try
             {
-                await photoService.DeletePhotosFromAlbum(viewModel.PhotoIds);
+                await photoService.MovePhotosToDirectory(galleryId, viewModel.PhotoIds, viewModel.TargetDirectoryId);
                 return Ok();
             }
             catch (InvalidOperationException ex)

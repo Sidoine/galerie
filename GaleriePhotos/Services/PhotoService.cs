@@ -676,16 +676,19 @@ namespace GaleriePhotos.Services
         /// Moves a list of photos to a target directory by updating their directory reference
         /// and physically moving the files on the file system
         /// </summary>
-        public async Task MovePhotosToDirectory(int[] photoIds, int targetDirectoryId)
+        public async Task MovePhotosToDirectory(int galleryId, int[] photoIds, int targetDirectoryId)
         {
             if (photoIds.Length == 0) return;
 
             var targetDirectory = await applicationDbContext.PhotoDirectories
                 .Include(x => x.Gallery)
                 .FirstOrDefaultAsync(x => x.Id == targetDirectoryId);
-            
+
             if (targetDirectory == null)
                 throw new InvalidOperationException("Le répertoire cible n'existe pas.");
+
+            if (targetDirectory.GalleryId != galleryId)
+                throw new InvalidOperationException("Le répertoire cible n'appartient pas à la galerie spécifiée.");
 
             var photos = await applicationDbContext.Photos
                 .Include(p => p.Directory)

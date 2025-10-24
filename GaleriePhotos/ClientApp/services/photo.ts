@@ -13,10 +13,6 @@ export class PhotoController {
         return this.client.fetch("api/photos/bulk-update-location", "POST", JSON.stringify(viewModel));
     }
 
-    deleteFromAlbum = (viewModel: views.PhotoDeleteFromAlbum) => {
-        return this.client.fetch("api/photos/delete-from-album", "POST", JSON.stringify(viewModel));
-    }
-
     get = (id: number) => {
         return this.client.fetchJson<views.PhotoFull>(`api/photos/${id}`, "GET", undefined);
     }
@@ -29,8 +25,8 @@ export class PhotoController {
         return this.client.fetch(`api/photos/${publicId}/thumbnail`, "GET", undefined);
     }
 
-    movePhotos = (viewModel: views.PhotoMove) => {
-        return this.client.fetch("api/photos/move", "POST", JSON.stringify(viewModel));
+    movePhotos = (galleryId: number, viewModel: views.PhotoMove) => {
+        return this.client.fetch(`api/photos/galleries/${galleryId}/move`, "POST", JSON.stringify(viewModel));
     }
 
     patch = (id: number, viewModel: views.PhotoPatch) => {

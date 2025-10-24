@@ -17,6 +17,7 @@ import { Link } from "expo-router";
 import { useApiClient } from "folke-service-helpers";
 import { PhotoController } from "@/services/photo";
 import { Alert } from "react-native";
+import { useAlert } from "./alert";
 
 function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const router = useRouter();
@@ -91,13 +92,15 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     selectedPhotosStore.clearSelection();
   }, [selectedPhotosStore]);
 
+  const alert = useAlert();
+
   const handleDeleteFromAlbum = useCallback(async () => {
     if (selectedPhotosStore.photoIds.length === 0) {
-      Alert.alert("Erreur", "Aucune photo sélectionnée");
+      alert("Erreur", "Aucune photo sélectionnée");
       return;
     }
 
-    Alert.alert(
+    alert(
       "Supprimer de l'album",
       `Déplacer ${selectedPhotosStore.count} photo${
         selectedPhotosStore.count > 1 ? "s" : ""
@@ -112,9 +115,17 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await photoService.deleteFromAlbum({
-                photoIds: selectedPhotosStore.photoIds,
-              });
+              if (!galleryStore.gallery) {
+                Alert.alert("Erreur", "Galerie introuvable");
+                return;
+              }
+              const response = await photoService.movePhotos(
+                galleryStore.gallery.id,
+                {
+                  photoIds: selectedPhotosStore.photoIds,
+                  targetDirectoryId: galleryStore.gallery.rootDirectoryId,
+                }
+              );
 
               if (response.ok) {
                 Alert.alert(
@@ -129,9 +140,11 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
                 // Navigate to root directory
                 if (galleryStore.gallery?.rootDirectoryId) {
                   router.push({
-                    pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
+                    pathname:
+                      "/(app)/gallery/[galleryId]/directory/[directoryId]",
                     params: {
-                      directoryId: galleryStore.gallery.rootDirectoryId.toString(),
+                      directoryId:
+                        galleryStore.gallery.rootDirectoryId.toString(),
                       galleryId: galleryStore.galleryId.toString(),
                     },
                   });
@@ -152,9 +165,10 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     );
   }, [
     selectedPhotosStore,
-    photoService,
-    galleryStore.gallery?.rootDirectoryId,
+    alert,
+    galleryStore.gallery,
     galleryStore.galleryId,
+    photoService,
     router,
   ]);
 
