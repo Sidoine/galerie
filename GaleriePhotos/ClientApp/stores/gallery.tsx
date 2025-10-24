@@ -104,8 +104,8 @@ export const GalleryStoreProvider = observer(function GalleryStoreProvider({
       galleriesStore,
       galleryId ?? 0
     );
-    return new PaginatedPhotosStore(gallery, loadPhotos, sortOrder);
-  }, [galleriesStore, gallery, galleryId, order]);
+    return new PaginatedPhotosStore(loadPhotos, sortOrder);
+  }, [galleriesStore, galleryId, order]);
 
   const galleryStore = useMemo<GalleryStore>(
     () => ({

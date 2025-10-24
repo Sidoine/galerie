@@ -92,7 +92,7 @@ export default function ImageFaces({
   if (!faces) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: "box-none" }]}>
       {faces.map((f) => {
         const left = f.x * scale + leftOrigin;
         const top = f.y * scale + topOrigin;
@@ -102,9 +102,8 @@ export default function ImageFaces({
           <View
             key={f.id}
             style={[styles.faceBox, { left, top, minWidth, height }]}
-            pointerEvents="box-none"
           >
-            <View style={styles.faceHeader} pointerEvents="auto">
+            <View style={styles.faceHeader}>
               <FaceSelector
                 face={f}
                 dense
@@ -151,5 +150,6 @@ const styles = StyleSheet.create({
   },
   faceHeader: {
     backgroundColor: "rgba(0,0,0,0.55)",
+    pointerEvents: "auto",
   },
 });

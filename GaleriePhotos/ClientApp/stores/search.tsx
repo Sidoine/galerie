@@ -174,8 +174,8 @@ export const SearchStoreProvider = observer(function SearchStoreProvider({
 
   const paginatedPhotosStore = useMemo(() => {
     const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
-    return new PaginatedPhotosStore(summary, loadPhotos, sortOrder);
-  }, [summary, loadPhotos, order]);
+    return new PaginatedPhotosStore(loadPhotos, sortOrder);
+  }, [loadPhotos, order]);
 
   const searchStore = useMemo<PhotoContainerStore>(
     () => ({

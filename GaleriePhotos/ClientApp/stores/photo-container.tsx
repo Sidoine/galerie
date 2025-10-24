@@ -54,7 +54,6 @@ export interface PhotoContainerStore {
   breadCrumbs: BreadCrumb[];
   container: PhotoContainerFull | null;
   getPhotoLink(photoId: number): Href;
-  /** Store de pagination adaptative (jours/mois). Présent quand la vue supporte le chargement progressif. */
   paginatedPhotosStore: PaginatedPhotosStore;
   setCover?(photoId: number): Promise<void>;
   setParentCover?(containerId: number): Promise<void>;

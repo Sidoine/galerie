@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useMemo,
-  memo,
   useEffect,
   useState,
   useRef,
@@ -17,14 +16,13 @@ import {
   AppStateStatus,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
+  ViewStyle,
 } from "react-native";
 import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import type { FlashListRef } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
-import { Photo } from "@/services/views";
-import ImageCard from "./image-card";
-import SubdirectoryCard from "./subdirectory-card";
-import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
+import { PhotoContainerStore } from "@/stores/photo-container";
 import {
   determineGroupingStrategy,
   groupPhotosByDate,
@@ -407,6 +405,27 @@ export const DirectoryView = observer(function DirectoryView({
   );
 });
 
+type ShadowStyle = ViewStyle & { boxShadow?: string };
+
+const floatingButtonShadowStyle = Platform.select<ShadowStyle>({
+  ios: {
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
+  },
+  android: {
+    elevation: 5,
+  },
+  web: {
+    boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.2)",
+  },
+  default: {
+    elevation: 5,
+  },
+});
+
 const styles = StyleSheet.create({
   rowContainer: {
     flex: 1,
@@ -482,10 +501,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#1976d2",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    ...floatingButtonShadowStyle,
   },
 });

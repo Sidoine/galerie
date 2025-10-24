@@ -5,6 +5,7 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
+  Platform,
 } from "react-native";
 import { palette, radius } from "@/stores/theme";
 
@@ -39,17 +40,34 @@ const DashboardDirectory: React.FC<DashboardCardProps> = ({
   return <View style={cardStyle}>{children}</View>;
 };
 
+type ShadowStyle = ViewStyle & { boxShadow?: string };
+
+const directoryShadowStyle = Platform.select<ShadowStyle>({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  android: {
+    elevation: 1,
+  },
+  web: {
+    boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.08)",
+  },
+  default: {
+    elevation: 1,
+  },
+});
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.surface,
     borderRadius: radius.md,
     padding: 16,
     marginBottom: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...directoryShadowStyle,
   },
 });
 

@@ -12,6 +12,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   Platform,
+  ViewStyle,
 } from "react-native";
 import { theme } from "@/stores/theme";
 import { PlacesMapProps } from "./places-map-props";
@@ -20,6 +21,28 @@ import { PlacesMapProps } from "./places-map-props";
  * Mobile implementation of PlacesMap (parallèle à places-map.web.tsx) utilisant react-native-maps.
  * Choisie automatiquement par Metro bundler sur mobile grâce au nom sans suffixe .web.
  */
+
+type ShadowStyle = ViewStyle & { boxShadow?: string };
+
+const calloutShadowStyle = Platform.select<ShadowStyle>({
+  ios: {
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  android: {
+    elevation: 4,
+  },
+  web: {
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.3)",
+  },
+  default: {
+    elevation: 4,
+  },
+});
+
 function PlacesMap({
   selectedCountry,
   placesToShow,
@@ -115,11 +138,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: theme.radius.md,
     maxWidth: 200,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...calloutShadowStyle,
   },
   calloutTitle: {
     fontWeight: "700",

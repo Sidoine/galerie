@@ -6,6 +6,7 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
+  Platform,
 } from "react-native";
 import { palette, radius } from "@/stores/theme";
 
@@ -19,6 +20,27 @@ export type DashboardCardProps = {
   actionText?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 };
+
+type ShadowStyle = ViewStyle & { boxShadow?: string };
+
+const cardShadowStyle = Platform.select<ShadowStyle>({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  android: {
+    elevation: 3,
+  },
+  web: {
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+  },
+  default: {
+    elevation: 3,
+  },
+});
 
 const DashboardCard: React.FC<DashboardCardProps> = ({
   title,
@@ -74,11 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surface,
     borderRadius: radius.lg,
     padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...cardShadowStyle,
   },
   header: {
     flexDirection: "row",

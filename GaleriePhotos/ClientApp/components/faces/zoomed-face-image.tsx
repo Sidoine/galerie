@@ -1,6 +1,15 @@
 import { Face } from "@/services/views";
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Image, ActivityIndicator, StyleSheet, Text } from "react-native";
+import {
+  View,
+  Image,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  ViewStyle,
+  StyleProp,
+  ImageStyle,
+} from "react-native";
 import { usePhotosStore } from "@/stores/photos";
 import { observer } from "mobx-react-lite";
 
@@ -40,7 +49,10 @@ export const ZoomedFaceImage = observer(function ZoomedFaceImage({
   }, [face.photoId, photo?.publicId, photoStore]);
 
   // Calcul des styles dynamiques
-  const { imageStyle, boxStyle } = useMemo(() => {
+  const { imageStyle, boxStyle } = useMemo<{
+    imageStyle: StyleProp<ImageStyle>;
+    boxStyle: StyleProp<ViewStyle>;
+  }>(() => {
     if (!imageSize || !containerSize) return { imageStyle: {}, boxStyle: {} };
     const { width: iw, height: ih } = imageSize;
     const ratio = iw / ih;
@@ -80,6 +92,7 @@ export const ZoomedFaceImage = observer(function ZoomedFaceImage({
         borderWidth: 2,
         borderColor: "#ffeb3b",
         borderRadius: 4,
+        pointerEvents: "none",
       } as const,
     };
   }, [imageSize, containerSize, face.x, face.y, face.width, face.height]);
@@ -106,11 +119,11 @@ export const ZoomedFaceImage = observer(function ZoomedFaceImage({
             resizeMode="contain"
           />
           {/* Rectangle englobant */}
-          <View pointerEvents="none" style={boxStyle} />
+          <View style={boxStyle} />
         </View>
       )}
       {photoDateLabel && (
-        <View style={styles.photoDateBadge} pointerEvents="none">
+        <View style={styles.photoDateBadge}>
           <Text style={styles.photoDateBadgeText}>{photoDateLabel}</Text>
         </View>
       )}
@@ -146,6 +159,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
+    pointerEvents: "none",
   },
   photoDateBadgeText: {
     color: "#fff",

@@ -195,8 +195,8 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   // Instance unique du store paginé (réinitialisé si le conteneur change)
   const paginatedPhotosStore = useMemo(() => {
     const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
-    return new PaginatedPhotosStore(directory, loadPhotos, sortOrder);
-  }, [directory, loadPhotos, order]);
+    return new PaginatedPhotosStore(loadPhotos, sortOrder);
+  }, [loadPhotos, order]);
 
   const directoryStore = useMemo<PhotoContainerStore>(
     () => ({

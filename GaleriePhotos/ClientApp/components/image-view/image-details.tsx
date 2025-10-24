@@ -25,7 +25,7 @@ export const ImageDetails = observer(function ImageDetails({
 }: ImageDetailsProps) {
   if (!open) return null;
   return (
-    <View style={styles.overlay} pointerEvents="box-none">
+    <View style={styles.overlay}>
       <View style={styles.panel}>
         <View style={styles.header}>
           <TouchableOpacity
@@ -99,6 +99,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.palette.background,
     elevation: 8,
     zIndex: 3000,
+    pointerEvents: "box-none",
   },
   panel: {
     flex: 1,

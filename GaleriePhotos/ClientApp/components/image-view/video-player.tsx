@@ -67,14 +67,14 @@ export default function VideoPlayer({
 
       {/* Overlay de chargement */}
       {isLoading && !hasError && (
-        <View style={styles.loadingOverlay} pointerEvents="none">
+        <View style={styles.loadingOverlay}>
           <Text style={styles.loadingText}>Chargement de la vidéo...</Text>
         </View>
       )}
 
       {/* Overlay d'erreur */}
       {hasError && (
-        <View style={styles.loadingOverlay} pointerEvents="none">
+        <View style={styles.loadingOverlay}>
           <Ionicons name="alert-circle-outline" size={60} color="white" />
           <Text style={styles.loadingText}>
             Erreur lors du chargement de la vidéo
@@ -118,6 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
+    pointerEvents: "none",
   },
   loadingText: {
     color: "white",

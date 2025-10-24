@@ -31,7 +31,6 @@ const AppLayoutContent = observer(function RootLayoutContent() {
             ),
           }}
         />
-        <Tabs.Screen name="index" options={{ href: null }} />
       </Tabs.Protected>
       <Tabs.Screen
         name="account"

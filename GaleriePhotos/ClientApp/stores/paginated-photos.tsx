@@ -32,7 +32,6 @@ export class PaginatedPhotosStore {
   pendingScrollRestoration = false;
 
   constructor(
-    private container: PhotoContainerFull | null,
     private loadPhotosFunction: LoadPhotosFunction,
     sortOrder: "asc" | "desc" = "desc"
   ) {
@@ -48,7 +47,6 @@ export class PaginatedPhotosStore {
       clearScrollRestoration: action,
     });
     this.sortOrder = sortOrder;
-    this.photos = [];
     this.isLoading = false;
     this.hasMore = true;
     this.error = null;

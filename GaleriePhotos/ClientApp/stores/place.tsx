@@ -328,8 +328,8 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
 
   const paginatedPhotosStore = useMemo(() => {
     const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
-    return new PaginatedPhotosStore(container, loadPhotos, sortOrder);
-  }, [container, loadPhotos, order]);
+    return new PaginatedPhotosStore(loadPhotos, sortOrder);
+  }, [loadPhotos, order]);
 
   const placeStore = useMemo<PhotoContainerStore>(() => {
     return {

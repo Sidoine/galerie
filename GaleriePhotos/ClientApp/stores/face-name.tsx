@@ -140,8 +140,8 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
 
   const paginatedPhotosStore = useMemo(() => {
     const sortOrder: "asc" | "desc" = order === "date-asc" ? "asc" : "desc";
-    return new PaginatedPhotosStore(faceName, loadPhotos, sortOrder);
-  }, [faceName, loadPhotos, order]);
+    return new PaginatedPhotosStore(loadPhotos, sortOrder);
+  }, [loadPhotos, order]);
 
   const renameContainer = useCallback(
     async (newName: string) => {
