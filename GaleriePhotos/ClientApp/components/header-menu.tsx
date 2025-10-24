@@ -6,7 +6,7 @@ import { PhotoMoveModal } from "./modals/photo-move-modal";
 import { AlbumCreateModal } from "./modals/album-create-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useMembersStore } from "@/stores/members";
 import { useRouter } from "expo-router";
@@ -104,9 +104,16 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     },
   ];
 
+  const [canDisplaySlideshow, setCanDisplaySlideshow] = useState(false);
+
+  useEffect(() => {
+    // Enable slideshow button only if there are more than 1 photo
+    setCanDisplaySlideshow(store.paginatedPhotosStore.photos.length > 1);
+  }, [store.paginatedPhotosStore.photos.length]);
+
   return (
     <>
-      {store.paginatedPhotosStore.photos.length > 0 && (
+      {canDisplaySlideshow && (
         <Link href={store.getSlideshowLink()} asChild>
           <TouchableOpacity
             style={styles.slideshowButton}

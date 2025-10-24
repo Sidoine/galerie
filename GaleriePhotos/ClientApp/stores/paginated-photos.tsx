@@ -22,7 +22,7 @@ export type LoadPhotosFunction = (
  * Store for handling paginated photo loading with offset-based chunks
  */
 export class PaginatedPhotosStore {
-  photos: Photo[] = [];
+  photos = observable.array<Photo>([]);
   isLoading = false;
   hasMore = true;
   error: string | null = null;
