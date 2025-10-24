@@ -17,7 +17,7 @@ using Microsoft.Extensions.Options;
 namespace Galerie.Server.Controllers
 {
     [Authorize]
-    [Route("api/directories")]
+    [Route("api")]
     public class DirectoryController : Controller
     {
         private readonly PhotoService photoService;
@@ -31,7 +31,7 @@ namespace Galerie.Server.Controllers
             this.directoryService = directoryService;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("directories/{id}")]
         public async Task<ActionResult<DirectoryFullViewModel>> Get(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -59,7 +59,7 @@ namespace Galerie.Server.Controllers
         }
 
         // GET: api/values
-        [HttpGet("{id}/directories")]
+        [HttpGet("directories/{id}/subdirectories")]
         public async Task<ActionResult<IEnumerable<DirectoryViewModel>>> GetSubdirectories(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -79,7 +79,7 @@ namespace Galerie.Server.Controllers
             return Ok(results);
         }
 
-        [HttpGet("{id}/photos")]
+        [HttpGet("directories/{id}/photos")]
         public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -108,7 +108,7 @@ namespace Galerie.Server.Controllers
             return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
         }
 
-        [HttpPatch("{id}")]
+        [HttpPatch("directories/{id}")]
         public async Task<ActionResult> Patch(int id, [FromBody] DirectoryPatchViewModel viewModel)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -133,7 +133,7 @@ namespace Galerie.Server.Controllers
             return Ok();
         }
 
-        [HttpPost("{id}/set-parent-cover")]
+        [HttpPost("directories/{id}/set-parent-cover")]
         public async Task<ActionResult> SetParentCover(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -155,12 +155,101 @@ namespace Galerie.Server.Controllers
         }
 
         /// <summary>
+        /// Creates a new directory (album) at the root of a gallery and optionally moves photos into it.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID where the album will be created</param>
+        /// <param name="model">Album name and optional photo IDs to move</param>
+        /// <returns>Created album or error</returns>
+        [HttpPost("galleries/{galleryId}/directories")]
+        public async Task<ActionResult<DirectoryViewModel>> CreateDirectory(int galleryId, [FromBody] DirectoryCreateViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                return BadRequest("Le nom ne peut pas être vide");
+            }
+
+            // Validate that the name doesn't contain path separators or other invalid characters
+            var invalidChars = Path.GetInvalidFileNameChars();
+            if (model.Name.Contains('/') || model.Name.Contains('\\') || 
+                model.Name.Contains('*') || model.Name.Contains('.') || 
+                model.Name.IndexOfAny(invalidChars) >= 0)
+            {
+                return BadRequest("Le nom ne peut pas contenir de caractères invalides");
+            }
+
+            // Get the gallery and check permissions
+            var gallery = await applicationDbContext.Galleries
+                .Include(g => g.Members)
+                .FirstOrDefaultAsync(g => g.Id == galleryId);
+            
+            if (gallery == null) return NotFound("Galerie introuvable");
+
+            if (!User.IsGalleryAdministrator(gallery))
+            {
+                return Forbid();
+            }
+
+            // Get the root directory
+            var rootDirectory = await applicationDbContext.PhotoDirectories
+                .FirstOrDefaultAsync(d => d.GalleryId == galleryId && d.ParentDirectoryId == null);
+            
+            if (rootDirectory == null) return NotFound("Répertoire racine introuvable");
+
+            // Check if a directory with the same name already exists at root
+            var existingDirectory = await applicationDbContext.PhotoDirectories
+                .Where(d => d.ParentDirectoryId == rootDirectory.Id)
+                .ToListAsync();
+            
+            if (existingDirectory.Any(d => Path.GetFileName(d.Path) == model.Name.Trim()))
+            {
+                return BadRequest("Un album avec ce nom existe déjà");
+            }
+
+            // Create the new directory
+            var newPath = string.IsNullOrEmpty(rootDirectory.Path) 
+                ? model.Name.Trim() 
+                : Path.Combine(rootDirectory.Path, model.Name.Trim());
+            
+            var newDirectory = new PhotoDirectory(newPath, 0, null, rootDirectory.Id)
+            {
+                Gallery = gallery
+            };
+            
+            applicationDbContext.PhotoDirectories.Add(newDirectory);
+            await applicationDbContext.SaveChangesAsync();
+
+            // Create the physical directory
+            await directoryService.CreateDirectoryAsync(newDirectory);
+
+            // Move photos if specified
+            if (model.PhotoIds.Length > 0)
+            {
+                try
+                {
+                    await photoService.MovePhotosToDirectory(model.PhotoIds, newDirectory.Id);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Rollback directory creation if photo move fails
+                    applicationDbContext.PhotoDirectories.Remove(newDirectory);
+                    await applicationDbContext.SaveChangesAsync();
+                    return BadRequest(ex.Message);
+                }
+            }
+
+            var numberOfPhotos = await photoService.GetNumberOfPhotos(newDirectory);
+            var numberOfSubDirectories = await photoService.GetNumberOfSubDirectories(newDirectory);
+            
+            return Ok(new DirectoryViewModel(newDirectory, numberOfPhotos, numberOfSubDirectories));
+        }
+
+        /// <summary>
         /// Renames a directory (album).
         /// </summary>
         /// <param name="id">Directory ID</param>
         /// <param name="model">New name</param>
         /// <returns>Success or error</returns>
-        [HttpPatch("{id}/rename")]
+        [HttpPatch("directories/{id}/rename")]
         public async Task<ActionResult> RenameDirectory(int id, [FromBody] DirectoryRenameViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Name))

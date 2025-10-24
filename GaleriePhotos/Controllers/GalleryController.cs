@@ -34,23 +34,8 @@ namespace GaleriePhotos.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var gallery = await applicationDbContext.Galleries
+                .Include(g => g.Members)
                 .Where(g => g.Id == id && g.Members.Any(m => m.UserId == userId))
-                .Select(x => new GalleryFullViewModel
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    NumberOfPhotos = applicationDbContext.Photos
-                        .Where(d => d.Directory.GalleryId == x.Id)
-                        .Count(),
-                    MinDate = applicationDbContext.Photos
-                        .Where(d => d.Directory.GalleryId == x.Id)
-                        .Min(p => p.DateTime),
-                    MaxDate = applicationDbContext.Photos
-                        .Where(d => d.Directory.GalleryId == x.Id)
-                        .Max(p => p.DateTime),
-                    RootDirectoryId = applicationDbContext.PhotoDirectories.First(d => d.GalleryId == x.Id && (d.PhotoDirectoryType == PhotoDirectoryType.Root || d.Path == "")).Id,
-                    CoverPhotoId = null,
-                })
                 .FirstOrDefaultAsync();
 
             if (gallery == null)
@@ -58,7 +43,34 @@ namespace GaleriePhotos.Controllers
                 return NotFound();
             }
 
-            return Ok(gallery);
+            var isAdministrator = User.IsGalleryAdministrator(gallery);
+
+            var result = new GalleryFullViewModel
+            {
+                Id = gallery.Id,
+                Name = gallery.Name,
+                NumberOfPhotos = await applicationDbContext.Photos
+                    .Where(d => d.Directory.GalleryId == gallery.Id)
+                    .CountAsync(),
+                MinDate = await applicationDbContext.Photos
+                    .Where(d => d.Directory.GalleryId == gallery.Id)
+                    .Select(p => p.DateTime)
+                    .DefaultIfEmpty()
+                    .MinAsync(),
+                MaxDate = await applicationDbContext.Photos
+                    .Where(d => d.Directory.GalleryId == gallery.Id)
+                    .Select(p => p.DateTime)
+                    .DefaultIfEmpty()
+                    .MaxAsync(),
+                RootDirectoryId = await applicationDbContext.PhotoDirectories
+                    .Where(d => d.GalleryId == gallery.Id && (d.PhotoDirectoryType == PhotoDirectoryType.Root || d.Path == ""))
+                    .Select(d => d.Id)
+                    .FirstAsync(),
+                CoverPhotoId = null,
+                IsAdministrator = isAdministrator
+            };
+
+            return Ok(result);
         }
 
         [HttpGet("{id}/photos")]
