@@ -5,11 +5,6 @@ import { useCallback } from "react";
 
 export default function GallerySlideshow() {
   const store = useGalleryStore();
-  const router = useRouter();
 
-  const handleClose = useCallback(() => {
-    router.back();
-  }, [router]);
-
-  return <DiaporamaScreen store={store} onClose={handleClose} />;
+  return <DiaporamaScreen store={store} />;
 }

@@ -15,7 +15,7 @@ import { useGalleryStore } from "@/stores/gallery";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { Link } from "expo-router";
 
-function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
+function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const router = useRouter();
   const galleryStore = useGalleryStore();
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
@@ -106,7 +106,7 @@ function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
 
   return (
     <>
-      {store && store.paginatedPhotosStore.photos.length > 0 && (
+      {store.paginatedPhotosStore.photos.length > 0 && (
         <Link href={store.getSlideshowLink()} asChild>
           <TouchableOpacity
             style={styles.slideshowButton}

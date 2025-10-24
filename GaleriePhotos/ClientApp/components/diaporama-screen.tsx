@@ -15,10 +15,8 @@ import VideoPlayer from "./image-view/video-player";
 
 export const DiaporamaScreen = observer(function DiaporamaScreen({
   store,
-  onClose,
 }: {
   store: PhotoContainerStore;
-  onClose: () => void;
 }) {
   const photosStore = usePhotosStore();
   const { paginatedPhotosStore } = store;
@@ -26,8 +24,8 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showControls, setShowControls] = useState(true);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<number | null>(null);
+  const autoAdvanceTimeoutRef = useRef<number | null>(null);
 
   const currentPhoto = photos[currentIndex];
   const imgUri = currentPhoto?.publicId
@@ -51,8 +49,7 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
 
   const goToNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % photos.length);
-    showControlsTemporarily();
-  }, [photos.length, showControlsTemporarily]);
+  }, [photos.length]);
 
   const handleInteraction = useCallback(() => {
     showControlsTemporarily();
@@ -65,8 +62,8 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
     if (autoAdvanceTimeoutRef.current) {
       clearTimeout(autoAdvanceTimeoutRef.current);
     }
-    onClose();
-  }, [onClose]);
+    store.navigateToContainer();
+  }, [store]);
 
   // Auto-advance every 10 seconds
   useEffect(() => {
