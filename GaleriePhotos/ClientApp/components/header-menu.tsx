@@ -3,10 +3,12 @@ import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
 import { PhotoMoveModal } from "./modals/photo-move-modal";
+import { AlbumCreateModal } from "./modals/album-create-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { useCallback, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useGalleryStore } from "@/stores/gallery";
 
 function HeaderMenu() {
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
@@ -14,7 +16,9 @@ function HeaderMenu() {
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
     useState(false);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
+  const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
+  const galleryStore = useGalleryStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
     setSelectionMenuVisible(true);
@@ -48,7 +52,19 @@ function HeaderMenu() {
     setMoveModalVisible(false);
   }, []);
 
+  const handleOpenCreateAlbumModal = useCallback(() => {
+    setCreateAlbumModalVisible(true);
+  }, []);
+
+  const handleCloseCreateAlbumModal = useCallback(() => {
+    setCreateAlbumModalVisible(false);
+  }, []);
+
   const handleMoveSuccess = useCallback(() => {
+    // Could refresh the view here if needed
+  }, []);
+
+  const handleCreateAlbumSuccess = useCallback(() => {
     // Could refresh the view here if needed
   }, []);
 
@@ -57,6 +73,7 @@ function HeaderMenu() {
   }, [selectedPhotosStore]);
 
   const hasSelection = selectedPhotosStore.count > 0;
+  const isGalleryAdmin = galleryStore.gallery?.isAdministrator || false;
 
   const selectionMenuItems: ActionMenuItem[] = [
     {
@@ -88,6 +105,16 @@ function HeaderMenu() {
           >
             <MaterialIcons name="drive-file-move" size={24} color="#007aff" />
           </TouchableOpacity>
+          {isGalleryAdmin && (
+            <TouchableOpacity
+              onPress={handleOpenCreateAlbumModal}
+              style={styles.createAlbumButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Créer un nouvel album"
+            >
+              <MaterialIcons name="create-new-folder" size={24} color="#007aff" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={handleOpenSelectionMenu}
             style={styles.selectionMenuButton}
@@ -123,6 +150,12 @@ function HeaderMenu() {
         onClose={handleCloseMoveModal}
         onSuccess={handleMoveSuccess}
       />
+      <AlbumCreateModal
+        visible={createAlbumModalVisible}
+        photoIds={selectedPhotosStore.photoIds}
+        onClose={handleCloseCreateAlbumModal}
+        onSuccess={handleCreateAlbumSuccess}
+      />
     </>
   );
 }
@@ -136,6 +169,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   moveButton: {
+    padding: 4,
+    marginRight: 4,
+  },
+  createAlbumButton: {
     padding: 4,
     marginRight: 4,
   },
