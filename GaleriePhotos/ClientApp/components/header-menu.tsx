@@ -12,8 +12,10 @@ import { useMembersStore } from "@/stores/members";
 import { useRouter } from "expo-router";
 import { Directory } from "@/services/views";
 import { useGalleryStore } from "@/stores/gallery";
+import { PhotoContainerStore } from "@/stores/photo-container";
+import { Link } from "expo-router";
 
-function HeaderMenu() {
+function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const router = useRouter();
   const galleryStore = useGalleryStore();
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
@@ -104,6 +106,18 @@ function HeaderMenu() {
 
   return (
     <>
+      {store.paginatedPhotosStore.photos.length > 0 && (
+        <Link href={store.getSlideshowLink()} asChild>
+          <TouchableOpacity
+            style={styles.slideshowButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Lancer le diaporama"
+            accessibilityRole="button"
+          >
+            <MaterialIcons name="slideshow" size={24} color="#007aff" />
+          </TouchableOpacity>
+        </Link>
+      )}
       {hasSelection && administrator && (
         <View style={styles.selectionActions}>
           <TouchableOpacity
@@ -170,6 +184,10 @@ function HeaderMenu() {
 export default observer(HeaderMenu);
 
 const styles = StyleSheet.create({
+  slideshowButton: {
+    padding: 4,
+    marginRight: 4,
+  },
   selectionActions: {
     flexDirection: "row",
     alignItems: "center",

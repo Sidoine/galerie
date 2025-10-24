@@ -61,4 +61,5 @@ export interface PhotoContainerStore {
   renameContainer?(newName: string): Promise<void>;
   childContainersHeader: ReactNode;
   getChildContainerLink(containerId: number): Href;
+  getSlideshowLink(): Href;
 }

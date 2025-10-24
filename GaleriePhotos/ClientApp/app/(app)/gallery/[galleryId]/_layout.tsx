@@ -48,7 +48,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Accueil",
           headerTitle: () => <BreadCrumbs store={galleryStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={galleryStore} />,
           drawerIcon: ({ color, size }) => (
             <Icon set="mci" name="home" color={color} size={size} />
           ),
@@ -67,7 +67,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Albums",
           headerTitle: () => <BreadCrumbs store={directoryStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={directoryStore} />,
           drawerIcon: ({ color, size }) => (
             <Icon
               set="mci"
@@ -91,7 +91,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Album",
           headerTitle: () => <BreadCrumbs store={directoryStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={directoryStore} />,
           drawerItemStyle: { display: "none" },
         }}
       />
@@ -101,7 +101,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Lieux",
           headerTitle: () => <BreadCrumbs store={placeStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={placeStore} />,
           drawerIcon: ({ color, size }) => (
             <Icon set="ion" name="map" color={color} size={size} />
           ),
@@ -120,7 +120,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Album",
           headerTitle: () => <BreadCrumbs store={placeStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={placeStore} />,
           drawerItemStyle: { display: "none" },
         }}
       />
@@ -146,7 +146,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         options={{
           title: "Album",
           headerTitle: () => <BreadCrumbs store={faceNameStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={faceNameStore} />,
           drawerItemStyle: { display: "none" },
         }}
       />
@@ -178,7 +178,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
           title: "Recherche",
           drawerItemStyle: { display: "none" },
           headerTitle: () => <BreadCrumbs store={searchStore} />,
-          headerRight: () => <HeaderMenu />,
+          headerRight: () => <HeaderMenu store={searchStore} />,
           drawerIcon: ({ color, size }) => (
             <Icon set="mci" name="magnify" color={color} size={size} />
           ),
@@ -188,6 +188,46 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         name="search/photos/[photoId]"
         options={{
           title: "Photo",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="slideshow"
+        options={{
+          title: "Diaporama",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="directory/[directoryId]/slideshow"
+        options={{
+          title: "Diaporama",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="face-names/[faceNameId]/slideshow"
+        options={{
+          title: "Diaporama",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="places/[placeId]/slideshow"
+        options={{
+          title: "Diaporama",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="search/slideshow"
+        options={{
+          title: "Diaporama",
           drawerItemStyle: { display: "none" },
           headerShown: false,
         }}

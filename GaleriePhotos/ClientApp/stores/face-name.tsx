@@ -67,6 +67,17 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       },
     };
   }, [faceNamesStore.galleryId]);
+
+  const getSlideshowLink = useCallback((): Href => {
+    return {
+      pathname: "/(app)/gallery/[galleryId]/face-names/[faceNameId]/slideshow",
+      params: {
+        galleryId: faceNamesStore.galleryId,
+        faceNameId: faceNameId ?? 0,
+        order,
+      },
+    };
+  }, [faceNamesStore.galleryId, faceNameId, order]);
   const navigateToChildContainer = useCallback(() => {
     router.push(getChildContainerLink());
   }, [router, getChildContainerLink]);
@@ -157,6 +168,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
       getChildContainerLink,
       paginatedPhotosStore,
       renameContainer,
+      getSlideshowLink,
     };
   }, [
     navigateToPhoto,
@@ -171,6 +183,7 @@ export const FaceNameStoreProvider = observer(function FaceNameStoreProvider({
     getChildContainerLink,
     paginatedPhotosStore,
     renameContainer,
+    getSlideshowLink,
   ]);
   return (
     <FaceNameStoreContext.Provider value={faceNameStore}>
