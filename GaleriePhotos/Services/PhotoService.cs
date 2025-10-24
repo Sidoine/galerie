@@ -676,16 +676,19 @@ namespace GaleriePhotos.Services
         /// Moves a list of photos to a target directory by updating their directory reference
         /// and physically moving the files on the file system
         /// </summary>
-        public async Task MovePhotosToDirectory(int[] photoIds, int targetDirectoryId)
+        public async Task MovePhotosToDirectory(int galleryId, int[] photoIds, int targetDirectoryId)
         {
             if (photoIds.Length == 0) return;
 
             var targetDirectory = await applicationDbContext.PhotoDirectories
                 .Include(x => x.Gallery)
                 .FirstOrDefaultAsync(x => x.Id == targetDirectoryId);
-            
+
             if (targetDirectory == null)
                 throw new InvalidOperationException("Le répertoire cible n'existe pas.");
+
+            if (targetDirectory.GalleryId != galleryId)
+                throw new InvalidOperationException("Le répertoire cible n'appartient pas à la galerie spécifiée.");
 
             var photos = await applicationDbContext.Photos
                 .Include(p => p.Directory)
@@ -711,6 +714,45 @@ namespace GaleriePhotos.Services
                 // Update the database reference
                 photo.Directory = targetDirectory;
                 photo.DirectoryId = targetDirectory.Id;
+                applicationDbContext.Update(photo);
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+        }
+
+        public async Task DeletePhotosFromAlbum(int[] photoIds)
+        {
+            if (photoIds.Length == 0) return;
+
+            var photos = await applicationDbContext.Photos
+                .Include(p => p.Directory)
+                    .ThenInclude(d => d.Gallery)
+                .Where(p => photoIds.Contains(p.Id))
+                .ToListAsync();
+
+            if (photos.Count == 0) return;
+
+            // All photos should be from the same gallery
+            var galleryId = photos[0].Directory.GalleryId;
+            if (photos.Any(p => p.Directory.GalleryId != galleryId))
+                throw new InvalidOperationException("Toutes les photos doivent appartenir à la même galerie.");
+
+            var gallery = photos[0].Directory.Gallery;
+            var rootDirectory = await GetRootDirectory(gallery);
+            var dataProvider = dataService.GetDataProvider(gallery);
+
+            foreach (var photo in photos)
+            {
+                // Skip if photo is already in the root directory
+                if (photo.DirectoryId == rootDirectory.Id)
+                    continue;
+
+                // Move the file physically
+                await dataProvider.MoveFile(rootDirectory, photo);
+
+                // Update the database reference
+                photo.Directory = rootDirectory;
+                photo.DirectoryId = rootDirectory.Id;
                 applicationDbContext.Update(photo);
             }
 

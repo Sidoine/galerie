@@ -92,6 +92,7 @@ namespace GaleriePhotosTest.Controllers
         public async Task MovePhotos_ReturnsBadRequest_WhenNoPhotosSpecified()
         {
             // Arrange
+            var galleryService = new GalleryService(_context);
             var dataService = new DataService();
             var photoService = new PhotoService(
                 Options.Create(new GalerieOptions()),
@@ -102,7 +103,8 @@ namespace GaleriePhotosTest.Controllers
                 Options.Create(new GalerieOptions()),
                 photoService,
                 _context,
-                dataService);
+                dataService,
+                galleryService);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -116,7 +118,7 @@ namespace GaleriePhotosTest.Controllers
             };
 
             // Act
-            var result = await controller.MovePhotos(viewModel);
+            var result = await controller.MovePhotos(_targetDirectory.GalleryId, viewModel);
 
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);
@@ -126,6 +128,7 @@ namespace GaleriePhotosTest.Controllers
         public async Task MovePhotos_ReturnsOk_WhenPhotosMovedSuccessfully()
         {
             // Arrange
+            var galleryService = new GalleryService(_context);
             var dataService = new DataService();
             var photoService = new PhotoService(
                 Options.Create(new GalerieOptions()),
@@ -136,7 +139,8 @@ namespace GaleriePhotosTest.Controllers
                 Options.Create(new GalerieOptions()),
                 photoService,
                 _context,
-                dataService);
+                dataService,
+                galleryService);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -150,7 +154,7 @@ namespace GaleriePhotosTest.Controllers
             };
 
             // Act
-            var result = await controller.MovePhotos(viewModel);
+            var result = await controller.MovePhotos(_targetDirectory.GalleryId, viewModel);
 
             // Assert
             Assert.IsType<OkResult>(result);
@@ -173,6 +177,7 @@ namespace GaleriePhotosTest.Controllers
         public async Task MovePhotos_ReturnsBadRequest_WhenTargetDirectoryDoesNotExist()
         {
             // Arrange
+            var galleryService = new GalleryService(_context);
             var dataService = new DataService();
             var photoService = new PhotoService(
                 Options.Create(new GalerieOptions()),
@@ -183,7 +188,8 @@ namespace GaleriePhotosTest.Controllers
                 Options.Create(new GalerieOptions()),
                 photoService,
                 _context,
-                dataService);
+                dataService,
+                galleryService);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -197,7 +203,7 @@ namespace GaleriePhotosTest.Controllers
             };
 
             // Act
-            var result = await controller.MovePhotos(viewModel);
+            var result = await controller.MovePhotos(_targetDirectory.GalleryId, viewModel);
 
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);

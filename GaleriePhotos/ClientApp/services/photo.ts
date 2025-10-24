@@ -25,8 +25,8 @@ export class PhotoController {
         return this.client.fetch(`api/photos/${publicId}/thumbnail`, "GET", undefined);
     }
 
-    movePhotos = (viewModel: views.PhotoMove) => {
-        return this.client.fetch("api/photos/move", "POST", JSON.stringify(viewModel));
+    movePhotos = (galleryId: number, viewModel: views.PhotoMove) => {
+        return this.client.fetch(`api/photos/galleries/${galleryId}/move`, "POST", JSON.stringify(viewModel));
     }
 
     patch = (id: number, viewModel: views.PhotoPatch) => {
