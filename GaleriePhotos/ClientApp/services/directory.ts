@@ -5,6 +5,10 @@ import * as views from "./views";
 export class DirectoryController {
 	constructor(private client: helpers.ApiClient) {}
 
+    createDirectory = (galleryId: number, model: views.DirectoryCreate) => {
+        return this.client.fetchJson<views.Directory>(`api/directories/create/${galleryId}`, "POST", JSON.stringify(model));
+    }
+
     get = (id: number) => {
         return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
