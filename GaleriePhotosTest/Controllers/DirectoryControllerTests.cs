@@ -425,3 +425,190 @@ public class DirectoryRenameTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
     }
 }
+
+public class DirectoryCreateTests
+{
+    private ApplicationDbContext GetInMemoryContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        return new ApplicationDbContext(options);
+    }
+
+    private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId)
+        };
+        if (globalAdmin)
+        {
+            claims.Add(new Claim(GaleriePhotos.Models.Claims.Administrator, true.ToString()));
+        }
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        return new ClaimsPrincipal(identity);
+    }
+
+    private Galerie.Server.Controllers.DirectoryController CreateController(ApplicationDbContext context, string userId, bool isGlobalAdmin)
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new GalerieOptions());
+        var logger = new TestLogger<GaleriePhotos.Services.PhotoService>();
+        var dataService = new GaleriePhotos.Services.DataService();
+        var photoService = new GaleriePhotos.Services.PhotoService(options, context, logger, dataService);
+        var directoryService = new GaleriePhotos.Services.DirectoryService(context, dataService);
+        
+        var controller = new Galerie.Server.Controllers.DirectoryController(photoService, context, directoryService)
+        {
+            ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = BuildUser(userId, isGlobalAdmin) }
+            }
+        };
+        
+        return controller;
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task CreateDirectory_ReturnsNotFound_WhenGalleryDoesNotExist()
+    {
+        using var context = GetInMemoryContext();
+        var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
+
+        var result = await controller.CreateDirectory(999, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task CreateDirectory_ReturnsForbid_WhenUserNotGalleryAdmin()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "user-not-admin";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var rootDirectory = new PhotoDirectory("", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(rootDirectory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.ForbidResult>(result.Result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task CreateDirectory_ReturnsBadRequest_WhenNameIsEmpty()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var rootDirectory = new PhotoDirectory("", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(rootDirectory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "   " });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task CreateDirectory_ReturnsBadRequest_WhenDirectoryWithSameNameExists()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var rootDirectory = new PhotoDirectory("", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(rootDirectory);
+        await context.SaveChangesAsync();
+
+        var existingDirectory = new PhotoDirectory("ExistingAlbum", 0, null, rootDirectory.Id) { Gallery = gallery, ParentDirectory = rootDirectory };
+        context.PhotoDirectories.Add(existingDirectory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "ExistingAlbum" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact(Skip = "Can only be run on PostgreSQL")]
+    public async Task CreateDirectory_ReturnsBadRequest_WhenNameContainsInvalidCharacters()
+    {
+        using var context = GetInMemoryContext();
+        
+        var userId = "admin-user";
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var rootDirectory = new PhotoDirectory("", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(rootDirectory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        // Test with forward slash
+        var result1 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "../malicious" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result1.Result);
+
+        // Test with backslash
+        var result2 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "..\\malicious" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result2.Result);
+
+        // Test with asterisk
+        var result3 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "bad*name" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result3.Result);
+
+        // Test with dot
+        var result4 = await controller.CreateDirectory(gallery.Id, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "bad.name" });
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result4.Result);
+    }
+}
