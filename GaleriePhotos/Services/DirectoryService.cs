@@ -35,6 +35,16 @@ namespace GaleriePhotos.Services
         }
 
         /// <summary>
+        /// Creates a directory in the file system.
+        /// </summary>
+        /// <param name="directory">The directory to create.</param>
+        public async Task CreateDirectoryAsync(PhotoDirectory directory)
+        {
+            var dataProvider = dataService.GetDataProvider(directory.Gallery);
+            await dataProvider.CreateDirectory(directory);
+        }
+
+        /// <summary>
         /// Renames a directory in the file system and updates the database.
         /// </summary>
         /// <param name="directory">The directory to rename.</param>

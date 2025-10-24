@@ -60,6 +60,14 @@ export interface DirectoryPatch {
     visibility?: number | undefined;
 
     coverPhotoId?: number | undefined;
+
+    name?: string | undefined;
+}
+
+export interface DirectoryCreate {
+    name: string;
+
+    photoIds: number[];
 }
 
 export interface DirectoryRename {
@@ -414,6 +422,8 @@ export interface GalleryFull {
     minDate: string;
 
     maxDate: string;
+
+    isAdministrator: boolean;
 
     id: number;
 

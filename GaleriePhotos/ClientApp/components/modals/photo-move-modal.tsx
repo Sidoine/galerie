@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import {
 import { observer } from "mobx-react-lite";
 import { useApiClient } from "folke-service-helpers";
 import { PhotoController } from "@/services/photo";
-import { DirectoryController } from "@/services/directory";
 import { PhotoMove, Directory } from "@/services/views";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -24,7 +23,7 @@ interface PhotoMoveModalProps {
   visible: boolean;
   photoIds: number[];
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (directory: Directory) => void;
 }
 
 export const PhotoMoveModal = observer(function PhotoMoveModal({
@@ -78,7 +77,10 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
           } avec succès`
         );
         selectedPhotosStore.clearSelection();
-        onSuccess?.();
+        const selectedDirectory =
+          directories &&
+          directories.find((dir) => dir.id === selectedDirectoryId);
+        if (selectedDirectory) onSuccess?.(selectedDirectory);
         onClose();
       } else {
         Alert.alert(
@@ -93,10 +95,11 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
       setLoading(false);
     }
   }, [
-    apiClient,
+    directories,
     onClose,
     onSuccess,
     photoIds,
+    photoService,
     selectedDirectoryId,
     selectedPhotosStore,
   ]);

@@ -3,19 +3,27 @@ import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
 import { PhotoMoveModal } from "./modals/photo-move-modal";
+import { AlbumCreateModal } from "./modals/album-create-modal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { useCallback, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useMembersStore } from "@/stores/members";
+import { useRouter } from "expo-router";
+import { Directory } from "@/services/views";
+import { useGalleryStore } from "@/stores/gallery";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { Link } from "expo-router";
 
 function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
+  const router = useRouter();
+  const galleryStore = useGalleryStore();
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
   const [bulkDateModalVisible, setBulkDateModalVisible] = useState(false);
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
     useState(false);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
+  const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
@@ -50,15 +58,33 @@ function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
     setMoveModalVisible(false);
   }, []);
 
-  const handleMoveSuccess = useCallback(() => {
-    // Could refresh the view here if needed
+  const handleOpenCreateAlbumModal = useCallback(() => {
+    setCreateAlbumModalVisible(true);
   }, []);
+
+  const handleCloseCreateAlbumModal = useCallback(() => {
+    setCreateAlbumModalVisible(false);
+  }, []);
+
+  const handleMoveOrCreateAlbumSuccess = useCallback(
+    (directory: Directory) => {
+      router.push({
+        pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
+        params: {
+          directoryId: directory.id.toString(),
+          galleryId: galleryStore.galleryId,
+        },
+      });
+    },
+    [galleryStore.galleryId, router]
+  );
 
   const handleClearSelection = useCallback(() => {
     selectedPhotosStore.clearSelection();
   }, [selectedPhotosStore]);
 
   const hasSelection = selectedPhotosStore.count > 0;
+  const { administrator } = useMembersStore();
 
   const selectionMenuItems: ActionMenuItem[] = [
     {
@@ -92,7 +118,7 @@ function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
           </TouchableOpacity>
         </Link>
       )}
-      {hasSelection && (
+      {hasSelection && administrator && (
         <View style={styles.selectionActions}>
           <TouchableOpacity
             onPress={handleOpenMoveModal}
@@ -101,6 +127,14 @@ function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
             accessibilityLabel="Déplacer vers un album"
           >
             <MaterialIcons name="drive-file-move" size={24} color="#007aff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleOpenCreateAlbumModal}
+            style={styles.createAlbumButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Créer un nouvel album"
+          >
+            <MaterialIcons name="create-new-folder" size={24} color="#007aff" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleOpenSelectionMenu}
@@ -135,7 +169,13 @@ function HeaderMenu({ store }: { store?: PhotoContainerStore }) {
         visible={moveModalVisible}
         photoIds={selectedPhotosStore.photoIds}
         onClose={handleCloseMoveModal}
-        onSuccess={handleMoveSuccess}
+        onSuccess={handleMoveOrCreateAlbumSuccess}
+      />
+      <AlbumCreateModal
+        visible={createAlbumModalVisible}
+        photoIds={selectedPhotosStore.photoIds}
+        onClose={handleCloseCreateAlbumModal}
+        onSuccess={handleMoveOrCreateAlbumSuccess}
       />
     </>
   );
@@ -154,6 +194,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   moveButton: {
+    padding: 4,
+    marginRight: 4,
+  },
+  createAlbumButton: {
     padding: 4,
     marginRight: 4,
   },
