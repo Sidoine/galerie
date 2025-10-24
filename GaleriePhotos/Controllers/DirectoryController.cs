@@ -17,7 +17,7 @@ using Microsoft.Extensions.Options;
 namespace Galerie.Server.Controllers
 {
     [Authorize]
-    [Route("api/directories")]
+    [Route("api")]
     public class DirectoryController : Controller
     {
         private readonly PhotoService photoService;
@@ -31,7 +31,7 @@ namespace Galerie.Server.Controllers
             this.directoryService = directoryService;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("directories/{id}")]
         public async Task<ActionResult<DirectoryFullViewModel>> Get(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -59,7 +59,7 @@ namespace Galerie.Server.Controllers
         }
 
         // GET: api/values
-        [HttpGet("{id}/directories")]
+        [HttpGet("directories/{id}/subdirectories")]
         public async Task<ActionResult<IEnumerable<DirectoryViewModel>>> GetSubdirectories(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -79,7 +79,7 @@ namespace Galerie.Server.Controllers
             return Ok(results);
         }
 
-        [HttpGet("{id}/photos")]
+        [HttpGet("directories/{id}/photos")]
         public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -108,7 +108,7 @@ namespace Galerie.Server.Controllers
             return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
         }
 
-        [HttpPatch("{id}")]
+        [HttpPatch("directories/{id}")]
         public async Task<ActionResult> Patch(int id, [FromBody] DirectoryPatchViewModel viewModel)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -133,7 +133,7 @@ namespace Galerie.Server.Controllers
             return Ok();
         }
 
-        [HttpPost("{id}/set-parent-cover")]
+        [HttpPost("directories/{id}/set-parent-cover")]
         public async Task<ActionResult> SetParentCover(int id)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
@@ -160,7 +160,7 @@ namespace Galerie.Server.Controllers
         /// <param name="galleryId">Gallery ID where the album will be created</param>
         /// <param name="model">Album name and optional photo IDs to move</param>
         /// <returns>Created album or error</returns>
-        [HttpPost("create/{galleryId}")]
+        [HttpPost("galleries/{galleryId}/directories")]
         public async Task<ActionResult<DirectoryViewModel>> CreateDirectory(int galleryId, [FromBody] DirectoryCreateViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Name))
@@ -222,7 +222,7 @@ namespace Galerie.Server.Controllers
             await directoryService.CreateDirectoryAsync(newDirectory);
 
             // Move photos if specified
-            if (model.PhotoIds != null && model.PhotoIds.Length > 0)
+            if (model.PhotoIds.Length > 0)
             {
                 try
                 {
@@ -249,7 +249,7 @@ namespace Galerie.Server.Controllers
         /// <param name="id">Directory ID</param>
         /// <param name="model">New name</param>
         /// <returns>Success or error</returns>
-        [HttpPatch("{id}/rename")]
+        [HttpPatch("directories/{id}/rename")]
         public async Task<ActionResult> RenameDirectory(int id, [FromBody] DirectoryRenameViewModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Name))

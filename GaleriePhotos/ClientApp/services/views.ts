@@ -60,12 +60,14 @@ export interface DirectoryPatch {
     visibility?: number | undefined;
 
     coverPhotoId?: number | undefined;
+
+    name?: string | undefined;
 }
 
 export interface DirectoryCreate {
     name: string;
 
-    photoIds: number | null[];
+    photoIds: number[];
 }
 
 export interface DirectoryRename {

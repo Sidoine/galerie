@@ -13,16 +13,17 @@ import {
 import { observer } from "mobx-react-lite";
 import { useApiClient } from "folke-service-helpers";
 import { DirectoryController } from "@/services/directory";
-import { DirectoryCreate } from "@/services/views";
+import { Directory, DirectoryCreate } from "@/services/views";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useGalleryStore } from "@/stores/gallery";
+import { useDirectoriesStore } from "@/stores/directories";
 
 interface AlbumCreateModalProps {
   visible: boolean;
   photoIds: number[];
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (album: Directory) => void;
 }
 
 export const AlbumCreateModal = observer(function AlbumCreateModal({
@@ -40,6 +41,7 @@ export const AlbumCreateModal = observer(function AlbumCreateModal({
     [apiClient]
   );
   const selectedPhotosStore = useSelectedPhotosStore();
+  const directoriesStore = useDirectoriesStore();
   const galleryId = galleryStore.gallery?.id;
 
   const handleCreate = useCallback(async () => {
@@ -79,14 +81,11 @@ export const AlbumCreateModal = observer(function AlbumCreateModal({
         );
         selectedPhotosStore.clearSelection();
         setAlbumName("");
-        onSuccess?.();
+        directoriesStore.clearCache();
+        onSuccess?.(response.value);
         onClose();
       } else {
-        const errorMessage =
-          typeof response.error === "string"
-            ? response.error
-            : "Une erreur est survenue lors de la création de l'album";
-        Alert.alert("Erreur", errorMessage);
+        Alert.alert("Erreur", response.message);
       }
     } catch (error) {
       console.error("Error creating album:", error);
@@ -123,10 +122,7 @@ export const AlbumCreateModal = observer(function AlbumCreateModal({
         >
           <View style={styles.header}>
             <Text style={styles.title}>Créer un nouvel album</Text>
-            <TouchableOpacity
-              onPress={handleClose}
-              accessibilityLabel="Fermer"
-            >
+            <TouchableOpacity onPress={handleClose} accessibilityLabel="Fermer">
               <MaterialIcons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>

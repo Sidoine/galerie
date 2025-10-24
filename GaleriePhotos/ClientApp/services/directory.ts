@@ -6,7 +6,7 @@ export class DirectoryController {
 	constructor(private client: helpers.ApiClient) {}
 
     createDirectory = (galleryId: number, model: views.DirectoryCreate) => {
-        return this.client.fetchJson<views.Directory>(`api/directories/create/${galleryId}`, "POST", JSON.stringify(model));
+        return this.client.fetchJson<views.Directory>(`api/galleries/${galleryId}/directories`, "POST", JSON.stringify(model));
     }
 
     get = (id: number) => {
@@ -18,7 +18,7 @@ export class DirectoryController {
     }
 
     getSubdirectories = (id: number) => {
-        return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/directories`, "GET", undefined);
+        return this.client.fetchJson<views.Directory[]>(`api/directories/${id}/subdirectories`, "GET", undefined);
     }
 
     patch = (id: number, viewModel: views.DirectoryPatch) => {

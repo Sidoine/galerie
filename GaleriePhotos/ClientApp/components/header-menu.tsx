@@ -8,9 +8,14 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useSelectedPhotosStore } from "@/stores/selected-photos";
 import { useCallback, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useMembersStore } from "@/stores/members";
+import { useRouter } from "expo-router";
+import { Directory } from "@/services/views";
 import { useGalleryStore } from "@/stores/gallery";
 
 function HeaderMenu() {
+  const router = useRouter();
+  const galleryStore = useGalleryStore();
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
   const [bulkDateModalVisible, setBulkDateModalVisible] = useState(false);
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
@@ -18,7 +23,6 @@ function HeaderMenu() {
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
-  const galleryStore = useGalleryStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
     setSelectionMenuVisible(true);
@@ -60,20 +64,25 @@ function HeaderMenu() {
     setCreateAlbumModalVisible(false);
   }, []);
 
-  const handleMoveSuccess = useCallback(() => {
-    // Could refresh the view here if needed
-  }, []);
-
-  const handleCreateAlbumSuccess = useCallback(() => {
-    // Could refresh the view here if needed
-  }, []);
+  const handleMoveOrCreateAlbumSuccess = useCallback(
+    (directory: Directory) => {
+      router.push({
+        pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
+        params: {
+          directoryId: directory.id.toString(),
+          galleryId: galleryStore.galleryId,
+        },
+      });
+    },
+    [galleryStore.galleryId, router]
+  );
 
   const handleClearSelection = useCallback(() => {
     selectedPhotosStore.clearSelection();
   }, [selectedPhotosStore]);
 
   const hasSelection = selectedPhotosStore.count > 0;
-  const isGalleryAdmin = galleryStore.gallery?.isAdministrator || false;
+  const { administrator } = useMembersStore();
 
   const selectionMenuItems: ActionMenuItem[] = [
     {
@@ -95,7 +104,7 @@ function HeaderMenu() {
 
   return (
     <>
-      {hasSelection && (
+      {hasSelection && administrator && (
         <View style={styles.selectionActions}>
           <TouchableOpacity
             onPress={handleOpenMoveModal}
@@ -105,16 +114,14 @@ function HeaderMenu() {
           >
             <MaterialIcons name="drive-file-move" size={24} color="#007aff" />
           </TouchableOpacity>
-          {isGalleryAdmin && (
-            <TouchableOpacity
-              onPress={handleOpenCreateAlbumModal}
-              style={styles.createAlbumButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Créer un nouvel album"
-            >
-              <MaterialIcons name="create-new-folder" size={24} color="#007aff" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={handleOpenCreateAlbumModal}
+            style={styles.createAlbumButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Créer un nouvel album"
+          >
+            <MaterialIcons name="create-new-folder" size={24} color="#007aff" />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleOpenSelectionMenu}
             style={styles.selectionMenuButton}
@@ -148,13 +155,13 @@ function HeaderMenu() {
         visible={moveModalVisible}
         photoIds={selectedPhotosStore.photoIds}
         onClose={handleCloseMoveModal}
-        onSuccess={handleMoveSuccess}
+        onSuccess={handleMoveOrCreateAlbumSuccess}
       />
       <AlbumCreateModal
         visible={createAlbumModalVisible}
         photoIds={selectedPhotosStore.photoIds}
         onClose={handleCloseCreateAlbumModal}
-        onSuccess={handleCreateAlbumSuccess}
+        onSuccess={handleMoveOrCreateAlbumSuccess}
       />
     </>
   );
