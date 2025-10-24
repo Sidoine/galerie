@@ -154,6 +154,10 @@ export interface PhotoMove {
     targetDirectoryId: number;
 }
 
+export interface PhotoDeleteFromAlbum {
+    photoIds: number[];
+}
+
 export interface Place {
     id: number;
 

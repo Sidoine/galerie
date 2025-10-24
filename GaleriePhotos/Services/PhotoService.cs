@@ -716,5 +716,44 @@ namespace GaleriePhotos.Services
 
             await applicationDbContext.SaveChangesAsync();
         }
+
+        public async Task DeletePhotosFromAlbum(int[] photoIds)
+        {
+            if (photoIds.Length == 0) return;
+
+            var photos = await applicationDbContext.Photos
+                .Include(p => p.Directory)
+                    .ThenInclude(d => d.Gallery)
+                .Where(p => photoIds.Contains(p.Id))
+                .ToListAsync();
+
+            if (photos.Count == 0) return;
+
+            // All photos should be from the same gallery
+            var galleryId = photos[0].Directory.GalleryId;
+            if (photos.Any(p => p.Directory.GalleryId != galleryId))
+                throw new InvalidOperationException("Toutes les photos doivent appartenir à la même galerie.");
+
+            var gallery = photos[0].Directory.Gallery;
+            var rootDirectory = await GetRootDirectory(gallery);
+            var dataProvider = dataService.GetDataProvider(gallery);
+
+            foreach (var photo in photos)
+            {
+                // Skip if photo is already in the root directory
+                if (photo.DirectoryId == rootDirectory.Id)
+                    continue;
+
+                // Move the file physically
+                await dataProvider.MoveFile(rootDirectory, photo);
+
+                // Update the database reference
+                photo.Directory = rootDirectory;
+                photo.DirectoryId = rootDirectory.Id;
+                applicationDbContext.Update(photo);
+            }
+
+            await applicationDbContext.SaveChangesAsync();
+        }
     }
 }

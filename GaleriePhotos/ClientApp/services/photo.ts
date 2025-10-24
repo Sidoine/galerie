@@ -13,6 +13,10 @@ export class PhotoController {
         return this.client.fetch("api/photos/bulk-update-location", "POST", JSON.stringify(viewModel));
     }
 
+    deleteFromAlbum = (viewModel: views.PhotoDeleteFromAlbum) => {
+        return this.client.fetch("api/photos/delete-from-album", "POST", JSON.stringify(viewModel));
+    }
+
     get = (id: number) => {
         return this.client.fetchJson<views.PhotoFull>(`api/photos/${id}`, "GET", undefined);
     }

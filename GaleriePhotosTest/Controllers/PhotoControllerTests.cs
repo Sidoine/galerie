@@ -202,5 +202,87 @@ namespace GaleriePhotosTest.Controllers
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);
         }
+
+        [Fact]
+        public async Task DeleteFromAlbum_ReturnsBadRequest_WhenNoPhotosSpecified()
+        {
+            // Arrange
+            var dataService = new DataService();
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                dataService);
+            var controller = new PhotoController(
+                Options.Create(new GalerieOptions()),
+                photoService,
+                _context,
+                dataService);
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser("user-1", globalAdmin: true) }
+            };
+
+            var viewModel = new PhotoDeleteFromAlbumViewModel
+            {
+                PhotoIds = Array.Empty<int>()
+            };
+
+            // Act
+            var result = await controller.DeleteFromAlbum(viewModel);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task DeleteFromAlbum_ReturnsOk_WhenPhotosMovedToRootSuccessfully()
+        {
+            // Arrange
+            var dataService = new DataService();
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                dataService);
+            var controller = new PhotoController(
+                Options.Create(new GalerieOptions()),
+                photoService,
+                _context,
+                dataService);
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser("user-1", globalAdmin: true) }
+            };
+
+            var viewModel = new PhotoDeleteFromAlbumViewModel
+            {
+                PhotoIds = new[] { _photo1.Id, _photo2.Id }
+            };
+
+            // Act
+            var result = await controller.DeleteFromAlbum(viewModel);
+
+            // Assert
+            Assert.IsType<OkResult>(result);
+
+            // Verify photos were moved to root directory in the database
+            var movedPhotos = await _context.Photos
+                .Include(p => p.Directory)
+                .Where(p => p.Id == _photo1.Id || p.Id == _photo2.Id)
+                .ToListAsync();
+
+            // All photos should now be in root directory (empty path or Root type)
+            Assert.All(movedPhotos, p => 
+                Assert.True(p.Directory.Path == "" || p.Directory.PhotoDirectoryType == PhotoDirectoryType.Root));
+
+            // Verify files were physically moved to root
+            Assert.True(File.Exists(Path.Combine(_tempOriginals, "photo1.jpg")));
+            Assert.True(File.Exists(Path.Combine(_tempOriginals, "photo2.jpg")));
+            Assert.False(File.Exists(Path.Combine(_tempOriginals, "source", "photo1.jpg")));
+            Assert.False(File.Exists(Path.Combine(_tempOriginals, "source", "photo2.jpg")));
+        }
     }
 }

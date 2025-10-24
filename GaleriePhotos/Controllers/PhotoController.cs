@@ -165,5 +165,23 @@ namespace Galerie.Server.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [Authorize(Policy = Policies.Administrator)]
+        [HttpPost("delete-from-album")]
+        public async Task<ActionResult> DeleteFromAlbum([FromBody] PhotoDeleteFromAlbumViewModel viewModel)
+        {
+            if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
+                return BadRequest("Aucune photo spécifiée");
+
+            try
+            {
+                await photoService.DeletePhotosFromAlbum(viewModel.PhotoIds);
+                return Ok();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
