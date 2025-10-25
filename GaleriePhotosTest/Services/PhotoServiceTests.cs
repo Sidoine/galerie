@@ -88,7 +88,7 @@ namespace GaleriePhotosTest.Services
             Assert.True(_db.PhotoDirectories.Any(x => x.Id == root.Id));
         }
 
-        [Fact(Skip = "Requires investigation - filesystem scanning issue")]
+        [Fact]
         public async Task GetDirectoryImages_AddsPhotoFromFileSystemAndSetsCover()
         {
             var fileName = "image1.jpg";
@@ -99,6 +99,9 @@ namespace GaleriePhotosTest.Services
             }
             var creation = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
             File.SetCreationTimeUtc(filePath, creation);
+
+            // Scan the directory to add the photo to the database
+            await _photoService.ScanDirectory(_rootDirectory);
 
             var photos = await _photoService.GetDirectoryImages(_rootDirectory);
             Assert.NotNull(photos);

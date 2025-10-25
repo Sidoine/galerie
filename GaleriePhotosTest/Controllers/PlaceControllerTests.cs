@@ -121,7 +121,7 @@ namespace GaleriePhotosTest.Controllers
             Assert.IsType<OkObjectResult>(result.Result);
         }
 
-        [Fact(Skip = "Test setup issue - PlaceService requires photo-place relationship")]
+        [Fact(Skip = "Test fails with 500 error - PlaceService.GetPlaceByIdAsync uses EF.Functions.ILike which doesn't work with in-memory database")]
         public async Task AssignPhotoToPlace_ReturnsForbid_WhenUserNotGalleryAdmin()
         {
             // Arrange
@@ -175,7 +175,7 @@ namespace GaleriePhotosTest.Controllers
             Assert.IsType<ForbidResult>(result);
         }
 
-        [Fact(Skip = "Test setup issue - PlaceService requires photo-place relationship")]
+        [Fact(Skip = "Test fails with 500 error - PlaceService.GetPlaceByIdAsync uses EF.Functions.ILike which doesn't work with in-memory database")]
         public async Task AssignPhotoToPlace_ReturnsOk_WhenUserIsGalleryAdmin()
         {
             // Arrange
@@ -226,6 +226,12 @@ namespace GaleriePhotosTest.Controllers
             var result = await controller.AssignPhotoToPlace(place.Id, photo.Id);
 
             // Assert
+            // Check if it's an error result first
+            if (result is ObjectResult objectResult)
+            {
+                // Log the error message for debugging
+                Assert.True(false, $"Expected OkResult but got ObjectResult with status code {objectResult.StatusCode} and value: {objectResult.Value}");
+            }
             Assert.IsType<OkResult>(result);
         }
     }
