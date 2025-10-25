@@ -58,6 +58,7 @@ export interface PhotoContainerStore {
   setCover?(photoId: number): Promise<void>;
   setParentCover?(containerId: number): Promise<void>;
   renameContainer?(newName: string): Promise<void>;
+  deletePhotosFromAlbum?(photoIds: number[]): Promise<void>;
   childContainersHeader: ReactNode;
   getChildContainerLink(containerId: number): Href;
   getSlideshowLink(): Href;

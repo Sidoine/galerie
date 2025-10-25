@@ -5,6 +5,9 @@ import { useDirectoriesStore } from "./directories";
 import { observer } from "mobx-react-lite";
 import { LoadPhotosFunction, PaginatedPhotosStore } from "./paginated-photos";
 import { useGalleryStore } from "./gallery";
+import { useApiClient } from "folke-service-helpers";
+import { PhotoController } from "@/services/photo";
+import { Alert } from "react-native";
 
 const DirectoryStoreContext = createContext<PhotoContainerStore | null>(null);
 
@@ -20,6 +23,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
   const router = useRouter();
   const directoriesStore = useDirectoriesStore();
   const galleryStore = useGalleryStore();
+  const apiClient = useApiClient();
   const galleryId = directoriesStore.galleryId;
   if (directoryId === "index" || directoryId === undefined) {
     directoryId = galleryStore.gallery?.rootDirectoryId;
@@ -174,6 +178,50 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
     [directoryId, directoriesStore]
   );
 
+  const photoService = useMemo(
+    () => new PhotoController(apiClient),
+    [apiClient]
+  );
+
+  const deletePhotosFromAlbum = useCallback(
+    async (photoIds: number[]) => {
+      if (!galleryStore.gallery) {
+        Alert.alert("Erreur", "Galerie introuvable");
+        return;
+      }
+
+      const response = await photoService.movePhotos(galleryStore.gallery.id, {
+        photoIds,
+        targetDirectoryId: galleryStore.gallery.rootDirectoryId,
+      });
+
+      if (response.ok) {
+        Alert.alert(
+          "Succès",
+          `${photoIds.length} photo${photoIds.length > 1 ? "s" : ""} déplacée${
+            photoIds.length > 1 ? "s" : ""
+          } vers la racine`
+        );
+        // Navigate to root directory
+        if (galleryStore.gallery?.rootDirectoryId) {
+          router.push({
+            pathname: "/(app)/gallery/[galleryId]/directory/[directoryId]",
+            params: {
+              directoryId: galleryStore.gallery.rootDirectoryId.toString(),
+              galleryId: galleryId.toString(),
+            },
+          });
+        }
+      } else {
+        Alert.alert(
+          "Erreur",
+          "Une erreur est survenue lors de la suppression"
+        );
+      }
+    },
+    [galleryStore.gallery, photoService, galleryId, router]
+  );
+
   // Mémoïse la fonction loadPhotos pour pagination offset-based
   const loadPhotos = useCallback<LoadPhotosFunction>(
     async (sortOrder: string, offset: number, count: number) => {
@@ -214,6 +262,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       setCover,
       setParentCover,
       renameContainer: directory?.parent ? renameContainer : undefined,
+      deletePhotosFromAlbum: directory?.parent ? deletePhotosFromAlbum : undefined,
       childContainersHeader: null,
       getChildContainerLink,
       paginatedPhotosStore,
@@ -234,6 +283,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
       setCover,
       setParentCover,
       renameContainer,
+      deletePhotosFromAlbum,
       getChildContainerLink,
       paginatedPhotosStore,
       getSlideshowLink,
