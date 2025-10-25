@@ -1,4 +1,10 @@
 
+export enum DateJumpType {
+    Year = 0,
+
+    Month = 1
+}
+
 export enum FaceDetectionStatus {
     NotStarted = 0,
 

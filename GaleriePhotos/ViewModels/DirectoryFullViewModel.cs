@@ -11,6 +11,7 @@ namespace GaleriePhotos.ViewModels
         public DirectoryViewModel? Parent { get; set; }
         public DateTime MinDate { get; set; }
         public DateTime MaxDate { get; set; }
+        public List<DateJumpViewModel> DateJumps { get; set; } = new List<DateJumpViewModel>();
 
         public DirectoryFullViewModel(PhotoDirectory photoDirectory, PhotoDirectory? parentDirectory, int numberOfPhotos, int numberOfSubDirectories) : base(photoDirectory, numberOfPhotos, numberOfSubDirectories)
         {

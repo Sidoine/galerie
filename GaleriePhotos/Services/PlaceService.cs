@@ -388,7 +388,13 @@ namespace GaleriePhotos.Services
                 })
                 .FirstOrDefaultAsync();
 
-            if (result == null || result.CoverPhotoId != null) return result;
+            if (result == null) return result;
+
+            // Calculate date jumps using query
+            var photoQuery = context.Photos.Where(ph => ph.PlaceId == placeId);
+            result.DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(result.MinDate, result.MaxDate, photoQuery);
+
+            if (result.CoverPhotoId != null) return result;
 
             var place = await context.Places
                 .Include(x => x.CoverPhoto)
@@ -574,7 +580,8 @@ namespace GaleriePhotos.Services
                 NumberOfPhotos = number,
                 CoverPhotoId = cover,
                 MinDate = min,
-                MaxDate = max
+                MaxDate = max,
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, baseQuery)
             };
         }
 
@@ -594,7 +601,8 @@ namespace GaleriePhotos.Services
                 NumberOfPhotos = number,
                 CoverPhotoId = cover,
                 MinDate = min,
-                MaxDate = max
+                MaxDate = max,
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, baseQuery)
             };
         }
 

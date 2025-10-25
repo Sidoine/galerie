@@ -224,7 +224,7 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
 
   // Mémoïse la fonction loadPhotos pour pagination offset-based
   const loadPhotos = useCallback<LoadPhotosFunction>(
-    async (sortOrder: string, offset: number, count: number) => {
+    async (sortOrder: string, offset: number, count: number, startDate?: string | null) => {
       if (!directoryId) return null;
 
       // Don't load photos if at root level
@@ -234,7 +234,8 @@ export const DirectoryStoreProvider = observer(function DirectoryStoreProvider({
         directoryId,
         sortOrder,
         offset,
-        count
+        count,
+        startDate
       );
     },
     [directoryId, directory?.parent, directoriesStore.directoryService]

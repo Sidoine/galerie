@@ -45,36 +45,40 @@ namespace GaleriePhotos.Controllers
 
             var isAdministrator = User.IsGalleryAdministrator(gallery);
 
+            var photoQuery = applicationDbContext.Photos
+                .Where(d => d.Directory.GalleryId == gallery.Id);
+
+            var minDate = await photoQuery
+                .Select(p => p.DateTime)
+                .DefaultIfEmpty()
+                .MinAsync();
+
+            var maxDate = await photoQuery
+                .Select(p => p.DateTime)
+                .DefaultIfEmpty()
+                .MaxAsync();
+
             var result = new GalleryFullViewModel
             {
                 Id = gallery.Id,
                 Name = gallery.Name,
-                NumberOfPhotos = await applicationDbContext.Photos
-                    .Where(d => d.Directory.GalleryId == gallery.Id)
-                    .CountAsync(),
-                MinDate = await applicationDbContext.Photos
-                    .Where(d => d.Directory.GalleryId == gallery.Id)
-                    .Select(p => p.DateTime)
-                    .DefaultIfEmpty()
-                    .MinAsync(),
-                MaxDate = await applicationDbContext.Photos
-                    .Where(d => d.Directory.GalleryId == gallery.Id)
-                    .Select(p => p.DateTime)
-                    .DefaultIfEmpty()
-                    .MaxAsync(),
+                NumberOfPhotos = await photoQuery.CountAsync(),
+                MinDate = minDate,
+                MaxDate = maxDate,
                 RootDirectoryId = await applicationDbContext.PhotoDirectories
                     .Where(d => d.GalleryId == gallery.Id && (d.PhotoDirectoryType == PhotoDirectoryType.Root || d.Path == ""))
                     .Select(d => d.Id)
                     .FirstAsync(),
                 CoverPhotoId = null,
-                IsAdministrator = isAdministrator
+                IsAdministrator = isAdministrator,
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(minDate, maxDate, photoQuery)
             };
 
             return Ok(result);
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             var gallery = await galleryService.Get(id);
             if (gallery == null) return NotFound();
@@ -84,16 +88,14 @@ namespace GaleriePhotos.Controllers
                 .Include(p => p.Place)
                 .Where(d => d.Directory.GalleryId == id);
 
-            // Apply sorting
-            var orderedQuery = sortOrder == "asc"
-                ? query.OrderBy(p => p.DateTime)
-                : query.OrderByDescending(p => p.DateTime);
+            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+            var photos = await orderedQuery.ToArrayAsync();
 
-            // Apply pagination
-            var photos = await orderedQuery
-                .Skip(offset)
-                .Take(count)
-                .ToArrayAsync();
+            // If we used negative offset, reverse the results
+            if (PhotoQueryHelper.ShouldReverseResults(offset))
+            {
+                photos = photos.Reverse().ToArray();
+            }
 
             return Ok(photos.Select(x => new PhotoViewModel(x)).ToArray());
         }
