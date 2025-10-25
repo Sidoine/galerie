@@ -195,7 +195,6 @@ namespace GaleriePhotos.Controllers
 
             var minDate = await photosQuery.MinAsync(p => p.DateTime);
             var maxDate = await photosQuery.MaxAsync(p => p.DateTime);
-            var photoDates = await photosQuery.Select(p => p.DateTime).ToListAsync();
 
             var result = new SearchResultFullViewModel
             {
@@ -204,7 +203,7 @@ namespace GaleriePhotos.Controllers
                 MaxDate = maxDate,
                 Name = query,
                 CoverPhotoId = null,
-                DateJumps = DateJumpHelper.CalculateDateJumps(minDate, maxDate, photoDates)
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(minDate, maxDate, photosQuery)
             };
 
             return Ok(result);
@@ -231,31 +230,11 @@ namespace GaleriePhotos.Controllers
 
             var photosQuery = BuildSearchQuery(gallery, query);
 
-            // If startDate is provided, filter from that date
-            if (startDate.HasValue)
-            {
-                photosQuery = sortOrder == "asc"
-                    ? photosQuery.Where(p => p.DateTime >= startDate.Value)
-                    : photosQuery.Where(p => p.DateTime <= startDate.Value);
-            }
+            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(photosQuery, sortOrder, offset, count, startDate);
+            var photos = await orderedQuery.ToListAsync();
 
-            // Handle negative offsets by reversing sort order
-            bool reverseSort = offset < 0;
-            int absOffset = Math.Abs(offset);
-
-            // Apply sorting
-            var orderedQuery = (sortOrder == "asc" && !reverseSort) || (sortOrder == "desc" && reverseSort)
-                ? photosQuery.OrderBy(p => p.DateTime)
-                : photosQuery.OrderByDescending(p => p.DateTime);
-
-            // Apply pagination
-            var photos = await orderedQuery
-                .Skip(absOffset)
-                .Take(count)
-                .ToListAsync();
-
-            // If we reversed the sort for negative offset, reverse the results back
-            if (reverseSort)
+            // If we used negative offset, reverse the results
+            if (PhotoQueryHelper.ShouldReverseResults(offset))
             {
                 photos.Reverse();
             }

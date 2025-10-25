@@ -390,12 +390,9 @@ namespace GaleriePhotos.Services
 
             if (result == null) return result;
 
-            // Calculate date jumps
-            var photoDates = await context.Photos
-                .Where(ph => ph.PlaceId == placeId)
-                .Select(ph => ph.DateTime)
-                .ToListAsync();
-            result.DateJumps = DateJumpHelper.CalculateDateJumps(result.MinDate, result.MaxDate, photoDates);
+            // Calculate date jumps using query
+            var photoQuery = context.Photos.Where(ph => ph.PlaceId == placeId);
+            result.DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(result.MinDate, result.MaxDate, photoQuery);
 
             if (result.CoverPhotoId != null) return result;
 
@@ -574,7 +571,6 @@ namespace GaleriePhotos.Services
             var number = await baseQuery.CountAsync();
             var min = await baseQuery.MinAsync(p => p.DateTime);
             var max = await baseQuery.MaxAsync(p => p.DateTime);
-            var photoDates = await baseQuery.Select(p => p.DateTime).ToListAsync();
             // Cover : première photo chronologique de l'année si disponible
             var cover = await baseQuery.OrderBy(p => p.DateTime).Select(p => p.PublicId.ToString()).FirstOrDefaultAsync();
             return new YearFullViewModel
@@ -585,7 +581,7 @@ namespace GaleriePhotos.Services
                 CoverPhotoId = cover,
                 MinDate = min,
                 MaxDate = max,
-                DateJumps = DateJumpHelper.CalculateDateJumps(min, max, photoDates)
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, baseQuery)
             };
         }
 
@@ -597,7 +593,6 @@ namespace GaleriePhotos.Services
             var number = await baseQuery.CountAsync();
             var min = await baseQuery.MinAsync(p => p.DateTime);
             var max = await baseQuery.MaxAsync(p => p.DateTime);
-            var photoDates = await baseQuery.Select(p => p.DateTime).ToListAsync();
             var cover = await baseQuery.OrderBy(p => p.DateTime).Select(p => p.PublicId.ToString()).FirstOrDefaultAsync();
             return new MonthFullViewModel
             {
@@ -607,7 +602,7 @@ namespace GaleriePhotos.Services
                 CoverPhotoId = cover,
                 MinDate = min,
                 MaxDate = max,
-                DateJumps = DateJumpHelper.CalculateDateJumps(min, max, photoDates)
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, baseQuery)
             };
         }
 

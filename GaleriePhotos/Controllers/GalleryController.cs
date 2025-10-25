@@ -45,30 +45,24 @@ namespace GaleriePhotos.Controllers
 
             var isAdministrator = User.IsGalleryAdministrator(gallery);
 
-            var minDate = await applicationDbContext.Photos
-                .Where(d => d.Directory.GalleryId == gallery.Id)
+            var photoQuery = applicationDbContext.Photos
+                .Where(d => d.Directory.GalleryId == gallery.Id);
+
+            var minDate = await photoQuery
                 .Select(p => p.DateTime)
                 .DefaultIfEmpty()
                 .MinAsync();
 
-            var maxDate = await applicationDbContext.Photos
-                .Where(d => d.Directory.GalleryId == gallery.Id)
+            var maxDate = await photoQuery
                 .Select(p => p.DateTime)
                 .DefaultIfEmpty()
                 .MaxAsync();
-
-            var photoDates = await applicationDbContext.Photos
-                .Where(d => d.Directory.GalleryId == gallery.Id)
-                .Select(p => p.DateTime)
-                .ToListAsync();
 
             var result = new GalleryFullViewModel
             {
                 Id = gallery.Id,
                 Name = gallery.Name,
-                NumberOfPhotos = await applicationDbContext.Photos
-                    .Where(d => d.Directory.GalleryId == gallery.Id)
-                    .CountAsync(),
+                NumberOfPhotos = await photoQuery.CountAsync(),
                 MinDate = minDate,
                 MaxDate = maxDate,
                 RootDirectoryId = await applicationDbContext.PhotoDirectories
@@ -77,7 +71,7 @@ namespace GaleriePhotos.Controllers
                     .FirstAsync(),
                 CoverPhotoId = null,
                 IsAdministrator = isAdministrator,
-                DateJumps = DateJumpHelper.CalculateDateJumps(minDate, maxDate, photoDates)
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(minDate, maxDate, photoQuery)
             };
 
             return Ok(result);
@@ -94,31 +88,11 @@ namespace GaleriePhotos.Controllers
                 .Include(p => p.Place)
                 .Where(d => d.Directory.GalleryId == id);
 
-            // If startDate is provided, filter from that date
-            if (startDate.HasValue)
-            {
-                query = sortOrder == "asc"
-                    ? query.Where(p => p.DateTime >= startDate.Value)
-                    : query.Where(p => p.DateTime <= startDate.Value);
-            }
+            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+            var photos = await orderedQuery.ToArrayAsync();
 
-            // Handle negative offsets by reversing sort order
-            bool reverseSort = offset < 0;
-            int absOffset = Math.Abs(offset);
-
-            // Apply sorting
-            var orderedQuery = (sortOrder == "asc" && !reverseSort) || (sortOrder == "desc" && reverseSort)
-                ? query.OrderBy(p => p.DateTime)
-                : query.OrderByDescending(p => p.DateTime);
-
-            // Apply pagination
-            var photos = await orderedQuery
-                .Skip(absOffset)
-                .Take(count)
-                .ToArrayAsync();
-
-            // If we reversed the sort for negative offset, reverse the results back
-            if (reverseSort)
+            // If we used negative offset, reverse the results
+            if (PhotoQueryHelper.ShouldReverseResults(offset))
             {
                 photos = photos.Reverse().ToArray();
             }

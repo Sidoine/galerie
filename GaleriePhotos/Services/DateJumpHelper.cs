@@ -1,21 +1,25 @@
+using GaleriePhotos.Models;
 using GaleriePhotos.ViewModels;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace GaleriePhotos.Services
 {
     public static class DateJumpHelper
     {
         /// <summary>
-        /// Calculate date jumps based on the date range and available photo dates.
+        /// Calculate date jumps based on the date range and available photo dates from a query.
         /// Returns an empty list if difference < 2 months, years if > 24 months, otherwise months.
+        /// This method executes the query in SQL for efficiency.
         /// </summary>
-        public static List<DateJumpViewModel> CalculateDateJumps(
+        public static async Task<List<DateJumpViewModel>> CalculateDateJumpsAsync(
             DateTime minDate, 
             DateTime maxDate, 
-            IEnumerable<DateTime> photoDates)
+            IQueryable<Photo> photoQuery)
         {
             var result = new List<DateJumpViewModel>();
             
@@ -33,16 +37,16 @@ namespace GaleriePhotos.Services
                 return result;
             }
 
-            // Get distinct dates with photos
-            var distinctDates = photoDates.Distinct().OrderBy(d => d).ToList();
+            var culture = CultureInfo.GetCultureInfo("fr-FR");
 
             if (monthsDifference > 24)
             {
-                // Return years
-                var years = distinctDates
-                    .Select(d => d.Year)
+                // Return years - group by year in SQL
+                var years = await photoQuery
+                    .Select(p => p.DateTime.Year)
                     .Distinct()
-                    .OrderBy(y => y);
+                    .OrderBy(y => y)
+                    .ToListAsync();
 
                 foreach (var year in years)
                 {
@@ -56,13 +60,13 @@ namespace GaleriePhotos.Services
             }
             else
             {
-                // Return months
-                var months = distinctDates
-                    .Select(d => new { d.Year, d.Month })
+                // Return months - group by year and month in SQL
+                var months = await photoQuery
+                    .Select(p => new { p.DateTime.Year, p.DateTime.Month })
                     .Distinct()
-                    .OrderBy(ym => ym.Year).ThenBy(ym => ym.Month);
+                    .OrderBy(ym => ym.Year).ThenBy(ym => ym.Month)
+                    .ToListAsync();
 
-                var culture = CultureInfo.GetCultureInfo("fr-FR");
                 foreach (var month in months)
                 {
                     var date = new DateTime(month.Year, month.Month, 1);
