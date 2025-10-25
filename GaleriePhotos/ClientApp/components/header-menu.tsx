@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, View, Alert } from "react-native";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
@@ -14,9 +14,6 @@ import { Directory } from "@/services/views";
 import { useGalleryStore } from "@/stores/gallery";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { Link } from "expo-router";
-import { useApiClient } from "folke-service-helpers";
-import { PhotoController } from "@/services/photo";
-import { Alert } from "react-native";
 import { useAlert } from "./alert";
 
 function HeaderMenu({ store }: { store: PhotoContainerStore }) {
@@ -29,11 +26,6 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
-  const apiClient = useApiClient();
-  const photoService = useMemo(
-    () => new PhotoController(apiClient),
-    [apiClient]
-  );
 
   const handleOpenSelectionMenu = useCallback(() => {
     setSelectionMenuVisible(true);
@@ -100,6 +92,10 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
       return;
     }
 
+    if (!store.deletePhotosFromAlbum) {
+      return;
+    }
+
     alert(
       "Supprimer de l'album",
       `Déplacer ${selectedPhotosStore.count} photo${
@@ -115,46 +111,8 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
           style: "destructive",
           onPress: async () => {
             try {
-              if (!galleryStore.gallery) {
-                Alert.alert("Erreur", "Galerie introuvable");
-                return;
-              }
-              const response = await photoService.movePhotos(
-                galleryStore.gallery.id,
-                {
-                  photoIds: selectedPhotosStore.photoIds,
-                  targetDirectoryId: galleryStore.gallery.rootDirectoryId,
-                }
-              );
-
-              if (response.ok) {
-                Alert.alert(
-                  "Succès",
-                  `${selectedPhotosStore.count} photo${
-                    selectedPhotosStore.count > 1 ? "s" : ""
-                  } déplacée${
-                    selectedPhotosStore.count > 1 ? "s" : ""
-                  } vers la racine`
-                );
-                selectedPhotosStore.clearSelection();
-                // Navigate to root directory
-                if (galleryStore.gallery?.rootDirectoryId) {
-                  router.push({
-                    pathname:
-                      "/(app)/gallery/[galleryId]/directory/[directoryId]",
-                    params: {
-                      directoryId:
-                        galleryStore.gallery.rootDirectoryId.toString(),
-                      galleryId: galleryStore.galleryId.toString(),
-                    },
-                  });
-                }
-              } else {
-                Alert.alert(
-                  "Erreur",
-                  "Une erreur est survenue lors de la suppression"
-                );
-              }
+              await store.deletePhotosFromAlbum!(selectedPhotosStore.photoIds);
+              selectedPhotosStore.clearSelection();
             } catch (error) {
               console.error("Error deleting photos from album:", error);
               Alert.alert("Erreur", "Une erreur est survenue");
@@ -163,40 +121,49 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
         },
       ]
     );
-  }, [
-    selectedPhotosStore,
-    alert,
-    galleryStore.gallery,
-    galleryStore.galleryId,
-    photoService,
-    router,
-  ]);
+  }, [selectedPhotosStore, alert, store]);
 
   const hasSelection = selectedPhotosStore.count > 0;
   const { administrator } = useMembersStore();
 
-  const selectionMenuItems: ActionMenuItem[] = [
-    {
-      label: "Changer la date",
-      onPress: handleOpenBulkDateModal,
-      icon: <MaterialIcons name="event" size={18} color="#1976d2" />,
-    },
-    {
-      label: "Changer la position (GPS)",
-      onPress: handleOpenBulkLocationModal,
-      icon: <MaterialIcons name="my-location" size={18} color="#1976d2" />,
-    },
-    {
-      label: "Supprimer de l'album",
-      onPress: handleDeleteFromAlbum,
-      icon: <MaterialIcons name="delete-outline" size={18} color="#d32f2f" />,
-    },
-    {
+  const selectionMenuItems: ActionMenuItem[] = useMemo(() => {
+    const items: ActionMenuItem[] = [
+      {
+        label: "Changer la date",
+        onPress: handleOpenBulkDateModal,
+        icon: <MaterialIcons name="event" size={18} color="#1976d2" />,
+      },
+      {
+        label: "Changer la position (GPS)",
+        onPress: handleOpenBulkLocationModal,
+        icon: <MaterialIcons name="my-location" size={18} color="#1976d2" />,
+      },
+    ];
+
+    // Only show delete option if the function is defined
+    if (store.deletePhotosFromAlbum) {
+      items.push({
+        label: "Supprimer de l'album",
+        onPress: handleDeleteFromAlbum,
+        icon: <MaterialIcons name="delete-outline" size={18} color="#d32f2f" />,
+      });
+    }
+
+    items.push({
       label: `Désélectionner tout (${selectedPhotosStore.count})`,
       onPress: handleClearSelection,
       icon: <MaterialIcons name="clear" size={18} color="#c62828" />,
-    },
-  ];
+    });
+
+    return items;
+  }, [
+    handleOpenBulkDateModal,
+    handleOpenBulkLocationModal,
+    store.deletePhotosFromAlbum,
+    handleDeleteFromAlbum,
+    selectedPhotosStore.count,
+    handleClearSelection,
+  ]);
 
   const [canDisplaySlideshow, setCanDisplaySlideshow] = useState(false);
 

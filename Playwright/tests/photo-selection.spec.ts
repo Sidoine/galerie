@@ -273,4 +273,37 @@ test.describe("Photo Selection Feature", () => {
       }
     }
   });
+
+  test("delete option should not appear at root level", async ({ page }) => {
+    await page.goto(`/gallery/${galleryId}`);
+
+    // Wait for photos to load
+    const photoLinks = page.locator('a[href*="/photos/"]');
+    await expect(photoLinks.first()).toBeVisible();
+
+    // Select a photo
+    const firstPhotoContainer = photoLinks.first().locator("..");
+    await firstPhotoContainer.hover();
+
+    const buttons = firstPhotoContainer.locator("button");
+    const buttonCount = await buttons.count();
+
+    if (buttonCount > 0) {
+      await buttons.first().click();
+      await page.waitForTimeout(500);
+
+      // Open menu
+      const menuButton = page.locator('button[aria-label*="sélectionnées"]');
+      if (await menuButton.isVisible()) {
+        await menuButton.click();
+
+        // Check that "Supprimer de l'album" option is NOT present at root level
+        const deleteOption = page.getByText("Supprimer de l'album");
+        await expect(deleteOption).not.toBeVisible();
+
+        // But other options should be present
+        await expect(page.getByText("Changer la date")).toBeVisible();
+      }
+    }
+  });
 });
