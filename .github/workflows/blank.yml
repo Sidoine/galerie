@@ -109,7 +109,7 @@ jobs:
       - name: Start web server
         working-directory: GaleriePhotos/ClientApp
         run: |
-          npx serve dist -l 6009 > /tmp/server.log 2>&1 &
+          npx serve dist -l 6009 --single > /tmp/server.log 2>&1 &
           echo $! > /tmp/server.pid
           # Give server a moment to start
           sleep 3
@@ -144,6 +144,7 @@ jobs:
           name: playwright-report
           path: Playwright/playwright-report/
           retention-days: 30
+          if-no-files-found: ignore
 
       - name: Upload test results
         if: always()
@@ -152,3 +153,4 @@ jobs:
           name: playwright-results
           path: Playwright/test-results/
           retention-days: 30
+          if-no-files-found: ignore
