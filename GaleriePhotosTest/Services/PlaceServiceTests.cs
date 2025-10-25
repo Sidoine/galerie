@@ -8,25 +8,24 @@ using Xunit;
 
 namespace GaleriePhotosTest.Services
 {
-    public class PlaceServiceTests : IDisposable
+    [Collection("PostgreSQL")]
+    public class PlaceServiceTests : IClassFixture<PostgreSqlTestFixture>, IDisposable
     {
         private readonly ApplicationDbContext context;
         private readonly PlaceService placeService;
         private readonly HttpClient httpClient;
 
-        public PlaceServiceTests()
+        public PlaceServiceTests(PostgreSqlTestFixture fixture)
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
+            context = fixture.CreateDbContext();
+            context.Database.EnsureCreated();
 
-            context = new ApplicationDbContext(options);
             var logger = new LoggerFactory().CreateLogger<PlaceService>();
             httpClient = new HttpClient();
             placeService = new PlaceService(context, logger, httpClient);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetPlacesByGalleryAsync_ReturnsEmptyList_WhenNoPlaces()
         {
             // Arrange
@@ -41,7 +40,7 @@ namespace GaleriePhotosTest.Services
             Assert.Empty(result);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetPlacesByGalleryAsync_ReturnsPlaces_WhenPlacesExist()
         {
             // Arrange
@@ -63,7 +62,7 @@ namespace GaleriePhotosTest.Services
             Assert.Contains(result, p => p.Name == "Lyon");
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AssignPhotoToPlaceAsync_ReturnsTrue_WhenPhotoAndPlaceExist()
         {
             // Arrange
@@ -93,7 +92,7 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(place.Id, updatedPhoto.PlaceId);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AssignPhotoToPlaceAsync_ReturnsFalse_WhenPhotoNotFound()
         {
             // Arrange
@@ -128,7 +127,7 @@ namespace GaleriePhotosTest.Services
             Assert.True(place.CreatedAt > DateTime.MinValue);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task MergeDuplicatePlacesAsync_MergesDuplicates_WhenDuplicatesExist()
         {
             // Arrange
@@ -170,7 +169,7 @@ namespace GaleriePhotosTest.Services
             Assert.All(photosWithPlace, p => Assert.Equal(remainingPlaces[0].Id, p.PlaceId));
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task MergeDuplicatePlacesAsync_DoesNotMergeDifferentPlaces_WhenNoDuplicates()
         {
             // Arrange
@@ -195,7 +194,7 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(2, remainingPlaces.Count);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetPlaceByIdAsync_AutomaticallyAssignsCover_WhenNoCoverExists()
         {
             // Arrange
@@ -231,7 +230,7 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(photo1.Id, updatedPlace.CoverPhotoId); // Should be the earliest photo
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetPlaceByIdAsync_DoesNotAssignVideoCover_WhenOnlyVideosExist()
         {
             // Arrange
@@ -266,7 +265,7 @@ namespace GaleriePhotosTest.Services
             Assert.Null(updatedPlace.CoverPhotoId);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetPlaceByIdAsync_SkipsPrivatePhotos_WhenAssigningCover()
         {
             // Arrange
@@ -303,7 +302,7 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(publicPhoto.Id, updatedPlace.CoverPhotoId); // Should be the public photo
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetPlaceByIdAsync_DoesNotChangeCover_WhenCoverAlreadyExists()
         {
             // Arrange

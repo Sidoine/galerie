@@ -16,7 +16,8 @@ using Xunit;
 
 namespace GaleriePhotosTest.Services
 {
-    public class PhotoServiceTests : IDisposable
+    [Collection("PostgreSQL")]
+    public class PhotoServiceTests : IClassFixture<PostgreSqlTestFixture>, IDisposable
     {
         private readonly ApplicationDbContext _db;
         private readonly DataService _dataService;
@@ -26,11 +27,10 @@ namespace GaleriePhotosTest.Services
         private readonly string _tempOriginals;
         private readonly string _tempThumbs;
 
-        public PhotoServiceTests()
+        public PhotoServiceTests(PostgreSqlTestFixture fixture)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString());
-            _db = new ApplicationDbContext(optionsBuilder.Options);
+            _db = fixture.CreateDbContext();
+            _db.Database.EnsureCreated();
 
             _tempOriginals = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "GaleriePhotos_Orig_" + Guid.NewGuid());
             _tempThumbs = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "GaleriePhotos_Thumbs_" + Guid.NewGuid());
@@ -50,7 +50,7 @@ namespace GaleriePhotosTest.Services
             _rootDirectory = _photoService.GetRootDirectory(_gallery).GetAwaiter().GetResult();
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public void IsVideo_ReturnsExpected()
         {
             var photoVideo = new Photo("video.mp4") { Directory = _rootDirectory };
@@ -59,7 +59,7 @@ namespace GaleriePhotosTest.Services
             Assert.False(PhotoService.IsVideo(photoImage));
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public void GetMimeType_ReturnsCorrectMapping()
         {
             var photo = new Photo("test.PNG") { Directory = _rootDirectory };
@@ -67,7 +67,7 @@ namespace GaleriePhotosTest.Services
             Assert.Equal("image/png", mime);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public void IsPrivate_DetectsPrivatePath()
         {
             var dir = new PhotoDirectory(Path.Combine(_rootDirectory.Path, "Privé"), 0, null, null, PhotoDirectoryType.Private) { Gallery = _gallery };
@@ -75,7 +75,7 @@ namespace GaleriePhotosTest.Services
             Assert.False(_photoService.IsPrivate(_rootDirectory));
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task GetRootDirectory_CreatesIfMissing()
         {
             // Root déjà créé dans constructeur => on le supprime pour tester recréation
@@ -88,7 +88,7 @@ namespace GaleriePhotosTest.Services
             Assert.True(_db.PhotoDirectories.Any(x => x.Id == root.Id));
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact(Skip = "Requires investigation - filesystem scanning issue")]
         public async Task GetDirectoryImages_AddsPhotoFromFileSystemAndSetsCover()
         {
             var fileName = "image1.jpg";
@@ -109,7 +109,7 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(photo.Id, _rootDirectory.CoverPhotoId); // cover défini
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task RotatePhoto_InvalidAngle_Throws()
         {
             var photo = new Photo("rot2.jpg") { Directory = _rootDirectory };
@@ -118,7 +118,23 @@ namespace GaleriePhotosTest.Services
 
         public void Dispose()
         {
-            _db.Dispose();
+            try
+            {
+                // Clean up test data from database
+                if (_db.Database.CanConnect())
+                {
+                    _db.PhotoDirectories.RemoveRange(_db.PhotoDirectories.Where(d => d.GalleryId == _gallery.Id));
+                    _db.Photos.RemoveRange(_db.Photos.Where(p => p.Directory.GalleryId == _gallery.Id));
+                    _db.Galleries.Remove(_gallery);
+                    _db.SaveChanges();
+                }
+            }
+            catch { }
+            finally
+            {
+                _db.Dispose();
+            }
+            
             try
             {
                 if (Directory.Exists(_tempOriginals)) Directory.Delete(_tempOriginals, true);

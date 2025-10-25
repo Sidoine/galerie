@@ -30,21 +30,28 @@ namespace GaleriePhotosTest.Services
         }
     }
 
-    public class FaceAutoNamingServiceTests
+    [Collection("PostgreSQL")]
+    public class FaceAutoNamingServiceTests : IClassFixture<PostgreSqlTestFixture>
     {
-        private ApplicationDbContext GetInMemoryContext()
+        private readonly PostgreSqlTestFixture _fixture;
+
+        public FaceAutoNamingServiceTests(PostgreSqlTestFixture fixture)
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-            return new ApplicationDbContext(options);
+            _fixture = fixture;
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        private ApplicationDbContext GetContext()
+        {
+            var context = _fixture.CreateDbContext();
+            context.Database.EnsureCreated();
+            return context;
+        }
+
+        [Fact]
         public async Task AutoNameSimilarFacesAsync_NoUnnamedFaces_ReturnsZero()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var photoService = new TestPhotoService(context, dataService);
@@ -86,11 +93,11 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(0, result);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AutoNameSimilarFacesAsync_NoNamedFaces_ReturnsZero()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var photoService = new TestPhotoService(context, dataService);
@@ -126,11 +133,11 @@ namespace GaleriePhotosTest.Services
             Assert.Equal(0, result);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AutoNameSimilarFacesAsync_SimilarFacesExist_AssignsNames()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var photoService = new TestPhotoService(context, dataService);
@@ -190,11 +197,11 @@ namespace GaleriePhotosTest.Services
             // On PostgreSQL, this would be assigned; on in-memory, it won't
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AutoNameSimilarFacesAsync_DissimilarFaces_DoesNotAssignNames()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var photoService = new TestPhotoService(context, dataService);
@@ -252,11 +259,11 @@ namespace GaleriePhotosTest.Services
             Assert.Null(updatedFace!.FaceNameId);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AutoNameSimilarFacesAsync_RespectsBatchSize()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var photoService = new TestPhotoService(context, dataService);
@@ -313,11 +320,11 @@ namespace GaleriePhotosTest.Services
             Assert.True(result >= 0 && result <= 5);
         }
 
-        [Fact(Skip = "Can only be run on PostgreSQL")]
+        [Fact]
         public async Task AutoNameSimilarFacesAsync_OnlyProcessesSpecifiedGallery()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
             var logger = new TestLogger<FaceDetectionService>();
             var dataService = new DataService();
             var photoService = new TestPhotoService(context, dataService);
