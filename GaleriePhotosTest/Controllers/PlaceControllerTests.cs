@@ -16,14 +16,21 @@ using Xunit;
 
 namespace GaleriePhotosTest.Controllers
 {
-    public class PlaceControllerTests
+    [Collection("PostgreSQL")]
+    public class PlaceControllerTests : IClassFixture<PostgreSqlTestFixture>
     {
-        private ApplicationDbContext GetInMemoryContext()
+        private readonly PostgreSqlTestFixture _fixture;
+
+        public PlaceControllerTests(PostgreSqlTestFixture fixture)
         {
-            var options = new DbContextOptionsBuilder<TestApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-            return new TestApplicationDbContext(options);
+            _fixture = fixture;
+        }
+
+        private ApplicationDbContext GetContext()
+        {
+            var context = _fixture.CreateDbContext();
+            context.Database.EnsureCreated();
+            return context;
         }
 
         private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
@@ -44,7 +51,8 @@ namespace GaleriePhotosTest.Controllers
         public async Task GetCountriesByGallery_ReturnsForbid_WhenUserNotGalleryMember()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
             var logger = new TestLogger<PlaceController>();
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
@@ -79,13 +87,16 @@ namespace GaleriePhotosTest.Controllers
 
             // Assert
             Assert.IsType<ForbidResult>(result.Result);
+            
+            // Transaction will rollback on dispose
         }
 
         [Fact]
         public async Task GetCountriesByGallery_ReturnsOk_WhenUserIsGalleryMember()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
             var logger = new TestLogger<PlaceController>();
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
@@ -119,13 +130,16 @@ namespace GaleriePhotosTest.Controllers
 
             // Assert
             Assert.IsType<OkObjectResult>(result.Result);
+            
+            // Transaction will rollback on dispose
         }
 
-        [Fact(Skip = "Test fails with 500 error - PlaceService.GetPlaceByIdAsync uses EF.Functions.ILike which doesn't work with in-memory database")]
+        [Fact]
         public async Task AssignPhotoToPlace_ReturnsForbid_WhenUserNotGalleryAdmin()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
             var logger = new TestLogger<PlaceController>();
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
@@ -173,13 +187,16 @@ namespace GaleriePhotosTest.Controllers
 
             // Assert
             Assert.IsType<ForbidResult>(result);
+            
+            // Transaction will rollback on dispose
         }
 
-        [Fact(Skip = "Test fails with 500 error - PlaceService.GetPlaceByIdAsync uses EF.Functions.ILike which doesn't work with in-memory database")]
+        [Fact]
         public async Task AssignPhotoToPlace_ReturnsOk_WhenUserIsGalleryAdmin()
         {
             // Arrange
-            using var context = GetInMemoryContext();
+            using var context = GetContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
             var logger = new TestLogger<PlaceController>();
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
@@ -226,13 +243,9 @@ namespace GaleriePhotosTest.Controllers
             var result = await controller.AssignPhotoToPlace(place.Id, photo.Id);
 
             // Assert
-            // Check if it's an error result first
-            if (result is ObjectResult objectResult)
-            {
-                // Log the error message for debugging
-                Assert.True(false, $"Expected OkResult but got ObjectResult with status code {objectResult.StatusCode} and value: {objectResult.Value}");
-            }
             Assert.IsType<OkResult>(result);
+            
+            // Transaction will rollback on dispose
         }
     }
 }
