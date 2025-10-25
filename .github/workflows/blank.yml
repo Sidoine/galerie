@@ -102,25 +102,27 @@ jobs:
         working-directory: Playwright
         run: yarn playwright install --with-deps chromium
 
-      - name: Start Expo web server
+      - name: Build frontend for production
+        working-directory: GaleriePhotos/ClientApp
+        run: yarn build
+
+      - name: Start web server
         working-directory: GaleriePhotos/ClientApp
         run: |
-          PORT=6009 yarn expo start --web > /tmp/expo.log 2>&1 &
-          echo $! > /tmp/expo.pid
-          # Give Expo a moment to start and check if it crashes immediately
-          sleep 5
-          if ! kill -0 $(cat /tmp/expo.pid) 2>/dev/null; then
-            echo "Expo server failed to start"
-            cat /tmp/expo.log
+          npx serve dist -l 6009 > /tmp/server.log 2>&1 &
+          echo $! > /tmp/server.pid
+          # Give server a moment to start
+          sleep 3
+          if ! kill -0 $(cat /tmp/server.pid) 2>/dev/null; then
+            echo "Web server failed to start"
+            cat /tmp/server.log
             exit 1
           fi
-        env:
-          CI: "true"
 
       - name: Wait for server to start
         run: |
-          # Expo web server can take up to 2 minutes to compile and start in CI
-          timeout 120 bash -c 'until curl -f http://localhost:6009 > /dev/null 2>&1; do sleep 2; done'
+          # Wait for the web server to be ready
+          timeout 30 bash -c 'until curl -f http://localhost:6009 > /dev/null 2>&1; do sleep 2; done'
 
       - name: Run Playwright tests
         working-directory: Playwright
@@ -128,11 +130,11 @@ jobs:
         env:
           CI: "true"
 
-      - name: Stop Expo server
+      - name: Stop web server
         if: always()
         run: |
-          if [ -f /tmp/expo.pid ]; then
-            kill $(cat /tmp/expo.pid) || true
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) || true
           fi
 
       - name: Upload Playwright report
