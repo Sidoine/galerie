@@ -59,3 +59,98 @@ jobs:
           git_remote_url: "ssh://dokku@sidoine.net:22/galerie"
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           # git_push_flags: "--force"
+
+  playwright:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      actions: write
+    
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: enable corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "yarn"
+          cache-dependency-path: "GaleriePhotos/ClientApp/yarn.lock"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('Playwright/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers-
+
+      - name: Install frontend dependencies
+        working-directory: GaleriePhotos/ClientApp
+        run: yarn install
+
+      - name: Install Playwright dependencies
+        working-directory: Playwright
+        run: yarn install
+
+      - name: Install Playwright browsers
+        working-directory: Playwright
+        run: yarn playwright install --with-deps chromium
+
+      - name: Build frontend for production
+        working-directory: GaleriePhotos/ClientApp
+        run: yarn build
+
+      - name: Start web server
+        working-directory: GaleriePhotos/ClientApp
+        run: |
+          npx serve dist -l 6009 --single > /tmp/server.log 2>&1 &
+          echo $! > /tmp/server.pid
+          # Give server a moment to start
+          sleep 3
+          if ! kill -0 $(cat /tmp/server.pid) 2>/dev/null; then
+            echo "Web server failed to start"
+            cat /tmp/server.log
+            exit 1
+          fi
+
+      - name: Wait for server to start
+        run: |
+          # Wait for the web server to be ready
+          timeout 30 bash -c 'until curl -f http://localhost:6009 > /dev/null 2>&1; do sleep 2; done'
+
+      - name: Run Playwright tests
+        working-directory: Playwright
+        run: yarn playwright test --reporter=list
+        env:
+          CI: "true"
+
+      - name: Stop web server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Playwright/playwright-report/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: Playwright/test-results/
+          retention-days: 30
+          if-no-files-found: ignore
