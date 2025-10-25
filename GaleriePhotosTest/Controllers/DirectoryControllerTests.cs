@@ -201,14 +201,29 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
     }
 }
 
-public class DirectoryRenameTests
+[Collection("PostgreSQL")]
+public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
 {
-    private ApplicationDbContext GetInMemoryContext()
+    private readonly PostgreSqlTestFixture _fixture;
+
+    public DirectoryRenameTests(PostgreSqlTestFixture fixture)
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        return new ApplicationDbContext(options);
+        _fixture = fixture;
+    }
+
+    private ApplicationDbContext GetContext()
+    {
+        var context = _fixture.CreateDbContext();
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    /// <summary>
+    /// Generates a unique user ID for test isolation
+    /// </summary>
+    private static string GenerateUserId(string prefix = "user")
+    {
+        return $"{prefix}-{Guid.NewGuid()}";
     }
 
     private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
@@ -244,22 +259,22 @@ public class DirectoryRenameTests
         return controller;
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task RenameDirectory_ReturnsNotFound_WhenDirectoryDoesNotExist()
     {
-        using var context = GetInMemoryContext();
-        var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
+        using var context = GetContext();
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
 
         var result = await controller.RenameDirectory(999, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "NewName" });
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task RenameDirectory_ReturnsForbid_WhenUserNotGalleryAdmin()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "user-not-admin";
+        var userId = GenerateUserId("user");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -283,12 +298,12 @@ public class DirectoryRenameTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.ForbidResult>(result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task RenameDirectory_ReturnsBadRequest_WhenNameIsEmpty()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -312,12 +327,12 @@ public class DirectoryRenameTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task RenameDirectory_ReturnsBadRequest_WhenSiblingWithSameNameExists()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -346,12 +361,12 @@ public class DirectoryRenameTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task RenameDirectory_ReturnsBadRequest_WhenNameContainsPathSeparators()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -396,12 +411,12 @@ public class DirectoryRenameTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result5);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task RenameDirectory_ReturnsBadRequest_WhenTryingToRenameRootDirectory()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -426,14 +441,29 @@ public class DirectoryRenameTests
     }
 }
 
-public class DirectoryCreateTests
+[Collection("PostgreSQL")]
+public class DirectoryCreateTests : IClassFixture<PostgreSqlTestFixture>
 {
-    private ApplicationDbContext GetInMemoryContext()
+    private readonly PostgreSqlTestFixture _fixture;
+
+    public DirectoryCreateTests(PostgreSqlTestFixture fixture)
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        return new ApplicationDbContext(options);
+        _fixture = fixture;
+    }
+
+    private ApplicationDbContext GetContext()
+    {
+        var context = _fixture.CreateDbContext();
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    /// <summary>
+    /// Generates a unique user ID for test isolation
+    /// </summary>
+    private static string GenerateUserId(string prefix = "user")
+    {
+        return $"{prefix}-{Guid.NewGuid()}";
     }
 
     private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
@@ -469,22 +499,22 @@ public class DirectoryCreateTests
         return controller;
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task CreateDirectory_ReturnsNotFound_WhenGalleryDoesNotExist()
     {
-        using var context = GetInMemoryContext();
-        var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
+        using var context = GetContext();
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
 
         var result = await controller.CreateDirectory(999, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundObjectResult>(result.Result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task CreateDirectory_ReturnsForbid_WhenUserNotGalleryAdmin()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "user-not-admin";
+        var userId = GenerateUserId("user");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -508,12 +538,12 @@ public class DirectoryCreateTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.ForbidResult>(result.Result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task CreateDirectory_ReturnsBadRequest_WhenNameIsEmpty()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -537,12 +567,12 @@ public class DirectoryCreateTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result.Result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task CreateDirectory_ReturnsBadRequest_WhenDirectoryWithSameNameExists()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -570,12 +600,12 @@ public class DirectoryCreateTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(result.Result);
     }
 
-    [Fact(Skip = "Can only be run on PostgreSQL")]
+    [Fact]
     public async Task CreateDirectory_ReturnsBadRequest_WhenNameContainsInvalidCharacters()
     {
-        using var context = GetInMemoryContext();
+        using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
