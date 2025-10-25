@@ -63,6 +63,10 @@ jobs:
   playwright:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+      actions: write
+    
     services:
       postgres:
         image: postgres:16
