@@ -59,3 +59,117 @@ jobs:
           git_remote_url: "ssh://dokku@sidoine.net:22/galerie"
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           # git_push_flags: "--force"
+
+  playwright:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: playwright_test
+          POSTGRES_DB: galerie_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: enable corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "yarn"
+          cache-dependency-path: "GaleriePhotos/ClientApp/yarn.lock"
+
+      - name: Restore .NET dependencies
+        run: dotnet restore GaleriePhotos.sln
+
+      - name: Install frontend dependencies
+        working-directory: GaleriePhotos/ClientApp
+        run: yarn install
+
+      - name: Build application
+        run: dotnet build --no-restore -c Release GaleriePhotos.sln
+
+      - name: Install Playwright dependencies
+        working-directory: Playwright
+        run: yarn install
+
+      - name: Install Playwright browsers
+        working-directory: Playwright
+        run: yarn playwright install --with-deps chromium
+
+      - name: Restore .NET tools
+        working-directory: GaleriePhotos
+        run: dotnet tool restore
+
+      - name: Run database migrations
+        run: dotnet ef database update --no-build -c Release
+        working-directory: GaleriePhotos
+        env:
+          ConnectionStrings__DefaultConnection: "User ID=postgres;Password=playwright_test;Host=localhost;Port=5432;Database=galerie_test"
+
+      - name: Start application
+        run: |
+          mkdir -p /tmp/playwright-photos /tmp/playwright-thumbnails
+          cd GaleriePhotos
+          dotnet run --no-build -c Release --no-launch-profile &
+          echo $! > /tmp/app.pid
+        env:
+          ASPNETCORE_URLS: "http://localhost:6009"
+          ASPNETCORE_ENVIRONMENT: "Development"
+          Administrator__Login: "test@example.com"
+          Administrator__Password: "TestPassword123!"
+          ConnectionStrings__DefaultConnection: "User ID=postgres;Password=playwright_test;Host=localhost;Port=5432;Database=galerie_test"
+          Galerie__Root: "/tmp/playwright-photos"
+          Galerie__ThumbnailsDirectory: "/tmp/playwright-thumbnails"
+
+      - name: Wait for application to start
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:6009 > /dev/null 2>&1; do sleep 2; done'
+
+      - name: Run Playwright tests
+        working-directory: Playwright
+        run: yarn playwright test --reporter=list
+        env:
+          CI: "true"
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f /tmp/app.pid ]; then
+            kill $(cat /tmp/app.pid) || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Playwright/playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: Playwright/test-results/
+          retention-days: 30
