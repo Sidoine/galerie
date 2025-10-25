@@ -47,18 +47,17 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         }).CreateClient();
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetRoot_WithoutAuthentication_ReturnsRedirect()
+    [Fact]
+    public async Task GetRoot_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Act
         var response = await _client.GetAsync("/api/directories/root");
 
-        // Assert - The endpoint is not protected as expected, it returns OK
-        // This is actually useful information about the endpoint behavior
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Assert - The endpoint is protected and returns Unauthorized without authentication
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task GetRoot_WithAuthentication_ReturnsOk()
     {
         // Arrange
@@ -72,7 +71,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task Get_WithInvalidId_ReturnsOk()
     {
         // Arrange
@@ -86,7 +85,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task GetSubdirectories_WithInvalidId_ReturnsOk()
     {
         // Arrange
@@ -100,7 +99,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task GetPhotos_WithInvalidId_ReturnsOk()
     {
         // Arrange
@@ -114,7 +113,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task Controller_WithAuthentication_ReturnsValidResponse()
     {
         // Arrange
@@ -134,7 +133,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         Assert.NotEmpty(content);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task GetRoot_WithGalleryMember_ReturnsGalleryRoot()
     {
         // This test checks that the new gallery system works
@@ -155,7 +154,7 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         Assert.NotEmpty(content);
     }
 
-    [Fact(Skip = "Authentication not working")]
+    [Fact(Skip = "WebApplicationFactory integration test - background services require PostgreSQL configuration")]
     public async Task GetRoot_WithoutGalleryMember_FallsBackToOldBehavior()
     {
         // This test verifies that when a user doesn't have gallery membership,
