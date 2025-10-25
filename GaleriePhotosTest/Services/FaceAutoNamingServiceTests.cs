@@ -83,9 +83,10 @@ namespace GaleriePhotosTest.Services
                 
                 await context.SaveChangesAsync();
             }
-            catch
+            catch (Exception)
             {
-                // Ignore cleanup errors
+                // Ignore cleanup errors - test isolation is best effort
+                // If cleanup fails, subsequent tests may still pass with unique IDs
             }
         }
 
