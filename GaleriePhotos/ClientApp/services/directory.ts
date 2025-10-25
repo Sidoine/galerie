@@ -13,8 +13,8 @@ export class DirectoryController {
         return this.client.fetchJson<views.DirectoryFull>(`api/directories/${id}`, "GET", undefined);
     }
 
-    getPhotos = (id: number, sortOrder?: string, offset?: number, count?: number) => {
-        return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos` + helpers.getQueryString({ sortOrder: sortOrder, offset: offset, count: count }), "GET", undefined);
+    getPhotos = (id: number, sortOrder?: string, offset?: number, count?: number, startDate?: string | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/directories/${id}/photos` + helpers.getQueryString({ sortOrder: sortOrder, offset: offset, count: count, startDate: startDate }), "GET", undefined);
     }
 
     getSubdirectories = (id: number) => {

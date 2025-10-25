@@ -17,8 +17,8 @@ export class GalleryController {
         return this.client.fetchJson<views.GalleryFull>(`api/galleries/${id}`, "GET", undefined);
     }
 
-    getPhotos = (id: number, sortOrder?: string, offset?: number, count?: number) => {
-        return this.client.fetchJson<views.Photo[]>(`api/galleries/${id}/photos` + helpers.getQueryString({ sortOrder: sortOrder, offset: offset, count: count }), "GET", undefined);
+    getPhotos = (id: number, sortOrder?: string, offset?: number, count?: number, startDate?: string | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/galleries/${id}/photos` + helpers.getQueryString({ sortOrder: sortOrder, offset: offset, count: count, startDate: startDate }), "GET", undefined);
     }
 
     getSeafileApiKey = (id: number, request: views.SeafileApiKeyRequest) => {

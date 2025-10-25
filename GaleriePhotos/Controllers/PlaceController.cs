@@ -100,7 +100,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             try
             {
@@ -117,16 +117,34 @@ namespace Galerie.Server.Controllers
                     return NotFound();
                 }
 
+                // If startDate is provided, filter from that date
+                if (startDate.HasValue)
+                {
+                    placePhotos = sortOrder == "asc"
+                        ? placePhotos.Where(p => p.DateTime >= startDate.Value).ToArray()
+                        : placePhotos.Where(p => p.DateTime <= startDate.Value).ToArray();
+                }
+
+                // Handle negative offsets by reversing sort order
+                bool reverseSort = offset < 0;
+                int absOffset = Math.Abs(offset);
+
                 // Apply sorting
-                var orderedPhotos = sortOrder == "asc"
+                var orderedPhotos = (sortOrder == "asc" && !reverseSort) || (sortOrder == "desc" && reverseSort)
                     ? placePhotos.OrderBy(p => p.DateTime)
                     : placePhotos.OrderByDescending(p => p.DateTime);
 
                 // Apply pagination
                 var paginatedPhotos = orderedPhotos
-                    .Skip(offset)
+                    .Skip(absOffset)
                     .Take(count)
                     .ToArray();
+
+                // If we reversed the sort for negative offset, reverse the results back
+                if (reverseSort)
+                {
+                    paginatedPhotos = paginatedPhotos.Reverse().ToArray();
+                }
 
                 return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
             }

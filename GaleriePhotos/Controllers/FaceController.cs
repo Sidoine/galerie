@@ -204,6 +204,14 @@ namespace GaleriePhotos.Controllers
                 })
                 .FirstOrDefaultAsync();
             if (name == null) return NotFound();
+
+            // Calculate date jumps
+            var photoDates = await applicationDbContext.Faces
+                .Where(f => f.FaceNameId == id)
+                .Select(f => f.Photo.DateTime)
+                .ToListAsync();
+            name.DateJumps = DateJumpHelper.CalculateDateJumps(name.MinDate, name.MaxDate, photoDates);
+
             return Ok(name);
         }
 
@@ -214,7 +222,7 @@ namespace GaleriePhotos.Controllers
         /// <param name="name">Nom du visage</param>
         /// <returns>Liste de PhotoViewModel</returns>
         [HttpGet("{galleryId}/face-names/{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id, string sortOrder = "asc", int offset = 0, int count = 25)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id, string sortOrder = "asc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             var gallery = await _galleryService.Get(galleryId);
             if (gallery == null) return NotFound();
@@ -228,16 +236,34 @@ namespace GaleriePhotos.Controllers
                 .Select(f => f.Photo)
                 .Distinct();
             
+            // If startDate is provided, filter from that date
+            if (startDate.HasValue)
+            {
+                query = sortOrder == "asc"
+                    ? query.Where(p => p.DateTime >= startDate.Value)
+                    : query.Where(p => p.DateTime <= startDate.Value);
+            }
+
+            // Handle negative offsets by reversing sort order
+            bool reverseSort = offset < 0;
+            int absOffset = Math.Abs(offset);
+
             // Apply sorting
-            var orderedQuery = sortOrder == "asc"
+            var orderedQuery = (sortOrder == "asc" && !reverseSort) || (sortOrder == "desc" && reverseSort)
                 ? query.OrderBy(p => p.DateTime)
                 : query.OrderByDescending(p => p.DateTime);
 
             // Apply pagination
             var photos = await orderedQuery
-                .Skip(offset)
+                .Skip(absOffset)
                 .Take(count)
                 .ToListAsync();
+
+            // If we reversed the sort for negative offset, reverse the results back
+            if (reverseSort)
+            {
+                photos.Reverse();
+            }
 
             var result = photos.Select(p => new PhotoViewModel(p)).ToArray();
             return Ok(result);

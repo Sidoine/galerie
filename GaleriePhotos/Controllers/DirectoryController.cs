@@ -48,12 +48,18 @@ namespace Galerie.Server.Controllers
             var numberOfPhotos = await photoService.GetNumberOfPhotos(directory);
             var numberOfSubDirectories = await photoService.GetNumberOfSubDirectories(directory);
             var (min, max) = await directoryService.GetPhotoDateRangeAsync(directory);
+            
+            // Get photo dates for date jumps
+            var photos = await photoService.GetDirectoryImages(directory);
+            var photoDates = photos?.Select(p => p.DateTime).ToList() ?? new List<DateTime>();
+            
             var dirVm = new DirectoryFullViewModel(directory, parentDirectory,
                 numberOfPhotos,
                 numberOfSubDirectories)
             {
                 MinDate = min,
-                MaxDate = max
+                MaxDate = max,
+                DateJumps = DateJumpHelper.CalculateDateJumps(min, max, photoDates)
             };
             return Ok(dirVm);
         }
@@ -80,7 +86,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("directories/{id}/photos")]
-        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
+        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
@@ -94,16 +100,34 @@ namespace Galerie.Server.Controllers
             var photos = await photoService.GetDirectoryImages(directory);
             if (photos == null) return NotFound();
 
+            // If startDate is provided, filter from that date
+            if (startDate.HasValue)
+            {
+                photos = sortOrder == "asc"
+                    ? photos.Where(p => p.DateTime >= startDate.Value).ToArray()
+                    : photos.Where(p => p.DateTime <= startDate.Value).ToArray();
+            }
+
+            // Handle negative offsets by reversing sort order
+            bool reverseSort = offset < 0;
+            int absOffset = Math.Abs(offset);
+
             // Apply sorting
-            var orderedPhotos = sortOrder == "asc"
+            var orderedPhotos = (sortOrder == "asc" && !reverseSort) || (sortOrder == "desc" && reverseSort)
                 ? photos.OrderBy(p => p.DateTime)
                 : photos.OrderByDescending(p => p.DateTime);
 
             // Apply pagination
             var paginatedPhotos = orderedPhotos
-                .Skip(offset)
+                .Skip(absOffset)
                 .Take(count)
                 .ToArray();
+
+            // If we reversed the sort for negative offset, reverse the results back
+            if (reverseSort)
+            {
+                paginatedPhotos = paginatedPhotos.Reverse().ToArray();
+            }
 
             return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
         }

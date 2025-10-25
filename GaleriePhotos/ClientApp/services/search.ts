@@ -9,8 +9,8 @@ export class SearchController {
         return this.client.fetchJson<views.RecentSearch[]>(`api/gallery/${galleryId}/search/recent`, "POST", JSON.stringify(request));
     }
 
-    getPhotos = (galleryId: number, query?: string, sortOrder?: string, offset?: number, count?: number) => {
-        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/search/photos` + helpers.getQueryString({ query: query, sortOrder: sortOrder, offset: offset, count: count }), "GET", undefined);
+    getPhotos = (galleryId: number, query?: string, sortOrder?: string, offset?: number, count?: number, startDate?: string | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/gallery/${galleryId}/search/photos` + helpers.getQueryString({ query: query, sortOrder: sortOrder, offset: offset, count: count, startDate: startDate }), "GET", undefined);
     }
 
     getRecentSearches = (galleryId: number) => {

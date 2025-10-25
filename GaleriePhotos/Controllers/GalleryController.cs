@@ -45,6 +45,23 @@ namespace GaleriePhotos.Controllers
 
             var isAdministrator = User.IsGalleryAdministrator(gallery);
 
+            var minDate = await applicationDbContext.Photos
+                .Where(d => d.Directory.GalleryId == gallery.Id)
+                .Select(p => p.DateTime)
+                .DefaultIfEmpty()
+                .MinAsync();
+
+            var maxDate = await applicationDbContext.Photos
+                .Where(d => d.Directory.GalleryId == gallery.Id)
+                .Select(p => p.DateTime)
+                .DefaultIfEmpty()
+                .MaxAsync();
+
+            var photoDates = await applicationDbContext.Photos
+                .Where(d => d.Directory.GalleryId == gallery.Id)
+                .Select(p => p.DateTime)
+                .ToListAsync();
+
             var result = new GalleryFullViewModel
             {
                 Id = gallery.Id,
@@ -52,29 +69,22 @@ namespace GaleriePhotos.Controllers
                 NumberOfPhotos = await applicationDbContext.Photos
                     .Where(d => d.Directory.GalleryId == gallery.Id)
                     .CountAsync(),
-                MinDate = await applicationDbContext.Photos
-                    .Where(d => d.Directory.GalleryId == gallery.Id)
-                    .Select(p => p.DateTime)
-                    .DefaultIfEmpty()
-                    .MinAsync(),
-                MaxDate = await applicationDbContext.Photos
-                    .Where(d => d.Directory.GalleryId == gallery.Id)
-                    .Select(p => p.DateTime)
-                    .DefaultIfEmpty()
-                    .MaxAsync(),
+                MinDate = minDate,
+                MaxDate = maxDate,
                 RootDirectoryId = await applicationDbContext.PhotoDirectories
                     .Where(d => d.GalleryId == gallery.Id && (d.PhotoDirectoryType == PhotoDirectoryType.Root || d.Path == ""))
                     .Select(d => d.Id)
                     .FirstAsync(),
                 CoverPhotoId = null,
-                IsAdministrator = isAdministrator
+                IsAdministrator = isAdministrator,
+                DateJumps = DateJumpHelper.CalculateDateJumps(minDate, maxDate, photoDates)
             };
 
             return Ok(result);
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             var gallery = await galleryService.Get(id);
             if (gallery == null) return NotFound();
@@ -84,16 +94,34 @@ namespace GaleriePhotos.Controllers
                 .Include(p => p.Place)
                 .Where(d => d.Directory.GalleryId == id);
 
+            // If startDate is provided, filter from that date
+            if (startDate.HasValue)
+            {
+                query = sortOrder == "asc"
+                    ? query.Where(p => p.DateTime >= startDate.Value)
+                    : query.Where(p => p.DateTime <= startDate.Value);
+            }
+
+            // Handle negative offsets by reversing sort order
+            bool reverseSort = offset < 0;
+            int absOffset = Math.Abs(offset);
+
             // Apply sorting
-            var orderedQuery = sortOrder == "asc"
+            var orderedQuery = (sortOrder == "asc" && !reverseSort) || (sortOrder == "desc" && reverseSort)
                 ? query.OrderBy(p => p.DateTime)
                 : query.OrderByDescending(p => p.DateTime);
 
             // Apply pagination
             var photos = await orderedQuery
-                .Skip(offset)
+                .Skip(absOffset)
                 .Take(count)
                 .ToArrayAsync();
+
+            // If we reversed the sort for negative offset, reverse the results back
+            if (reverseSort)
+            {
+                photos = photos.Reverse().ToArray();
+            }
 
             return Ok(photos.Select(x => new PhotoViewModel(x)).ToArray());
         }

@@ -14,12 +14,22 @@ export interface Directory {
     numberOfSubDirectories: number;
 }
 
+export interface DateJump {
+    type: enums.DateJumpType;
+
+    date: string;
+
+    label: string;
+}
+
 export interface DirectoryFull {
     parent: Directory | null;
 
     minDate: string;
 
     maxDate: string;
+
+    dateJumps: DateJump[];
 
     id: number;
 
@@ -179,6 +189,8 @@ export interface PlaceFull {
 
     maxDate: string;
 
+    dateJumps: DateJump[];
+
     id: number;
 
     name: string;
@@ -223,6 +235,8 @@ export interface YearFull {
 
     maxDate: string;
 
+    dateJumps: DateJump[];
+
     id: number;
 
     name: string;
@@ -236,6 +250,8 @@ export interface MonthFull {
     minDate: string;
 
     maxDate: string;
+
+    dateJumps: DateJump[];
 
     id: number;
 
@@ -367,6 +383,8 @@ export interface FaceNameFull {
 
     maxDate: string;
 
+    dateJumps: DateJump[];
+
     id: number;
 
     name: string;
@@ -424,6 +442,8 @@ export interface GalleryFull {
     maxDate: string;
 
     isAdministrator: boolean;
+
+    dateJumps: DateJump[];
 
     id: number;
 
@@ -580,6 +600,8 @@ export interface SearchResultFull {
     coverPhotoId: string | null;
 
     name: string;
+
+    dateJumps: DateJump[];
 }
 
 export interface UserPatch {
