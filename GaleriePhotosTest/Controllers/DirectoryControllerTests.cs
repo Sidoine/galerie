@@ -218,6 +218,14 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
         return context;
     }
 
+    /// <summary>
+    /// Generates a unique user ID for test isolation
+    /// </summary>
+    private static string GenerateUserId(string prefix = "user")
+    {
+        return $"{prefix}-{Guid.NewGuid()}";
+    }
+
     private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
     {
         var claims = new List<Claim>
@@ -255,7 +263,7 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     public async Task RenameDirectory_ReturnsNotFound_WhenDirectoryDoesNotExist()
     {
         using var context = GetContext();
-        var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
 
         var result = await controller.RenameDirectory(999, new GaleriePhotos.ViewModels.DirectoryRenameViewModel { Name = "NewName" });
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
@@ -266,7 +274,7 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     {
         using var context = GetContext();
         
-        var userId = "user-not-admin";
+        var userId = GenerateUserId("user");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -295,7 +303,7 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -324,7 +332,7 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -358,7 +366,7 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -408,7 +416,7 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -433,14 +441,29 @@ public class DirectoryRenameTests : IClassFixture<PostgreSqlTestFixture>
     }
 }
 
-public class DirectoryCreateTests
+[Collection("PostgreSQL")]
+public class DirectoryCreateTests : IClassFixture<PostgreSqlTestFixture>
 {
+    private readonly PostgreSqlTestFixture _fixture;
+
+    public DirectoryCreateTests(PostgreSqlTestFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     private ApplicationDbContext GetContext()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        return new ApplicationDbContext(options);
+        var context = _fixture.CreateDbContext();
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    /// <summary>
+    /// Generates a unique user ID for test isolation
+    /// </summary>
+    private static string GenerateUserId(string prefix = "user")
+    {
+        return $"{prefix}-{Guid.NewGuid()}";
     }
 
     private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
@@ -480,7 +503,7 @@ public class DirectoryCreateTests
     public async Task CreateDirectory_ReturnsNotFound_WhenGalleryDoesNotExist()
     {
         using var context = GetContext();
-        var controller = CreateController(context, "admin-user", isGlobalAdmin: true);
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
 
         var result = await controller.CreateDirectory(999, new GaleriePhotos.ViewModels.DirectoryCreateViewModel { Name = "NewAlbum", PhotoIds = [] });
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundObjectResult>(result.Result);
@@ -491,7 +514,7 @@ public class DirectoryCreateTests
     {
         using var context = GetContext();
         
-        var userId = "user-not-admin";
+        var userId = GenerateUserId("user");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -520,7 +543,7 @@ public class DirectoryCreateTests
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -549,7 +572,7 @@ public class DirectoryCreateTests
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();
@@ -582,7 +605,7 @@ public class DirectoryCreateTests
     {
         using var context = GetContext();
         
-        var userId = "admin-user";
+        var userId = GenerateUserId("admin");
         var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
         context.Galleries.Add(gallery);
         await context.SaveChangesAsync();

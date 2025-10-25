@@ -47,6 +47,20 @@ namespace GaleriePhotosTest.Services
             return context;
         }
 
+        /// <summary>
+        /// Creates a 512-dimensional vector for testing. 
+        /// Values can be specified to create similar or dissimilar vectors.
+        /// </summary>
+        private static Vector CreateTestVector(float baseValue = 1.0f)
+        {
+            var values = new float[512];
+            for (int i = 0; i < 512; i++)
+            {
+                values[i] = baseValue + (i * 0.001f); // Small variation to make vectors unique but similar
+            }
+            return new Vector(values);
+        }
+
         [Fact]
         public async Task AutoNameSimilarFacesAsync_NoUnnamedFaces_ReturnsZero()
         {
@@ -78,7 +92,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10, Y = 20, Width = 30, Height = 40,
                 FaceNameId = faceName.Id,
                 FaceName = faceName
@@ -120,7 +134,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10, Y = 20, Width = 30, Height = 40
             };
             context.Faces.Add(face);
@@ -165,7 +179,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo1.Id,
                 Photo = photo1,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10, Y = 20, Width = 30, Height = 40,
                 FaceNameId = faceName.Id,
                 FaceName = faceName
@@ -178,7 +192,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo2.Id,
                 Photo = photo2,
-                Embedding = new Vector(new float[] { 1.01f, 2.01f }),
+                Embedding = CreateTestVector(1.01f),
                 X = 50, Y = 60, Width = 70, Height = 80
             };
             context.Faces.Add(unnamedFace);
@@ -229,7 +243,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo1.Id,
                 Photo = photo1,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10, Y = 20, Width = 30, Height = 40,
                 FaceNameId = faceName.Id,
                 FaceName = faceName
@@ -242,7 +256,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo2.Id,
                 Photo = photo2,
-                Embedding = new Vector(new float[] { 100.0f, 200.0f }),
+                Embedding = CreateTestVector(100.0f),
                 X = 50, Y = 60, Width = 70, Height = 80
             };
             context.Faces.Add(unnamedFace);
@@ -290,7 +304,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10, Y = 20, Width = 30, Height = 40,
                 FaceNameId = faceName.Id,
                 FaceName = faceName
@@ -304,7 +318,7 @@ namespace GaleriePhotosTest.Services
                 {
                     PhotoId = photo.Id,
                     Photo = photo,
-                    Embedding = new Vector(new float[] { 1.01f + i * 0.001f, 2.01f + i * 0.001f }),
+                    Embedding = CreateTestVector(1.01f + i * 0.001f),
                     X = 50 + i, Y = 60 + i, Width = 70, Height = 80
                 };
                 context.Faces.Add(unnamedFace);
@@ -355,7 +369,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo1.Id,
                 Photo = photo1,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10, Y = 20, Width = 30, Height = 40,
                 FaceNameId = faceName1.Id,
                 FaceName = faceName1
@@ -364,7 +378,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo1.Id,
                 Photo = photo1,
-                Embedding = new Vector(new float[] { 1.01f, 2.01f }),
+                Embedding = CreateTestVector(1.01f),
                 X = 50, Y = 60, Width = 70, Height = 80
             };
             context.Faces.AddRange(namedFace1, unnamedFace1);
@@ -374,7 +388,7 @@ namespace GaleriePhotosTest.Services
             {
                 PhotoId = photo2.Id,
                 Photo = photo2,
-                Embedding = new Vector(new float[] { 1.01f, 2.01f }),
+                Embedding = CreateTestVector(1.01f),
                 X = 50, Y = 60, Width = 70, Height = 80
             };
             context.Faces.Add(unnamedFace2);

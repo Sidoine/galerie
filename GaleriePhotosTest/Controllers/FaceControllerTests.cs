@@ -44,6 +44,14 @@ namespace GaleriePhotosTest.Controllers
             return context;
         }
 
+        /// <summary>
+        /// Generates a unique user ID for test isolation
+        /// </summary>
+        private static string GenerateUserId(string prefix = "user")
+        {
+            return $"{prefix}-{Guid.NewGuid()}";
+        }
+
         private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
         {
             var claims = new List<Claim>
@@ -58,6 +66,20 @@ namespace GaleriePhotosTest.Controllers
             return new ClaimsPrincipal(identity);
         }
 
+        /// <summary>
+        /// Creates a 512-dimensional vector for testing. 
+        /// Values can be specified to create similar or dissimilar vectors.
+        /// </summary>
+        private static Vector CreateTestVector(float baseValue = 1.0f)
+        {
+            var values = new float[512];
+            for (int i = 0; i < 512; i++)
+            {
+                values[i] = baseValue + (i * 0.001f); // Small variation to make vectors unique but similar
+            }
+            return new Vector(values);
+        }
+
         [Fact]
         public async Task GetDistinctNames_ReturnsUniqueNames()
         {
@@ -70,7 +92,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "user-1";
+            var userId = GenerateUserId("user");
 
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
@@ -111,7 +133,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10,
                 Y = 20,
                 Width = 30,
@@ -123,7 +145,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 3.0f, 4.0f }),
+                Embedding = CreateTestVector(3.0f),
                 X = 50,
                 Y = 60,
                 Width = 70,
@@ -135,7 +157,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 5.0f, 6.0f }),
+                Embedding = CreateTestVector(5.0f),
                 X = 90,
                 Y = 100,
                 Width = 110,
@@ -171,7 +193,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "user-2";
+            var userId = GenerateUserId("user");
 
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
@@ -206,7 +228,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo1.Id,
                 Photo = photo1,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10,
                 Y = 20,
                 Width = 30,
@@ -216,7 +238,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo2.Id,
                 Photo = photo2,
-                Embedding = new Vector(new float[] { 3.0f, 4.0f }),
+                Embedding = CreateTestVector(3.0f),
                 X = 50,
                 Y = 60,
                 Width = 70,
@@ -249,7 +271,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "user-3";
+            var userId = GenerateUserId("user");
 
             // Add test data
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
@@ -279,7 +301,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 1.0f, 2.0f }),
+                Embedding = CreateTestVector(1.0f),
                 X = 10,
                 Y = 20,
                 Width = 30,
@@ -316,7 +338,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "user-4";
+            var userId = GenerateUserId("user");
 
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
@@ -345,7 +367,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Vector(new float[] { 0.11f, 0.22f }),
+                Embedding = CreateTestVector(0.11f),
                 X = 1,
                 Y = 2,
                 Width = 3,
@@ -392,7 +414,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "user-not-admin";
+            var userId = GenerateUserId("user");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
@@ -426,7 +448,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "admin-user";
+            var userId = GenerateUserId("admin");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
@@ -453,7 +475,7 @@ namespace GaleriePhotosTest.Controllers
             {
                 PhotoId = photo.Id,
                 Photo = photo,
-                Embedding = new Pgvector.Vector(new float[] { 0.1f, 0.2f }),
+                Embedding = CreateTestVector(0.1f),
                 X = 1,
                 Y = 2,
                 Width = 3,
@@ -499,7 +521,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "user-not-admin";
+            var userId = GenerateUserId("user");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
@@ -533,7 +555,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "admin-user";
+            var userId = GenerateUserId("admin");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
@@ -566,7 +588,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "admin-user";
+            var userId = GenerateUserId("admin");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
@@ -603,7 +625,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "admin-user";
+            var userId = GenerateUserId("admin");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
@@ -641,7 +663,7 @@ namespace GaleriePhotosTest.Controllers
             var galleryService = new GalleryService(context);
             var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
 
-            var userId = "admin-user";
+            var userId = GenerateUserId("admin");
             var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
             context.Galleries.Add(gallery);
             await context.SaveChangesAsync();
