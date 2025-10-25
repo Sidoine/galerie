@@ -67,30 +67,10 @@ jobs:
       contents: read
       actions: write
     
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: playwright_test
-          POSTGRES_DB: galerie_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
-      - name: Setup .NET 9 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "9.0.x"
 
       - name: enable corepack
         run: corepack enable
@@ -110,15 +90,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-browsers-
 
-      - name: Restore .NET dependencies
-        run: dotnet restore GaleriePhotos.sln
-
       - name: Install frontend dependencies
         working-directory: GaleriePhotos/ClientApp
         run: yarn install
-
-      - name: Build application
-        run: dotnet build --no-restore -c Release GaleriePhotos.sln
 
       - name: Install Playwright dependencies
         working-directory: Playwright
@@ -128,34 +102,17 @@ jobs:
         working-directory: Playwright
         run: yarn playwright install --with-deps chromium
 
-      - name: Restore .NET tools
-        working-directory: GaleriePhotos
-        run: dotnet tool restore
-
-      - name: Run database migrations
-        run: dotnet ef database update --no-build -c Release
-        working-directory: GaleriePhotos
-        env:
-          ConnectionStrings__DefaultConnection: "User ID=postgres;Password=playwright_test;Host=localhost;Port=5432;Database=galerie_test"
-
-      - name: Start application
+      - name: Start Expo web server
+        working-directory: GaleriePhotos/ClientApp
         run: |
-          mkdir -p /tmp/playwright-photos /tmp/playwright-thumbnails
-          cd GaleriePhotos
-          dotnet run --no-build -c Release --no-launch-profile &
-          echo $! > /tmp/app.pid
+          PORT=6009 yarn expo start --web &
+          echo $! > /tmp/expo.pid
         env:
-          ASPNETCORE_URLS: "http://localhost:6009"
-          ASPNETCORE_ENVIRONMENT: "Development"
-          Administrator__Login: "test@example.com"
-          Administrator__Password: "TestPassword123!"
-          ConnectionStrings__DefaultConnection: "User ID=postgres;Password=playwright_test;Host=localhost;Port=5432;Database=galerie_test"
-          Galerie__Root: "/tmp/playwright-photos"
-          Galerie__ThumbnailsDirectory: "/tmp/playwright-thumbnails"
+          CI: "true"
 
-      - name: Wait for application to start
+      - name: Wait for server to start
         run: |
-          timeout 60 bash -c 'until curl -f http://localhost:6009 > /dev/null 2>&1; do sleep 2; done'
+          timeout 120 bash -c 'until curl -f http://localhost:6009 > /dev/null 2>&1; do sleep 2; done'
 
       - name: Run Playwright tests
         working-directory: Playwright
@@ -163,11 +120,11 @@ jobs:
         env:
           CI: "true"
 
-      - name: Stop application
+      - name: Stop Expo server
         if: always()
         run: |
-          if [ -f /tmp/app.pid ]; then
-            kill $(cat /tmp/app.pid) || true
+          if [ -f /tmp/expo.pid ]; then
+            kill $(cat /tmp/expo.pid) || true
           fi
 
       - name: Upload Playwright report
