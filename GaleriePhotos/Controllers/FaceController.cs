@@ -204,6 +204,13 @@ namespace GaleriePhotos.Controllers
                 })
                 .FirstOrDefaultAsync();
             if (name == null) return NotFound();
+
+            // Calculate date jumps using query
+            var photoQuery = applicationDbContext.Faces
+                .Where(f => f.FaceNameId == id)
+                .Select(f => f.Photo);
+            name.DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(name.MinDate, name.MaxDate, photoQuery);
+
             return Ok(name);
         }
 
@@ -214,7 +221,7 @@ namespace GaleriePhotos.Controllers
         /// <param name="name">Nom du visage</param>
         /// <returns>Liste de PhotoViewModel</returns>
         [HttpGet("{galleryId}/face-names/{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id, string sortOrder = "asc", int offset = 0, int count = 25)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPhotosByFaceName(int galleryId, int id, string sortOrder = "asc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             var gallery = await _galleryService.Get(galleryId);
             if (gallery == null) return NotFound();
@@ -228,16 +235,14 @@ namespace GaleriePhotos.Controllers
                 .Select(f => f.Photo)
                 .Distinct();
             
-            // Apply sorting
-            var orderedQuery = sortOrder == "asc"
-                ? query.OrderBy(p => p.DateTime)
-                : query.OrderByDescending(p => p.DateTime);
+            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+            var photos = await orderedQuery.ToListAsync();
 
-            // Apply pagination
-            var photos = await orderedQuery
-                .Skip(offset)
-                .Take(count)
-                .ToListAsync();
+            // If we used negative offset, reverse the results
+            if (PhotoQueryHelper.ShouldReverseResults(offset))
+            {
+                photos.Reverse();
+            }
 
             var result = photos.Select(p => new PhotoViewModel(p)).ToArray();
             return Ok(result);

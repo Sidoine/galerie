@@ -311,7 +311,8 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     async (
       sortOrder: string,
       offset: number,
-      count: number
+      count: number,
+      startDate?: string | null
     ): Promise<PhotoResponse<Photo[]>> => {
       if (!placeId) return { ok: true, value: [] };
       return await placesStore.placeController.getPlacePhotos(
@@ -320,7 +321,8 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
         month,
         sortOrder,
         offset,
-        count
+        count,
+        startDate
       );
     },
     [placeId, placesStore, year, month]

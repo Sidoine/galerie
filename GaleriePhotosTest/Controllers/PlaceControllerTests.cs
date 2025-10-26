@@ -57,7 +57,7 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService);
+            var controller = new PlaceController(placeService, logger, galleryService, context);
 
             var userId = "user-1";
             var otherUserId = "user-2";
@@ -101,7 +101,7 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService);
+            var controller = new PlaceController(placeService, logger, galleryService, context);
 
             var userId = "user-1";
 
@@ -144,7 +144,7 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService);
+            var controller = new PlaceController(placeService, logger, galleryService, context);
 
             var userId = "user-1";
 
@@ -201,7 +201,7 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService);
+            var controller = new PlaceController(placeService, logger, galleryService, context);
 
             var userId = "user-1";
 

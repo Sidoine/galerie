@@ -48,12 +48,17 @@ namespace Galerie.Server.Controllers
             var numberOfPhotos = await photoService.GetNumberOfPhotos(directory);
             var numberOfSubDirectories = await photoService.GetNumberOfSubDirectories(directory);
             var (min, max) = await directoryService.GetPhotoDateRangeAsync(directory);
+            
+            // Get photo query for date jumps - do the calculation in SQL
+            var photoQuery = applicationDbContext.Photos.Where(p => p.DirectoryId == directory.Id);
+            
             var dirVm = new DirectoryFullViewModel(directory, parentDirectory,
                 numberOfPhotos,
                 numberOfSubDirectories)
             {
                 MinDate = min,
-                MaxDate = max
+                MaxDate = max,
+                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, photoQuery)
             };
             return Ok(dirVm);
         }
@@ -80,7 +85,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("directories/{id}/photos")]
-        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25)
+        public async Task<ActionResult<IEnumerable<PhotoViewModel>>> GetPhotos(int id, string sortOrder = "desc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
@@ -91,21 +96,21 @@ namespace Galerie.Server.Controllers
                 return Forbid();
             }
 
-            var photos = await photoService.GetDirectoryImages(directory);
-            if (photos == null) return NotFound();
+            // Use query instead of loading all photos into memory
+            var query = applicationDbContext.Photos
+                .Include(p => p.Place)
+                .Where(p => p.DirectoryId == directory.Id);
 
-            // Apply sorting
-            var orderedPhotos = sortOrder == "asc"
-                ? photos.OrderBy(p => p.DateTime)
-                : photos.OrderByDescending(p => p.DateTime);
+            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+            var photos = await orderedQuery.ToArrayAsync();
 
-            // Apply pagination
-            var paginatedPhotos = orderedPhotos
-                .Skip(offset)
-                .Take(count)
-                .ToArray();
+            // If we used negative offset, reverse the results
+            if (PhotoQueryHelper.ShouldReverseResults(offset))
+            {
+                photos = photos.Reverse().ToArray();
+            }
 
-            return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
+            return Ok(photos.Select(x => new PhotoViewModel(x)));
         }
 
         [HttpPatch("directories/{id}")]

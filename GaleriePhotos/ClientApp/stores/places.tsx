@@ -26,7 +26,8 @@ class PlacesStore {
         month?: number | null,
         sortOrder?: string,
         offset?: number,
-        count?: number
+        count?: number,
+        startDate?: string | null
       ]
     >,
     private placeYearsLoader: MapLoader<Year[], [number]>,

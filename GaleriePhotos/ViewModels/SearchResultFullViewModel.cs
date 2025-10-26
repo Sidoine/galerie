@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace GaleriePhotos.ViewModels
 {
@@ -9,5 +10,6 @@ namespace GaleriePhotos.ViewModels
         public DateTime? MaxDate { get; set; }
         public string? CoverPhotoId { get; set; }
         public required string Name { get; set; }
+        public List<DateJumpViewModel> DateJumps { get; set; } = new List<DateJumpViewModel>();
     }
 }

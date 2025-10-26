@@ -21,12 +21,14 @@ namespace Galerie.Server.Controllers
         private readonly PlaceService placeService;
         private readonly ILogger<PlaceController> logger;
         private readonly GalleryService galleryService;
+        private readonly ApplicationDbContext applicationDbContext;
 
-        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService)
+        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService, ApplicationDbContext applicationDbContext)
         {
             this.placeService = placeService;
             this.logger = logger;
             this.galleryService = galleryService;
+            this.applicationDbContext = applicationDbContext;
         }
 
         [HttpGet("gallery/{galleryId}/countries")]
@@ -100,7 +102,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             try
             {
@@ -111,24 +113,31 @@ namespace Galerie.Server.Controllers
                 if (gallery == null) return NotFound();
                 if (!User.IsGalleryMember(gallery)) return Forbid();
 
-                var placePhotos = await placeService.GetPlacePhotosAsync(id, year, month);
-                if (placePhotos == null)
+                // Build query instead of loading all photos
+                var query = applicationDbContext.Photos
+                    .Include(p => p.Place)
+                    .Where(p => p.PlaceId == id);
+
+                if (year.HasValue)
                 {
-                    return NotFound();
+                    query = query.Where(p => p.DateTime.Year == year.Value);
                 }
 
-                // Apply sorting
-                var orderedPhotos = sortOrder == "asc"
-                    ? placePhotos.OrderBy(p => p.DateTime)
-                    : placePhotos.OrderByDescending(p => p.DateTime);
+                if (month.HasValue)
+                {
+                    query = query.Where(p => p.DateTime.Month == month.Value);
+                }
 
-                // Apply pagination
-                var paginatedPhotos = orderedPhotos
-                    .Skip(offset)
-                    .Take(count)
-                    .ToArray();
+                var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+                var photos = await orderedQuery.ToArrayAsync();
 
-                return Ok(paginatedPhotos.Select(x => new PhotoViewModel(x)));
+                // If we used negative offset, reverse the results
+                if (PhotoQueryHelper.ShouldReverseResults(offset))
+                {
+                    photos = photos.Reverse().ToArray();
+                }
+
+                return Ok(photos.Select(x => new PhotoViewModel(x)));
             }
             catch (Exception ex)
             {

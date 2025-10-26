@@ -11,7 +11,7 @@ class FaceNamesStore {
     private nameLoader: MapLoader<FaceNameFull, [number, number]>,
     private namePhotosLoader: MapLoader<
       Photo[],
-      [number, number, string?, number?, number?]
+      [number, number, string?, number?, number?, (string | null)?]
     >,
     public faceController: FaceController
   ) {

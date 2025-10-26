@@ -16,7 +16,7 @@ class DirectoriesStore {
     public subDirectoriesLoader: MapLoader<Directory[], [number]>,
     public contentLoader: MapLoader<
       Photo[],
-      [number, string?, number?, number?]
+      [number, string?, number?, number?, (string | null)?]
     >,
     public infoLoader: MapLoader<DirectoryFull, [number]>,
     public directoryService: DirectoryController,

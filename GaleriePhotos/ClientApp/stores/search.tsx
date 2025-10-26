@@ -159,14 +159,15 @@ export const SearchStoreProvider = observer(function SearchStoreProvider({
   }, [gallery, galleryId, query, summary]);
 
   const loadPhotos = useCallback(
-    async (sortOrder: string, offset: number, count: number) => {
+    async (sortOrder: string, offset: number, count: number, startDate?: string | null) => {
       if (!galleryId || !query) return null;
       return await searchService.getPhotos(
         galleryId,
         query,
         sortOrder,
         offset,
-        count
+        count,
+        startDate
       );
     },
     [galleryId, query, searchService]
