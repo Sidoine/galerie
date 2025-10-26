@@ -4742,6 +4742,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-constants@npm:~18.0.10":
+  version: 18.0.10
+  resolution: "expo-constants@npm:18.0.10"
+  dependencies:
+    "@expo/config": "npm:~12.0.10"
+    "@expo/env": "npm:~2.0.7"
+  peerDependencies:
+    expo: "*"
+    react-native: "*"
+  checksum: 10c0/c3878d7a4c438e1bab25bc5267553c06e4c002237f0cf35eb434de70734e31ef1d07c151d9a7771b75be1baa1c794a4c1c731167cbdfa5bd4fe41a499b8dda4b
+  languageName: node
+  linkType: hard
+
 "expo-constants@npm:~18.0.8, expo-constants@npm:~18.0.9":
   version: 18.0.9
   resolution: "expo-constants@npm:18.0.9"
@@ -5455,7 +5468,7 @@ __metadata:
     eslint-plugin-react: "npm:^7.37.5"
     eslint-plugin-react-hooks: "npm:^5.2.0"
     expo: "npm:~54.0.10"
-    expo-constants: "npm:~18.0.9"
+    expo-constants: "npm:~18.0.10"
     expo-dev-client: "npm:^6.0.16"
     expo-font: "npm:~14.0.8"
     expo-haptics: "npm:~15.0.7"
