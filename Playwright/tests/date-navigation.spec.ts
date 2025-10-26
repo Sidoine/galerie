@@ -138,9 +138,7 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(photoLinks.first()).toBeVisible();
 
     // Initially, the date navigation sidebar should not be visible
-    const dateNavigation = page.locator('[data-testid="date-navigation-sidebar"]').or(
-      page.locator('text=/janvier|février|mars|avril/i').first()
-    );
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
     
     // Scroll down to trigger the sidebar
     await page.mouse.wheel(0, 500);
@@ -149,9 +147,7 @@ test.describe("Date Navigation Sidebar", () => {
     await page.waitForTimeout(100);
     
     // The sidebar should become visible after scrolling
-    // Note: We're checking for month names in French as that's what the sidebar displays
-    const sidebarText = page.locator('text=/janvier|février|mars|avril/i').first();
-    await expect(sidebarText).toBeVisible({ timeout: 5000 });
+    await expect(dateNavigation).toBeVisible({ timeout: 5000 });
   });
 
   test("hides date navigation sidebar after 2 seconds of no scrolling", async ({
@@ -168,14 +164,14 @@ test.describe("Date Navigation Sidebar", () => {
     await page.waitForTimeout(100);
 
     // Check that sidebar is visible
-    const sidebarText = page.locator('text=/janvier|février|mars|avril/i').first();
-    await expect(sidebarText).toBeVisible({ timeout: 5000 });
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
+    await expect(dateNavigation).toBeVisible({ timeout: 5000 });
 
     // Wait for auto-hide (2 seconds + buffer)
     await page.waitForTimeout(2500);
 
     // Sidebar should be hidden
-    await expect(sidebarText).not.toBeVisible();
+    await expect(dateNavigation).not.toBeVisible();
   });
 
   test("navigates to selected date when clicking on date link", async ({
@@ -191,23 +187,25 @@ test.describe("Date Navigation Sidebar", () => {
     await page.mouse.wheel(0, 500);
     await page.waitForTimeout(100);
 
-    // Find a date link in the sidebar (looking for month names)
-    const dateLink = page.locator('text=/février|mars/i').first();
-    await expect(dateLink).toBeVisible({ timeout: 5000 });
+    // Check that sidebar is visible
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
+    await expect(dateNavigation).toBeVisible({ timeout: 5000 });
+
+    // Find any date link in the sidebar
+    const dateLink = dateNavigation.locator('[data-testid^="date-link-"]').first();
+    await expect(dateLink).toBeVisible();
 
     // Click on the date link
     await dateLink.click();
 
     // Wait for API call with startDate parameter
-    const apiRequest = page.waitForResponse(
+    await page.waitForResponse(
       (response) =>
         response.url().includes(`/api/directories/${rootDirectoryId}/photos`) &&
         response.url().includes("startDate") &&
         response.request().method() === "GET",
       { timeout: 5000 }
     );
-
-    await apiRequest;
 
     // After clicking, photos should reload and scroll to top
     await expect(photoLinks.first()).toBeVisible();
@@ -225,8 +223,8 @@ test.describe("Date Navigation Sidebar", () => {
     await page.waitForTimeout(100);
 
     // Check that sidebar is visible
-    const sidebarText = page.locator('text=/janvier|février|mars|avril/i').first();
-    await expect(sidebarText).toBeVisible({ timeout: 5000 });
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
+    await expect(dateNavigation).toBeVisible({ timeout: 5000 });
 
     // Wait 1.5 seconds (less than 2 seconds)
     await page.waitForTimeout(1500);
@@ -238,13 +236,13 @@ test.describe("Date Navigation Sidebar", () => {
     await page.waitForTimeout(1500);
 
     // Sidebar should still be visible because timer was reset
-    await expect(sidebarText).toBeVisible();
+    await expect(dateNavigation).toBeVisible();
 
     // Wait for the full 2 seconds after last scroll
     await page.waitForTimeout(2500);
 
     // Now it should be hidden
-    await expect(sidebarText).not.toBeVisible();
+    await expect(dateNavigation).not.toBeVisible();
   });
 
   test("loads more photos when scrolling up (loadMoreBefore)", async ({

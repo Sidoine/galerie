@@ -326,8 +326,8 @@ export const DirectoryView = observer(function DirectoryView({
         event.nativeEvent.contentOffset.y
       );
       
-      // Show date navigation sidebar on scroll
-      if (paginatedPhotos.length > 0 && shouldGroupPhotos) {
+      // Show date navigation sidebar on scroll if we have photos
+      if (paginatedPhotos.length > 20) {
         setShowDateNavigation(true);
         
         // Reset hide timer
@@ -341,7 +341,7 @@ export const DirectoryView = observer(function DirectoryView({
         }, 2000);
       }
     },
-    [paginatedStore, paginatedPhotos.length, shouldGroupPhotos]
+    [paginatedStore, paginatedPhotos.length]
   );
 
   useEffect(() => {

@@ -83,7 +83,7 @@ export const DateNavigationSidebar = observer(
     }
 
     return (
-      <View style={styles.container}>
+      <View style={styles.container} testID="date-navigation-sidebar">
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -96,6 +96,7 @@ export const DateNavigationSidebar = observer(
               onPress={() => handleDatePress(dateGroup)}
               accessibilityLabel={`Aller à ${dateGroup.displayTitle}`}
               accessibilityRole="button"
+              testID={`date-link-${dateGroup.date}`}
             >
               <Text style={styles.dateText} numberOfLines={2}>
                 {dateGroup.displayTitle}
