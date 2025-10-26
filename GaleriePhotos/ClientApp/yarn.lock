@@ -4755,30 +4755,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-dev-client@npm:^6.0.12":
-  version: 6.0.15
-  resolution: "expo-dev-client@npm:6.0.15"
+"expo-dev-client@npm:^6.0.16":
+  version: 6.0.16
+  resolution: "expo-dev-client@npm:6.0.16"
   dependencies:
-    expo-dev-launcher: "npm:6.0.15"
-    expo-dev-menu: "npm:7.0.14"
+    expo-dev-launcher: "npm:6.0.16"
+    expo-dev-menu: "npm:7.0.15"
     expo-dev-menu-interface: "npm:2.0.0"
     expo-manifests: "npm:~1.0.8"
     expo-updates-interface: "npm:~2.0.0"
   peerDependencies:
     expo: "*"
-  checksum: 10c0/c8be3e36a50ff92b2c562a546ef0702c51202f30a42481e7f74318f60456b879e0e6b27289848808f1123ec28b23f883c4f9175056a329773d55a057f0eb58ae
+  checksum: 10c0/400d7d640ca876538e093da153f96d96f0c6d38b515faef9f2e4ceb2a297bb879bc0cbaf2c504452979e080d71825af9960e729ca526ed4e86f331cfaf4e53fc
   languageName: node
   linkType: hard
 
-"expo-dev-launcher@npm:6.0.15":
-  version: 6.0.15
-  resolution: "expo-dev-launcher@npm:6.0.15"
+"expo-dev-launcher@npm:6.0.16":
+  version: 6.0.16
+  resolution: "expo-dev-launcher@npm:6.0.16"
   dependencies:
-    expo-dev-menu: "npm:7.0.14"
+    expo-dev-menu: "npm:7.0.15"
     expo-manifests: "npm:~1.0.8"
   peerDependencies:
     expo: "*"
-  checksum: 10c0/930f4241aeea4e35cf5d32d03f66057a78d5198b18515a7e9e2020ee08115733dabaf1c451acf5bc3437dc3c836b1bd1f0229a3222a4ce83c13a76469e5e5fae
+  checksum: 10c0/ec84911b2e722caf4fd4d0c9febe85ec1a443ce0742faa6407c36db21532be522da8094b57d8c1fa55c878af834df0345347b09bad0a4d56b9e564b61e233ec0
   languageName: node
   linkType: hard
 
@@ -4791,14 +4791,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-dev-menu@npm:7.0.14":
-  version: 7.0.14
-  resolution: "expo-dev-menu@npm:7.0.14"
+"expo-dev-menu@npm:7.0.15":
+  version: 7.0.15
+  resolution: "expo-dev-menu@npm:7.0.15"
   dependencies:
     expo-dev-menu-interface: "npm:2.0.0"
   peerDependencies:
     expo: "*"
-  checksum: 10c0/083d51798e21baea795a7a66141285ebfce18ef2b1a1583d45cab9769acb48d268172c69b656e0926ec0acc7d85da8452475eb8fbbcfc7bf842c066a8527421f
+  checksum: 10c0/31fc22d7b4d9627bd8c2da89e9f3e0042eb8628d768231747671184ad146498068274ab1f797bd311becb5b08848750cbd33a28cb1931609aa08cfaa2f25a4ec
   languageName: node
   linkType: hard
 
@@ -5449,7 +5449,7 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^5.2.0"
     expo: "npm:~54.0.10"
     expo-constants: "npm:~18.0.9"
-    expo-dev-client: "npm:^6.0.12"
+    expo-dev-client: "npm:^6.0.16"
     expo-font: "npm:~14.0.8"
     expo-haptics: "npm:~15.0.7"
     expo-image: "npm:~3.0.8"
