@@ -11,6 +11,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Hosting;
 using GaleriePhotos.Data;
 using GaleriePhotos.Models;
+using System.IO;
 
 namespace GaleriePhotosTest.Controllers;
 
@@ -47,134 +48,273 @@ public class DirectoryControllerTests : IClassFixture<WebApplicationFactory<Star
         }).CreateClient();
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetRoot_WithoutAuthentication_ReturnsRedirect()
+    [Fact]
+    public async Task GetRoot_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Act
         var response = await _client.GetAsync("/api/directories/root");
 
-        // Assert - The endpoint is not protected as expected, it returns OK
-        // This is actually useful information about the endpoint behavior
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Assert - The endpoint is protected and returns Unauthorized without authentication
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetRoot_WithAuthentication_ReturnsOk()
+}
+
+/// <summary>
+/// Tests for DirectoryController methods using PostgreSQL.
+/// These tests replace the skipped WebApplicationFactory tests with direct controller testing.
+/// </summary>
+[Collection("PostgreSQL")]
+public class DirectoryControllerPostgresTests : IClassFixture<PostgreSqlTestFixture>
+{
+    private readonly PostgreSqlTestFixture _fixture;
+
+    public DirectoryControllerPostgresTests(PostgreSqlTestFixture fixture)
     {
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
-
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/root");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _fixture = fixture;
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task Get_WithInvalidId_ReturnsOk()
+    private ApplicationDbContext GetContext()
     {
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
-
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/999999");
-
-        // Assert - The controller returns OK, possibly because it handles missing directories gracefully
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var context = _fixture.CreateDbContext();
+        context.Database.EnsureCreated();
+        return context;
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetSubdirectories_WithInvalidId_ReturnsOk()
+    /// <summary>
+    /// Generates a unique user ID for test isolation
+    /// </summary>
+    private static string GenerateUserId(string prefix = "user")
     {
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
-
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/999999/directories");
-
-        // Assert - The controller returns OK, indicating it handles the request gracefully
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return $"{prefix}-{Guid.NewGuid()}";
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetPhotos_WithInvalidId_ReturnsOk()
+    private static ClaimsPrincipal BuildUser(string userId, bool globalAdmin = false)
     {
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
-
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/999999/photos");
-
-        // Assert - The controller returns OK, indicating it handles the request gracefully
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId)
+        };
+        if (globalAdmin)
+        {
+            claims.Add(new Claim(GaleriePhotos.Models.Claims.Administrator, true.ToString()));
+        }
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        return new ClaimsPrincipal(identity);
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task Controller_WithAuthentication_ReturnsValidResponse()
+    private Galerie.Server.Controllers.DirectoryController CreateController(ApplicationDbContext context, string userId, bool isGlobalAdmin)
     {
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
-
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/root");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        // The controller may return different content types based on configuration
-        // This test verifies the controller responds correctly to authenticated requests
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.NotNull(content);
-        Assert.NotEmpty(content);
-    }
-
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetRoot_WithGalleryMember_ReturnsGalleryRoot()
-    {
-        // This test checks that the new gallery system works
-        // Since we're using an in-memory database, we'll test the endpoint behavior
-        // The user has Administrator claim which should work with either system
+        var options = Microsoft.Extensions.Options.Options.Create(new GalerieOptions());
+        var logger = new TestLogger<GaleriePhotos.Services.PhotoService>();
+        var dataService = new GaleriePhotos.Services.DataService();
+        var photoService = new GaleriePhotos.Services.PhotoService(options, context, logger, dataService);
+        var directoryService = new GaleriePhotos.Services.DirectoryService(context, dataService);
         
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
-
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/root");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.NotNull(content);
-        Assert.NotEmpty(content);
+        var controller = new Galerie.Server.Controllers.DirectoryController(photoService, context, directoryService)
+        {
+            ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = BuildUser(userId, isGlobalAdmin) }
+            }
+        };
+        
+        return controller;
     }
 
-    [Fact(Skip = "Authentication not working")]
-    public async Task GetRoot_WithoutGalleryMember_FallsBackToOldBehavior()
+    [Fact]
+    public async Task Get_WithInvalidId_ReturnsNotFound()
     {
-        // This test verifies that when a user doesn't have gallery membership,
-        // the system falls back to the old behavior (which should work for administrators)
+        using var context = GetContext();
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
+
+        var result = await controller.Get(999999);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetSubdirectories_WithInvalidId_ReturnsNotFound()
+    {
+        using var context = GetContext();
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
+
+        var result = await controller.GetSubdirectories(999999);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetPhotos_WithInvalidId_ReturnsNotFound()
+    {
+        using var context = GetContext();
+        var controller = CreateController(context, GenerateUserId("admin"), isGlobalAdmin: true);
+
+        var result = await controller.GetPhotos(999999);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Get_WithValidDirectory_ReturnsOk()
+    {
+        using var context = GetContext();
         
-        // Arrange
-        _authenticatedClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Test");
+        // Create temporary directories for file system operations
+        var tempOriginals = Path.Combine(Path.GetTempPath(), "GaleriePhotos_Test_" + Guid.NewGuid());
+        var tempThumbs = Path.Combine(Path.GetTempPath(), "GaleriePhotos_Thumbs_" + Guid.NewGuid());
+        Directory.CreateDirectory(tempOriginals);
+        Directory.CreateDirectory(tempThumbs);
 
-        // Act
-        var response = await _authenticatedClient.GetAsync("/api/directories/root");
+        try
+        {
+            var userId = GenerateUserId("admin");
+            var gallery = new Gallery("Test Gallery", tempOriginals, tempThumbs, DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
 
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.NotNull(content);
-        Assert.NotEmpty(content);
+            var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            // Create the actual directory on file system
+            Directory.CreateDirectory(Path.Combine(tempOriginals, "TestDir"));
+
+            var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+            var result = await controller.Get(directory.Id);
+            Assert.IsType<Microsoft.AspNetCore.Mvc.OkObjectResult>(result.Result);
+        }
+        finally
+        {
+            // Clean up temporary directories
+            if (Directory.Exists(tempOriginals))
+                Directory.Delete(tempOriginals, true);
+            if (Directory.Exists(tempThumbs))
+                Directory.Delete(tempThumbs, true);
+        }
+    }
+
+    [Fact]
+    public async Task GetSubdirectories_WithValidDirectory_ReturnsOk()
+    {
+        using var context = GetContext();
+        
+        // Create temporary directories for file system operations
+        var tempOriginals = Path.Combine(Path.GetTempPath(), "GaleriePhotos_Test_" + Guid.NewGuid());
+        var tempThumbs = Path.Combine(Path.GetTempPath(), "GaleriePhotos_Thumbs_" + Guid.NewGuid());
+        Directory.CreateDirectory(tempOriginals);
+        Directory.CreateDirectory(tempThumbs);
+
+        try
+        {
+            var userId = GenerateUserId("admin");
+            var gallery = new Gallery("Test Gallery", tempOriginals, tempThumbs, DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            var parentDirectory = new PhotoDirectory("Parent", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(parentDirectory);
+            await context.SaveChangesAsync();
+
+            var subDirectory = new PhotoDirectory("Parent/Sub", 0, null, parentDirectory.Id) { Gallery = gallery, ParentDirectory = parentDirectory };
+            context.PhotoDirectories.Add(subDirectory);
+            await context.SaveChangesAsync();
+
+            // Create the actual directories on file system
+            Directory.CreateDirectory(Path.Combine(tempOriginals, "Parent"));
+            Directory.CreateDirectory(Path.Combine(tempOriginals, "Parent", "Sub"));
+
+            var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+            var result = await controller.GetSubdirectories(parentDirectory.Id);
+            Assert.IsType<Microsoft.AspNetCore.Mvc.OkObjectResult>(result.Result);
+        }
+        finally
+        {
+            // Clean up temporary directories
+            if (Directory.Exists(tempOriginals))
+                Directory.Delete(tempOriginals, true);
+            if (Directory.Exists(tempThumbs))
+                Directory.Delete(tempThumbs, true);
+        }
+    }
+
+    [Fact]
+    public async Task GetPhotos_WithValidDirectory_ReturnsOk()
+    {
+        using var context = GetContext();
+        
+        var userId = GenerateUserId("admin");
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var appUser = new ApplicationUser { Id = userId, UserName = userId };
+        context.Users.Add(appUser);
+        context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = appUser
+        });
+        await context.SaveChangesAsync();
+
+        var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(directory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.GetPhotos(directory.Id);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Get_WithNonMemberUser_ReturnsForbid()
+    {
+        using var context = GetContext();
+        
+        var userId = GenerateUserId("user");
+        var otherUserId = GenerateUserId("other");
+        var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+        context.Galleries.Add(gallery);
+        await context.SaveChangesAsync();
+        
+        var otherUser = new ApplicationUser { Id = otherUserId, UserName = otherUserId };
+        context.Users.Add(otherUser);
+        context.Add(new GalleryMember(gallery.Id, otherUserId, 0, isAdministrator: true)
+        {
+            Gallery = gallery,
+            User = otherUser
+        });
+        await context.SaveChangesAsync();
+
+        var directory = new PhotoDirectory("TestDir", 0, null, null) { Gallery = gallery };
+        context.PhotoDirectories.Add(directory);
+        await context.SaveChangesAsync();
+
+        var controller = CreateController(context, userId, isGlobalAdmin: false);
+
+        var result = await controller.Get(directory.Id);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.ForbidResult>(result.Result);
     }
 }
+
 
 public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {

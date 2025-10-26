@@ -218,27 +218,7 @@ Access face features through:
 - Face names list: `/g/:galleryId/face-names`
 - Photos by face: `/g/:galleryId/face-names/:faceNameId`
 - API endpoint: `GET /api/gallery/{galleryId}/face-names/{id}/photos`
-
-## Troubleshooting
-
-### Duplicate Places Issue
-
-If you have multiple place entries for the same city (especially from older versions that used zoom level 14), you can merge them using the merge duplicates feature:
-
-**Via API:**
-```bash
-# Requires admin authentication
-POST /api/places/gallery/{galleryId}/merge-duplicates
-```
-
-This will:
-- Find places with the same name, parent, and type within the gallery
-- Merge them into the oldest place entry
-- Reassign all photos and child places to the kept place
-- Delete the duplicate entries
-
-The issue was fixed in the current version by changing the OpenStreetMap zoom level from 14 (neighborhood level) to 10 (city level) to ensure only city-level places are returned.
-
+
 ## Contributing
 
 1. Fork the repository
