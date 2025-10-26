@@ -35,6 +35,7 @@ import { DirectoryFlatListItem, gap } from "./item-types";
 import DateHeader from "./date-header";
 import { AlbumRow } from "./album-row";
 import { PhotoRow } from "./photo-row";
+import { DateNavigationSidebar } from "./date-navigation-sidebar";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -94,6 +95,10 @@ export const DirectoryView = observer(function DirectoryView({
   );
   const listRef = useRef<FlashListRef<DirectoryFlatListItem> | null>(null);
   const shouldRestoreScroll = useRef(false);
+  
+  // Date navigation sidebar state
+  const [showDateNavigation, setShowDateNavigation] = useState(false);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
@@ -107,6 +112,10 @@ export const DirectoryView = observer(function DirectoryView({
 
     return () => {
       subscription.remove();
+      // Cleanup hide timer on unmount
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
     };
   }, []);
 
@@ -281,6 +290,34 @@ export const DirectoryView = observer(function DirectoryView({
       paginatedStore.loadMore();
     }
   }, [allowAutoLoad, paginatedStore]);
+  
+  const handleStartReached = useCallback(() => {
+    if (!allowAutoLoad) {
+      return;
+    }
+    if (paginatedStore && paginatedStore.shouldLoadMoreBefore()) {
+      paginatedStore.loadMoreBefore();
+    }
+  }, [allowAutoLoad, paginatedStore]);
+  
+  const handleDateSelect = useCallback(
+    async (date: string) => {
+      // Hide the sidebar immediately
+      setShowDateNavigation(false);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+      
+      // Jump to the selected date
+      await paginatedStore.jumpToDate(date);
+      
+      // Scroll to top after jumping to date
+      if (listRef.current) {
+        listRef.current.scrollToOffset({ offset: 0, animated: true });
+      }
+    },
+    [paginatedStore]
+  );
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -288,8 +325,23 @@ export const DirectoryView = observer(function DirectoryView({
         0,
         event.nativeEvent.contentOffset.y
       );
+      
+      // Show date navigation sidebar on scroll
+      if (paginatedPhotos.length > 0 && shouldGroupPhotos) {
+        setShowDateNavigation(true);
+        
+        // Reset hide timer
+        if (hideTimerRef.current) {
+          clearTimeout(hideTimerRef.current);
+        }
+        
+        // Hide after 2 seconds of no scrolling
+        hideTimerRef.current = setTimeout(() => {
+          setShowDateNavigation(false);
+        }, 2000);
+      }
     },
-    [paginatedStore]
+    [paginatedStore, paginatedPhotos.length, shouldGroupPhotos]
   );
 
   useEffect(() => {
@@ -350,6 +402,8 @@ export const DirectoryView = observer(function DirectoryView({
         getItemType={getItemType}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.3}
+        onStartReached={handleStartReached}
+        onStartReachedThreshold={0.3}
         removeClippedSubviews
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -371,6 +425,13 @@ export const DirectoryView = observer(function DirectoryView({
             <Text style={styles.emptyStateText}>Aucune photo trouvée</Text>
           </View>
         )}
+      <DateNavigationSidebar
+        photos={paginatedPhotos}
+        groupByDay={groupingStrategy === "day"}
+        visible={showDateNavigation}
+        onDateSelect={handleDateSelect}
+        order={order === "date-desc" ? "date-desc" : "date-asc"}
+      />
       {paginatedPhotos.length > 0 && (
         <TouchableOpacity
           style={styles.sortFloatingButton}
