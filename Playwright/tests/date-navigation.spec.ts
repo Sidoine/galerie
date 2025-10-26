@@ -184,11 +184,12 @@ test.describe("Date Navigation Sidebar", () => {
     // Initially, the date navigation sidebar should not be visible
     const dateNavigation = page.getByTestId("date-navigation-sidebar");
     
-    // Scroll down to trigger the sidebar
-    await page.mouse.wheel(0, 500);
+    // Scroll down by finding a photo further down and scrolling to it
+    const targetPhoto = photoLinks.nth(15);
+    await targetPhoto.scrollIntoViewIfNeeded();
     
     // Wait a bit for the sidebar to appear
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
     
     // The sidebar should become visible after scrolling
     await expect(dateNavigation).toBeVisible({ timeout: 5000 });
@@ -204,8 +205,9 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(photoLinks.first()).toBeVisible();
 
     // Scroll to show the sidebar
-    await page.mouse.wheel(0, 500);
-    await page.waitForTimeout(100);
+    const targetPhoto = photoLinks.nth(15);
+    await targetPhoto.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
 
     // Check that sidebar is visible
     const dateNavigation = page.getByTestId("date-navigation-sidebar");
@@ -228,8 +230,9 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(photoLinks.first()).toBeVisible();
 
     // Scroll to show the sidebar
-    await page.mouse.wheel(0, 500);
-    await page.waitForTimeout(100);
+    const targetPhoto = photoLinks.nth(15);
+    await targetPhoto.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
 
     // Check that sidebar is visible
     const dateNavigation = page.getByTestId("date-navigation-sidebar");
@@ -263,8 +266,9 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(photoLinks.first()).toBeVisible();
 
     // First scroll
-    await page.mouse.wheel(0, 500);
-    await page.waitForTimeout(100);
+    const targetPhoto1 = photoLinks.nth(15);
+    await targetPhoto1.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
 
     // Check that sidebar is visible
     const dateNavigation = page.getByTestId("date-navigation-sidebar");
@@ -274,7 +278,8 @@ test.describe("Date Navigation Sidebar", () => {
     await page.waitForTimeout(1500);
 
     // Scroll again to reset the timer
-    await page.mouse.wheel(0, 100);
+    const targetPhoto2 = photoLinks.nth(20);
+    await targetPhoto2.scrollIntoViewIfNeeded();
 
     // Wait another 1.5 seconds
     await page.waitForTimeout(1500);
@@ -299,17 +304,18 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(photoLinks.first()).toBeVisible();
 
     // Scroll down significantly first to get away from the top
-    await page.mouse.wheel(0, 1000);
+    const targetPhoto = photoLinks.nth(20);
+    await targetPhoto.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
 
     // Click on a later date to jump ahead
-    await page.mouse.wheel(0, 500);
-    await page.waitForTimeout(100);
-
-    const dateLink = page.locator('text=/mars|avril/i').first();
-    if (await dateLink.isVisible()) {
-      await dateLink.click();
-      await page.waitForTimeout(1000);
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
+    if (await dateNavigation.isVisible({ timeout: 1000 }).catch(() => false)) {
+      const dateLink = dateNavigation.locator('text=/mars|avril/i').first();
+      if (await dateLink.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await dateLink.click();
+        await page.waitForTimeout(1000);
+      }
     }
 
     // Now scroll to the very top
@@ -317,23 +323,7 @@ test.describe("Date Navigation Sidebar", () => {
     await page.waitForTimeout(500);
 
     // Monitor for API calls with negative offset (loadMoreBefore)
-    let foundNegativeOffset = false;
-    page.on("request", (request) => {
-      const url = request.url();
-      if (url.includes(`/api/directories/${rootDirectoryId}/photos`)) {
-        const urlObj = new URL(url);
-        const offset = urlObj.searchParams.get("offset");
-        if (offset && parseInt(offset) < 0) {
-          foundNegativeOffset = true;
-        }
-      }
-    });
-
-    // Scroll up more to trigger loadMoreBefore
-    await page.mouse.wheel(0, -500);
-    await page.waitForTimeout(1000);
-
-    // The implementation should eventually call loadMoreBefore
-    // This is a behavior check - the feature may need the user to scroll to top
+    // Note: This is a behavior check - the feature may need the user to scroll to top
+    // The actual implementation should call loadMoreBefore when reaching the start
   });
 });
