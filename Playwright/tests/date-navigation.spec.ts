@@ -245,10 +245,10 @@ test.describe("Date Navigation Sidebar", () => {
     // Click on the date link
     await dateLink.click();
 
-    // Wait for API call with startDate parameter
+    // Wait for API call with startDate parameter (gallery endpoint)
     await page.waitForResponse(
       (response) =>
-        response.url().includes(`/api/directories/${rootDirectoryId}/photos`) &&
+        response.url().includes(`/api/galleries/${galleryId}/photos`) &&
         response.url().includes("startDate") &&
         response.request().method() === "GET",
       { timeout: 5000 }
