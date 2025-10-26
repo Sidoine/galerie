@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerApiMocks } from "./helpers/apiMocks.ts";
+import { registerApiMocks } from "./helpers/apiMocks";
 
 const galleryId = 1;
 const rootDirectoryId = 10;

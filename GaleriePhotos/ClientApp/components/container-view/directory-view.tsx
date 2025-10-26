@@ -41,6 +41,9 @@ export interface DirectoryViewProps {
   store: PhotoContainerStore;
 }
 
+// Minimum number of photos required to show the date navigation sidebar
+const MIN_PHOTOS_FOR_DATE_NAVIGATION = 20;
+
 function splitInRows<T>(data: T[], cols: number): T[][] {
   const rows: T[][] = [];
   for (let i = 0; i < data.length; i += cols) {
@@ -326,8 +329,8 @@ export const DirectoryView = observer(function DirectoryView({
         event.nativeEvent.contentOffset.y
       );
       
-      // Show date navigation sidebar on scroll if we have photos
-      if (paginatedPhotos.length > 20) {
+      // Show date navigation sidebar on scroll if we have enough photos
+      if (paginatedPhotos.length > MIN_PHOTOS_FOR_DATE_NAVIGATION) {
         setShowDateNavigation(true);
         
         // Reset hide timer
