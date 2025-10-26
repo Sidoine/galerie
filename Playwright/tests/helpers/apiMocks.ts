@@ -221,10 +221,31 @@ export async function registerApiMocks(
     );
     if (method === "GET" && directoryPhotosMatch) {
       const directoryId = Number(directoryPhotosMatch[1]);
-      const photos = photosByDirectoryId[directoryId] ?? [];
+      let photos = photosByDirectoryId[directoryId] ?? [];
+      
+      // Handle startDate parameter
+      const startDate = searchParams.get("startDate");
+      if (startDate) {
+        const startDateTime = new Date(startDate).getTime();
+        // Filter photos to start from the given date
+        photos = photos.filter((photo: any) => {
+          const photoTime = new Date(photo.dateTime).getTime();
+          return photoTime >= startDateTime;
+        });
+      }
+      
       const offset = Number(searchParams.get("offset") ?? "0");
       const count = Number(searchParams.get("count") ?? photos.length);
-      const slice = photos.slice(offset, offset + count);
+      
+      // Handle negative offset (loading before)
+      let slice;
+      if (offset < 0) {
+        const absOffset = Math.abs(offset);
+        slice = photos.slice(Math.max(0, photos.length - absOffset - count), photos.length - absOffset);
+      } else {
+        slice = photos.slice(offset, offset + count);
+      }
+      
       return respond(route, slice);
     }
 
