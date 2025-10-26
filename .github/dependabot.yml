@@ -1,0 +1,47 @@
+# Dependabot configuration for automatic package updates
+# Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # NuGet packages for main project
+  - package-ecosystem: "nuget"
+    directory: "/GaleriePhotos"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "nuget"
+
+  # NuGet packages for test project
+  - package-ecosystem: "nuget"
+    directory: "/GaleriePhotosTest"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "nuget"
+      - "tests"
+
+  # npm packages for ClientApp (main frontend)
+  - package-ecosystem: "npm"
+    directory: "/GaleriePhotos/ClientApp"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+      - "frontend"
+
+  # npm packages for Playwright tests
+  - package-ecosystem: "npm"
+    directory: "/Playwright"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+      - "tests"
