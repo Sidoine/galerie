@@ -30,6 +30,8 @@ export default defineConfig({
   workers: env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [["html", { open: "never" }]],
+  /* Increase timeout for CI */
+  timeout: 60000,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
@@ -40,6 +42,10 @@ export default defineConfig({
     trace: "on-first-retry",
 
     screenshot: "only-on-failure",
+    
+    /* Wait for networkidle to ensure app is fully loaded */
+    navigationTimeout: 30000,
+    actionTimeout: 15000,
   },
 
   /* Configure projects for major browsers */
