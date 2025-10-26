@@ -56,3 +56,16 @@ jobs:
           node-version: "20.x"
           cache: "yarn"
           cache-dependency-path: "GaleriePhotos/ClientApp/yarn.lock"
+
+      - name: Install frontend dependencies
+        working-directory: GaleriePhotos/ClientApp
+        run: yarn install
+
+      - name: Install Playwright dependencies
+        working-directory: Playwright
+        run: yarn install
+
+      - name: Install Playwright browsers
+        working-directory: Playwright
+        run: yarn playwright install --with-deps chromium
+        
