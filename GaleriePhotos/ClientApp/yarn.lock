@@ -1621,6 +1621,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@expo/vector-icons@npm:^15.0.3":
+  version: 15.0.3
+  resolution: "@expo/vector-icons@npm:15.0.3"
+  peerDependencies:
+    expo-font: ">=14.0.4"
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/f33274dede267c713618512969afdee28e47e97ba8a7ee7e1d0ab18b417683ace7c4a1b79152d6ec2d254420a23a685582fd956f6cd83a2120514d9efbab1109
+  languageName: node
+  linkType: hard
+
 "@expo/ws-tunnel@npm:^1.0.1":
   version: 1.0.6
   resolution: "@expo/ws-tunnel@npm:1.0.6"
@@ -5424,7 +5435,7 @@ __metadata:
   resolution: "galeriephotos@workspace:."
   dependencies:
     "@expo/metro-runtime": "npm:^6.1.2"
-    "@expo/vector-icons": "npm:^15.0.2"
+    "@expo/vector-icons": "npm:^15.0.3"
     "@react-navigation/bottom-tabs": "npm:^7.4.0"
     "@react-navigation/drawer": "npm:^7.5.0"
     "@react-navigation/native": "npm:^7.1.8"
