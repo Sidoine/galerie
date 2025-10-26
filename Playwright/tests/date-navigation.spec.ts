@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerApiMocks } from "./helpers/apiMocks";
+import { registerApiMocks } from "./helpers/apiMocks.ts";
 
 const galleryId = 1;
 const rootDirectoryId = 10;
@@ -47,6 +47,28 @@ const mockGalleryFull = {
   rootDirectoryId,
   numberOfPhotos: totalPhotos,
   coverPhotoId: null,
+  dateJumps: [
+    {
+      type: 1, // Month
+      date: "2024-01-01T00:00:00Z",
+      label: "janvier 2024",
+    },
+    {
+      type: 1, // Month
+      date: "2024-02-01T00:00:00Z",
+      label: "février 2024",
+    },
+    {
+      type: 1, // Month
+      date: "2024-03-01T00:00:00Z",
+      label: "mars 2024",
+    },
+    {
+      type: 1, // Month
+      date: "2024-04-01T00:00:00Z",
+      label: "avril 2024",
+    },
+  ],
 };
 
 const galleryPhotoDetailsById = Object.fromEntries(
