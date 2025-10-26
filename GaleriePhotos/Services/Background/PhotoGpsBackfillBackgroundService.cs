@@ -130,7 +130,7 @@ namespace GaleriePhotos.Services.Background
                 .Where(p => p.Id != photo.Id
                     && p.Directory.GalleryId == galleryId
                     && p.Latitude.HasValue && p.Longitude.HasValue
-                    && p.Latitude != 0 && p.Longitude != 0
+                    && (p.Latitude != 0 || p.Longitude != 0)
                     && p.DateTime >= minDate && p.DateTime <= maxDate)
                 .Select(p => new
                 {
