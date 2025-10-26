@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import {
   View,
   Text,
@@ -7,20 +7,12 @@ import {
   ScrollView,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import { Photo } from "@/services/views";
-
-export interface DateGroup {
-  date: string; // YYYY-MM-DD or YYYY-MM
-  displayTitle: string;
-  firstPhotoDate: string; // ISO date string to use for jumpToDate
-}
+import { DateJump } from "@/services/views";
 
 interface DateNavigationSidebarProps {
-  photos: Photo[];
-  groupByDay: boolean;
+  dateJumps: DateJump[];
   visible: boolean;
   onDateSelect: (date: string) => void;
-  order: "date-desc" | "date-asc";
 }
 
 /**
@@ -29,56 +21,18 @@ interface DateNavigationSidebarProps {
  */
 export const DateNavigationSidebar = observer(
   function DateNavigationSidebar({
-    photos,
-    groupByDay,
+    dateJumps,
     visible,
     onDateSelect,
-    order,
   }: DateNavigationSidebarProps) {
-    // Extract unique date groups from photos
-    const dateGroups = useMemo(() => {
-      if (photos.length === 0) return [];
-
-      const groups = new Map<string, Photo>();
-
-      photos.forEach((photo) => {
-        const date = new Date(photo.dateTime);
-        const key = groupByDay
-          ? date.toISOString().split("T")[0] // YYYY-MM-DD
-          : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
-
-        // Store the first photo for this date group
-        if (!groups.has(key)) {
-          groups.set(key, photo);
-        }
-      });
-
-      const dateGroupsArray = Array.from(groups.entries()).map(
-        ([date, photo]) => ({
-          date,
-          displayTitle: formatDateGroupTitle(date, groupByDay),
-          firstPhotoDate: photo.dateTime,
-        })
-      );
-
-      // Sort by date
-      dateGroupsArray.sort((a, b) =>
-        order === "date-desc"
-          ? b.date.localeCompare(a.date)
-          : a.date.localeCompare(b.date)
-      );
-
-      return dateGroupsArray;
-    }, [photos, groupByDay, order]);
-
     const handleDatePress = useCallback(
-      (dateGroup: DateGroup) => {
-        onDateSelect(dateGroup.firstPhotoDate);
+      (dateJump: DateJump) => {
+        onDateSelect(dateJump.date);
       },
       [onDateSelect]
     );
 
-    if (!visible || dateGroups.length === 0) {
+    if (!visible || dateJumps.length === 0) {
       return null;
     }
 
@@ -89,17 +43,17 @@ export const DateNavigationSidebar = observer(
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {dateGroups.map((dateGroup) => (
+          {dateJumps.map((dateJump) => (
             <TouchableOpacity
-              key={dateGroup.date}
+              key={dateJump.date}
               style={styles.dateItem}
-              onPress={() => handleDatePress(dateGroup)}
-              accessibilityLabel={`Aller à ${dateGroup.displayTitle}`}
+              onPress={() => handleDatePress(dateJump)}
+              accessibilityLabel={`Aller à ${dateJump.label}`}
               accessibilityRole="button"
-              testID={`date-link-${dateGroup.date}`}
+              testID={`date-link-${dateJump.date}`}
             >
               <Text style={styles.dateText} numberOfLines={2}>
-                {dateGroup.displayTitle}
+                {dateJump.label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -108,27 +62,6 @@ export const DateNavigationSidebar = observer(
     );
   }
 );
-
-/**
- * Formats the date group title for display in the sidebar
- */
-function formatDateGroupTitle(dateKey: string, isDay: boolean): string {
-  if (isDay) {
-    const date = new Date(dateKey + "T00:00:00");
-    return new Intl.DateTimeFormat("fr-FR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(date);
-  } else {
-    const [year, month] = dateKey.split("-");
-    const date = new Date(Number(year), Number(month) - 1, 1);
-    return new Intl.DateTimeFormat("fr-FR", {
-      year: "numeric",
-      month: "long",
-    }).format(date);
-  }
-}
 
 const styles = StyleSheet.create({
   container: {

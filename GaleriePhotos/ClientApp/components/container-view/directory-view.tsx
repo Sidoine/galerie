@@ -41,9 +41,6 @@ export interface DirectoryViewProps {
   store: PhotoContainerStore;
 }
 
-// Minimum number of photos required to show the date navigation sidebar
-const MIN_PHOTOS_FOR_DATE_NAVIGATION = 20;
-
 function splitInRows<T>(data: T[], cols: number): T[][] {
   const rows: T[][] = [];
   for (let i = 0; i < data.length; i += cols) {
@@ -329,8 +326,8 @@ export const DirectoryView = observer(function DirectoryView({
         event.nativeEvent.contentOffset.y
       );
       
-      // Show date navigation sidebar on scroll if we have enough photos
-      if (paginatedPhotos.length > MIN_PHOTOS_FOR_DATE_NAVIGATION) {
+      // Show date navigation sidebar on scroll if we have date jumps
+      if (store.container?.dateJumps && store.container.dateJumps.length > 0) {
         setShowDateNavigation(true);
         
         // Reset hide timer
@@ -344,7 +341,7 @@ export const DirectoryView = observer(function DirectoryView({
         }, 2000);
       }
     },
-    [paginatedStore, paginatedPhotos.length]
+    [paginatedStore, store.container]
   );
 
   useEffect(() => {
@@ -429,11 +426,9 @@ export const DirectoryView = observer(function DirectoryView({
           </View>
         )}
       <DateNavigationSidebar
-        photos={paginatedPhotos}
-        groupByDay={groupingStrategy === "day"}
+        dateJumps={store.container?.dateJumps ?? []}
         visible={showDateNavigation}
         onDateSelect={handleDateSelect}
-        order={order === "date-desc" ? "date-desc" : "date-asc"}
       />
       {paginatedPhotos.length > 0 && (
         <TouchableOpacity

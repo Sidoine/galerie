@@ -101,6 +101,28 @@ const mockRootDirectoryFull = {
   parent: null,
   minDate: mockPhotos[0]!.dateTime,
   maxDate: mockPhotos[mockPhotos.length - 1]!.dateTime,
+  dateJumps: [
+    {
+      type: 1, // Month
+      date: "2024-01-01T00:00:00Z",
+      label: "janvier 2024",
+    },
+    {
+      type: 1, // Month
+      date: "2024-02-01T00:00:00Z",
+      label: "février 2024",
+    },
+    {
+      type: 1, // Month
+      date: "2024-03-01T00:00:00Z",
+      label: "mars 2024",
+    },
+    {
+      type: 1, // Month
+      date: "2024-04-01T00:00:00Z",
+      label: "avril 2024",
+    },
+  ],
 };
 
 const mockDirectories = {
