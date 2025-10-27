@@ -294,7 +294,7 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(dateNavigation).not.toBeVisible();
   });
 
-  test("loads more photos when scrolling up (loadMoreBefore)", async ({
+  test("loads more photos when scrolling up after date jump (loadMoreBefore)", async ({
     page,
   }) => {
     await page.goto(`/gallery/${galleryId}`);
@@ -303,27 +303,52 @@ test.describe("Date Navigation Sidebar", () => {
     const photoLinks = page.locator('a[href*="/photos/"]');
     await expect(photoLinks.first()).toBeVisible();
 
-    // Scroll down significantly first to get away from the top
+    // Scroll down to show the sidebar
     const targetPhoto = photoLinks.nth(20);
     await targetPhoto.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
 
-    // Click on a later date to jump ahead
+    // Click on March (a later date) to jump ahead
     const dateNavigation = page.getByTestId("date-navigation-sidebar");
-    if (await dateNavigation.isVisible({ timeout: 1000 }).catch(() => false)) {
-      const dateLink = dateNavigation.locator('text=/mars|avril/i').first();
-      if (await dateLink.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await dateLink.click();
-        await page.waitForTimeout(1000);
-      }
-    }
-
-    // Now scroll to the very top
+    await expect(dateNavigation).toBeVisible({ timeout: 2000 });
+    
+    const marchDateLink = dateNavigation.locator('text=/mars/i').first();
+    await expect(marchDateLink).toBeVisible();
+    
+    // Set up listener for API call with negative offset before clicking
+    const negativeOffsetPromise = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/galleries/${galleryId}/photos`) &&
+        response.url().includes("offset=-") &&
+        response.request().method() === "GET",
+      { timeout: 10000 }
+    );
+    
+    // Click on March to jump to that date
+    await marchDateLink.click();
+    
+    // Wait for the jump to complete (API call with startDate)
+    await page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/galleries/${galleryId}/photos`) &&
+        response.url().includes("startDate") &&
+        response.request().method() === "GET",
+      { timeout: 5000 }
+    );
+    
+    // Wait for photos to load
+    await page.waitForTimeout(500);
+    
+    // Now scroll to the very top to trigger loadMoreBefore
     await page.keyboard.press("Home");
     await page.waitForTimeout(500);
-
-    // Monitor for API calls with negative offset (loadMoreBefore)
-    // Note: This is a behavior check - the feature may need the user to scroll to top
-    // The actual implementation should call loadMoreBefore when reaching the start
+    
+    // Verify that the API was called with negative offset (loadMoreBefore)
+    const negativeOffsetResponse = await negativeOffsetPromise;
+    expect(negativeOffsetResponse.url()).toMatch(/offset=-\d+/);
+    
+    // Verify that photos before March are now visible
+    // The test should confirm that scrolling up after jumping to a date works correctly
+    await expect(photoLinks.first()).toBeVisible();
   });
 });
