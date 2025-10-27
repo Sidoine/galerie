@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using GaleriePhotos.Data;
 using GaleriePhotos.ViewModels;
@@ -55,62 +53,6 @@ namespace GaleriePhotos.Controllers
                 .Take(limit)
                 .ToListAsync();
 
-            var dateMismatchCandidates = await galleryPhotosQuery
-                .Where(p => p.FileName != null && p.FileName.Length >= 8)
-                .AsNoTracking()
-                .Select(p => new
-                {
-                    p.Id,
-                    p.DateTime,
-                    p.FileName,
-                    p.DirectoryId,
-                    DirectoryPath = p.Directory.Path
-                })
-                .OrderBy(p => p.DateTime)
-                .ThenBy(p => p.Id)
-                .ToListAsync();
-
-            var mismatchedPhotos = new List<(int DirectoryId, string DirectoryPath, int PhotoId, DateOnly PhotoDate)>();
-            foreach (var photo in dateMismatchCandidates)
-            {
-                if (!TryExtractDateFromFileName(photo.FileName, out var fileDate))
-                {
-                    continue;
-                }
-
-                var photoDate = DateOnly.FromDateTime(photo.DateTime);
-                if (fileDate != photoDate)
-                {
-                    mismatchedPhotos.Add((
-                        photo.DirectoryId,
-                        photo.DirectoryPath ?? string.Empty,
-                        photo.Id,
-                        photoDate));
-                }
-            }
-
-            var mismatchedAlbums = mismatchedPhotos
-                .GroupBy(p => p.DirectoryId)
-                .Select(group =>
-                {
-                    var firstPhoto = group
-                        .OrderBy(x => x.PhotoDate)
-                        .ThenBy(x => x.PhotoId)
-                        .FirstOrDefault();
-
-                    return new
-                    {
-                        DirectoryId = group.Key,
-                        DirectoryPath = firstPhoto.DirectoryPath,
-                        Count = group.Count(),
-                        FirstPhotoId = firstPhoto.PhotoId
-                    };
-                })
-                .OrderByDescending(x => x.Count)
-                .ThenBy(x => x.DirectoryPath)
-                .Take(limit)
-                .ToList();
-
             var statistics = new DashboardStatisticsViewModel
             {
                 PhotosWithoutGpsCount = photosWithoutGpsCount,
@@ -119,17 +61,7 @@ namespace GaleriePhotos.Controllers
                     a.DirectoryId,
                     a.DirectoryPath,
                     a.MissingCount
-                )).ToList(),
-                PhotosWithFilenameDateMismatchCount = mismatchedPhotos.Count,
-                AlbumsWithPhotosWithFilenameDateMismatchCount = mismatchedAlbums.Count,
-                AlbumsWithFilenameDateMismatch = mismatchedAlbums
-                    .Select(a => new AlbumFilenameDateMismatchInfoViewModel(
-                        a.DirectoryId,
-                        a.DirectoryPath,
-                        a.Count,
-                        a.FirstPhotoId
-                    ))
-                    .ToList()
+                )).ToList()
             };
             // Faces automatically named from other detected faces
             var autoNamedFacesQuery = from f in applicationDbContext.Faces
@@ -150,36 +82,58 @@ namespace GaleriePhotos.Controllers
             return Ok(statistics);
         }
 
-        private static bool TryExtractDateFromFileName(string fileName, out DateOnly date)
+        [HttpGet("gps-backfill-progress")]
+        public async Task<ActionResult<GpsBackfillProgressViewModel>> GetGpsBackfillProgress(int galleryId)
         {
-            date = default;
-            if (string.IsNullOrWhiteSpace(fileName))
+            // Get total count of photos without GPS in gallery
+            var totalPhotosWithoutGps = await applicationDbContext.Photos
+                .Where(p => p.Directory.GalleryId == galleryId
+                    && (p.Latitude == null || p.Longitude == null || (p.Latitude == 0 && p.Longitude == 0))
+                    && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
+                    && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
+                .CountAsync();
+
+            // Get the last processed photo ID from background service state
+            var serviceState = await applicationDbContext.BackgroundServiceStates
+                .SingleOrDefaultAsync(s => s.Id == "photo-gps-backfill");
+
+            int lastProcessedPhotoId = 0;
+            if (serviceState != null && !string.IsNullOrWhiteSpace(serviceState.State))
             {
-                return false;
+                try
+                {
+                    var state = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(serviceState.State);
+                    if (state != null && state.ContainsKey("LastProcessedPhotoId"))
+                    {
+                        var value = state["LastProcessedPhotoId"];
+                        if (value != null)
+                        {
+                            lastProcessedPhotoId = Convert.ToInt32(value.ToString());
+                        }
+                    }
+                }
+                catch
+                {
+                    // If deserialization fails, keep lastProcessedPhotoId as 0
+                }
             }
 
-            var match = Regex.Match(fileName, @"^(?<year>\d{4})[-_.]?(?<month>\d{2})[-_.]?(?<day>\d{2})");
-            if (!match.Success)
-            {
-                return false;
-            }
+            // Get count of photos that have been processed (photos with ID <= lastProcessedPhotoId)
+            var processedCount = lastProcessedPhotoId > 0
+                ? await applicationDbContext.Photos
+                    .Where(p => p.Directory.GalleryId == galleryId
+                        && p.Id <= lastProcessedPhotoId
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
+                    .CountAsync()
+                : 0;
 
-            if (!int.TryParse(match.Groups["year"].Value, out var year) ||
-                !int.TryParse(match.Groups["month"].Value, out var month) ||
-                !int.TryParse(match.Groups["day"].Value, out var day))
+            return Ok(new GpsBackfillProgressViewModel
             {
-                return false;
-            }
-
-            try
-            {
-                date = new DateOnly(year, month, day);
-                return true;
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return false;
-            }
+                TotalPhotosWithoutGps = totalPhotosWithoutGps,
+                ProcessedCount = processedCount,
+                LastProcessedPhotoId = lastProcessedPhotoId
+            });
         }
     }
 }
