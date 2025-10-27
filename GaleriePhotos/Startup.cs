@@ -97,7 +97,8 @@ namespace GaleriePhotos
             services.AddHostedService<PlaceLocationBackgroundService>();
             services.AddHostedService<PhotoCaptureDateBackfillBackgroundService>();
             services.AddHostedService<GalleryScanBackgroundService>();
-
+            services.AddHostedService<PhotoGpsBackfillBackgroundService>();
+            
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
@@ -177,3 +178,4 @@ namespace GaleriePhotos
         }
     }
 }
+
