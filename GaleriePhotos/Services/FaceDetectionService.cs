@@ -217,8 +217,21 @@ namespace GaleriePhotos.Services
                 face.FaceNameId = faceName.Id;
                 face.NamedAt = DateTime.UtcNow;
 
+                // Also update all faces that were auto-named from this face
+                var autoNamedFaces = await applicationDbContext.Faces
+                    .Include(f => f.Photo)
+                        .ThenInclude(p => p.Directory)
+                    .Where(f => f.AutoNamedFromFaceId == faceId && f.Photo.Directory.GalleryId == gallery.Id)
+                    .ToListAsync();
+
+                foreach (var autoNamedFace in autoNamedFaces)
+                {
+                    autoNamedFace.FaceNameId = faceName.Id;
+                    autoNamedFace.NamedAt = DateTime.UtcNow;
+                }
+
                 await applicationDbContext.SaveChangesAsync();
-                logger.LogInformation("Assigned name '{Name}' to face {FaceId}", name, faceId);
+                logger.LogInformation("Assigned name '{Name}' to face {FaceId} and {Count} auto-named faces", name, faceId, autoNamedFaces.Count);
 
                 return true;
             }
