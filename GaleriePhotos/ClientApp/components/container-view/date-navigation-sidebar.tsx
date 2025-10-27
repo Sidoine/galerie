@@ -9,6 +9,11 @@ import {
 import { observer } from "mobx-react-lite";
 import { DateJump } from "@/services/views";
 
+// Constants for auto-scroll behavior
+const DATE_ITEM_HEIGHT = 44; // Height of each date item (padding + margins)
+const CENTERING_OFFSET = 100; // Offset to center the item in the viewport
+const SCROLL_DELAY_MS = 100; // Delay before scrolling to ensure view is rendered
+
 interface DateNavigationSidebarProps {
   dateJumps: DateJump[];
   visible: boolean;
@@ -63,10 +68,9 @@ export const DateNavigationSidebar = observer(
 
       // Use a timeout to ensure the view is rendered
       const timer = setTimeout(() => {
-        const itemHeight = 44; // Approximate height of dateItem (padding + margins)
-        const offset = Math.max(0, index * itemHeight - 100); // Center by offsetting
+        const offset = Math.max(0, index * DATE_ITEM_HEIGHT - CENTERING_OFFSET);
         scrollViewRef.current?.scrollTo({ y: offset, animated: true });
-      }, 100);
+      }, SCROLL_DELAY_MS);
 
       return () => clearTimeout(timer);
     }, [visible, firstVisibleDate, sortedDateJumps]);

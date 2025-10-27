@@ -19,7 +19,7 @@ import {
   Platform,
   ViewStyle,
 } from "react-native";
-import { FlashList, ListRenderItem } from "@shopify/flash-list";
+import { FlashList, ListRenderItem, ViewToken } from "@shopify/flash-list";
 import type { FlashListRef } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
 import { PhotoContainerStore } from "@/stores/photo-container";
@@ -346,7 +346,7 @@ export const DirectoryView = observer(function DirectoryView({
   );
 
   const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: any[] }) => {
+    ({ viewableItems }: { viewableItems: ViewToken<DirectoryFlatListItem>[] }) => {
       if (!viewableItems || viewableItems.length === 0) {
         return;
       }
