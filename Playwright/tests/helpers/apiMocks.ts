@@ -102,50 +102,7 @@ export async function registerApiMocks(
     ) {
       const offset = Number(searchParams.get("offset") ?? "0");
       const count = Number(searchParams.get("count") ?? galleryPhotos.length);
-      const sortOrder = searchParams.get("sortOrder") ?? "desc";
-      const startDateStr = searchParams.get("startDate");
-      
-      let photos = [...galleryPhotos];
-      
-      // Apply startDate filter if provided
-      if (startDateStr) {
-        const startDate = new Date(startDateStr);
-        
-        if (offset < 0) {
-          // For negative offset, invert the filter
-          photos = sortOrder === "asc"
-            ? photos.filter(p => new Date(p.dateTime) < startDate)
-            : photos.filter(p => new Date(p.dateTime) > startDate);
-        } else {
-          // For positive offset, normal filter
-          photos = sortOrder === "asc"
-            ? photos.filter(p => new Date(p.dateTime) >= startDate)
-            : photos.filter(p => new Date(p.dateTime) <= startDate);
-        }
-      }
-      
-      // Apply sorting based on sortOrder and offset
-      if (sortOrder === "desc" && offset >= 0) {
-        photos.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-      } else if (sortOrder === "asc" && offset >= 0) {
-        photos.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-      } else if (sortOrder === "desc" && offset < 0) {
-        // Negative offset with desc: reverse to asc, then reverse results
-        photos.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-      } else if (sortOrder === "asc" && offset < 0) {
-        // Negative offset with asc: reverse to desc, then reverse results
-        photos.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-      }
-      
-      // Apply pagination
-      const absOffset = Math.abs(offset);
-      let slice = photos.slice(absOffset, absOffset + count);
-      
-      // Reverse results for negative offset
-      if (offset < 0) {
-        slice = slice.reverse();
-      }
-      
+      const slice = galleryPhotos.slice(offset, offset + count);
       return respond(route, slice);
     }
 
