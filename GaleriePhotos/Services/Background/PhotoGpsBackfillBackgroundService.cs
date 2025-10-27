@@ -16,7 +16,7 @@ namespace GaleriePhotos.Services.Background
         private const string ServiceStateId = "photo-gps-backfill";
         private static readonly TimeSpan ProcessingInterval = TimeSpan.FromMinutes(5);
         private static readonly TimeSpan MaxTimeDifference = TimeSpan.FromHours(24);
-        private const int BatchSize = 10;
+        private const int BatchSize = 100;
 
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<PhotoGpsBackfillBackgroundService> logger;
@@ -180,3 +180,4 @@ namespace GaleriePhotos.Services.Background
         }
     }
 }
+
