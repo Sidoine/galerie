@@ -24,11 +24,22 @@ namespace GaleriePhotosTest.Services
                     Id = i + 1,
                     DateTime = baseDate.AddDays(i),
                     DirectoryId = 1,
-                    Directory = null! // We'll suppress warnings for test data
+                    // Set to null for test data as Directory navigation property is not needed for PhotoQueryHelper tests
+                    Directory = null!
                 });
             }
 
             return photos;
+        }
+
+        private static Photo[] ApplyControllerReversal(Photo[] result, int offset)
+        {
+            // Simulate the reversal that happens in the controller for negative offsets
+            if (PhotoQueryHelper.ShouldReverseResults(offset))
+            {
+                return result.Reverse().ToArray();
+            }
+            return result;
         }
 
         [Fact]
@@ -65,12 +76,7 @@ namespace GaleriePhotosTest.Services
 
             // Act
             var result = PhotoQueryHelper.ApplySortingAndOffset(query, "desc", -10, 10, marchFirst).ToArray();
-            
-            // Simulate controller reversal
-            if (PhotoQueryHelper.ShouldReverseResults(-10))
-            {
-                result = result.Reverse().ToArray();
-            }
+            result = ApplyControllerReversal(result, -10);
 
             // Assert
             Assert.Equal(10, result.Length);
@@ -121,12 +127,7 @@ namespace GaleriePhotosTest.Services
 
             // Act
             var result = PhotoQueryHelper.ApplySortingAndOffset(query, "asc", -10, 10, marchFirst).ToArray();
-            
-            // Simulate controller reversal
-            if (PhotoQueryHelper.ShouldReverseResults(-10))
-            {
-                result = result.Reverse().ToArray();
-            }
+            result = ApplyControllerReversal(result, -10);
 
             // Assert
             Assert.Equal(10, result.Length);
