@@ -19,9 +19,11 @@ namespace GaleriePhotos.Services
             // If startDate is provided, filter from that date
             if (startDate.HasValue)
             {
+                // Specify kind as UTC to avoid DateTime comparison errors with PostgreSQL
+                var dateWithKind = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
                 query = sortOrder == "asc"
-                    ? query.Where(p => p.DateTime >= startDate.Value)
-                    : query.Where(p => p.DateTime <= startDate.Value);
+                    ? query.Where(p => p.DateTime >= dateWithKind)
+                    : query.Where(p => p.DateTime <= dateWithKind);
             }
 
             // Handle negative offsets by reversing sort order

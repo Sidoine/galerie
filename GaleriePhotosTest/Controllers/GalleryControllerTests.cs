@@ -197,5 +197,76 @@ namespace GaleriePhotosTest.Controllers
             // Assert
             Assert.IsType<OkObjectResult>(result.Result);
         }
+
+        [Fact]
+        public async Task GetPhotos_HandlesUnspecifiedDateTimeKind_WithStartDate()
+        {
+            // Arrange
+            using var context = GetInMemoryContext();
+            var galleryService = new GalleryService(context);
+            var controller = new GalleryController(context, galleryService);
+
+            var userId = "user-1";
+
+            // Create gallery with user as member
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+
+            // Create a directory for the gallery
+            var directory = new PhotoDirectory("/test", 0, null, null, PhotoDirectoryType.Regular)
+            {
+                Gallery = gallery,
+                GalleryId = gallery.Id
+            };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            // Create test photos with UTC DateTime
+            var photo1 = new Photo("test1.jpg")
+            {
+                DateTime = DateTime.SpecifyKind(new DateTime(2024, 1, 1, 10, 0, 0), DateTimeKind.Utc),
+                Directory = directory,
+                DirectoryId = directory.Id
+            };
+            var photo2 = new Photo("test2.jpg")
+            {
+                DateTime = DateTime.SpecifyKind(new DateTime(2024, 1, 2, 10, 0, 0), DateTimeKind.Utc),
+                Directory = directory,
+                DirectoryId = directory.Id
+            };
+            context.Photos.Add(photo1);
+            context.Photos.Add(photo2);
+            await context.SaveChangesAsync();
+
+            var user = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(user);
+            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            {
+                Gallery = gallery,
+                User = user
+            };
+            context.Add(member);
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            // Create an unspecified DateTime - this simulates what would come from API
+            var startDate = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Unspecified);
+
+            // Act - This should not throw an exception
+            var result = await controller.GetPhotos(gallery.Id, "desc", 0, 25, startDate);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result.Result);
+            var okResult = result.Result as OkObjectResult;
+            var photos = okResult?.Value as PhotoViewModel[];
+            Assert.NotNull(photos);
+            // With desc order and startDate of 2024-01-01 12:00, only photo1 should be returned
+            Assert.Single(photos);
+        }
     }
 }
