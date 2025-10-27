@@ -98,6 +98,7 @@ export const DirectoryView = observer(function DirectoryView({
   
   // Date navigation sidebar state
   const [showDateNavigation, setShowDateNavigation] = useState(false);
+  const [firstVisibleDate, setFirstVisibleDate] = useState<string | null>(null);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -344,6 +345,52 @@ export const DirectoryView = observer(function DirectoryView({
     [paginatedStore, store.container]
   );
 
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: any[] }) => {
+      if (!viewableItems || viewableItems.length === 0) {
+        return;
+      }
+
+      // Find the first date header that's visible
+      const firstDateHeader = viewableItems.find(
+        (item) => item.item?.type === "dateHeader"
+      );
+
+      if (firstDateHeader?.item) {
+        // Extract date from the item's id (format: "date-header-YYYY-MM-DD" or "date-header-YYYY-MM")
+        const dateId = firstDateHeader.item.id.replace("date-header-", "");
+        
+        // Convert to ISO format for comparison with DateJump dates
+        // DateJump dates are like "2024-01-01T00:00:00Z", we need to match on the date part
+        const matchingJump = store.container?.dateJumps?.find((dj) => {
+          const djDate = dj.date.split("T")[0]; // Get YYYY-MM-DD part
+          return djDate === dateId || djDate.startsWith(dateId); // Match full date or month
+        });
+        
+        if (matchingJump) {
+          setFirstVisibleDate(matchingJump.date);
+        }
+      } else {
+        // If no date header is visible, try to infer from the first photo
+        const firstPhotoRow = viewableItems.find(
+          (item) => item.item?.type === "photoRow" && item.item?.groupId
+        );
+        if (firstPhotoRow?.item?.groupId && firstPhotoRow.item.groupId !== "all") {
+          const groupId = firstPhotoRow.item.groupId;
+          const matchingJump = store.container?.dateJumps?.find((dj) => {
+            const djDate = dj.date.split("T")[0];
+            return djDate === groupId || djDate.startsWith(groupId);
+          });
+          
+          if (matchingJump) {
+            setFirstVisibleDate(matchingJump.date);
+          }
+        }
+      }
+    },
+    [store.container]
+  );
+
   useEffect(() => {
     const needsRestore =
       shouldRestoreScroll.current || paginatedStore.pendingScrollRestoration;
@@ -407,6 +454,10 @@ export const DirectoryView = observer(function DirectoryView({
         removeClippedSubviews
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        viewabilityConfig={{
+          itemVisiblePercentThreshold: 10,
+        }}
         ListFooterComponent={
           paginatedStore?.isLoading ? (
             <View style={styles.loadingFooter}>
@@ -429,6 +480,8 @@ export const DirectoryView = observer(function DirectoryView({
         dateJumps={store.container?.dateJumps ?? []}
         visible={showDateNavigation}
         onDateSelect={handleDateSelect}
+        sortOrder={order}
+        firstVisibleDate={firstVisibleDate}
       />
       {paginatedPhotos.length > 0 && (
         <TouchableOpacity

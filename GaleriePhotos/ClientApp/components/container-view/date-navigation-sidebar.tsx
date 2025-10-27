@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ interface DateNavigationSidebarProps {
   dateJumps: DateJump[];
   visible: boolean;
   onDateSelect: (date: string) => void;
+  sortOrder: "date-asc" | "date-desc";
+  firstVisibleDate?: string | null;
 }
 
 /**
@@ -24,13 +26,50 @@ export const DateNavigationSidebar = observer(
     dateJumps,
     visible,
     onDateSelect,
+    sortOrder,
+    firstVisibleDate,
   }: DateNavigationSidebarProps) {
+    const scrollViewRef = useRef<ScrollView>(null);
+    const dateItemRefs = useRef<Map<string, View>>(new Map());
+
     const handleDatePress = useCallback(
       (dateJump: DateJump) => {
         onDateSelect(dateJump.date);
       },
       [onDateSelect]
     );
+
+    // Sort dateJumps according to the current sort order
+    const sortedDateJumps = useMemo(() => {
+      const jumps = [...dateJumps];
+      if (sortOrder === "date-desc") {
+        jumps.reverse();
+      }
+      return jumps;
+    }, [dateJumps, sortOrder]);
+
+    // Scroll to center the first visible date when it changes
+    useEffect(() => {
+      if (!visible || !firstVisibleDate || sortedDateJumps.length === 0) {
+        return;
+      }
+
+      const index = sortedDateJumps.findIndex(
+        (dj) => dj.date === firstVisibleDate
+      );
+      if (index === -1) {
+        return;
+      }
+
+      // Use a timeout to ensure the view is rendered
+      const timer = setTimeout(() => {
+        const itemHeight = 44; // Approximate height of dateItem (padding + margins)
+        const offset = Math.max(0, index * itemHeight - 100); // Center by offsetting
+        scrollViewRef.current?.scrollTo({ y: offset, animated: true });
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }, [visible, firstVisibleDate, sortedDateJumps]);
 
     if (!visible || dateJumps.length === 0) {
       return null;
@@ -39,24 +78,42 @@ export const DateNavigationSidebar = observer(
     return (
       <View style={styles.container} testID="date-navigation-sidebar">
         <ScrollView
+          ref={scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {dateJumps.map((dateJump) => (
-            <TouchableOpacity
-              key={dateJump.date}
-              style={styles.dateItem}
-              onPress={() => handleDatePress(dateJump)}
-              accessibilityLabel={`Aller à ${dateJump.label}`}
-              accessibilityRole="button"
-              testID={`date-link-${dateJump.date}`}
-            >
-              <Text style={styles.dateText} numberOfLines={2}>
-                {dateJump.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {sortedDateJumps.map((dateJump) => {
+            const isFirstVisible = dateJump.date === firstVisibleDate;
+            return (
+              <TouchableOpacity
+                key={dateJump.date}
+                ref={(ref) => {
+                  if (ref) {
+                    dateItemRefs.current.set(dateJump.date, ref as unknown as View);
+                  }
+                }}
+                style={[
+                  styles.dateItem,
+                  isFirstVisible && styles.dateItemHighlighted,
+                ]}
+                onPress={() => handleDatePress(dateJump)}
+                accessibilityLabel={`Aller à ${dateJump.label}`}
+                accessibilityRole="button"
+                testID={`date-link-${dateJump.date}`}
+              >
+                <Text
+                  style={[
+                    styles.dateText,
+                    isFirstVisible && styles.dateTextHighlighted,
+                  ]}
+                  numberOfLines={2}
+                >
+                  {dateJump.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     );
@@ -91,10 +148,19 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: "rgba(25, 118, 210, 0.1)",
   },
+  dateItemHighlighted: {
+    backgroundColor: "rgba(25, 118, 210, 0.25)",
+    borderWidth: 1,
+    borderColor: "#1976d2",
+  },
   dateText: {
     fontSize: 12,
     fontWeight: "500",
     color: "#1976d2",
     textAlign: "center",
+  },
+  dateTextHighlighted: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
