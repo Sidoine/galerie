@@ -59,5 +59,72 @@ namespace GaleriePhotosTest.Controllers
             var album2 = stats.AlbumsWithoutGps.First(a => a.DirectoryPath == "Album2");
             Assert.Equal(1, album2.MissingGpsPhotoCount);
         }
+
+        [Fact]
+        public async Task GetGpsBackfillProgress_ReturnsCorrectProgress()
+        {
+            using var db = CreateDb();
+
+            var gallery = new Gallery("Test", "/orig", "/thumbs", DataProviderType.FileSystem, null, null);
+            db.Galleries.Add(gallery);
+            await db.SaveChangesAsync();
+
+            var dir = new PhotoDirectory("Album1", 0, null, null) { Gallery = gallery };
+            db.PhotoDirectories.Add(dir);
+            await db.SaveChangesAsync();
+
+            // Add 5 photos without GPS
+            for (int i = 1; i <= 5; i++)
+            {
+                db.Photos.Add(new Photo($"photo{i}.jpg") { Directory = dir, Latitude = null, Longitude = null, DateTime = DateTime.UtcNow });
+            }
+            await db.SaveChangesAsync();
+
+            // Simulate background service progress - photo ID 2 was last processed
+            db.BackgroundServiceStates.Add(new BackgroundServiceState
+            {
+                Id = "photo-gps-backfill",
+                State = "{\"LastProcessedPhotoId\":2}"
+            });
+            await db.SaveChangesAsync();
+
+            var controller = new DashboardController(db);
+
+            var result = await controller.GetGpsBackfillProgress(gallery.Id);
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var progress = Assert.IsType<GpsBackfillProgressViewModel>(ok.Value);
+
+            Assert.Equal(5, progress.TotalPhotosWithoutGps);
+            Assert.Equal(2, progress.LastProcessedPhotoId);
+            Assert.Equal(2, progress.ProcessedCount);
+        }
+
+        [Fact]
+        public async Task GetGpsBackfillProgress_NoState_ReturnsZeroProgress()
+        {
+            using var db = CreateDb();
+
+            var gallery = new Gallery("Test", "/orig", "/thumbs", DataProviderType.FileSystem, null, null);
+            db.Galleries.Add(gallery);
+            await db.SaveChangesAsync();
+
+            var dir = new PhotoDirectory("Album1", 0, null, null) { Gallery = gallery };
+            db.PhotoDirectories.Add(dir);
+            await db.SaveChangesAsync();
+
+            // Add photos without GPS but no background service state
+            db.Photos.Add(new Photo("photo1.jpg") { Directory = dir, Latitude = null, Longitude = null, DateTime = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+
+            var controller = new DashboardController(db);
+
+            var result = await controller.GetGpsBackfillProgress(gallery.Id);
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var progress = Assert.IsType<GpsBackfillProgressViewModel>(ok.Value);
+
+            Assert.Equal(1, progress.TotalPhotosWithoutGps);
+            Assert.Equal(0, progress.LastProcessedPhotoId);
+            Assert.Equal(0, progress.ProcessedCount);
+        }
     }
 }
