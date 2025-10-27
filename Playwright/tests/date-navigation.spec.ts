@@ -315,15 +315,6 @@ test.describe("Date Navigation Sidebar", () => {
     const marchDateLink = dateNavigation.locator('text=/mars/i').first();
     await expect(marchDateLink).toBeVisible();
     
-    // Set up listener for API call with negative offset before clicking
-    const negativeOffsetPromise = page.waitForResponse(
-      (response) =>
-        response.url().includes(`/api/galleries/${galleryId}/photos`) &&
-        response.url().includes("offset=-") &&
-        response.request().method() === "GET",
-      { timeout: 10000 }
-    );
-    
     // Click on March to jump to that date
     await marchDateLink.click();
     
@@ -338,6 +329,15 @@ test.describe("Date Navigation Sidebar", () => {
     
     // Wait for photos to load
     await page.waitForTimeout(500);
+    
+    // Set up listener for API call with negative offset AFTER the date jump
+    const negativeOffsetPromise = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/galleries/${galleryId}/photos`) &&
+        response.url().includes("offset=-") &&
+        response.request().method() === "GET",
+      { timeout: 10000 }
+    );
     
     // Now scroll to the very top to trigger loadMoreBefore
     await page.keyboard.press("Home");
