@@ -491,5 +491,101 @@ namespace GaleriePhotosTest.Services
             
             // Transaction will rollback on dispose, no need for explicit cleanup
         }
+
+        [Fact]
+        public async Task AssignNameToFaceAsync_UpdatesAutoNamedFaces()
+        {
+            // Arrange
+            using var context = GetContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            
+            // Create unique gallery to avoid interference from other tests
+            var galleryName = $"Test Gallery {Guid.NewGuid()}";
+            var gallery = new Gallery(galleryName, "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+
+            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            await context.SaveChangesAsync();
+
+            var photo1 = new Photo("test1.jpg") { Directory = directory };
+            var photo2 = new Photo("test2.jpg") { Directory = directory };
+            var photo3 = new Photo("test3.jpg") { Directory = directory };
+            context.Photos.AddRange(photo1, photo2, photo3);
+            await context.SaveChangesAsync();
+
+            // Add a face that will be manually named
+            var referenceFace = new Face
+            {
+                PhotoId = photo1.Id,
+                Photo = photo1,
+                Embedding = CreateTestVector(1.0f, gallery.Id),
+                X = 10, Y = 20, Width = 30, Height = 40
+            };
+            context.Faces.Add(referenceFace);
+            await context.SaveChangesAsync();
+
+            // Add two faces that were auto-named from the reference face
+            var autoNamedFace1 = new Face
+            {
+                PhotoId = photo2.Id,
+                Photo = photo2,
+                Embedding = CreateTestVector(1.01f, gallery.Id),
+                X = 50, Y = 60, Width = 70, Height = 80,
+                AutoNamedFromFaceId = referenceFace.Id
+            };
+            var autoNamedFace2 = new Face
+            {
+                PhotoId = photo3.Id,
+                Photo = photo3,
+                Embedding = CreateTestVector(1.02f, gallery.Id),
+                X = 90, Y = 100, Width = 110, Height = 120,
+                AutoNamedFromFaceId = referenceFace.Id
+            };
+            context.Faces.AddRange(autoNamedFace1, autoNamedFace2);
+            await context.SaveChangesAsync();
+
+            // Act - Assign a name to the reference face
+            var result = await faceDetectionService.AssignNameToFaceAsync(gallery, referenceFace.Id, "TestPerson");
+
+            // Assert
+            Assert.True(result, "AssignNameToFaceAsync should succeed");
+
+            // Verify all three faces were named
+            var updatedReferenceFace = await context.Faces
+                .Include(f => f.FaceName)
+                .FirstOrDefaultAsync(f => f.Id == referenceFace.Id);
+            var updatedAutoNamedFace1 = await context.Faces
+                .Include(f => f.FaceName)
+                .FirstOrDefaultAsync(f => f.Id == autoNamedFace1.Id);
+            var updatedAutoNamedFace2 = await context.Faces
+                .Include(f => f.FaceName)
+                .FirstOrDefaultAsync(f => f.Id == autoNamedFace2.Id);
+
+            Assert.NotNull(updatedReferenceFace);
+            Assert.NotNull(updatedReferenceFace.FaceName);
+            Assert.Equal("TestPerson", updatedReferenceFace.FaceName.Name);
+            Assert.NotNull(updatedReferenceFace.NamedAt);
+
+            Assert.NotNull(updatedAutoNamedFace1);
+            Assert.NotNull(updatedAutoNamedFace1.FaceName);
+            Assert.Equal("TestPerson", updatedAutoNamedFace1.FaceName.Name);
+            Assert.NotNull(updatedAutoNamedFace1.NamedAt);
+            Assert.Equal(referenceFace.Id, updatedAutoNamedFace1.AutoNamedFromFaceId);
+
+            Assert.NotNull(updatedAutoNamedFace2);
+            Assert.NotNull(updatedAutoNamedFace2.FaceName);
+            Assert.Equal("TestPerson", updatedAutoNamedFace2.FaceName.Name);
+            Assert.NotNull(updatedAutoNamedFace2.NamedAt);
+            Assert.Equal(referenceFace.Id, updatedAutoNamedFace2.AutoNamedFromFaceId);
+
+            // Transaction will rollback on dispose, no need for explicit cleanup
+        }
     }
 }
