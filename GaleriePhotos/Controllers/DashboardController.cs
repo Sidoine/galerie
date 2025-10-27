@@ -118,11 +118,13 @@ namespace GaleriePhotos.Controllers
                 }
             }
 
-            // Get count of photos that have been processed (photos with ID <= lastProcessedPhotoId)
+            // Get count of photos without GPS that have been processed (photos with ID <= lastProcessedPhotoId)
+            // This represents progress through photos that need processing, not all photos
             var processedCount = lastProcessedPhotoId > 0
                 ? await applicationDbContext.Photos
                     .Where(p => p.Directory.GalleryId == galleryId
                         && p.Id <= lastProcessedPhotoId
+                        && (p.Latitude == null || p.Longitude == null || (p.Latitude == 0 && p.Longitude == 0))
                         && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private
                         && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
                     .CountAsync()

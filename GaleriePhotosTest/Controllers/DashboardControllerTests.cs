@@ -126,5 +126,52 @@ namespace GaleriePhotosTest.Controllers
             Assert.Equal(0, progress.LastProcessedPhotoId);
             Assert.Equal(0, progress.ProcessedCount);
         }
+
+        [Fact]
+        public async Task GetGpsBackfillProgress_OnlyCountsPhotosWithoutGps()
+        {
+            using var db = CreateDb();
+
+            var gallery = new Gallery("Test", "/orig", "/thumbs", DataProviderType.FileSystem, null, null);
+            db.Galleries.Add(gallery);
+            await db.SaveChangesAsync();
+
+            var dir = new PhotoDirectory("Album1", 0, null, null) { Gallery = gallery };
+            db.PhotoDirectories.Add(dir);
+            await db.SaveChangesAsync();
+
+            // Add photos: some with GPS, some without
+            // Photo ID 1: no GPS
+            db.Photos.Add(new Photo("photo1.jpg") { Directory = dir, Latitude = null, Longitude = null, DateTime = DateTime.UtcNow });
+            // Photo ID 2: has GPS (should not be counted in processed)
+            db.Photos.Add(new Photo("photo2.jpg") { Directory = dir, Latitude = 48.0, Longitude = 2.0, DateTime = DateTime.UtcNow });
+            // Photo ID 3: no GPS
+            db.Photos.Add(new Photo("photo3.jpg") { Directory = dir, Latitude = null, Longitude = null, DateTime = DateTime.UtcNow });
+            // Photo ID 4: no GPS
+            db.Photos.Add(new Photo("photo4.jpg") { Directory = dir, Latitude = null, Longitude = null, DateTime = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+
+            // Simulate background service progress - photo ID 3 was last processed
+            // This means photos 1, 2, and 3 have been attempted
+            // But only photos 1 and 3 should count as "processed" since photo 2 has GPS
+            db.BackgroundServiceStates.Add(new BackgroundServiceState
+            {
+                Id = "photo-gps-backfill",
+                State = "{\"LastProcessedPhotoId\":3}"
+            });
+            await db.SaveChangesAsync();
+
+            var controller = new DashboardController(db);
+
+            var result = await controller.GetGpsBackfillProgress(gallery.Id);
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var progress = Assert.IsType<GpsBackfillProgressViewModel>(ok.Value);
+
+            // Total: 3 photos without GPS (IDs 1, 3, 4)
+            Assert.Equal(3, progress.TotalPhotosWithoutGps);
+            Assert.Equal(3, progress.LastProcessedPhotoId);
+            // Processed: 2 photos without GPS with ID <= 3 (IDs 1, 3)
+            Assert.Equal(2, progress.ProcessedCount);
+        }
     }
 }
