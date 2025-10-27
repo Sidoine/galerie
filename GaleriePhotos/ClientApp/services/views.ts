@@ -270,16 +270,6 @@ export interface AlbumWithoutGpsInfo {
     missingGpsPhotoCount: number;
 }
 
-export interface AlbumFilenameDateMismatchInfo {
-    directoryId: number;
-
-    directoryPath: string;
-
-    mismatchedPhotoCount: number;
-
-    firstPhotoId: number;
-}
-
 export interface AutoNamedFaceSampleInfo {
     faceId: number;
 
@@ -293,15 +283,17 @@ export interface DashboardStatistics {
 
     albumsWithoutGps: AlbumWithoutGpsInfo[];
 
-    photosWithFilenameDateMismatchCount: number;
-
-    albumsWithPhotosWithFilenameDateMismatchCount: number;
-
-    albumsWithFilenameDateMismatch: AlbumFilenameDateMismatchInfo[];
-
     autoNamedFacesCount: number;
 
     autoNamedFaceSamples: AutoNamedFaceSampleInfo[];
+}
+
+export interface GpsBackfillProgress {
+    totalPhotosWithoutGps: number;
+
+    processedCount: number;
+
+    lastProcessedPhotoId: number;
 }
 
 export interface GalleryDirectoryVisibility {

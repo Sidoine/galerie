@@ -13,15 +13,13 @@ import {
   DashboardController,
   DashboardStatistics,
   AlbumWithoutGpsInfo,
-  AlbumFilenameDateMismatchInfo,
+  GpsBackfillProgress,
 } from "@/services/services";
 import { useMeStore } from "@/stores/me";
 import { useApiClient } from "folke-service-helpers";
 import { palette, radius } from "@/stores/theme";
 import PhotosWithoutGpsCard from "@/components/dashboard/PhotosWithoutGpsCard";
-import PhotosDateMismatchCard from "@/components/dashboard/PhotosDateMismatchCard";
 import AlbumsWithoutGpsList from "@/components/dashboard/AlbumsWithoutGpsList";
-import AlbumsWithDateMismatchList from "@/components/dashboard/AlbumsWithDateMismatchList";
 import AutoNamedFacesCard from "@/components/dashboard/AutoNamedFacesCard";
 import FaceThumbnail from "@/components/faces/face-thumbnail";
 
@@ -33,12 +31,13 @@ const DashboardScreen = observer(function DashboardScreen() {
   const [statistics, setStatistics] = useState<DashboardStatistics | null>(
     null
   );
+  const [gpsProgress, setGpsProgress] = useState<GpsBackfillProgress | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAlbumsWithoutGps, setShowAlbumsWithoutGps] = useState(false);
-  const [showAlbumsWithDateMismatch, setShowAlbumsWithDateMismatch] =
-    useState(false);
   const [showAutoNamedFaces, setShowAutoNamedFaces] = useState(false);
 
   const dashboardController = useMemo(
@@ -51,11 +50,6 @@ const DashboardScreen = observer(function DashboardScreen() {
     [statistics]
   );
 
-  const albumsWithDateMismatch = useMemo(
-    () => statistics?.albumsWithFilenameDateMismatch ?? [],
-    [statistics]
-  );
-
   const loadStatistics = useCallback(
     async (options?: { silent?: boolean }) => {
       if (!galleryId) return;
@@ -64,7 +58,6 @@ const DashboardScreen = observer(function DashboardScreen() {
 
       try {
         setShowAlbumsWithoutGps(false);
-        setShowAlbumsWithDateMismatch(false);
         setShowAutoNamedFaces(false);
         if (silent) {
           setRefreshing(true);
@@ -72,16 +65,22 @@ const DashboardScreen = observer(function DashboardScreen() {
           setLoading(true);
         }
         setError(null);
-        const response = await dashboardController.getStatistics(
-          Number(galleryId)
-        );
-        if (response.ok) {
-          setStatistics(response.value);
+        const [statsResponse, progressResponse] = await Promise.all([
+          dashboardController.getStatistics(Number(galleryId)),
+          dashboardController.getGpsBackfillProgress(Number(galleryId)),
+        ]);
+
+        if (statsResponse.ok) {
+          setStatistics(statsResponse.value);
         } else {
           setError(
-            response.message ||
+            statsResponse.message ||
               "Impossible de charger les statistiques du tableau de bord"
           );
+        }
+
+        if (progressResponse.ok) {
+          setGpsProgress(progressResponse.value);
         }
       } catch (err) {
         console.error("Failed to load dashboard statistics:", err);
@@ -101,24 +100,13 @@ const DashboardScreen = observer(function DashboardScreen() {
     if (!albumsWithoutGps.length) {
       return;
     }
-    setShowAlbumsWithDateMismatch(false);
     setShowAlbumsWithoutGps((previous) => !previous);
   }, [albumsWithoutGps.length]);
-
-  const toggleDateMismatchAlbumsVisibility = useCallback(() => {
-    if (!albumsWithDateMismatch.length) {
-      return;
-    }
-    setShowAlbumsWithoutGps(false);
-    setShowAlbumsWithDateMismatch((previous) => !previous);
-  }, [albumsWithDateMismatch.length]);
 
   const toggleAutoNamedFacesVisibility = useCallback(() => {
     if (!statistics?.autoNamedFaceSamples.length) {
       return;
     }
-    setShowAlbumsWithoutGps(false);
-    setShowAlbumsWithDateMismatch(false);
     setShowAutoNamedFaces((prev) => !prev);
   }, [statistics]);
 
@@ -128,7 +116,6 @@ const DashboardScreen = observer(function DashboardScreen() {
 
   useEffect(() => {
     setShowAlbumsWithoutGps(false);
-    setShowAlbumsWithDateMismatch(false);
   }, [galleryId]);
 
   const navigateToAlbum = useCallback(
@@ -137,19 +124,6 @@ const DashboardScreen = observer(function DashboardScreen() {
         return;
       }
       router.push(`/gallery/${galleryId}/directory/${albumInfo.directoryId}`);
-    },
-    [galleryId, router]
-  );
-
-  const openFirstMismatchPhoto = useCallback(
-    (info: AlbumFilenameDateMismatchInfo) => {
-      if (!galleryId) {
-        return;
-      }
-      router.push({
-        pathname: "/(app)/gallery/[galleryId]/photos/[photoId]",
-        params: { galleryId, photoId: info.firstPhotoId },
-      });
     },
     [galleryId, router]
   );
@@ -211,12 +185,35 @@ const DashboardScreen = observer(function DashboardScreen() {
             expanded={showAlbumsWithoutGps}
             onToggle={toggleAlbumsVisibility}
           />
-          <PhotosDateMismatchCard
-            totalCount={statistics.photosWithFilenameDateMismatchCount}
-            hasAlbums={albumsWithDateMismatch.length > 0}
-            expanded={showAlbumsWithDateMismatch}
-            onToggle={toggleDateMismatchAlbumsVisibility}
-          />
+          {gpsProgress && gpsProgress.totalPhotosWithoutGps > 0 && (
+            <View style={styles.progressCard}>
+              <Text style={styles.progressTitle}>
+                Traitement GPS en cours
+              </Text>
+              <Text style={styles.progressSubtitle}>
+                {gpsProgress.processedCount} / {gpsProgress.totalPhotosWithoutGps} photos traitées
+              </Text>
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${
+                        gpsProgress.totalPhotosWithoutGps > 0
+                          ? (gpsProgress.processedCount / gpsProgress.totalPhotosWithoutGps) * 100
+                          : 0
+                      }%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressPercentage}>
+                {gpsProgress.totalPhotosWithoutGps > 0
+                  ? Math.round((gpsProgress.processedCount / gpsProgress.totalPhotosWithoutGps) * 100)
+                  : 0}%
+              </Text>
+            </View>
+          )}
           <AutoNamedFacesCard
             totalCount={statistics.autoNamedFacesCount}
             hasSamples={statistics.autoNamedFaceSamples.length > 0}
@@ -228,15 +225,6 @@ const DashboardScreen = observer(function DashboardScreen() {
               albums={albumsWithoutGps}
               totalListedCount={statistics.albumsWithPhotosWithoutGpsCount}
               onSelect={navigateToAlbum}
-            />
-          ) : null}
-          {albumsWithDateMismatch.length > 0 && showAlbumsWithDateMismatch ? (
-            <AlbumsWithDateMismatchList
-              albums={albumsWithDateMismatch}
-              totalListedCount={
-                statistics.albumsWithPhotosWithFilenameDateMismatchCount
-              }
-              onOpenPhoto={openFirstMismatchPhoto}
             />
           ) : null}
           {statistics.autoNamedFaceSamples.length > 0 && showAutoNamedFaces ? (
@@ -325,6 +313,45 @@ const styles = StyleSheet.create({
   sampleText: {
     fontSize: 14,
     color: palette.textPrimary,
+  },
+  progressCard: {
+    backgroundColor: palette.card,
+    borderRadius: radius.md,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: palette.textPrimary,
+    marginBottom: 8,
+  },
+  progressSubtitle: {
+    fontSize: 14,
+    color: palette.textSecondary,
+    marginBottom: 12,
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: palette.border,
+    borderRadius: radius.sm,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: palette.primary,
+    borderRadius: radius.sm,
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: palette.primary,
+    textAlign: "right",
   },
 });
 
