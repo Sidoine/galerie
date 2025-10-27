@@ -214,8 +214,11 @@ namespace GaleriePhotos.Services
                     await applicationDbContext.SaveChangesAsync(); // Save to get the ID
                 }
 
+                // Use consistent timestamp for all faces
+                var namedAt = DateTime.UtcNow;
+                
                 face.FaceNameId = faceName.Id;
-                face.NamedAt = DateTime.UtcNow;
+                face.NamedAt = namedAt;
 
                 // Also update all faces that were auto-named from this face
                 var autoNamedFaces = await applicationDbContext.Faces
@@ -227,7 +230,7 @@ namespace GaleriePhotos.Services
                 foreach (var autoNamedFace in autoNamedFaces)
                 {
                     autoNamedFace.FaceNameId = faceName.Id;
-                    autoNamedFace.NamedAt = DateTime.UtcNow;
+                    autoNamedFace.NamedAt = namedAt;
                 }
 
                 await applicationDbContext.SaveChangesAsync();
