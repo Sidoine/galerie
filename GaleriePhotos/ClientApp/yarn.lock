@@ -2631,13 +2631,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/drawer@npm:^7.5.0":
-  version: 7.5.9
-  resolution: "@react-navigation/drawer@npm:7.5.9"
+"@react-navigation/drawer@npm:^7.6.0":
+  version: 7.6.0
+  resolution: "@react-navigation/drawer@npm:7.6.0"
   dependencies:
-    "@react-navigation/elements": "npm:^2.6.5"
+    "@react-navigation/elements": "npm:^2.7.0"
     color: "npm:^4.2.3"
-    react-native-drawer-layout: "npm:^4.1.13"
+    react-native-drawer-layout: "npm:^4.2.0"
     use-latest-callback: "npm:^0.2.4"
   peerDependencies:
     "@react-navigation/native": ^7.1.18
@@ -2647,7 +2647,7 @@ __metadata:
     react-native-reanimated: ">= 2.0.0"
     react-native-safe-area-context: ">= 4.0.0"
     react-native-screens: ">= 4.0.0"
-  checksum: 10c0/57b248fcd7d2988ec475527b04fe64321b31f329a442216eb0331bac9847fb057189d2c7c644fe83c2e314ff1833462107fdc4e17181f14a65a06f657cce1d81
+  checksum: 10c0/d11a243bf1e6f76230836a8468930c9ea9c4275ca369ae43c64fb2ac8f03bf4c5f4f77411f7b3b9681c909cc38e7128f817a366d734282c9ca10137dbfa32862
   languageName: node
   linkType: hard
 
@@ -5514,7 +5514,7 @@ __metadata:
     "@expo/metro-runtime": "npm:^6.1.2"
     "@expo/vector-icons": "npm:^15.0.3"
     "@react-navigation/bottom-tabs": "npm:^7.5.0"
-    "@react-navigation/drawer": "npm:^7.5.0"
+    "@react-navigation/drawer": "npm:^7.6.0"
     "@react-navigation/native": "npm:^7.1.8"
     "@react-navigation/stack": "npm:^7.5.0"
     "@shopify/flash-list": "npm:^2.1.0"
@@ -8315,17 +8315,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-drawer-layout@npm:^4.1.13":
-  version: 4.1.13
-  resolution: "react-native-drawer-layout@npm:4.1.13"
+"react-native-drawer-layout@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "react-native-drawer-layout@npm:4.2.0"
   dependencies:
+    color: "npm:^4.2.3"
     use-latest-callback: "npm:^0.2.4"
   peerDependencies:
     react: ">= 18.2.0"
     react-native: "*"
     react-native-gesture-handler: ">= 2.0.0"
     react-native-reanimated: ">= 2.0.0"
-  checksum: 10c0/446213bd177d19a929997689d3ef271df4017a0660a782b325023b8ccc5595b3ceb76934093ad02a7324b62bff7f5351e5039954688bd5a66ba3b3f40d35d44b
+  checksum: 10c0/70f568c3bc846aeb0e8d5087e681077cb197a4dd15057fc8f652cec3470f75ef214f5a2495889315bb5c339b8bb4e5e5997414375ae8594a1505f7c8f653e9fb
   languageName: node
   linkType: hard
 
