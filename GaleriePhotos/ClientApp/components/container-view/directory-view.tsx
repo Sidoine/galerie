@@ -380,11 +380,13 @@ export const DirectoryView = observer(function DirectoryView({
           setFirstVisibleDate(matchingJump.date);
         }
       } else {
-        // If no date header is visible, try to infer from the first photo
+        // If no date header is visible, try to infer from the first photo row with a date groupId
         const firstPhotoRow = viewableItems.find(
-          (item) => item.item?.type === "photoRow"
+          (item) => item.item?.type === "photoRow" && 
+                    item.item.groupId && 
+                    item.item.groupId !== "all"
         );
-        if (firstPhotoRow?.item?.type === "photoRow" && firstPhotoRow.item.groupId && firstPhotoRow.item.groupId !== "all") {
+        if (firstPhotoRow?.item?.type === "photoRow") {
           const groupId = firstPhotoRow.item.groupId;
           const matchingJump = store.container?.dateJumps?.find((dj) => {
             const djDate = dj.date.split("T")[0];
