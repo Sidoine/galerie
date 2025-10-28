@@ -433,19 +433,7 @@ namespace GaleriePhotos.Services
             return result;
         }
 
-        public async Task<YearViewModel[]> GetPlaceYearsAsync(int placeId)
-        {
-            return await context.Photos.Where(x => x.PlaceId == placeId)
-                .GroupBy(x => x.DateTime.Year)
-                .Select(x => new YearViewModel
-                {
-                    Id = x.Key,
-                    Name = x.Key.ToString(),
-                    NumberOfPhotos = x.Count()
-                })
-                .Distinct()
-                .ToArrayAsync();
-        }
+
 
         public async Task<List<PlaceViewModel>> GetCitiesByCountryAsync(int countryId, int galleryId)
         {
@@ -549,62 +537,7 @@ namespace GaleriePhotos.Services
             return true;
         }
 
-        public async Task<MonthViewModel[]> GetPlaceMonthsAsync(int id, int year)
-        {
-            return await context.Photos.Where(x => x.PlaceId == id && x.DateTime.Year == year)
-                .GroupBy(x => x.DateTime.Month)
-                .Select(x => new MonthViewModel
-                {
-                    Id = x.Key,
-                    Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(x.Key),
-                    NumberOfPhotos = x.Count()
-                })
-                .Distinct()
-                .ToArrayAsync();
-        }
 
-        public async Task<YearFullViewModel?> GetPlaceYearAsync(int placeId, int year)
-        {
-            var baseQuery = context.Photos.Where(p => p.PlaceId == placeId && p.DateTime.Year == year);
-            if (!await baseQuery.AnyAsync()) return null;
-
-            var number = await baseQuery.CountAsync();
-            var min = await baseQuery.MinAsync(p => p.DateTime);
-            var max = await baseQuery.MaxAsync(p => p.DateTime);
-            // Cover : première photo chronologique de l'année si disponible
-            var cover = await baseQuery.OrderBy(p => p.DateTime).Select(p => p.PublicId.ToString()).FirstOrDefaultAsync();
-            return new YearFullViewModel
-            {
-                Id = year,
-                Name = year.ToString(),
-                NumberOfPhotos = number,
-                CoverPhotoId = cover,
-                MinDate = min,
-                MaxDate = max,
-                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, baseQuery)
-            };
-        }
-
-        public async Task<MonthFullViewModel?> GetPlaceMonthAsync(int placeId, int year, int month)
-        {
-            var baseQuery = context.Photos.Where(p => p.PlaceId == placeId && p.DateTime.Year == year && p.DateTime.Month == month);
-            if (!await baseQuery.AnyAsync()) return null;
-
-            var number = await baseQuery.CountAsync();
-            var min = await baseQuery.MinAsync(p => p.DateTime);
-            var max = await baseQuery.MaxAsync(p => p.DateTime);
-            var cover = await baseQuery.OrderBy(p => p.DateTime).Select(p => p.PublicId.ToString()).FirstOrDefaultAsync();
-            return new MonthFullViewModel
-            {
-                Id = month,
-                Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month),
-                NumberOfPhotos = number,
-                CoverPhotoId = cover,
-                MinDate = min,
-                MaxDate = max,
-                DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(min, max, baseQuery)
-            };
-        }
 
         /// <summary>
         /// Merges duplicate places within a gallery. Places are considered duplicates if they have

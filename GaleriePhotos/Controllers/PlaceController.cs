@@ -102,7 +102,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{id}/photos")]
-        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, int? year, int? month, string sortOrder = "asc", int offset = 0, int count = 25, DateTime? startDate = null)
+        public async Task<ActionResult<PhotoViewModel[]>> GetPlacePhotos(int id, string sortOrder = "asc", int offset = 0, int count = 25, DateTime? startDate = null)
         {
             try
             {
@@ -117,16 +117,6 @@ namespace Galerie.Server.Controllers
                 var query = applicationDbContext.Photos
                     .Include(p => p.Place)
                     .Where(p => p.PlaceId == id);
-
-                if (year.HasValue)
-                {
-                    query = query.Where(p => p.DateTime.Year == year.Value);
-                }
-
-                if (month.HasValue)
-                {
-                    query = query.Where(p => p.DateTime.Month == month.Value);
-                }
 
                 var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
                 var photos = await orderedQuery.ToArrayAsync();
@@ -147,7 +137,7 @@ namespace Galerie.Server.Controllers
         }
 
         [HttpGet("{id}/photos/count")]
-        public async Task<ActionResult<int>> GetPlacePhotoCount(int id, int? year, int? month)
+        public async Task<ActionResult<int>> GetPlacePhotoCount(int id)
         {
             var place = await placeService.GetPlaceByIdAsync(id);
             if (place == null) return NotFound();
@@ -156,64 +146,10 @@ namespace Galerie.Server.Controllers
             if (gallery == null) return NotFound();
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
-            return Ok(await placeService.GetPlaceNumberOfPhotosAsync(id, year, month));
+            return Ok(await placeService.GetPlaceNumberOfPhotosAsync(id, null, null));
         }
 
-        [HttpGet("{id}/years")]
-        public async Task<ActionResult<YearViewModel[]>> GetPlaceYears(int id)
-        {
-            var place = await placeService.GetPlaceByIdAsync(id);
-            if (place == null) return NotFound();
-            
-            var gallery = await galleryService.Get(place.GalleryId);
-            if (gallery == null) return NotFound();
-            if (!User.IsGalleryMember(gallery)) return Forbid();
 
-            return Ok(await placeService.GetPlaceYearsAsync(id));
-        }
-
-        [HttpGet("{id}/years/{year}/monthes")]
-        public async Task<ActionResult<MonthViewModel[]>> GetPlaceMonths(int id, int year)
-        {
-            var place = await placeService.GetPlaceByIdAsync(id);
-            if (place == null) return NotFound();
-            
-            var gallery = await galleryService.Get(place.GalleryId);
-            if (gallery == null) return NotFound();
-            if (!User.IsGalleryMember(gallery)) return Forbid();
-
-            return Ok(await placeService.GetPlaceMonthsAsync(id, year));
-        }
-
-        [HttpGet("{id}/years/{year}")]
-        public async Task<ActionResult<YearFullViewModel>> GetPlaceYear(int id, int year)
-        {
-            var place = await placeService.GetPlaceByIdAsync(id);
-            if (place == null) return NotFound();
-            
-            var gallery = await galleryService.Get(place.GalleryId);
-            if (gallery == null) return NotFound();
-            if (!User.IsGalleryMember(gallery)) return Forbid();
-
-            var result = await placeService.GetPlaceYearAsync(id, year);
-            if (result == null) return NotFound();
-            return Ok(result);
-        }
-
-        [HttpGet("{id}/years/{year}/months/{month}")]
-        public async Task<ActionResult<MonthFullViewModel>> GetPlaceMonth(int id, int year, int month)
-        {
-            var place = await placeService.GetPlaceByIdAsync(id);
-            if (place == null) return NotFound();
-            
-            var gallery = await galleryService.Get(place.GalleryId);
-            if (gallery == null) return NotFound();
-            if (!User.IsGalleryMember(gallery)) return Forbid();
-
-            var result = await placeService.GetPlaceMonthAsync(id, year, month);
-            if (result == null) return NotFound();
-            return Ok(result);
-        }
 
         [HttpPost("{placeId}/photos/{photoId}")]
         public async Task<ActionResult> AssignPhotoToPlace(int placeId, int photoId)
