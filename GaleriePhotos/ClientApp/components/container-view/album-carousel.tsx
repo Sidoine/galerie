@@ -1,9 +1,11 @@
 import { PhotoContainer, PhotoContainerStore } from "@/stores/photo-container";
 import { View, StyleSheet, ScrollView } from "react-native";
+import { observer } from "mobx-react-lite";
+import { useMemo } from "react";
 import SubdirectoryCard from "./subdirectory-card";
 import { gap } from "./item-types";
 
-export function AlbumCarousel({
+export const AlbumCarousel = observer(function AlbumCarousel({
   items,
   store,
   columnWidth,
@@ -13,7 +15,7 @@ export function AlbumCarousel({
   columnWidth: number;
 }) {
   // For carousel, we want larger cards than in grid
-  const cardSize = columnWidth * 2 + gap;
+  const cardSize = useMemo(() => columnWidth * 2 + gap, [columnWidth]);
 
   return (
     <ScrollView
@@ -35,7 +37,7 @@ export function AlbumCarousel({
       ))}
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   scrollView: {
