@@ -4,12 +4,8 @@ import {
   DirectoryFull,
   FaceName,
   FaceNameFull,
-  Month,
-  MonthFull,
   Place,
   PlaceFull,
-  Year,
-  YearFull,
   GalleryFull,
   Gallery,
   SearchResultFull,
@@ -18,16 +14,12 @@ import { ReactNode } from "react";
 import { PaginatedPhotosStore } from "./paginated-photos";
 
 export type PhotoContainer =
-  | Year
-  | Month
   | Directory
   | Place
   | FaceName
   | Gallery;
 
 export type PhotoContainerFull =
-  | YearFull
-  | MonthFull
   | DirectoryFull
   | PlaceFull
   | FaceNameFull
