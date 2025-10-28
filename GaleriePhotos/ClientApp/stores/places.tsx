@@ -1,12 +1,8 @@
 import { computed, makeObservable } from "mobx";
 import {
-  Month,
-  MonthFull,
   Photo,
   Place,
   PlaceFull,
-  Year,
-  YearFull,
 } from "../services/views";
 import { PlaceController } from "../services/place";
 import { createContext, useContext, useMemo } from "react";
@@ -22,23 +18,14 @@ class PlacesStore {
       Photo[],
       [
         placeId: number,
-        year?: number | null,
-        month?: number | null,
         sortOrder?: string,
         offset?: number,
         count?: number,
         startDate?: string | null
       ]
     >,
-    private placeYearsLoader: MapLoader<Year[], [number]>,
-    private placeMonthsLoader: MapLoader<Month[], [number, number]>,
-    private placePhotoCountLoader: MapLoader<
-      number,
-      [placeId: number, year?: number | null, month?: number | null]
-    >,
-    public placeController: PlaceController,
-    private placeYearLoader: MapLoader<YearFull, [number, number]>,
-    private placeMonthLoader: MapLoader<MonthFull, [number, number, number]>
+    private placePhotoCountLoader: MapLoader<number, [placeId: number]>,
+    public placeController: PlaceController
   ) {
     makeObservable(this, {
       countries: computed,
@@ -53,53 +40,29 @@ class PlacesStore {
     return this.placeLoader.getValue(id);
   }
 
-  getPlaceYear(placeId: number, year: number) {
-    return this.placeYearLoader.getValue(placeId, year);
-  }
-
-  getPlaceMonth(placeId: number, year: number, month: number) {
-    return this.placeMonthLoader.getValue(placeId, year, month);
-  }
-
   getCitiesByCountry(countryId: number) {
     return this.citiesLoader.getValue(this.galleryId, countryId);
   }
 
   /**
-   * Récupère les photos d'un lieu, éventuellement filtrées par année, mois avec pagination offset-based.
+   * Récupère les photos d'un lieu avec pagination offset-based.
    */
   getPlacePhotos(
     placeId: number,
-    year?: number | null,
-    month?: number | null,
     sortOrder?: string,
     offset?: number,
     count?: number
   ): Photo[] | null {
     return this.placePhotosLoader.getValue(
       placeId,
-      year,
-      month,
       sortOrder,
       offset,
       count
     );
   }
 
-  getPlacePhotoCount(
-    placeId: number,
-    year?: number | null,
-    month?: number | null
-  ): number | null {
-    return this.placePhotoCountLoader.getValue(placeId, year, month);
-  }
-
-  getPlaceYears(placeId: number): Year[] | null {
-    return this.placeYearsLoader.getValue(placeId);
-  }
-
-  getPlaceMonths(placeId: number, year: number): Month[] | null {
-    return this.placeMonthsLoader.getValue(placeId, year);
+  getPlacePhotoCount(placeId: number): number | null {
+    return this.placePhotoCountLoader.getValue(placeId);
   }
 
   async setCover(placeId: number, photoId: number) {
@@ -127,10 +90,6 @@ export function PlacesStoreProvider({
     const placeLoader = new MapLoader(placeController.getPlaceById);
     const citiesLoader = new MapLoader(placeController.getCitiesByCountry);
     const placePhotosLoader = new MapLoader(placeController.getPlacePhotos);
-    const placeYearsLoader = new MapLoader(placeController.getPlaceYears);
-    const placeMonthsLoader = new MapLoader(placeController.getPlaceMonths);
-    const placeYearLoader = new MapLoader(placeController.getPlaceYear);
-    const placeMonthLoader = new MapLoader(placeController.getPlaceMonth);
     const placePhotoCountLoader = new MapLoader(
       placeController.getPlacePhotoCount
     );
@@ -140,12 +99,8 @@ export function PlacesStoreProvider({
       placeLoader,
       citiesLoader,
       placePhotosLoader,
-      placeYearsLoader,
-      placeMonthsLoader,
       placePhotoCountLoader,
-      placeController,
-      placeYearLoader,
-      placeMonthLoader
+      placeController
     );
   }, [apiClient, galleryId]);
 

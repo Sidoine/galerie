@@ -210,58 +210,6 @@ export interface PlaceFull {
     galleryId: number;
 }
 
-export interface Year {
-    id: number;
-
-    name: string;
-
-    numberOfPhotos: number;
-
-    coverPhotoId: string | null;
-}
-
-export interface Month {
-    id: number;
-
-    name: string;
-
-    numberOfPhotos: number;
-
-    coverPhotoId: string | null;
-}
-
-export interface YearFull {
-    minDate: string;
-
-    maxDate: string;
-
-    dateJumps: DateJump[];
-
-    id: number;
-
-    name: string;
-
-    numberOfPhotos: number;
-
-    coverPhotoId: string | null;
-}
-
-export interface MonthFull {
-    minDate: string;
-
-    maxDate: string;
-
-    dateJumps: DateJump[];
-
-    id: number;
-
-    name: string;
-
-    numberOfPhotos: number;
-
-    coverPhotoId: string | null;
-}
-
 export interface AlbumWithoutGpsInfo {
     directoryId: number;
 

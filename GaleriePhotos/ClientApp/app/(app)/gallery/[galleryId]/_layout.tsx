@@ -243,8 +243,6 @@ export default function GalleryLayout() {
     order,
     faceNameId,
     placeId,
-    year,
-    month,
     query,
   } = useGlobalSearchParams<{
     galleryId: string;
@@ -252,8 +250,6 @@ export default function GalleryLayout() {
     faceNameId?: string;
     placeId?: string;
     order: "date-asc" | "date-desc";
-    year?: string;
-    month?: string;
     query?: string;
   }>();
 
@@ -289,8 +285,6 @@ export default function GalleryLayout() {
                           >
                             <PlaceStoreProvider
                               placeId={placeId ? Number(placeId) : undefined}
-                              year={year ? Number(year) : undefined}
-                              month={month ? Number(month) : undefined}
                               order={order}
                             >
                               <SearchStoreProvider

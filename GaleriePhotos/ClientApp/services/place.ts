@@ -21,32 +21,16 @@ export class PlaceController {
         return this.client.fetchJson<views.PlaceFull>(`api/places/${id}`, "GET", undefined);
     }
 
-    getPlaceMonth = (id: number, year: number, month: number) => {
-        return this.client.fetchJson<views.MonthFull>(`api/places/${id}/years/${year}/months/${month}`, "GET", undefined);
+    getPlacePhotoCount = (id: number) => {
+        return this.client.fetchJson<number>(`api/places/${id}/photos/count`, "GET", undefined);
     }
 
-    getPlaceMonths = (id: number, year: number) => {
-        return this.client.fetchJson<views.Month[]>(`api/places/${id}/years/${year}/monthes`, "GET", undefined);
-    }
-
-    getPlacePhotoCount = (id: number, year?: number | null, month?: number | null) => {
-        return this.client.fetchJson<number>(`api/places/${id}/photos/count` + helpers.getQueryString({ year: year, month: month }), "GET", undefined);
-    }
-
-    getPlacePhotos = (id: number, year?: number | null, month?: number | null, sortOrder?: string, offset?: number, count?: number, startDate?: string | null) => {
-        return this.client.fetchJson<views.Photo[]>(`api/places/${id}/photos` + helpers.getQueryString({ year: year, month: month, sortOrder: sortOrder, offset: offset, count: count, startDate: startDate }), "GET", undefined);
+    getPlacePhotos = (id: number, sortOrder?: string, offset?: number, count?: number, startDate?: string | null) => {
+        return this.client.fetchJson<views.Photo[]>(`api/places/${id}/photos` + helpers.getQueryString({ sortOrder: sortOrder, offset: offset, count: count, startDate: startDate }), "GET", undefined);
     }
 
     getPlacesByGallery = (galleryId: number) => {
         return this.client.fetchJson<views.Place[]>(`api/places/gallery/${galleryId}`, "GET", undefined);
-    }
-
-    getPlaceYear = (id: number, year: number) => {
-        return this.client.fetchJson<views.YearFull>(`api/places/${id}/years/${year}`, "GET", undefined);
-    }
-
-    getPlaceYears = (id: number) => {
-        return this.client.fetchJson<views.Year[]>(`api/places/${id}/years`, "GET", undefined);
     }
 
     mergeDuplicatePlaces = (galleryId: number) => {
