@@ -326,4 +326,134 @@ test.describe("Date Navigation Sidebar", () => {
     // Note: This is a behavior check - the feature may need the user to scroll to top
     // The actual implementation should call loadMoreBefore when reaching the start
   });
+
+  test("navigates to end of month when clicking date link in descending sort order", async ({
+    page,
+  }) => {
+    await page.goto(`/gallery/${galleryId}`);
+
+    // Wait for photos to load (default is descending order - most recent first)
+    const photoLinks = page.locator('a[href*="/photos/"]');
+    await expect(photoLinks.first()).toBeVisible();
+
+    // Scroll to show the sidebar
+    const targetPhoto = photoLinks.nth(15);
+    await targetPhoto.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    // Check that sidebar is visible
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
+    await expect(dateNavigation).toBeVisible({ timeout: 5000 });
+
+    // Find the "janvier 2024" date link
+    const janLink = dateNavigation.locator('text=/janvier/i').first();
+    await expect(janLink).toBeVisible();
+
+    // Click on January link
+    await janLink.click();
+
+    // Wait for API call with startDate parameter
+    // In descending order, clicking January should navigate to end of January (2024-01-31T23:59:59.999Z)
+    const responsePromise = page.waitForResponse(
+      (response) => {
+        if (
+          response.url().includes(`/api/galleries/${galleryId}/photos`) &&
+          response.url().includes("startDate") &&
+          response.request().method() === "GET"
+        ) {
+          // Extract startDate from URL
+          const url = new URL(response.url());
+          const startDate = url.searchParams.get("startDate");
+          // Check if the date is end of January (not beginning)
+          // Should be 2024-01-31T23:59:59.999Z or similar
+          if (startDate) {
+            const date = new Date(startDate);
+            // Should be January 31st, not January 1st
+            return date.getUTCDate() === 31;
+          }
+        }
+        return false;
+      },
+      { timeout: 5000 }
+    );
+
+    await responsePromise;
+
+    // After clicking, photos should reload and scroll to top
+    await expect(photoLinks.first()).toBeVisible();
+  });
+
+  test("navigates to beginning of month when clicking date link in ascending sort order", async ({
+    page,
+  }) => {
+    await page.goto(`/gallery/${galleryId}`);
+
+    // Wait for photos to load
+    const photoLinks = page.locator('a[href*="/photos/"]');
+    await expect(photoLinks.first()).toBeVisible();
+
+    // Open sort menu and switch to ascending order
+    const sortButton = page.locator('button[aria-label*="tri"]').or(
+      page.locator('button:has-text("Plus")')
+    );
+    
+    // Try to find and click the sort button
+    if (await sortButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await sortButton.click();
+      await page.waitForTimeout(100);
+      
+      // Click on "Plus ancien en premier" (oldest first)
+      const ascOption = page.locator('text=/Plus ancien/i');
+      if (await ascOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await ascOption.click();
+        await page.waitForTimeout(500);
+      }
+    }
+
+    // Scroll to show the sidebar
+    const targetPhoto = photoLinks.nth(15);
+    await targetPhoto.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    // Check that sidebar is visible
+    const dateNavigation = page.getByTestId("date-navigation-sidebar");
+    await expect(dateNavigation).toBeVisible({ timeout: 5000 });
+
+    // Find the "février 2024" date link
+    const febLink = dateNavigation.locator('text=/février/i').first();
+    await expect(febLink).toBeVisible();
+
+    // Click on February link
+    await febLink.click();
+
+    // Wait for API call with startDate parameter
+    // In ascending order, clicking February should navigate to beginning of February (2024-02-01T00:00:00.000Z)
+    const responsePromise = page.waitForResponse(
+      (response) => {
+        if (
+          response.url().includes(`/api/galleries/${galleryId}/photos`) &&
+          response.url().includes("startDate") &&
+          response.request().method() === "GET"
+        ) {
+          // Extract startDate from URL
+          const url = new URL(response.url());
+          const startDate = url.searchParams.get("startDate");
+          // Check if the date is beginning of February
+          // Should be 2024-02-01T00:00:00.000Z
+          if (startDate) {
+            const date = new Date(startDate);
+            // Should be February 1st
+            return date.getUTCDate() === 1 && date.getUTCMonth() === 1; // Month is 0-indexed
+          }
+        }
+        return false;
+      },
+      { timeout: 5000 }
+    );
+
+    await responsePromise;
+
+    // After clicking, photos should reload and scroll to top
+    await expect(photoLinks.first()).toBeVisible();
+  });
 });
