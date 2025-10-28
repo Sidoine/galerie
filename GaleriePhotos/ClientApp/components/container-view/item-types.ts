@@ -23,6 +23,11 @@ export interface AlbumRowItem extends BaseItem {
   items: PhotoContainer[];
 }
 
+export interface AlbumCarouselItem extends BaseItem {
+  type: "albumCarousel";
+  items: PhotoContainer[];
+}
+
 export interface DateHeaderItem extends BaseItem {
   type: "dateHeader";
   title: string;
@@ -43,6 +48,7 @@ export interface LoadingItem extends BaseItem {
 export type DirectoryFlatListItem =
   | AlbumsHeaderItem
   | AlbumRowItem
+  | AlbumCarouselItem
   | DateHeaderItem
   | PhotoRowItem
   | LoadingItem;

@@ -34,6 +34,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { DirectoryFlatListItem, gap } from "./item-types";
 import DateHeader from "./date-header";
 import { AlbumRow } from "./album-row";
+import { AlbumCarousel } from "./album-carousel";
 import { PhotoRow } from "./photo-row";
 import { DateNavigationSidebar } from "./date-navigation-sidebar";
 
@@ -136,16 +137,32 @@ export const DirectoryView = observer(function DirectoryView({
   // Construction de la liste plate
   const flatData: DirectoryFlatListItem[] = useMemo(() => {
     const items: DirectoryFlatListItem[] = [];
+    
+    // Determine if we should use carousel (when both containers and photos exist)
+    const hasPhotos = paginatedPhotos.length > 0;
+    const hasContainers = directories && directories.length > 0;
+    const shouldUseCarousel = hasPhotos && hasContainers;
 
-    if (albumRows.length > 0) {
+    if (hasContainers) {
       items.push({
         id: "albums-header",
         type: "albumsHeader",
         title: store.childContainersHeader,
       });
-      albumRows.forEach((row, idx) => {
-        items.push({ id: `album-row-${idx}`, type: "albumRow", items: row });
-      });
+      
+      if (shouldUseCarousel) {
+        // Display all containers in a single carousel
+        items.push({ 
+          id: "album-carousel", 
+          type: "albumCarousel", 
+          items: directories 
+        });
+      } else {
+        // Display containers in grid rows as before
+        albumRows.forEach((row, idx) => {
+          items.push({ id: `album-row-${idx}`, type: "albumRow", items: row });
+        });
+      }
     }
 
     if (paginatedPhotos.length > 0) {
@@ -210,8 +227,10 @@ export const DirectoryView = observer(function DirectoryView({
     return items;
   }, [
     albumRows,
+    directories,
     paginatedPhotos,
     paginatedStore.isLoading,
+    paginatedStore.hasMoreBefore,
     store.childContainersHeader,
     shouldGroupPhotos,
     cols,
@@ -255,6 +274,14 @@ export const DirectoryView = observer(function DirectoryView({
         case "albumRow":
           return (
             <AlbumRow
+              items={item.items}
+              store={store}
+              columnWidth={columnWidth}
+            />
+          );
+        case "albumCarousel":
+          return (
+            <AlbumCarousel
               items={item.items}
               store={store}
               columnWidth={columnWidth}
