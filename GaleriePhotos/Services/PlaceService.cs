@@ -386,8 +386,17 @@ namespace GaleriePhotos.Services
                     NumberOfPhotos = p.Type == PlaceType.Country 
                         ? context.Photos.Count(ph => ph.PlaceId == p.Id || (ph.Place != null && ph.Place.ParentId == p.Id))
                         : context.Photos.Count(ph => ph.PlaceId == p.Id),
-                    MinDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow,
-                    MaxDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow
+                    // For countries, include child place photos in date range calculations
+                    MinDate = p.Type == PlaceType.Country
+                        ? (context.Photos.Any(x => x.PlaceId == p.Id || (x.Place != null && x.Place.ParentId == p.Id)) 
+                            ? context.Photos.Where(ph => ph.PlaceId == p.Id || (ph.Place != null && ph.Place.ParentId == p.Id)).Min(ph => ph.DateTime) 
+                            : DateTime.UtcNow)
+                        : (context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow),
+                    MaxDate = p.Type == PlaceType.Country
+                        ? (context.Photos.Any(x => x.PlaceId == p.Id || (x.Place != null && x.Place.ParentId == p.Id)) 
+                            ? context.Photos.Where(ph => ph.PlaceId == p.Id || (ph.Place != null && ph.Place.ParentId == p.Id)).Max(ph => ph.DateTime) 
+                            : DateTime.UtcNow)
+                        : (context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow)
                 })
                 .FirstOrDefaultAsync();
 
@@ -495,17 +504,15 @@ namespace GaleriePhotos.Services
 
         public async Task<Photo[]> GetPlacePhotosAsync(int placeId, int? year, int? month)
         {
-            IQueryable<Photo> query = QueryPlacePhotos(placeId, year, month);
+            var place = await context.Places.FindAsync(placeId);
+            IQueryable<Photo> query = QueryPlacePhotos(placeId, place?.Type, year, month);
             return await query.ToArrayAsync();
         }
 
-        private IQueryable<Photo> QueryPlacePhotos(int placeId, int? year, int? month)
+        private IQueryable<Photo> QueryPlacePhotos(int placeId, PlaceType? placeType, int? year, int? month)
         {
-            // Check if the place is a country to include child city photos
-            var place = context.Places.Find(placeId);
-            
             IQueryable<Photo> query;
-            if (place?.Type == PlaceType.Country)
+            if (placeType == PlaceType.Country)
             {
                 // For countries, include photos from cities within the country
                 query = context.Photos
@@ -530,7 +537,8 @@ namespace GaleriePhotos.Services
 
         public async Task<int> GetPlaceNumberOfPhotosAsync(int placeId, int? year, int? month)
         {
-            return await QueryPlacePhotos(placeId, year, month).CountAsync();
+            var place = await context.Places.FindAsync(placeId);
+            return await QueryPlacePhotos(placeId, place?.Type, year, month).CountAsync();
         }
 
         public async Task<bool> AssignPhotoToPlaceAsync(int photoId, int placeId)
