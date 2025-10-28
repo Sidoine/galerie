@@ -165,7 +165,7 @@ export const DirectoryView = observer(function DirectoryView({
           groupingStrategy === "day",
           order === "date-desc" ? "date-desc" : "date-asc"
         );
-        groups.forEach((group) => {
+        groups.forEach((group, groupIndex) => {
           const placeNames = Array.from(
             new Set(
               group.photos
@@ -173,13 +173,22 @@ export const DirectoryView = observer(function DirectoryView({
                 .filter((name): name is string => !!name && name.length > 0)
             )
           );
-          items.push({
-            id: `date-header-${group.id}`,
-            type: "dateHeader",
-            title: group.displayTitle,
-            placeNames,
-            photoIds: group.photos.map((photo) => photo.id),
-          });
+          // Show date header if:
+          // 1. This is not the first group (there are photos from a previous date), OR
+          // 2. This is the first group AND we're at the beginning of the gallery (no more photos before)
+          const isFirstGroup = groupIndex === 0;
+          const isAtGalleryStart = !paginatedStore.hasMoreBefore;
+          const shouldShowDateHeader = !isFirstGroup || isAtGalleryStart;
+          
+          if (shouldShowDateHeader) {
+            items.push({
+              id: `date-header-${group.id}`,
+              type: "dateHeader",
+              title: group.displayTitle,
+              placeNames,
+              photoIds: group.photos.map((photo) => photo.id),
+            });
+          }
           const rows = splitPhotosIntoRows(group.photos, cols);
           rows.forEach((row, idx) =>
             items.push({
@@ -373,9 +382,9 @@ export const DirectoryView = observer(function DirectoryView({
       } else {
         // If no date header is visible, try to infer from the first photo
         const firstPhotoRow = viewableItems.find(
-          (item) => item.item?.type === "photoRow" && item.item?.groupId
+          (item) => item.item?.type === "photoRow"
         );
-        if (firstPhotoRow?.item?.groupId && firstPhotoRow.item.groupId !== "all") {
+        if (firstPhotoRow?.item?.type === "photoRow" && firstPhotoRow.item.groupId && firstPhotoRow.item.groupId !== "all") {
           const groupId = firstPhotoRow.item.groupId;
           const matchingJump = store.container?.dateJumps?.find((dj) => {
             const djDate = dj.date.split("T")[0];
