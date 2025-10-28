@@ -393,9 +393,7 @@ test.describe("Date Navigation Sidebar", () => {
     await expect(photoLinks.first()).toBeVisible();
 
     // Open sort menu and switch to ascending order
-    const sortButton = page.locator('button[aria-label*="tri"]').or(
-      page.locator('button:has-text("Plus")')
-    );
+    const sortButton = page.locator('[aria-label="Ouvrir les options de tri"]');
     
     // Try to find and click the sort button
     if (await sortButton.isVisible({ timeout: 1000 }).catch(() => false)) {
