@@ -382,7 +382,10 @@ namespace GaleriePhotos.Services
                     ParentId = p.ParentId,
                     GalleryId = p.GalleryId,
                     CoverPhotoId = p.CoverPhoto != null ? p.CoverPhoto.PublicId.ToString() : null,
-                    NumberOfPhotos = context.Photos.Count(ph => ph.PlaceId == p.Id),
+                    // For countries, count photos from cities within the country as well
+                    NumberOfPhotos = p.Type == PlaceType.Country 
+                        ? context.Photos.Count(ph => ph.PlaceId == p.Id || (ph.Place != null && ph.Place.ParentId == p.Id))
+                        : context.Photos.Count(ph => ph.PlaceId == p.Id),
                     MinDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Min(ph => ph.DateTime) : DateTime.UtcNow,
                     MaxDate = context.Photos.Any(x => x.PlaceId == p.Id) ? context.Photos.Where(ph => ph.PlaceId == p.Id).Max(ph => ph.DateTime) : DateTime.UtcNow
                 })
@@ -390,8 +393,17 @@ namespace GaleriePhotos.Services
 
             if (result == null) return result;
 
-            // Calculate date jumps using query
-            var photoQuery = context.Photos.Where(ph => ph.PlaceId == placeId);
+            // Calculate date jumps using query - include child place photos for countries
+            var placeForQuery = await context.Places.FindAsync(placeId);
+            IQueryable<Photo> photoQuery;
+            if (placeForQuery?.Type == PlaceType.Country)
+            {
+                photoQuery = context.Photos.Where(ph => ph.PlaceId == placeId || (ph.Place != null && ph.Place.ParentId == placeId));
+            }
+            else
+            {
+                photoQuery = context.Photos.Where(ph => ph.PlaceId == placeId);
+            }
             result.DateJumps = await DateJumpHelper.CalculateDateJumpsAsync(result.MinDate, result.MaxDate, photoQuery);
 
             if (result.CoverPhotoId != null) return result;
@@ -489,9 +501,28 @@ namespace GaleriePhotos.Services
 
         private IQueryable<Photo> QueryPlacePhotos(int placeId, int? year, int? month)
         {
-            var query = context.Photos
-                            .Include(p => p.Place)
-                            .Where(p => p.PlaceId == placeId && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
+            // Check if the place is a country to include child city photos
+            var place = context.Places.Find(placeId);
+            
+            IQueryable<Photo> query;
+            if (place?.Type == PlaceType.Country)
+            {
+                // For countries, include photos from cities within the country
+                query = context.Photos
+                    .Include(p => p.Place)
+                    .Where(p => (p.PlaceId == placeId || (p.Place != null && p.Place.ParentId == placeId)) 
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private 
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
+            }
+            else
+            {
+                query = context.Photos
+                    .Include(p => p.Place)
+                    .Where(p => p.PlaceId == placeId 
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private 
+                        && p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
+            }
+            
             if (year != null) query = query.Where(p => p.DateTime.Year == year.Value);
             if (month != null) query = query.Where(p => p.DateTime.Month == month.Value);
             return query;

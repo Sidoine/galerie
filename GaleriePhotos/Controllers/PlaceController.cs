@@ -114,9 +114,20 @@ namespace Galerie.Server.Controllers
                 if (!User.IsGalleryMember(gallery)) return Forbid();
 
                 // Build query instead of loading all photos
-                var query = applicationDbContext.Photos
-                    .Include(p => p.Place)
-                    .Where(p => p.PlaceId == id);
+                // For countries, include photos from cities within the country
+                IQueryable<Photo> query;
+                if (place.Type == PlaceType.Country)
+                {
+                    query = applicationDbContext.Photos
+                        .Include(p => p.Place)
+                        .Where(p => p.PlaceId == id || (p.Place != null && p.Place.ParentId == id));
+                }
+                else
+                {
+                    query = applicationDbContext.Photos
+                        .Include(p => p.Place)
+                        .Where(p => p.PlaceId == id);
+                }
 
                 var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
                 var photos = await orderedQuery.ToArrayAsync();
