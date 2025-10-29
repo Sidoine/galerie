@@ -37,6 +37,7 @@ import { AlbumRow } from "./album-row";
 import { AlbumCarousel } from "./album-carousel";
 import { PhotoRow } from "./photo-row";
 import { DateNavigationSidebar } from "./date-navigation-sidebar";
+import { DateJump } from "@/services/views";
 
 export interface DirectoryViewProps {
   store: PhotoContainerStore;
@@ -96,11 +97,13 @@ export const DirectoryView = observer(function DirectoryView({
   );
   const listRef = useRef<FlashListRef<DirectoryFlatListItem> | null>(null);
   const shouldRestoreScroll = useRef(false);
-  
+
   // Date navigation sidebar state
   const [showDateNavigation, setShowDateNavigation] = useState(false);
-  const [firstVisibleDate, setFirstVisibleDate] = useState<string | null>(null);
-  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [firstVisibleDate, setFirstVisibleDate] = useState<DateJump | null>(
+    null
+  );
+  const hideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
@@ -137,11 +140,15 @@ export const DirectoryView = observer(function DirectoryView({
   // Construction de la liste plate
   const flatData: DirectoryFlatListItem[] = useMemo(() => {
     const items: DirectoryFlatListItem[] = [];
-    
+
     // Determine if we should use carousel (when both containers and photos exist)
     const hasPhotos = paginatedPhotos.length > 0;
     const hasContainers = directories && directories.length > 0;
     const shouldUseCarousel = hasPhotos && hasContainers;
+
+    if (paginatedStore.isLoadingBefore) {
+      items.push({ id: "loading", type: "loading" });
+    }
 
     if (hasContainers) {
       items.push({
@@ -149,13 +156,13 @@ export const DirectoryView = observer(function DirectoryView({
         type: "albumsHeader",
         title: store.childContainersHeader,
       });
-      
+
       if (shouldUseCarousel) {
         // Display all containers in a single carousel
-        items.push({ 
-          id: "album-carousel", 
-          type: "albumCarousel", 
-          items: directories 
+        items.push({
+          id: "album-carousel",
+          type: "albumCarousel",
+          items: directories,
         });
       } else {
         // Display containers in grid rows as before
@@ -195,8 +202,9 @@ export const DirectoryView = observer(function DirectoryView({
           // 2. This is the first group AND we're at the beginning of the gallery (no more photos before)
           const isFirstGroup = groupIndex === 0;
           const isAtGalleryStart = !paginatedStore.hasMoreBefore;
-          const shouldShowDateHeader = !isFirstGroup || isAtGalleryStart;
-          
+          const shouldShowDateHeader =
+            !isFirstGroup || isAtGalleryStart || !paginatedStore.hasScrolledUp;
+
           if (shouldShowDateHeader) {
             items.push({
               id: `date-header-${group.id}`,
@@ -204,6 +212,7 @@ export const DirectoryView = observer(function DirectoryView({
               title: group.displayTitle,
               placeNames,
               photoIds: group.photos.map((photo) => photo.id),
+              date: group.date,
             });
           }
           const rows = splitPhotosIntoRows(group.photos, cols);
@@ -220,7 +229,7 @@ export const DirectoryView = observer(function DirectoryView({
     }
 
     // État de chargement initial (aucune photo encore disponible)
-    if (paginatedStore.isLoading && paginatedPhotos.length === 0) {
+    if (paginatedStore.isLoading) {
       items.push({ id: "loading", type: "loading" });
     }
 
@@ -323,20 +332,20 @@ export const DirectoryView = observer(function DirectoryView({
     if (!allowAutoLoad) {
       return;
     }
-    if (paginatedStore && paginatedStore.shouldLoadMore()) {
+    if (paginatedStore.shouldLoadMore()) {
       paginatedStore.loadMore();
     }
   }, [allowAutoLoad, paginatedStore]);
-  
+
   const handleStartReached = useCallback(() => {
     if (!allowAutoLoad) {
       return;
     }
-    if (paginatedStore && paginatedStore.shouldLoadMoreBefore()) {
+    if (paginatedStore.shouldLoadMoreBefore()) {
       paginatedStore.loadMoreBefore();
     }
   }, [allowAutoLoad, paginatedStore]);
-  
+
   const handleDateSelect = useCallback(
     async (date: string) => {
       // Hide the sidebar immediately
@@ -344,10 +353,10 @@ export const DirectoryView = observer(function DirectoryView({
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
       }
-      
+
       // Jump to the selected date
       await paginatedStore.jumpToDate(date);
-      
+
       // Scroll to top after jumping to date
       if (listRef.current) {
         listRef.current.scrollToOffset({ offset: 0, animated: true });
@@ -362,16 +371,16 @@ export const DirectoryView = observer(function DirectoryView({
         0,
         event.nativeEvent.contentOffset.y
       );
-      
+
       // Show date navigation sidebar on scroll if we have date jumps
       if (store.container?.dateJumps && store.container.dateJumps.length > 0) {
         setShowDateNavigation(true);
-        
+
         // Reset hide timer
         if (hideTimerRef.current) {
           clearTimeout(hideTimerRef.current);
         }
-        
+
         // Hide after 2 seconds of no scrolling
         hideTimerRef.current = setTimeout(() => {
           setShowDateNavigation(false);
@@ -382,47 +391,47 @@ export const DirectoryView = observer(function DirectoryView({
   );
 
   const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<DirectoryFlatListItem>[] }) => {
-      if (!viewableItems || viewableItems.length === 0) {
+    ({
+      viewableItems,
+    }: {
+      viewableItems: ViewToken<DirectoryFlatListItem>[];
+    }) => {
+      if (
+        !viewableItems ||
+        viewableItems.length === 0 ||
+        !store.container?.dateJumps
+      ) {
         return;
       }
 
-      // Find the first date header that's visible
-      const firstDateHeader = viewableItems.find(
-        (item) => item.item?.type === "dateHeader"
-      );
+      // Find the first photo row that's visible
+      const firstPhotoRow = viewableItems
+        .filter((x) => x.isViewable && x.item)
+        .map((x) => x.item)
+        .find((item) => item.type === "photoRow");
 
-      if (firstDateHeader?.item) {
-        // Extract date from the item's id (format: "date-header-YYYY-MM-DD" or "date-header-YYYY-MM")
-        const dateId = firstDateHeader.item.id.replace("date-header-", "");
-        
-        // Convert to ISO format for comparison with DateJump dates
-        // DateJump dates are like "2024-01-01T00:00:00Z", we need to match on the date part
-        const matchingJump = store.container?.dateJumps?.find((dj) => {
-          const djDate = dj.date.split("T")[0]; // Get YYYY-MM-DD part
-          return djDate === dateId || djDate.startsWith(dateId); // Match full date or month
-        });
-        
-        if (matchingJump) {
-          setFirstVisibleDate(matchingJump.date);
-        }
-      } else {
-        // If no date header is visible, try to infer from the first photo row with a date groupId
-        const firstPhotoRow = viewableItems.find(
-          (item) => item.item?.type === "photoRow" && 
-                    item.item.groupId && 
-                    item.item.groupId !== "all"
-        );
-        if (firstPhotoRow?.item?.type === "photoRow") {
-          const groupId = firstPhotoRow.item.groupId;
-          const matchingJump = store.container?.dateJumps?.find((dj) => {
-            const djDate = dj.date.split("T")[0];
-            return djDate === groupId || djDate.startsWith(groupId);
-          });
-          
-          if (matchingJump) {
-            setFirstVisibleDate(matchingJump.date);
+      if (firstPhotoRow) {
+        const photo = firstPhotoRow.items[0];
+        const photoDate = photo.dateTime;
+        let selectedJump: null | DateJump = null;
+        if (order === "date-asc") {
+          for (const jump of store.container.dateJumps) {
+            selectedJump = jump;
+            if (jump.date > photoDate) {
+              break;
+            }
           }
+        } else {
+          for (const jump of store.container.dateJumps.slice().reverse()) {
+            selectedJump = jump;
+            if (jump.date < photoDate) {
+              break;
+            }
+          }
+        }
+
+        if (selectedJump) {
+          setFirstVisibleDate(selectedJump);
         }
       }
     },
@@ -496,14 +505,6 @@ export const DirectoryView = observer(function DirectoryView({
         viewabilityConfig={{
           itemVisiblePercentThreshold: 10,
         }}
-        ListFooterComponent={
-          paginatedStore?.isLoading ? (
-            <View style={styles.loadingFooter}>
-              <ActivityIndicator size="large" />
-              <Text style={styles.loadingText}>Chargement des photos...</Text>
-            </View>
-          ) : null
-        }
       />
       {paginatedPhotos.length === 0 &&
         !paginatedStore.isLoading &&

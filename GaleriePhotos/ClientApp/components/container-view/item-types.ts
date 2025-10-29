@@ -33,6 +33,7 @@ export interface DateHeaderItem extends BaseItem {
   title: string;
   placeNames: string[];
   photoIds: number[];
+  date: Date;
 }
 
 export interface PhotoRowItem extends BaseItem {

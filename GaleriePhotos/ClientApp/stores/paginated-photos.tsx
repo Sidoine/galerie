@@ -1,4 +1,10 @@
-import { makeObservable, observable, action, runInAction } from "mobx";
+import {
+  makeObservable,
+  observable,
+  action,
+  runInAction,
+  computed,
+} from "mobx";
 import { Photo } from "@/services/views";
 import { PhotoContainerFull } from "./photo-container";
 
@@ -26,6 +32,7 @@ export type LoadPhotosFunction = (
 export class PaginatedPhotosStore {
   photos = observable.array<Photo>([]);
   isLoading = false;
+  isLoadingBefore = false;
   hasMore = true;
   hasMoreBefore = true;
   error: string | null = null;
@@ -43,6 +50,7 @@ export class PaginatedPhotosStore {
     makeObservable<typeof this, "addPhotos" | "addPhotosBefore">(this, {
       photos: observable.shallow,
       isLoading: observable,
+      isLoadingBefore: observable,
       hasMore: observable,
       hasMoreBefore: observable,
       error: observable,
@@ -54,14 +62,19 @@ export class PaginatedPhotosStore {
       requestScrollRestoration: action,
       clearScrollRestoration: action,
       jumpToDate: action,
+      hasScrolledUp: computed,
     });
     this.sortOrder = sortOrder;
     this.isLoading = false;
     this.hasMore = true;
-    this.hasMoreBefore = true;
+    this.hasMoreBefore = false;
     this.error = null;
     this.lastScrollOffset = 0;
     this.pendingScrollRestoration = false;
+  }
+
+  get hasScrolledUp(): boolean {
+    return this.offsetFromStart > 0;
   }
 
   /**
@@ -76,7 +89,12 @@ export class PaginatedPhotosStore {
    * Load more photos (backward direction)
    */
   async loadMoreBefore() {
-    if (this.isLoading || !this.hasMoreBefore) return;
+    console.log(
+      "Loading more photos before",
+      this.isLoadingBefore,
+      this.hasMoreBefore
+    );
+    if (this.isLoadingBefore || !this.hasMoreBefore) return;
     await this.loadChunk(true);
   }
 
@@ -93,6 +111,11 @@ export class PaginatedPhotosStore {
       this.error = null;
     });
     await this.loadChunk(false);
+    await this.loadChunk(true);
+  }
+
+  private get invertedSortOrder(): "asc" | "desc" {
+    return this.sortOrder === "asc" ? "desc" : "asc";
   }
 
   /**
@@ -100,20 +123,24 @@ export class PaginatedPhotosStore {
    * @param backward If true, load photos before the current set (negative offset)
    */
   private async loadChunk(backward: boolean) {
-    if (this.isLoading) return;
+    if (backward ? this.isLoadingBefore : this.isLoading) return;
 
     runInAction(() => {
-      this.isLoading = true;
+      if (backward) {
+        this.isLoadingBefore = true;
+      } else {
+        this.isLoading = true;
+      }
       this.error = null;
     });
 
     try {
-      const offset = backward 
-        ? -(this.offsetFromStart + this.pageSize)
+      const offset = backward
+        ? this.offsetFromStart
         : this.offsetFromStart + this.photos.length;
-      
+
       const photos = await this.loadPhotosFunction(
-        this.sortOrder,
+        backward ? this.invertedSortOrder : this.sortOrder,
         offset,
         this.pageSize,
         this.startDate
@@ -151,7 +178,11 @@ export class PaginatedPhotosStore {
       });
     } finally {
       runInAction(() => {
-        this.isLoading = false;
+        if (backward) {
+          this.isLoadingBefore = false;
+        } else {
+          this.isLoading = false;
+        }
       });
     }
   }
@@ -168,6 +199,7 @@ export class PaginatedPhotosStore {
     const existingIds = new Set(this.photos.map((p) => p.id));
     const uniqueNewPhotos = newPhotos.filter((p) => !existingIds.has(p.id));
     this.photos.unshift(...uniqueNewPhotos);
+    console.log("Added photos before, new length:", this.photos.length);
   }
 
   /**

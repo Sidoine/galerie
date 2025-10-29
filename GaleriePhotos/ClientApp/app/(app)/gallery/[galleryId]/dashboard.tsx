@@ -187,11 +187,10 @@ const DashboardScreen = observer(function DashboardScreen() {
           />
           {gpsProgress && gpsProgress.totalPhotosWithoutGps > 0 && (
             <View style={styles.progressCard}>
-              <Text style={styles.progressTitle}>
-                Traitement GPS en cours
-              </Text>
+              <Text style={styles.progressTitle}>Traitement GPS en cours</Text>
               <Text style={styles.progressSubtitle}>
-                {gpsProgress.processedCount} / {gpsProgress.totalPhotosWithoutGps} photos traitées
+                {gpsProgress.processedCount} /{" "}
+                {gpsProgress.totalPhotosWithoutGps} photos traitées
               </Text>
               <View style={styles.progressBarContainer}>
                 <View
@@ -200,7 +199,9 @@ const DashboardScreen = observer(function DashboardScreen() {
                     {
                       width: `${
                         gpsProgress.totalPhotosWithoutGps > 0
-                          ? (gpsProgress.processedCount / gpsProgress.totalPhotosWithoutGps) * 100
+                          ? (gpsProgress.processedCount /
+                              gpsProgress.totalPhotosWithoutGps) *
+                            100
                           : 0
                       }%`,
                     },
@@ -209,8 +210,13 @@ const DashboardScreen = observer(function DashboardScreen() {
               </View>
               <Text style={styles.progressPercentage}>
                 {gpsProgress.totalPhotosWithoutGps > 0
-                  ? Math.round((gpsProgress.processedCount / gpsProgress.totalPhotosWithoutGps) * 100)
-                  : 0}%
+                  ? Math.round(
+                      (gpsProgress.processedCount /
+                        gpsProgress.totalPhotosWithoutGps) *
+                        100
+                    )
+                  : 0}
+                %
               </Text>
             </View>
           )}
@@ -315,7 +321,7 @@ const styles = StyleSheet.create({
     color: palette.textPrimary,
   },
   progressCard: {
-    backgroundColor: palette.card,
+    backgroundColor: palette.surface,
     borderRadius: radius.md,
     padding: 16,
     shadowColor: "#000",

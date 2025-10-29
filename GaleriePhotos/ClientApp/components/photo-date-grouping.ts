@@ -2,7 +2,7 @@ import { Photo } from "@/services/views";
 import { PhotoContainerFull } from "@/stores/photo-container";
 
 export interface DateGroupedPhoto {
-  date: string;
+  date: Date;
   photos: Photo[];
 }
 
@@ -36,17 +36,19 @@ export function groupPhotosByDate(
     groups.get(key)!.push(photo);
   });
 
-  const grouped = Array.from(groups.entries()).map(([date, photos]) => ({
-    id: date,
-    date,
-    photos,
-    displayTitle: formatDateGroupTitle(date, groupByDay),
-  }));
+  const grouped: DateGroup[] = Array.from(groups.entries()).map(
+    ([date, photos]) => ({
+      id: date,
+      date: new Date(date),
+      photos,
+      displayTitle: formatDateGroupTitle(date, groupByDay),
+    })
+  );
 
   grouped.sort((a, b) =>
     order === "date-desc"
-      ? b.date.localeCompare(a.date)
-      : a.date.localeCompare(b.date)
+      ? b.date.getTime() - a.date.getTime()
+      : a.date.getTime() - b.date.getTime()
   );
   return grouped;
 }

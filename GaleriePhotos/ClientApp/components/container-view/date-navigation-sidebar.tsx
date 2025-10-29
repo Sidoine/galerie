@@ -22,7 +22,7 @@ const SCROLL_DELAY_MS = 100; // Delay before scrolling to ensure view is rendere
  */
 function getEndOfPeriod(dateStr: string, type: DateJumpType): string {
   const date = new Date(dateStr);
-  
+
   if (type === DateJumpType.Month) {
     // Get the last day of the month
     // Set to the first day of next month, then subtract 1 millisecond
@@ -36,7 +36,7 @@ function getEndOfPeriod(dateStr: string, type: DateJumpType): string {
     const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
     return endDate.toISOString();
   }
-  
+
   return dateStr;
 }
 
@@ -45,116 +45,116 @@ interface DateNavigationSidebarProps {
   visible: boolean;
   onDateSelect: (date: string) => void;
   sortOrder: "date-asc" | "date-desc";
-  firstVisibleDate?: string | null;
+  firstVisibleDate?: DateJump | null;
 }
 
 /**
  * Sidebar component that displays a list of dates for quick navigation
  * Appears while scrolling and auto-hides after inactivity
  */
-export const DateNavigationSidebar = observer(
-  function DateNavigationSidebar({
-    dateJumps,
-    visible,
-    onDateSelect,
-    sortOrder,
-    firstVisibleDate,
-  }: DateNavigationSidebarProps) {
-    const scrollViewRef = useRef<ScrollView>(null);
-    const dateItemRefs = useRef<Map<string, View>>(new Map());
+export const DateNavigationSidebar = observer(function DateNavigationSidebar({
+  dateJumps,
+  visible,
+  onDateSelect,
+  sortOrder,
+  firstVisibleDate,
+}: DateNavigationSidebarProps) {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const dateItemRefs = useRef<Map<string, View>>(new Map());
 
-    const handleDatePress = useCallback(
-      (dateJump: DateJump) => {
-        // When sorting in descending order (most recent first),
-        // navigate to the end of the period instead of the beginning
-        const dateToJump = sortOrder === "date-desc"
+  const handleDatePress = useCallback(
+    (dateJump: DateJump) => {
+      // When sorting in descending order (most recent first),
+      // navigate to the end of the period instead of the beginning
+      const dateToJump =
+        sortOrder === "date-desc"
           ? getEndOfPeriod(dateJump.date, dateJump.type)
           : dateJump.date;
-        
-        onDateSelect(dateToJump);
-      },
-      [onDateSelect, sortOrder]
-    );
 
-    // Sort dateJumps according to the current sort order
-    const sortedDateJumps = useMemo(() => {
-      const jumps = [...dateJumps];
-      if (sortOrder === "date-desc") {
-        jumps.reverse();
-      }
-      return jumps;
-    }, [dateJumps, sortOrder]);
+      onDateSelect(dateToJump);
+    },
+    [onDateSelect, sortOrder]
+  );
 
-    // Scroll to center the first visible date when it changes
-    useEffect(() => {
-      if (!visible || !firstVisibleDate || sortedDateJumps.length === 0) {
-        return;
-      }
+  // Sort dateJumps according to the current sort order
+  const sortedDateJumps = useMemo(() => {
+    const jumps = [...dateJumps];
+    if (sortOrder === "date-desc") {
+      jumps.reverse();
+    }
+    return jumps;
+  }, [dateJumps, sortOrder]);
 
-      const index = sortedDateJumps.findIndex(
-        (dj) => dj.date === firstVisibleDate
-      );
-      if (index === -1) {
-        return;
-      }
-
-      // Use a timeout to ensure the view is rendered
-      const timer = setTimeout(() => {
-        const offset = Math.max(0, index * DATE_ITEM_HEIGHT - CENTERING_OFFSET);
-        scrollViewRef.current?.scrollTo({ y: offset, animated: true });
-      }, SCROLL_DELAY_MS);
-
-      return () => clearTimeout(timer);
-    }, [visible, firstVisibleDate, sortedDateJumps]);
-
-    if (!visible || dateJumps.length === 0) {
-      return null;
+  // Scroll to center the first visible date when it changes
+  useEffect(() => {
+    if (!visible || !firstVisibleDate || sortedDateJumps.length === 0) {
+      return;
     }
 
-    return (
-      <View style={styles.container} testID="date-navigation-sidebar">
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {sortedDateJumps.map((dateJump) => {
-            const isFirstVisible = dateJump.date === firstVisibleDate;
-            return (
-              <TouchableOpacity
-                key={dateJump.date}
-                ref={(ref) => {
-                  if (ref) {
-                    dateItemRefs.current.set(dateJump.date, ref as unknown as View);
-                  }
-                }}
-                style={[
-                  styles.dateItem,
-                  isFirstVisible && styles.dateItemHighlighted,
-                ]}
-                onPress={() => handleDatePress(dateJump)}
-                accessibilityLabel={`Aller à ${dateJump.label}`}
-                accessibilityRole="button"
-                testID={`date-link-${dateJump.date}`}
-              >
-                <Text
-                  style={[
-                    styles.dateText,
-                    isFirstVisible && styles.dateTextHighlighted,
-                  ]}
-                  numberOfLines={2}
-                >
-                  {dateJump.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
+    const index = sortedDateJumps.findIndex((dj) => dj === firstVisibleDate);
+    if (index === -1) {
+      return;
+    }
+
+    // Use a timeout to ensure the view is rendered
+    const timer = setTimeout(() => {
+      const offset = Math.max(0, index * DATE_ITEM_HEIGHT - CENTERING_OFFSET);
+      scrollViewRef.current?.scrollTo({ y: offset, animated: true });
+    }, SCROLL_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [visible, firstVisibleDate, sortedDateJumps]);
+
+  if (!visible || dateJumps.length === 0) {
+    return null;
   }
-);
+
+  return (
+    <View style={styles.container} testID="date-navigation-sidebar">
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {sortedDateJumps.map((dateJump) => {
+          const isFirstVisible = dateJump === firstVisibleDate;
+          return (
+            <TouchableOpacity
+              key={dateJump.date}
+              ref={(ref) => {
+                if (ref) {
+                  dateItemRefs.current.set(
+                    dateJump.date,
+                    ref as unknown as View
+                  );
+                }
+              }}
+              style={[
+                styles.dateItem,
+                isFirstVisible && styles.dateItemHighlighted,
+              ]}
+              onPress={() => handleDatePress(dateJump)}
+              accessibilityLabel={`Aller à ${dateJump.label}`}
+              accessibilityRole="button"
+              testID={`date-link-${dateJump.date}`}
+            >
+              <Text
+                style={[
+                  styles.dateText,
+                  isFirstVisible && styles.dateTextHighlighted,
+                ]}
+                numberOfLines={2}
+              >
+                {dateJump.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
