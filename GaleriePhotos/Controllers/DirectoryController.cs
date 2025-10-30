@@ -101,14 +101,8 @@ namespace Galerie.Server.Controllers
                 .Include(p => p.Place)
                 .Where(p => p.DirectoryId == directory.Id);
 
-            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+            var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToArrayAsync();
-
-            // If we used negative offset, reverse the results
-            if (PhotoQueryHelper.ShouldReverseResults(offset))
-            {
-                photos = photos.Reverse().ToArray();
-            }
 
             return Ok(photos.Select(x => new PhotoViewModel(x)));
         }

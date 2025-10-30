@@ -6,7 +6,6 @@ import {
   computed,
 } from "mobx";
 import { Photo } from "@/services/views";
-import { PhotoContainerFull } from "./photo-container";
 
 export type PhotoResponse<TD> =
   | {
@@ -188,18 +187,11 @@ export class PaginatedPhotosStore {
   }
 
   private addPhotos(newPhotos: Photo[]) {
-    // Avoid duplicates
-    const existingIds = new Set(this.photos.map((p) => p.id));
-    const uniqueNewPhotos = newPhotos.filter((p) => !existingIds.has(p.id));
-    this.photos.push(...uniqueNewPhotos);
+    this.photos.push(...newPhotos);
   }
 
   private addPhotosBefore(newPhotos: Photo[]) {
-    // Avoid duplicates and add at the beginning
-    const existingIds = new Set(this.photos.map((p) => p.id));
-    const uniqueNewPhotos = newPhotos.filter((p) => !existingIds.has(p.id));
-    this.photos.unshift(...uniqueNewPhotos);
-    console.log("Added photos before, new length:", this.photos.length);
+    this.photos.unshift(...newPhotos.slice().reverse());
   }
 
   /**

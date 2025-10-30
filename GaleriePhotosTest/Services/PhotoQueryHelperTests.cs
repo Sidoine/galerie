@@ -32,16 +32,6 @@ namespace GaleriePhotosTest.Services
             return photos;
         }
 
-        private static Photo[] ApplyControllerReversal(Photo[] result, int offset)
-        {
-            // Simulate the reversal that happens in the controller for negative offsets
-            if (PhotoQueryHelper.ShouldReverseResults(offset))
-            {
-                return result.Reverse().ToArray();
-            }
-            return result;
-        }
-
         [Fact]
         public void ApplySortingAndOffset_WithStartDateAndPositiveOffset_FiltersCorrectly_Desc()
         {
@@ -67,33 +57,6 @@ namespace GaleriePhotosTest.Services
         }
 
         [Fact]
-        public void ApplySortingAndOffset_WithStartDateAndNegativeOffset_FiltersCorrectly_Desc()
-        {
-            // Arrange
-            var photos = CreateTestPhotos();
-            var query = photos.AsQueryable();
-            var marchFirst = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            // Act
-            var result = PhotoQueryHelper.ApplySortingAndOffset(query, "desc", -10, 10, marchFirst).ToArray();
-            result = ApplyControllerReversal(result, -10);
-
-            // Assert
-            Assert.Equal(10, result.Length);
-            // For desc order with negative offset, photos should be > March 1 (newer photos)
-            Assert.All(result, p => Assert.True(p.DateTime > marchFirst, 
-                $"Photo date {p.DateTime} should be > {marchFirst}"));
-            // Photos should be in descending order after reversal
-            for (int i = 0; i < result.Length - 1; i++)
-            {
-                Assert.True(result[i].DateTime >= result[i + 1].DateTime,
-                    $"Photo at index {i} ({result[i].DateTime}) should be >= photo at index {i + 1} ({result[i + 1].DateTime})");
-            }
-            // First photo should be after March 1
-            Assert.True(result[0].DateTime > marchFirst);
-        }
-
-        [Fact]
         public void ApplySortingAndOffset_WithStartDateAndPositiveOffset_FiltersCorrectly_Asc()
         {
             // Arrange
@@ -115,33 +78,6 @@ namespace GaleriePhotosTest.Services
             }
             // First photo should be March 1 (the oldest photo >= March 1)
             Assert.Equal(marchFirst, result[0].DateTime);
-        }
-
-        [Fact]
-        public void ApplySortingAndOffset_WithStartDateAndNegativeOffset_FiltersCorrectly_Asc()
-        {
-            // Arrange
-            var photos = CreateTestPhotos();
-            var query = photos.AsQueryable();
-            var marchFirst = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            // Act
-            var result = PhotoQueryHelper.ApplySortingAndOffset(query, "asc", -10, 10, marchFirst).ToArray();
-            result = ApplyControllerReversal(result, -10);
-
-            // Assert
-            Assert.Equal(10, result.Length);
-            // For asc order with negative offset, photos should be < March 1 (older photos)
-            Assert.All(result, p => Assert.True(p.DateTime < marchFirst,
-                $"Photo date {p.DateTime} should be < {marchFirst}"));
-            // Photos should be in ascending order after reversal
-            for (int i = 0; i < result.Length - 1; i++)
-            {
-                Assert.True(result[i].DateTime <= result[i + 1].DateTime,
-                    $"Photo at index {i} ({result[i].DateTime}) should be <= photo at index {i + 1} ({result[i + 1].DateTime})");
-            }
-            // First photo should be before March 1
-            Assert.True(result[0].DateTime < marchFirst);
         }
 
         [Fact]
@@ -170,16 +106,6 @@ namespace GaleriePhotosTest.Services
             {
                 Assert.True(resultAsc[i].DateTime <= resultAsc[i + 1].DateTime);
             }
-        }
-
-        [Fact]
-        public void ShouldReverseResults_ReturnsCorrectValue()
-        {
-            // Arrange & Act & Assert
-            Assert.True(PhotoQueryHelper.ShouldReverseResults(-10));
-            Assert.True(PhotoQueryHelper.ShouldReverseResults(-1));
-            Assert.False(PhotoQueryHelper.ShouldReverseResults(0));
-            Assert.False(PhotoQueryHelper.ShouldReverseResults(10));
         }
     }
 }

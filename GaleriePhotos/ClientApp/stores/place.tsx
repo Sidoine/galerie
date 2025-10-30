@@ -29,7 +29,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
   const placesStore = usePlacesStore();
   const place = placeId ? placesStore.getPlace(placeId) : null;
   const container = place;
-  
+
   const getPhotoLink = useCallback(
     (photoId: number): Href => {
       return {
@@ -44,14 +44,14 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     },
     [placesStore.galleryId, placeId, order]
   );
-  
+
   const navigateToPhoto = useCallback(
     (photoId: number) => {
       router.push(getPhotoLink(photoId));
     },
     [router, getPhotoLink]
   );
-  
+
   const navigateToContainer = useCallback(() => {
     router.replace({
       pathname: "/gallery/[galleryId]/places/[placeId]",
@@ -63,12 +63,10 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     });
   }, [router, placesStore.galleryId, placeId, order]);
 
-  let childType: "places" | "none" = "none";
   let containersList: PhotoContainer[] | null = emptyPhotoContainer;
   if (place) {
     if (place.type === PlaceType.Country) {
       containersList = placesStore.getCitiesByCountry(place.id);
-      childType = "places";
     } else {
       containersList = emptyPhotoContainer;
     }
@@ -121,7 +119,7 @@ export const PlaceStoreProvider = observer(function PlaceStoreProvider({
     } else {
       router.push(`/gallery/${placesStore.galleryId}/places`);
     }
-  }, [order, place?.parentId, placeId, placesStore.galleryId, router]);
+  }, [order, place?.parentId, placesStore.galleryId, router]);
 
   const parentPlace = place?.parentId
     ? placesStore.getPlace(place.parentId)

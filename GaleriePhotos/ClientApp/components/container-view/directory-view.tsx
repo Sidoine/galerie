@@ -235,12 +235,14 @@ export const DirectoryView = observer(function DirectoryView({
 
     return items;
   }, [
-    albumRows,
-    directories,
     paginatedPhotos,
+    directories,
+    paginatedStore.isLoadingBefore,
     paginatedStore.isLoading,
     paginatedStore.hasMoreBefore,
+    paginatedStore.hasScrolledUp,
     store.childContainersHeader,
+    albumRows,
     shouldGroupPhotos,
     cols,
     groupingStrategy,
@@ -435,7 +437,7 @@ export const DirectoryView = observer(function DirectoryView({
         }
       }
     },
-    [store.container]
+    [order, store.container?.dateJumps]
   );
 
   useEffect(() => {

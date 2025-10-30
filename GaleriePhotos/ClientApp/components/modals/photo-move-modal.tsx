@@ -99,6 +99,7 @@ export const PhotoMoveModal = observer(function PhotoMoveModal({
     }
   }, [
     directories,
+    galleryStore.galleryId,
     onClose,
     onSuccess,
     photoIds,

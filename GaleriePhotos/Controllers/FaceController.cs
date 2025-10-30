@@ -235,15 +235,8 @@ namespace GaleriePhotos.Controllers
                 .Select(f => f.Photo)
                 .Distinct();
             
-            var orderedQuery = PhotoQueryHelper.ApplySortingAndOffset(query, sortOrder, offset, count, startDate);
+            var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToListAsync();
-
-            // If we used negative offset, reverse the results
-            if (PhotoQueryHelper.ShouldReverseResults(offset))
-            {
-                photos.Reverse();
-            }
-
             var result = photos.Select(p => new PhotoViewModel(p)).ToArray();
             return Ok(result);
         }

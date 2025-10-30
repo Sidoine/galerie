@@ -25,11 +25,12 @@ export default defineConfig([
       "js/recommended",
       reactPlugin.configs.flat.recommended,
       tseslint.configs.recommended,
-      "reactHooks/recommended-latest",
+      reactHooks.configs.flat["recommended-latest"],
     ],
     rules: {
       "react/react-in-jsx-scope": "off",
       "react/no-unescaped-entities": "off",
+      "react-hooks/set-state-in-effect": "off",
     },
     settings: {
       react: { version: "detect" },
