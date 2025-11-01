@@ -22,7 +22,7 @@ namespace GaleriePhotos.Services
             {
                 // Specify kind as UTC to avoid DateTime comparison errors with PostgreSQL
                 var dateWithKind = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
-                
+
                 query = sortOrder == "asc"
                     ? query.Where(p => p.DateTime >= dateWithKind)
                     : query.Where(p => p.DateTime <= dateWithKind);
@@ -35,6 +35,17 @@ namespace GaleriePhotos.Services
 
             // Apply pagination
             return orderedQuery.Skip(offset).Take(count);
+        }
+
+        public static IQueryable<Photo> ApplyRights(
+            this IQueryable<Photo> query,
+            GalleryMember galleryMember)
+        {
+            if (galleryMember.IsAdministrator)
+            {
+                return query;
+            }
+            return query.Where(x => (x.Directory.Visibility & galleryMember.DirectoryVisibility) != 0);
         }
     }
 }

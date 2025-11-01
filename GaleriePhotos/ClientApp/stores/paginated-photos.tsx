@@ -62,6 +62,7 @@ export class PaginatedPhotosStore {
       clearScrollRestoration: action,
       jumpToDate: action,
       hasScrolledUp: computed,
+      clear: action,
     });
     this.sortOrder = sortOrder;
     this.isLoading = false;
@@ -70,6 +71,15 @@ export class PaginatedPhotosStore {
     this.error = null;
     this.lastScrollOffset = 0;
     this.pendingScrollRestoration = false;
+  }
+
+  clear() {
+    this.photos.clear();
+    this.isLoading = false;
+    this.hasMore = true;
+    this.hasMoreBefore = this.startDate !== null;
+    this.error = null;
+    this.offsetFromStart = 0;
   }
 
   get hasScrolledUp(): boolean {

@@ -20,6 +20,7 @@ import { SearchStoreProvider, useSearchStore } from "@/stores/search";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { SelectedPhotosStoreProvider } from "@/stores/selected-photos";
 import HeaderMenu from "@/components/header-menu";
+import { FavoritesStoreProvider, useFavoritesStore } from "@/stores/favorites";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -31,6 +32,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
   const directoryStore = useDirectoryStore();
   const galleryStore = useGalleryStore();
   const searchStore = useSearchStore();
+  const favoritesStore = useFavoritesStore();
 
   return (
     <Drawer
@@ -134,6 +136,17 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         }}
       />
       <Drawer.Screen
+        name="favorites/index"
+        options={{
+          title: "Favoris",
+          headerTitle: () => <BreadCrumbs store={favoritesStore} />,
+          headerRight: () => <HeaderMenu store={favoritesStore} />,
+          drawerIcon: ({ color, size }) => (
+            <Icon set="mci" name="star-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Drawer.Screen
         name="face-names/[faceNameId]/photos/[photoId]"
         options={{
           title: "Photo",
@@ -232,26 +245,36 @@ const GalleryLayoutContent = observer(function LayoutContent() {
           headerShown: false,
         }}
       />
+      <Drawer.Screen
+        name="favorites/slideshow"
+        options={{
+          title: "Diaporama",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="favorites/photos/[photoId]"
+        options={{
+          title: "Photo",
+          headerShown: false,
+          drawerItemStyle: { display: "none" },
+        }}
+      />
     </Drawer>
   );
 });
 
 export default function GalleryLayout() {
-  const {
-    galleryId,
-    directoryId,
-    order,
-    faceNameId,
-    placeId,
-    query,
-  } = useGlobalSearchParams<{
-    galleryId: string;
-    directoryId?: string;
-    faceNameId?: string;
-    placeId?: string;
-    order: "date-asc" | "date-desc";
-    query?: string;
-  }>();
+  const { galleryId, directoryId, order, faceNameId, placeId, query } =
+    useGlobalSearchParams<{
+      galleryId: string;
+      directoryId?: string;
+      faceNameId?: string;
+      placeId?: string;
+      order: "date-asc" | "date-desc";
+      query?: string;
+    }>();
 
   return (
     <MeStoreProvider>
@@ -292,7 +315,12 @@ export default function GalleryLayout() {
                                 query={query}
                                 order={order}
                               >
-                                <GalleryLayoutContent />
+                                <FavoritesStoreProvider
+                                  order={order}
+                                  galleryId={Number(galleryId)}
+                                >
+                                  <GalleryLayoutContent />
+                                </FavoritesStoreProvider>
                               </SearchStoreProvider>
                             </PlaceStoreProvider>
                           </FaceNameStoreProvider>

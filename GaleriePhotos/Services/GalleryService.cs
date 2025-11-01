@@ -18,4 +18,10 @@ public class GalleryService
     {
         return await dbContext.Galleries.Include(x => x.Members).FirstOrDefaultAsync(g => g.Id == galleryId);
     }
+
+    public async Task<GalleryMember?> GetMember(int galleryId, string userId)
+    {
+        return await dbContext.GalleryMembers
+            .FirstOrDefaultAsync(m => m.GalleryId == galleryId && m.UserId == userId);
+    }
 }

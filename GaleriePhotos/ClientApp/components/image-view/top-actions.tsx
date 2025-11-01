@@ -14,6 +14,7 @@ import { PhotoContainerStore } from "@/stores/photo-container";
 import { DirectoryBulkDateModal } from "../modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "../modals/directory-bulk-location-modal";
 import { ActionMenu, ActionMenuItem } from "../action-menu";
+import { useFavoritesStore } from "@/stores/favorites";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -143,9 +144,12 @@ function TopActions({
     []
   );
 
+  const favoritesStore = useFavoritesStore();
+
   const handleToggleFavorite = useCallback(async () => {
     await photosStore.toggleFavorite(photo);
-  }, [photosStore, photo]);
+    favoritesStore.paginatedPhotosStore.clear();
+  }, [photosStore, photo, favoritesStore.paginatedPhotosStore]);
 
   const items: ActionMenuItem[] = [];
   if (membersStore.administrator) {
@@ -207,7 +211,9 @@ function TopActions({
         )}
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel={photo.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          accessibilityLabel={
+            photo.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"
+          }
           onPress={handleToggleFavorite}
           style={styles.iconButton}
         >

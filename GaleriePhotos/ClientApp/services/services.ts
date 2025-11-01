@@ -2,6 +2,7 @@ export * from "./dashboard";
 export * from "./directory";
 export * from "./directoryVisibility";
 export * from "./face";
+export * from "./favorite";
 export * from "./gallery";
 export * from "./galleryMember";
 export * from "./geocoding";
