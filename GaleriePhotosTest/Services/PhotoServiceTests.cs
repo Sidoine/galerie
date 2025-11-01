@@ -180,7 +180,7 @@ namespace GaleriePhotosTest.Services
             _db.Photos.Add(photo);
             await _db.SaveChangesAsync();
 
-            var favorite = new PhotoFavorite(photo.Id, user.Id) { Photo = photo, User = user };
+            var favorite = new PhotoFavorite(photo.Id, user.Id);
             _db.PhotoFavorites.Add(favorite);
             await _db.SaveChangesAsync();
 
@@ -235,7 +235,7 @@ namespace GaleriePhotosTest.Services
             _db.Photos.Add(photo);
             await _db.SaveChangesAsync();
 
-            var favorite = new PhotoFavorite(photo.Id, user.Id) { Photo = photo, User = user };
+            var favorite = new PhotoFavorite(photo.Id, user.Id);
             _db.PhotoFavorites.Add(favorite);
             await _db.SaveChangesAsync();
 

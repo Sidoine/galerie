@@ -13,7 +13,7 @@ namespace GaleriePhotos.Models
         }
 
         // Navigation properties
-        public required Photo Photo { get; set; }
-        public required ApplicationUser User { get; set; }
+        public Photo? Photo { get; set; }
+        public ApplicationUser? User { get; set; }
     }
 }

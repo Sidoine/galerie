@@ -785,19 +785,22 @@ namespace GaleriePhotos.Services
             }
             else
             {
-                // Add favorite
-                var appUser = await applicationDbContext.Users.FindAsync(userId);
-                var photo = await applicationDbContext.Photos.FindAsync(photoId);
-                if (appUser == null || photo == null) return false;
+                // Verify photo exists before adding favorite
+                var photoExists = await applicationDbContext.Photos.AnyAsync(p => p.Id == photoId);
+                if (!photoExists) return false;
 
-                var newFavorite = new PhotoFavorite(photoId, userId)
+                try
                 {
-                    Photo = photo,
-                    User = appUser
-                };
-                applicationDbContext.PhotoFavorites.Add(newFavorite);
-                await applicationDbContext.SaveChangesAsync();
-                return true;
+                    var newFavorite = new PhotoFavorite(photoId, userId);
+                    applicationDbContext.PhotoFavorites.Add(newFavorite);
+                    await applicationDbContext.SaveChangesAsync();
+                    return true;
+                }
+                catch (DbUpdateException)
+                {
+                    // Handle race condition or invalid user
+                    return false;
+                }
             }
         }
     }
