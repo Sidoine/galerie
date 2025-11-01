@@ -102,6 +102,14 @@ namespace Galerie.Server.Controllers
         {
             var photo = await photoService.GetPhoto(id);
             if (photo == null) return NotFound();
+            if (viewModel.Description.IsSet)
+            {
+                var descriptionValue = viewModel.Description.Value;
+                var trimmed = descriptionValue?.Trim();
+                photo.Description = string.IsNullOrWhiteSpace(trimmed)
+                    ? null
+                    : trimmed;
+            }
             await applicationDbContext.SaveChangesAsync();
             return Ok();
         }

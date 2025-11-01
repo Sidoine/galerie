@@ -107,6 +107,8 @@ export interface PhotoFull {
 
     name: string;
 
+    description: string | null;
+
     nextId: number | null;
 
     previousId: number | null;
@@ -132,6 +134,8 @@ export interface PhotoFull {
 
 export interface PhotoPatch {
     visible?: boolean | undefined;
+
+    description?: string | undefined;
 }
 
 export interface PhotoAccess {
