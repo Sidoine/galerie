@@ -145,5 +145,115 @@ namespace GaleriePhotosTest.Services
             }
             catch { }
         }
+
+        [Fact]
+        public async Task IsPhotoFavorite_ReturnsFalseWhenNotFavorited()
+        {
+            // Arrange
+            var user = new ApplicationUser { UserName = "testuser", Email = "test@example.com" };
+            _db.Users.Add(user);
+            var photo = new Photo("test.jpg") { Directory = _rootDirectory };
+            _db.Photos.Add(photo);
+            await _db.SaveChangesAsync();
+
+            var claims = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id)
+                })
+            );
+
+            // Act
+            var isFavorite = await _photoService.IsPhotoFavorite(photo.Id, claims);
+
+            // Assert
+            Assert.False(isFavorite);
+        }
+
+        [Fact]
+        public async Task IsPhotoFavorite_ReturnsTrueWhenFavorited()
+        {
+            // Arrange
+            var user = new ApplicationUser { UserName = "testuser2", Email = "test2@example.com" };
+            _db.Users.Add(user);
+            var photo = new Photo("test2.jpg") { Directory = _rootDirectory };
+            _db.Photos.Add(photo);
+            await _db.SaveChangesAsync();
+
+            var favorite = new PhotoFavorite(photo.Id, user.Id) { Photo = photo, User = user };
+            _db.PhotoFavorites.Add(favorite);
+            await _db.SaveChangesAsync();
+
+            var claims = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id)
+                })
+            );
+
+            // Act
+            var isFavorite = await _photoService.IsPhotoFavorite(photo.Id, claims);
+
+            // Assert
+            Assert.True(isFavorite);
+        }
+
+        [Fact]
+        public async Task TogglePhotoFavorite_AddsFavoriteWhenNotExists()
+        {
+            // Arrange
+            var user = new ApplicationUser { UserName = "testuser3", Email = "test3@example.com" };
+            _db.Users.Add(user);
+            var photo = new Photo("test3.jpg") { Directory = _rootDirectory };
+            _db.Photos.Add(photo);
+            await _db.SaveChangesAsync();
+
+            var claims = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id)
+                })
+            );
+
+            // Act
+            var result = await _photoService.TogglePhotoFavorite(photo.Id, claims);
+
+            // Assert
+            Assert.True(result);
+            var favorite = await _db.PhotoFavorites
+                .FirstOrDefaultAsync(pf => pf.PhotoId == photo.Id && pf.UserId == user.Id);
+            Assert.NotNull(favorite);
+        }
+
+        [Fact]
+        public async Task TogglePhotoFavorite_RemovesFavoriteWhenExists()
+        {
+            // Arrange
+            var user = new ApplicationUser { UserName = "testuser4", Email = "test4@example.com" };
+            _db.Users.Add(user);
+            var photo = new Photo("test4.jpg") { Directory = _rootDirectory };
+            _db.Photos.Add(photo);
+            await _db.SaveChangesAsync();
+
+            var favorite = new PhotoFavorite(photo.Id, user.Id) { Photo = photo, User = user };
+            _db.PhotoFavorites.Add(favorite);
+            await _db.SaveChangesAsync();
+
+            var claims = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id)
+                })
+            );
+
+            // Act
+            var result = await _photoService.TogglePhotoFavorite(photo.Id, claims);
+
+            // Assert
+            Assert.False(result);
+            var favoriteAfter = await _db.PhotoFavorites
+                .FirstOrDefaultAsync(pf => pf.PhotoId == photo.Id && pf.UserId == user.Id);
+            Assert.Null(favoriteAfter);
+        }
     }
 }
