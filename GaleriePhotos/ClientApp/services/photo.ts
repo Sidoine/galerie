@@ -40,5 +40,9 @@ export class PhotoController {
     setAccess = (id: number, viewModel: views.PhotoAccess) => {
         return this.client.fetch(`api/photos/${id}/access`, "PATCH", JSON.stringify(viewModel));
     }
+
+    toggleFavorite = (id: number) => {
+        return this.client.fetchJson<boolean>(`api/photos/${id}/favorite`, "POST", undefined);
+    }
 }
 

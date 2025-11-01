@@ -143,6 +143,10 @@ function TopActions({
     []
   );
 
+  const handleToggleFavorite = useCallback(async () => {
+    await photosStore.toggleFavorite(photo);
+  }, [photosStore, photo]);
+
   const items: ActionMenuItem[] = [];
   if (membersStore.administrator) {
     if (store.setCover) {
@@ -201,6 +205,19 @@ function TopActions({
             )}
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={photo.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          onPress={handleToggleFavorite}
+          style={styles.iconButton}
+        >
+          <Icon
+            name={photo.isFavorite ? "star" : "star-outline"}
+            set="mci"
+            size={22}
+            color={photo.isFavorite ? "#FFD700" : "#fff"}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={onDetailsToggle}
