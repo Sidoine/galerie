@@ -21,9 +21,11 @@ namespace Galerie.Server.ViewModels
 
         public PlaceShortViewModel? Place { get; set; }
 
-        public PhotoViewModel(Photo photo)
+        public bool IsFavorite { get; set; }
+
+        public PhotoViewModel(Photo photo, bool isFavorite = false)
         {
-            (Id, Name, Video, DirectoryId, PublicId, DateTime) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId, photo.PublicId.ToString(), photo.DateTime);
+            (Id, Name, Video, DirectoryId, PublicId, DateTime, IsFavorite) = (photo.Id, photo.FileName, PhotoService.IsVideo(photo), photo.DirectoryId, photo.PublicId.ToString(), photo.DateTime, isFavorite);
             Place = photo.PlaceId.HasValue
                 ? new PlaceShortViewModel(photo.PlaceId.Value, photo.Place?.Name ?? string.Empty)
                 : null;

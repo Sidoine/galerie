@@ -758,5 +758,50 @@ namespace GaleriePhotos.Services
 
             await applicationDbContext.SaveChangesAsync();
         }
+
+        public async Task<bool> IsPhotoFavorite(int photoId, ClaimsPrincipal user)
+        {
+            var userId = user.GetUserId();
+            if (userId == null) return false;
+
+            return await applicationDbContext.PhotoFavorites
+                .AnyAsync(pf => pf.PhotoId == photoId && pf.UserId == userId);
+        }
+
+        public async Task<bool> TogglePhotoFavorite(int photoId, ClaimsPrincipal user)
+        {
+            var userId = user.GetUserId();
+            if (userId == null) return false;
+
+            var favorite = await applicationDbContext.PhotoFavorites
+                .FirstOrDefaultAsync(pf => pf.PhotoId == photoId && pf.UserId == userId);
+
+            if (favorite != null)
+            {
+                // Remove favorite
+                applicationDbContext.PhotoFavorites.Remove(favorite);
+                await applicationDbContext.SaveChangesAsync();
+                return false;
+            }
+            else
+            {
+                // Verify photo exists before adding favorite
+                var photoExists = await applicationDbContext.Photos.AnyAsync(p => p.Id == photoId);
+                if (!photoExists) return false;
+
+                try
+                {
+                    var newFavorite = new PhotoFavorite(photoId, userId);
+                    applicationDbContext.PhotoFavorites.Add(newFavorite);
+                    await applicationDbContext.SaveChangesAsync();
+                    return true;
+                }
+                catch (DbUpdateException)
+                {
+                    // Handle race condition or invalid user
+                    return false;
+                }
+            }
+        }
     }
 }

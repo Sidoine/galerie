@@ -92,7 +92,8 @@ namespace Galerie.Server.Controllers
             if (images == null) return NotFound();
             var (previous, next) = GetNextAndPrevious(photo, images);
             var isPrivate = photoService.IsPrivate(photo.Directory);
-            var viewModel = new PhotoFullViewModel(photo, previous, next, isPrivate);
+            var isFavorite = await photoService.IsPhotoFavorite(id, User);
+            var viewModel = new PhotoFullViewModel(photo, previous, next, isPrivate, isFavorite);
             return Ok(viewModel);
         }
 
@@ -170,6 +171,18 @@ namespace Galerie.Server.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [Authorize]
+        [HttpPost("{id}/favorite")]
+        public async Task<ActionResult<bool>> ToggleFavorite(int id)
+        {
+            var photo = await photoService.GetPhoto(id);
+            if (photo == null) return NotFound();
+            if (!photoService.IsDirectoryVisible(User, photo.Directory)) return Forbid();
+
+            var isFavorite = await photoService.TogglePhotoFavorite(id, User);
+            return Ok(isFavorite);
         }
     }
 }

@@ -19,6 +19,7 @@ namespace GaleriePhotos.Data
         public DbSet<Place> Places { get; set; } = null!;
         public DbSet<BackgroundServiceState> BackgroundServiceStates { get; set; } = null!;
         public DbSet<GalleryRecentSearch> GalleryRecentSearches { get; set; } = null!;
+        public DbSet<PhotoFavorite> PhotoFavorites { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)
@@ -149,6 +150,25 @@ namespace GaleriePhotos.Data
                     .WithMany()
                     .HasForeignKey(e => e.CoverPhotoId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure PhotoFavorite entity
+            modelBuilder.Entity<PhotoFavorite>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Photo)
+                    .WithMany()
+                    .HasForeignKey(e => e.PhotoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Ensure a user can only favorite a photo once
+                entity.HasIndex(e => new { e.PhotoId, e.UserId }).IsUnique();
             });
         }
     }

@@ -64,6 +64,8 @@ export interface Photo {
     dateTime: string;
 
     place: PlaceShort | null;
+
+    isFavorite: boolean;
 }
 
 export interface DirectoryPatch {
@@ -126,6 +128,8 @@ export interface PhotoFull {
     faceDetectionStatus: enums.FaceDetectionStatus;
 
     directoryId: number;
+
+    isFavorite: boolean;
 
     place: PlaceShort | null;
 }

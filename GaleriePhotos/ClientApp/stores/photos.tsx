@@ -15,6 +15,7 @@ class PhotosStore {
       patchPhoto: action,
       setAccess: action,
       rotatePhoto: action,
+      toggleFavorite: action,
     });
   }
 
@@ -55,6 +56,15 @@ class PhotosStore {
     await this.photoService.rotate(photo.id, { angle });
     this.photoReloadSuffix.set(photo.publicId, Date.now());
     this.imageLoader.cache.clear();
+  }
+
+  async toggleFavorite(photo: PhotoFull) {
+    const response = await this.photoService.toggleFavorite(photo.id);
+    if (response.ok) {
+      photo.isFavorite = response.value;
+      return response.value;
+    }
+    return photo.isFavorite;
   }
 }
 
