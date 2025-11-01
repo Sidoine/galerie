@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { observer } from "mobx-react-lite";
-import { PhotoFull, PhotoPatch } from "@/services/views";
+import { Photo, PhotoFull, PhotoPatch } from "@/services/views";
 import Icon from "../Icon";
 import { theme } from "@/stores/theme";
 import AdaptiveMap from "./adaptive-map";
 import { usePhotosStore } from "@/stores/photos";
+import { DirectoryBulkDateModal } from "../modals/directory-bulk-date-modal";
+import { DirectoryBulkLocationModal } from "../modals/directory-bulk-location-modal";
 
 interface ImageDetailsProps {
   image: PhotoFull;
@@ -33,11 +35,51 @@ export const ImageDetails = observer(function ImageDetails({
   );
   const [savingDescription, setSavingDescription] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
   const normalizedCurrentDescription = (image.description ?? "").trim();
   const normalizedDraftDescription = descriptionDraft.trim();
   const hasDescriptionChanges =
     normalizedDraftDescription !== normalizedCurrentDescription;
+  const formattedDate = useMemo(() => {
+    if (!image.dateTime) return "Date inconnue";
+    const parsed = new Date(image.dateTime);
+    return Number.isFinite(parsed.getTime())
+      ? parsed.toLocaleDateString()
+      : image.dateTime;
+  }, [image.dateTime]);
+  const hasCoordinates =
+    image.latitude !== null &&
+    image.latitude !== undefined &&
+    image.longitude !== null &&
+    image.longitude !== undefined;
+  const locationText = hasCoordinates
+    ? `Lat: ${image.latitude?.toFixed(5)} / Lon: ${image.longitude?.toFixed(5)}`
+    : "Aucune localisation";
+  const locationActionLabel = hasCoordinates ? "Modifier" : "Ajouter";
+  const photoForLocationModal = useMemo<Photo>(
+    () => ({
+      id: image.id,
+      publicId: image.publicId,
+      name: image.name,
+      video: image.video,
+      directoryId: image.directoryId,
+      dateTime: image.dateTime,
+      place: image.place,
+      isFavorite: image.isFavorite,
+    }),
+    [
+      image.dateTime,
+      image.directoryId,
+      image.id,
+      image.name,
+      image.place,
+      image.publicId,
+      image.video,
+      image.isFavorite,
+    ]
+  );
 
   useEffect(() => {
     if (!editingDescription) {
@@ -51,8 +93,15 @@ export const ImageDetails = observer(function ImageDetails({
       setDescriptionDraft(image.description ?? "");
       setSavingDescription(false);
       setDescriptionError(null);
+      setDateModalVisible(false);
+      setLocationModalVisible(false);
     }
   }, [open, image.description]);
+
+  useEffect(() => {
+    setDateModalVisible(false);
+    setLocationModalVisible(false);
+  }, [image.id]);
 
   const handleStartEditing = useCallback(() => {
     setDescriptionDraft(image.description ?? "");
@@ -96,6 +145,19 @@ export const ImageDetails = observer(function ImageDetails({
     }
   }, [hasDescriptionChanges, image, normalizedDraftDescription, photosStore]);
 
+  const handleOpenDateModal = useCallback(() => {
+    setDateModalVisible(true);
+  }, []);
+  const handleCloseDateModal = useCallback(() => {
+    setDateModalVisible(false);
+  }, []);
+  const handleOpenLocationModal = useCallback(() => {
+    setLocationModalVisible(true);
+  }, []);
+  const handleCloseLocationModal = useCallback(() => {
+    setLocationModalVisible(false);
+  }, []);
+
   if (!open) return null;
   return (
     <View style={styles.overlay}>
@@ -112,12 +174,11 @@ export const ImageDetails = observer(function ImageDetails({
         </View>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.sectionCaption}>Détails</Text>
-          {image.dateTime && (
-            <DetailRow
-              icon={<Icon name="calendar" set="mci" size={18} />}
-              text={new Date(image.dateTime).toLocaleDateString()}
-            />
-          )}
+          <DetailRow
+            icon={<Icon name="calendar" set="mci" size={18} />}
+            text={formattedDate}
+            onEdit={handleOpenDateModal}
+          />
           {image.camera && (
             <DetailRow
               icon={<Icon name="camera-outline" set="mci" size={18} />}
@@ -127,6 +188,12 @@ export const ImageDetails = observer(function ImageDetails({
           <DetailRow
             icon={<Icon name="image-outline" set="mci" size={18} />}
             text={image.name}
+          />
+          <DetailRow
+            icon={<Icon name="map-marker" set="mci" size={18} />}
+            text={locationText}
+            onEdit={handleOpenLocationModal}
+            editLabel={locationActionLabel}
           />
           <Text style={styles.sectionCaption}>Description</Text>
           {editingDescription ? (
@@ -210,17 +277,11 @@ export const ImageDetails = observer(function ImageDetails({
               </TouchableOpacity>
             </View>
           )}
-          {image.latitude && image.longitude && (
+          {hasCoordinates && (
             <View style={styles.geoBox}>
-              <Text style={styles.geoText}>
-                Lat: {image.latitude.toFixed(5)}
-              </Text>
-              <Text style={styles.geoText}>
-                Lon: {image.longitude.toFixed(5)}
-              </Text>
               <AdaptiveMap
-                latitude={image.latitude}
-                longitude={image.longitude}
+                latitude={image.latitude!}
+                longitude={image.longitude!}
                 title="Photo prise ici"
                 description={image.name}
                 style={styles.map}
@@ -228,16 +289,56 @@ export const ImageDetails = observer(function ImageDetails({
             </View>
           )}
         </ScrollView>
+        {dateModalVisible && (
+          <DirectoryBulkDateModal
+            visible={dateModalVisible}
+            photoIds={[image.id]}
+            directoryPath={image.name}
+            onClose={handleCloseDateModal}
+          />
+        )}
+        {locationModalVisible && (
+          <DirectoryBulkLocationModal
+            visible={locationModalVisible}
+            photos={[photoForLocationModal]}
+            onClose={handleCloseLocationModal}
+            overwriteExisting
+          />
+        )}
       </View>
     </View>
   );
 });
 
-function DetailRow({ icon, text }: { icon: React.ReactNode; text: string }) {
+function DetailRow({
+  icon,
+  text,
+  onEdit,
+  editLabel = "Modifier",
+}: {
+  icon: React.ReactNode;
+  text: string;
+  onEdit?: () => void;
+  editLabel?: string;
+}) {
   return (
     <View style={styles.detailRow}>
       <View style={styles.detailIcon}>{icon}</View>
       <Text style={styles.detailText}>{text}</Text>
+      {onEdit && (
+        <TouchableOpacity
+          onPress={onEdit}
+          style={styles.detailActionButton}
+          accessibilityRole="button"
+        >
+          <Icon
+            name="pencil"
+            set="mci"
+            size={18}
+            color={theme.palette.textSecondary}
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -303,6 +404,11 @@ const styles = StyleSheet.create({
   detailText: {
     color: theme.palette.textPrimary,
     flexShrink: 1,
+  },
+  detailActionButton: {
+    marginLeft: theme.spacing(2),
+    paddingVertical: theme.spacing(0.5),
+    paddingHorizontal: theme.spacing(1.5),
   },
   descriptionRow: {
     flexDirection: "row",

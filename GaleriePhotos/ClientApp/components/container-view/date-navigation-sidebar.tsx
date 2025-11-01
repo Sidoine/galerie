@@ -163,13 +163,6 @@ const styles = StyleSheet.create({
     top: 80,
     bottom: 80,
     width: 120,
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
   },
   scrollView: {
     flex: 1,
@@ -182,15 +175,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginVertical: 2,
     borderRadius: 4,
-    backgroundColor: "rgba(25, 118, 210, 0.1)",
+    backgroundColor: "rgba(238, 240, 243, 0.5)",
   },
   dateItemHighlighted: {
-    backgroundColor: "rgba(25, 118, 210, 0.3)",
+    backgroundColor: "rgba(104, 117, 129, 0.5)",
   },
   dateText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#1976d2",
+    color: "black",
     textAlign: "center",
   },
   dateTextHighlighted: {
