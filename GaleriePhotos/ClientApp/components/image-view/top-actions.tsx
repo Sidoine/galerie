@@ -15,6 +15,8 @@ import { DirectoryBulkDateModal } from "../modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "../modals/directory-bulk-location-modal";
 import { ActionMenu, ActionMenuItem } from "../action-menu";
 import { useFavoritesStore } from "@/stores/favorites";
+import { PhotoMoveModal } from "../modals/photo-move-modal";
+import { useAlert } from "../alert";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -61,28 +63,21 @@ function TopActions({
   const [menuVisible, setMenuVisible] = useState(false);
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [moveModalVisible, setMoveModalVisible] = useState(false);
 
   const openMenu = useCallback(() => setMenuVisible(true), []);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
+
+  const openMoveModal = useCallback(() => {
+    closeMenu();
+    setMoveModalVisible(true);
+  }, [closeMenu]);
+  const closeMoveModal = useCallback(() => setMoveModalVisible(false), []);
 
   const handleCoverClick = useCallback(() => {
     closeMenu();
     store.setCover?.(photo.id);
   }, [closeMenu, store, photo.id]);
-
-  const handleShareVisibilityClick = useCallback(async () => {
-    closeMenu();
-    await photosStore.setAccess(photo, false);
-    directoriesStore.clearCache();
-    store.navigateToContainer();
-  }, [closeMenu, photosStore, photo, directoriesStore, store]);
-
-  const handleUnshareVisibilityClick = useCallback(async () => {
-    closeMenu();
-    await photosStore.setAccess(photo, true);
-    directoriesStore.clearCache();
-    store.navigateToContainer();
-  }, [closeMenu, photosStore, photo, directoriesStore, store]);
   const [canShare, setCanShare] = useState(false);
   useEffect(() => {
     async function checkSharingAvailability() {
@@ -151,6 +146,40 @@ function TopActions({
     favoritesStore.paginatedPhotosStore.clear();
   }, [photosStore, photo, favoritesStore.paginatedPhotosStore]);
 
+  const alert = useAlert();
+
+  const handleDeleteFromAlbum = useCallback(() => {
+    closeMenu();
+    if (!store.deletePhotosFromAlbum) {
+      return;
+    }
+
+    alert(
+      "Supprimer de l'album",
+      "Déplacer cette photo vers la racine de la galerie ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await store.deletePhotosFromAlbum?.([photo.id]);
+            } catch (error) {
+              console.error("Error deleting photo from album:", error);
+            }
+          },
+        },
+      ]
+    );
+  }, [alert, closeMenu, photo.id, store]);
+
+  const handleMoveSuccess = useCallback(() => {
+    closeMoveModal();
+    directoriesStore.clearCache();
+    store.navigateToContainer();
+  }, [closeMoveModal, directoriesStore, store]);
+
   const items: ActionMenuItem[] = [];
   if (membersStore.administrator) {
     if (store.setCover) {
@@ -162,9 +191,15 @@ function TopActions({
     items.push(
       { label: "Tourner à droite", onPress: handleRotateRight },
       { label: "Tourner à gauche", onPress: handleRotateLeft },
-      photo.private
-        ? { label: "Rendre publique", onPress: handleShareVisibilityClick }
-        : { label: "Rendre privée", onPress: handleUnshareVisibilityClick },
+      { label: "Déplacer vers un album", onPress: openMoveModal }
+    );
+    if (store.deletePhotosFromAlbum) {
+      items.push({
+        label: "Supprimer de l'album",
+        onPress: handleDeleteFromAlbum,
+      });
+    }
+    items.push(
       { label: "Changer la date", onPress: openDateModal },
       { label: "Changer la localisation", onPress: openLocationModal }
     );
@@ -256,6 +291,12 @@ function TopActions({
           overwriteExisting
         />
       )}
+      <PhotoMoveModal
+        visible={moveModalVisible}
+        photoIds={[photo.id]}
+        onClose={closeMoveModal}
+        onSuccess={handleMoveSuccess}
+      />
     </View>
   );
 }
