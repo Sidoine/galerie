@@ -17,6 +17,7 @@ import { ActionMenu, ActionMenuItem } from "../action-menu";
 import { useFavoritesStore } from "@/stores/favorites";
 import { PhotoMoveModal } from "../modals/photo-move-modal";
 import { useAlert } from "../alert";
+import { useShare } from "../modals/photo-share";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -25,28 +26,6 @@ interface TopActionsProps {
   onClose: () => void;
   photo: PhotoFull;
   store: PhotoContainerStore;
-}
-
-function getMimeTypeFromExtension(extension: string) {
-  switch (extension.toLowerCase()) {
-    case "jpg":
-    case "jpeg":
-      return "image/jpeg";
-    case "png":
-      return "image/png";
-    case "gif":
-      return "image/gif";
-    case "mp4":
-      return "video/mp4";
-    case "mov":
-      return "video/quicktime";
-    case "webm":
-      return "video/webm";
-    case "webp":
-      return "image/webp";
-    default:
-      return "application/octet-stream";
-  }
 }
 
 function TopActions({
@@ -78,42 +57,13 @@ function TopActions({
     closeMenu();
     store.setCover?.(photo.id);
   }, [closeMenu, store, photo.id]);
-  const [canShare, setCanShare] = useState(false);
-  useEffect(() => {
-    async function checkSharingAvailability() {
-      const available = await Sharing.isAvailableAsync();
-      setCanShare(available);
-    }
-    checkSharingAvailability();
-  }, []);
+
+  const [share, canShare] = useShare();
 
   const handleSystemShareClick = useCallback(async () => {
     closeMenu();
-    if (!canShare) return;
-
-    // Construction de l'URL distante de l'image (originale) via store
-    const imageUrl = photosStore.getImage(photo.publicId);
-
-    // Télécharger l'image dans un fichier temporaire (obligatoire pour expo-sharing sur mobile)
-    if (Platform.OS !== "web") {
-      const fileName = `shared-${photo.publicId}.jpg`;
-      const baseDir = Paths.cache;
-      const tmpPath = `${baseDir}${fileName}`;
-      const download = await File.downloadFileAsync(
-        imageUrl,
-        new Directory(tmpPath)
-      );
-      await Sharing.shareAsync(download.uri, {
-        dialogTitle: "Partager l'image",
-        mimeType: download.type,
-      });
-    } else {
-      await Sharing.shareAsync(imageUrl, {
-        dialogTitle: "Partager l'image",
-        mimeType: getMimeTypeFromExtension(imageUrl.split(".").pop() || "jpg"),
-      });
-    }
-  }, [canShare, closeMenu, photo.publicId, photosStore]);
+    await share(photo);
+  }, [closeMenu, photo, share]);
 
   const handleRotate = useCallback(
     async (angle: number) => {

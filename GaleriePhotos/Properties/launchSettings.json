@@ -1,28 +1,28 @@
 {
-    "iisSettings": {
-        "windowsAuthentication": false,
-        "anonymousAuthentication": true,
-        "iisExpress": {
-            "applicationUrl": "http://localhost:65029",
-            "sslPort": 44322
-        }
-    },
-    "profiles": {
-        "IIS Express": {
-            "commandName": "IISExpress",
-            "launchBrowser": true,
-            "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
-        },
-        "GaleriePhotos": {
-            "commandName": "Project",
-            "environmentVariables": {
-                "Administrator__Login": "sidoine@sidoine.net",
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "Administrator__Password": "tototo"
-            },
-            "applicationUrl": "http://*:6009"
-        }
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:65029",
+      "sslPort": 44322
     }
+  },
+  "profiles": {
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "GaleriePhotos": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "Administrator__Login": "sidoine@sidoine.net",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Administrator__Password": "tototo"
+      },
+      "applicationUrl": "http://*:6009;https://*:7009"
+    }
+  }
 }
