@@ -2677,19 +2677,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/bottom-tabs@npm:^7.5.0":
-  version: 7.5.0
-  resolution: "@react-navigation/bottom-tabs@npm:7.5.0"
+"@react-navigation/bottom-tabs@npm:^7.8.1":
+  version: 7.8.1
+  resolution: "@react-navigation/bottom-tabs@npm:7.8.1"
   dependencies:
-    "@react-navigation/elements": "npm:^2.7.0"
+    "@react-navigation/elements": "npm:^2.8.1"
     color: "npm:^4.2.3"
+    sf-symbols-typescript: "npm:^2.1.0"
   peerDependencies:
-    "@react-navigation/native": ^7.1.18
+    "@react-navigation/native": ^7.1.19
     react: ">= 18.2.0"
     react-native: "*"
     react-native-safe-area-context: ">= 4.0.0"
     react-native-screens: ">= 4.0.0"
-  checksum: 10c0/25f9913d4f56f132ab95de02792efdede45a3f0412efeb38ea862d85c48ee1fbd0889cc8ea8becda913ff2650e9c382e5d26b60b546922b2f046d9dd288e1aae
+  checksum: 10c0/5bb76ed603d778f58bcd5b78bb8cfc96dbc042a16db82e10094eca19243c3a83bc113ec5f2b7ce398dc3fcd96a468bf50d577d1912c0c522febc6f48987756fb
   languageName: node
   linkType: hard
 
@@ -5625,7 +5626,7 @@ __metadata:
   dependencies:
     "@expo/metro-runtime": "npm:^6.1.2"
     "@expo/vector-icons": "npm:^15.0.3"
-    "@react-navigation/bottom-tabs": "npm:^7.5.0"
+    "@react-navigation/bottom-tabs": "npm:^7.8.1"
     "@react-navigation/drawer": "npm:^7.6.0"
     "@react-navigation/native": "npm:^7.1.8"
     "@react-navigation/stack": "npm:^7.6.2"
