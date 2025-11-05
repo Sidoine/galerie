@@ -2848,14 +2848,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@shopify/flash-list@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@shopify/flash-list@npm:2.1.0"
+"@shopify/flash-list@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@shopify/flash-list@npm:2.2.0"
   peerDependencies:
     "@babel/runtime": "*"
     react: "*"
     react-native: "*"
-  checksum: 10c0/88f566814307838296df053aa33544cf0b268dc3574526fd4002cd73b3aa33e6cc8af3d5284b0f5eecf490cbf772078d07a0c9193b2486be9cc077eb5cb7c27d
+  checksum: 10c0/ce6bb2096abf1b826e716804106013955c145c0c37d3a277ce294eb0044047af1aeea410fd7c297cc1352b6029b853de5fca2503340f116ccd0281049290625e
   languageName: node
   linkType: hard
 
@@ -5629,7 +5629,7 @@ __metadata:
     "@react-navigation/drawer": "npm:^7.6.0"
     "@react-navigation/native": "npm:^7.1.8"
     "@react-navigation/stack": "npm:^7.6.2"
-    "@shopify/flash-list": "npm:^2.1.0"
+    "@shopify/flash-list": "npm:^2.2.0"
     "@types/leaflet": "npm:^1.9.20"
     "@types/react": "npm:~19.2.2"
     "@types/react-leaflet": "npm:^3.0.0"

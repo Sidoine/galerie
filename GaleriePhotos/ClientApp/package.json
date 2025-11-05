@@ -18,7 +18,7 @@
     "@react-navigation/drawer": "^7.6.0",
     "@react-navigation/native": "^7.1.8",
     "@react-navigation/stack": "^7.6.2",
-    "@shopify/flash-list": "^2.1.0",
+    "@shopify/flash-list": "^2.2.0",
     "@types/react-leaflet": "^3.0.0",
     "expo": "~54.0.21",
     "expo-constants": "~18.0.10",
