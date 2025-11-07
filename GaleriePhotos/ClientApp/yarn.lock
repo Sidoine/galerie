@@ -5164,13 +5164,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-server@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "expo-server@npm:1.0.2"
-  checksum: 10c0/4caba89c27a1c3b5e7e02449065d2ab20db697c7acb6eb8adc8687a5f0574d576ea5b279829a2e44351bec9144280da670284aa6183ffe1c93e7b1255c2aa468
-  languageName: node
-  linkType: hard
-
 "expo-server@npm:^1.0.3":
   version: 1.0.3
   resolution: "expo-server@npm:1.0.3"

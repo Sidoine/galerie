@@ -79,6 +79,20 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
   }, [hideControlsAfterDelay]);
 
   const goToNext = useCallback(() => {
+    // Check if we can go to next photo
+    if (currentIndex >= photos.length - 1) {
+      // We're at the last photo, don't advance
+      return;
+    }
+
+    // Load more photos when approaching the end (3 photos from the end)
+    if (
+      currentIndex >= photos.length - 3 &&
+      paginatedPhotosStore.shouldLoadMore()
+    ) {
+      paginatedPhotosStore.loadMore();
+    }
+
     // Start fade out transition
     currentOpacity.value = withTiming(0, {
       duration: 500,
@@ -91,12 +105,42 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
 
     // Change photo after a short delay
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % photos.length);
+      setCurrentIndex((prev) => Math.min(prev + 1, photos.length - 1));
       // Reset opacities for next transition
       currentOpacity.value = 1;
       nextOpacity.value = 0;
     }, 500);
-  }, [photos.length, currentOpacity, nextOpacity]);
+  }, [currentIndex, photos.length, currentOpacity, nextOpacity, paginatedPhotosStore]);
+
+  const goToPrevious = useCallback(() => {
+    // Check if we can go to previous photo
+    if (currentIndex <= 0) {
+      // We're at the first photo, don't go back
+      return;
+    }
+
+    // Load more photos when approaching the start (3 photos from the start)
+    if (
+      currentIndex <= 2 &&
+      paginatedPhotosStore.shouldLoadMoreBefore()
+    ) {
+      paginatedPhotosStore.loadMoreBefore();
+    }
+
+    // Start fade out transition
+    currentOpacity.value = withTiming(0, {
+      duration: 500,
+      easing: Easing.inOut(Easing.ease),
+    });
+
+    // Change photo after a short delay
+    setTimeout(() => {
+      setCurrentIndex((prev) => Math.max(prev - 1, 0));
+      // Reset opacities for next transition
+      currentOpacity.value = 1;
+      nextOpacity.value = 0;
+    }, 500);
+  }, [currentIndex, currentOpacity, nextOpacity, paginatedPhotosStore]);
 
   const handleInteraction = useCallback(() => {
     showControlsTemporarily();
@@ -164,6 +208,32 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
     };
   }, [showControlsTemporarily]);
 
+  // Handle keyboard navigation on web
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goToNext();
+        showControlsTemporarily();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goToPrevious();
+        showControlsTemporarily();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        handleClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [goToNext, goToPrevious, handleClose, showControlsTemporarily]);
+
   if (!currentPhoto || photos.length === 0) {
     return null;
   }
@@ -181,7 +251,7 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
             uri={imgUri}
             style={styles.media}
             onNext={goToNext}
-            onPrevious={() => {}}
+            onPrevious={goToPrevious}
           />
         ) : (
           <>
@@ -201,33 +271,60 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
         )}
       </View>
       {showControls && (
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            onPress={handleSpeedChange}
-            style={styles.speedButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityLabel={`Vitesse du diaporama: ${SPEED_LABELS[speedIndex]}`}
-            accessibilityRole="button"
-          >
-            <View style={styles.speedButtonContent}>
-              <MaterialIcons 
-                name={currentSpeed === 0 ? "pause" : "timer"} 
-                size={24} 
-                color="#fff" 
-              />
-              <Text style={styles.speedText}>{SPEED_LABELS[speedIndex]}</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleClose}
-            style={styles.closeButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityLabel="Fermer le diaporama"
-            accessibilityRole="button"
-          >
-            <MaterialIcons name="close" size={32} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <>
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              onPress={handleSpeedChange}
+              style={styles.speedButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel={`Vitesse du diaporama: ${SPEED_LABELS[speedIndex]}`}
+              accessibilityRole="button"
+            >
+              <View style={styles.speedButtonContent}>
+                <MaterialIcons 
+                  name={currentSpeed === 0 ? "pause" : "timer"} 
+                  size={24} 
+                  color="#fff" 
+                />
+                <Text style={styles.speedText}>{SPEED_LABELS[speedIndex]}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Fermer le diaporama"
+              accessibilityRole="button"
+            >
+              <MaterialIcons name="close" size={32} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          {/* Navigation arrows */}
+          {!isVideo && (
+            <>
+              {currentIndex > 0 && (
+                <TouchableOpacity
+                  style={[styles.navButton, styles.navButtonLeft]}
+                  onPress={goToPrevious}
+                  accessibilityLabel="Photo précédente"
+                  accessibilityRole="button"
+                >
+                  <MaterialIcons name="chevron-left" size={48} color="#fff" />
+                </TouchableOpacity>
+              )}
+              {currentIndex < photos.length - 1 && (
+                <TouchableOpacity
+                  style={[styles.navButton, styles.navButtonRight]}
+                  onPress={goToNext}
+                  accessibilityLabel="Photo suivante"
+                  accessibilityRole="button"
+                >
+                  <MaterialIcons name="chevron-right" size={48} color="#fff" />
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+        </>
       )}
     </Pressable>
   );
@@ -285,5 +382,19 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+  },
+  navButton: {
+    position: "absolute",
+    top: "50%",
+    transform: [{ translateY: -24 }],
+    padding: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: 24,
+  },
+  navButtonLeft: {
+    left: 16,
+  },
+  navButtonRight: {
+    right: 16,
   },
 });
