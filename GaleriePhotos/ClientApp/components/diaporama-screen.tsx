@@ -105,7 +105,7 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
 
     // Change photo after a short delay
     setTimeout(() => {
-      setCurrentIndex((prev) => Math.min(prev + 1, photos.length - 1));
+      setCurrentIndex((prev) => prev + 1);
       // Reset opacities for next transition
       currentOpacity.value = 1;
       nextOpacity.value = 0;
@@ -135,7 +135,7 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
 
     // Change photo after a short delay
     setTimeout(() => {
-      setCurrentIndex((prev) => Math.max(prev - 1, 0));
+      setCurrentIndex((prev) => prev - 1);
       // Reset opacities for next transition
       currentOpacity.value = 1;
       nextOpacity.value = 0;
