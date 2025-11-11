@@ -47,15 +47,35 @@ export default observer(function ImageView({
       photoIndex < paginatedPhotosStore.photos.length - 1
         ? paginatedPhotosStore.photos[photoIndex + 1]
         : null;
-    if (nextPhoto) navigateToPhoto(nextPhoto.id);
-  }, [navigateToPhoto, photoIndex, paginatedPhotosStore.photos]);
+    if (nextPhoto) {
+      navigateToPhoto(nextPhoto.id);
+      // Load more photos when approaching the end (3 photos from the end)
+      if (
+        photoIndex !== undefined &&
+        photoIndex >= paginatedPhotosStore.photos.length - 3 &&
+        paginatedPhotosStore.shouldLoadMore()
+      ) {
+        paginatedPhotosStore.loadMore();
+      }
+    }
+  }, [navigateToPhoto, photoIndex, paginatedPhotosStore]);
   const handlePrevious = useCallback(() => {
     const previousPhoto =
       photoIndex !== undefined && photoIndex > 0
         ? paginatedPhotosStore.photos[photoIndex - 1]
         : null;
-    if (previousPhoto) navigateToPhoto(previousPhoto.id);
-  }, [navigateToPhoto, photoIndex, paginatedPhotosStore.photos]);
+    if (previousPhoto) {
+      navigateToPhoto(previousPhoto.id);
+      // Load more photos when approaching the start (3 photos from the start)
+      if (
+        photoIndex !== undefined &&
+        photoIndex <= 2 &&
+        paginatedPhotosStore.shouldLoadMoreBefore()
+      ) {
+        paginatedPhotosStore.loadMoreBefore();
+      }
+    }
+  }, [navigateToPhoto, photoIndex, paginatedPhotosStore]);
   const handleClose = useCallback(() => {
     paginatedPhotosStore.requestScrollRestoration();
     navigateToContainer();

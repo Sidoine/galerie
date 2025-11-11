@@ -264,4 +264,75 @@ test.describe("Slideshow feature", () => {
     await page.waitForTimeout(300);
     await expect(speedButton).toHaveAccessibleName("Vitesse du diaporama: 10s");
   });
+
+  test("navigates to next photo using keyboard arrow in slideshow", async ({
+    page,
+  }) => {
+    await page.goto(`/gallery/${galleryId}/slideshow?order=date-asc`);
+
+    // Wait for slideshow to load
+    await page.waitForTimeout(1000);
+
+    // Check that we start with the first photo
+    const firstPhotoImage = page.locator('img[src*="photo-101"]');
+    await expect(firstPhotoImage).toBeVisible({ timeout: 5000 });
+
+    // Press right arrow to go to next photo
+    await page.keyboard.press("ArrowRight");
+
+    // Wait for transition
+    await page.waitForTimeout(600);
+
+    // Should show the second photo
+    const secondPhotoImage = page.locator('img[src*="photo-102"]');
+    await expect(secondPhotoImage).toBeVisible({ timeout: 5000 });
+  });
+
+  test("navigates to previous photo using keyboard arrow in slideshow", async ({
+    page,
+  }) => {
+    await page.goto(`/gallery/${galleryId}/slideshow?order=date-asc`);
+
+    // Wait for slideshow to load
+    await page.waitForTimeout(1000);
+
+    // Navigate to second photo first
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(600);
+
+    const secondPhotoImage = page.locator('img[src*="photo-102"]');
+    await expect(secondPhotoImage).toBeVisible({ timeout: 5000 });
+
+    // Press left arrow to go back to first photo
+    await page.keyboard.press("ArrowLeft");
+
+    // Wait for transition
+    await page.waitForTimeout(600);
+
+    // Should show the first photo again
+    const firstPhotoImage = page.locator('img[src*="photo-101"]');
+    await expect(firstPhotoImage).toBeVisible({ timeout: 5000 });
+  });
+
+  test("shows navigation arrows in slideshow", async ({ page }) => {
+    await page.goto(`/gallery/${galleryId}/slideshow?order=date-asc`);
+
+    // Wait for slideshow to load
+    await page.waitForTimeout(1000);
+
+    // At the first photo, only next arrow should be visible
+    const nextButton = page.getByLabel("Photo suivante");
+    await expect(nextButton).toBeVisible();
+
+    const prevButton = page.getByLabel("Photo précédente");
+    await expect(prevButton).not.toBeVisible();
+
+    // Navigate to second photo
+    await nextButton.click();
+    await page.waitForTimeout(600);
+
+    // Now both arrows should be visible
+    await expect(nextButton).toBeVisible();
+    await expect(prevButton).toBeVisible();
+  });
 });
