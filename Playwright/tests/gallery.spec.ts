@@ -246,12 +246,22 @@ test.describe("Gallery page", () => {
   test("restores scroll position after closing a photo", async ({ page }) => {
     await page.goto(`/gallery/${galleryId}`);
 
+    // Wait for photos to be fully loaded
+    const photoLinks = page.locator('a[href*="/photos/"]');
+    await expect(photoLinks.first()).toBeVisible();
+    
+    // Wait a bit for any animations/transitions to complete
+    await page.waitForTimeout(300);
+
     const targetIndex = 24;
     const targetPhoto = mockPhotos[targetIndex]!;
     const targetLocator = page.locator(`a[href*="/photos/${targetPhoto.id}"]`);
 
     await targetLocator.scrollIntoViewIfNeeded();
     await expect(targetLocator).toBeVisible();
+    
+    // Wait for scroll to stabilize
+    await page.waitForTimeout(200);
 
     const scrollBefore = await getScrollContainerInfo(targetLocator);
     expect(scrollBefore.scrollTop).toBeGreaterThan(0);
@@ -268,6 +278,10 @@ test.describe("Gallery page", () => {
     await expect(page).toHaveURL(new RegExp(`/gallery/${galleryId}(\\?.*)?$`));
 
     await expect(targetLocator).toBeVisible();
+    
+    // Wait for scroll position to stabilize after restoration
+    // The scroll restoration uses requestAnimationFrame and may need time to complete
+    await page.waitForTimeout(1000);
 
     const scrollAfter = await getScrollContainerInfo(targetLocator);
 
