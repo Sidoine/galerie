@@ -2677,9 +2677,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/bottom-tabs@npm:^7.8.1":
-  version: 7.8.1
-  resolution: "@react-navigation/bottom-tabs@npm:7.8.1"
+"@react-navigation/bottom-tabs@npm:^7.8.4":
+  version: 7.8.4
+  resolution: "@react-navigation/bottom-tabs@npm:7.8.4"
   dependencies:
     "@react-navigation/elements": "npm:^2.8.1"
     color: "npm:^4.2.3"
@@ -2690,7 +2690,7 @@ __metadata:
     react-native: "*"
     react-native-safe-area-context: ">= 4.0.0"
     react-native-screens: ">= 4.0.0"
-  checksum: 10c0/5bb76ed603d778f58bcd5b78bb8cfc96dbc042a16db82e10094eca19243c3a83bc113ec5f2b7ce398dc3fcd96a468bf50d577d1912c0c522febc6f48987756fb
+  checksum: 10c0/16a2a6fcebf4fc22d61749636ab16bc47fd7a18e4c419bc9128217514eab3cbf12e8c0b94d2df2d655bb846e769734c080e5397305d7af83a89f300cde0e95bd
   languageName: node
   linkType: hard
 
@@ -5619,7 +5619,7 @@ __metadata:
   dependencies:
     "@expo/metro-runtime": "npm:^6.1.2"
     "@expo/vector-icons": "npm:^15.0.3"
-    "@react-navigation/bottom-tabs": "npm:^7.8.1"
+    "@react-navigation/bottom-tabs": "npm:^7.8.4"
     "@react-navigation/drawer": "npm:^7.6.0"
     "@react-navigation/native": "npm:^7.1.8"
     "@react-navigation/stack": "npm:^7.6.2"
