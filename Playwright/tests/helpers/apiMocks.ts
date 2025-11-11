@@ -181,6 +181,32 @@ export async function registerApiMocks(
       return respond(route, months);
     }
 
+    const photoImageMatch = pathname.match(/^\/api\/photos\/([^/]+)\/image$/);
+    if (method === "GET" && photoImageMatch) {
+      const publicId = photoImageMatch[1];
+      // Return a 1x1 transparent PNG as a placeholder
+      const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      const buffer = Buffer.from(base64Image, "base64");
+      return route.fulfill({
+        status: 200,
+        headers: { "content-type": "image/png" },
+        body: buffer,
+      });
+    }
+
+    const photoThumbnailMatch = pathname.match(/^\/api\/photos\/([^/]+)\/thumbnail$/);
+    if (method === "GET" && photoThumbnailMatch) {
+      const publicId = photoThumbnailMatch[1];
+      // Return a 1x1 transparent PNG as a placeholder
+      const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      const buffer = Buffer.from(base64Image, "base64");
+      return route.fulfill({
+        status: 200,
+        headers: { "content-type": "image/png" },
+        body: buffer,
+      });
+    }
+
     const photoDetailsMatch = pathname.match(/^\/api\/photos\/(\d+)$/);
     if (method === "GET" && photoDetailsMatch) {
       const photoId = Number(photoDetailsMatch[1]);
