@@ -64,6 +64,13 @@ export const DiaporamaScreen = observer(function DiaporamaScreen({
     opacity: nextOpacity.value,
   }));
 
+  // Load photos when component mounts
+  useEffect(() => {
+    if (photos.length === 0 && !paginatedPhotosStore.isLoading) {
+      paginatedPhotosStore.loadMore();
+    }
+  }, [paginatedPhotosStore, photos.length]);
+
   const hideControlsAfterDelay = useCallback(() => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
