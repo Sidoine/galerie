@@ -35,7 +35,7 @@
     "expo-symbols": "~1.0.7",
     "expo-system-ui": "~6.0.8",
     "expo-video": "^3.0.14",
-    "expo-web-browser": "~15.0.7",
+    "expo-web-browser": "~15.0.9",
     "folke-service-helpers": "^3.7.0",
     "leaflet": "^1.9.4",
     "mobx": "^6.13.7",
