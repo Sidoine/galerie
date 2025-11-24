@@ -2791,6 +2791,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-navigation/elements@npm:^2.8.3":
+  version: 2.8.3
+  resolution: "@react-navigation/elements@npm:2.8.3"
+  dependencies:
+    color: "npm:^4.2.3"
+    use-latest-callback: "npm:^0.2.4"
+    use-sync-external-store: "npm:^1.5.0"
+  peerDependencies:
+    "@react-native-masked-view/masked-view": ">= 0.2.0"
+    "@react-navigation/native": ^7.1.21
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+  peerDependenciesMeta:
+    "@react-native-masked-view/masked-view":
+      optional: true
+  checksum: 10c0/95571aff9d6929fb62402e64cb6b3e659e338a1b9bae2e3c00191a94a43be4df8d1a7c907bf37bd1b8496c9d8bf113488a735ee3f3cd490ff2a664a987f2defb
+  languageName: node
+  linkType: hard
+
 "@react-navigation/native-stack@npm:^7.3.16":
   version: 7.3.27
   resolution: "@react-navigation/native-stack@npm:7.3.27"
@@ -2832,20 +2852,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/stack@npm:^7.6.3":
-  version: 7.6.3
-  resolution: "@react-navigation/stack@npm:7.6.3"
+"@react-navigation/stack@npm:^7.6.7":
+  version: 7.6.7
+  resolution: "@react-navigation/stack@npm:7.6.7"
   dependencies:
-    "@react-navigation/elements": "npm:^2.8.1"
+    "@react-navigation/elements": "npm:^2.8.3"
     color: "npm:^4.2.3"
+    use-latest-callback: "npm:^0.2.4"
   peerDependencies:
-    "@react-navigation/native": ^7.1.19
+    "@react-navigation/native": ^7.1.21
     react: ">= 18.2.0"
     react-native: "*"
     react-native-gesture-handler: ">= 2.0.0"
     react-native-safe-area-context: ">= 4.0.0"
     react-native-screens: ">= 4.0.0"
-  checksum: 10c0/5037eeaa6bc5bb628fb6ee1a82b5f7033c8165162eb8f5ce99277a8e77d56329e7d77556c72e4aff5dea70256bbd0bea7b208ab44a7e23ce40d870278c2c5c11
+  checksum: 10c0/821bbd0a587ca15fab92891426874f5dda0de9b74c6b1dd488c83fcd589c166cbddc3ce3046690441dfa02f04f5e1dc51e2651ea30b099ab097a1ebebb23ae2d
   languageName: node
   linkType: hard
 
@@ -5628,7 +5649,7 @@ __metadata:
     "@react-navigation/bottom-tabs": "npm:^7.8.4"
     "@react-navigation/drawer": "npm:^7.6.0"
     "@react-navigation/native": "npm:^7.1.8"
-    "@react-navigation/stack": "npm:^7.6.3"
+    "@react-navigation/stack": "npm:^7.6.7"
     "@shopify/flash-list": "npm:^2.2.0"
     "@types/leaflet": "npm:^1.9.20"
     "@types/react": "npm:~19.2.2"
