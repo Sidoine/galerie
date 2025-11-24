@@ -4916,7 +4916,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-constants@npm:~18.0.8, expo-constants@npm:~18.0.9":
+"expo-constants@npm:~18.0.9":
   version: 18.0.9
   resolution: "expo-constants@npm:18.0.9"
   dependencies:
@@ -5040,16 +5040,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-linking@npm:~8.0.8":
-  version: 8.0.8
-  resolution: "expo-linking@npm:8.0.8"
+"expo-linking@npm:~8.0.9":
+  version: 8.0.9
+  resolution: "expo-linking@npm:8.0.9"
   dependencies:
-    expo-constants: "npm:~18.0.8"
+    expo-constants: "npm:~18.0.10"
     invariant: "npm:^2.2.4"
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: 10c0/238a3aa5b9d8a8e64ec94e4a1b16607b247535163672f215365443eb2354f2c409be4e32236a1b75cb85f673d9008aecaad44adc129643fd759948ade424678e
+  checksum: 10c0/2633bec0202af4eafd1c8b263a3cc3606614386ceaf5550d6308fb993d0c2b2a46c0fa810e40afadd98966e5f0eee3853c5bab17a7b6b822fbd19c7ca0e03ab1
   languageName: node
   linkType: hard
 
@@ -5642,7 +5642,7 @@ __metadata:
     expo-font: "npm:~14.0.8"
     expo-haptics: "npm:~15.0.7"
     expo-image: "npm:~3.0.10"
-    expo-linking: "npm:~8.0.8"
+    expo-linking: "npm:~8.0.9"
     expo-router: "npm:~6.0.14"
     expo-secure-store: "npm:~15.0.7"
     expo-sharing: "npm:^14.0.7"
