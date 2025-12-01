@@ -17,7 +17,7 @@
     "@react-navigation/bottom-tabs": "^7.8.4",
     "@react-navigation/drawer": "^7.6.0",
     "@react-navigation/native": "^7.1.8",
-    "@react-navigation/stack": "^7.6.3",
+    "@react-navigation/stack": "^7.6.8",
     "@shopify/flash-list": "^2.2.0",
     "@types/react-leaflet": "^3.0.0",
     "expo": "~54.0.23",
