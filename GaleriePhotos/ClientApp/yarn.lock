@@ -2657,23 +2657,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/drawer@npm:^7.6.0":
-  version: 7.6.0
-  resolution: "@react-navigation/drawer@npm:7.6.0"
+"@react-navigation/drawer@npm:^7.7.9":
+  version: 7.7.9
+  resolution: "@react-navigation/drawer@npm:7.7.9"
   dependencies:
-    "@react-navigation/elements": "npm:^2.7.0"
+    "@react-navigation/elements": "npm:^2.9.2"
     color: "npm:^4.2.3"
     react-native-drawer-layout: "npm:^4.2.0"
     use-latest-callback: "npm:^0.2.4"
   peerDependencies:
-    "@react-navigation/native": ^7.1.18
+    "@react-navigation/native": ^7.1.25
     react: ">= 18.2.0"
     react-native: "*"
     react-native-gesture-handler: ">= 2.0.0"
     react-native-reanimated: ">= 2.0.0"
     react-native-safe-area-context: ">= 4.0.0"
     react-native-screens: ">= 4.0.0"
-  checksum: 10c0/d11a243bf1e6f76230836a8468930c9ea9c4275ca369ae43c64fb2ac8f03bf4c5f4f77411f7b3b9681c909cc38e7128f817a366d734282c9ca10137dbfa32862
+  checksum: 10c0/e44fb41863c343b15231b2c981c72c5cabacf263c80549f997c77a9047ea037aa1e42f5921ee255a2966d7cc7be4d2645e0c0c376a263ace4b5558f8134f8da6
   languageName: node
   linkType: hard
 
@@ -2697,46 +2697,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-navigation/elements@npm:^2.7.0":
-  version: 2.7.0
-  resolution: "@react-navigation/elements@npm:2.7.0"
-  dependencies:
-    color: "npm:^4.2.3"
-    use-latest-callback: "npm:^0.2.4"
-    use-sync-external-store: "npm:^1.5.0"
-  peerDependencies:
-    "@react-native-masked-view/masked-view": ">= 0.2.0"
-    "@react-navigation/native": ^7.1.18
-    react: ">= 18.2.0"
-    react-native: "*"
-    react-native-safe-area-context: ">= 4.0.0"
-  peerDependenciesMeta:
-    "@react-native-masked-view/masked-view":
-      optional: true
-  checksum: 10c0/4128146e14d812681deb885b4505745b2dc47596d4b15cc713fafcb95632efda61e5d1fc75dd9e4bbd503099a866fb1591e08356ebd47bde0405c7a30dc144cf
-  languageName: node
-  linkType: hard
-
-"@react-navigation/elements@npm:^2.8.1":
-  version: 2.8.1
-  resolution: "@react-navigation/elements@npm:2.8.1"
-  dependencies:
-    color: "npm:^4.2.3"
-    use-latest-callback: "npm:^0.2.4"
-    use-sync-external-store: "npm:^1.5.0"
-  peerDependencies:
-    "@react-native-masked-view/masked-view": ">= 0.2.0"
-    "@react-navigation/native": ^7.1.19
-    react: ">= 18.2.0"
-    react-native: "*"
-    react-native-safe-area-context: ">= 4.0.0"
-  peerDependenciesMeta:
-    "@react-native-masked-view/masked-view":
-      optional: true
-  checksum: 10c0/6014aaef448f57a4c84757ba12ab622bb7e8bfca90d1e678afc03a6c35a241002c6826fba5e24302f659cb26e3b81c9b93d5afec60626831fb418e0cec795d82
-  languageName: node
-  linkType: hard
-
 "@react-navigation/elements@npm:^2.8.4":
   version: 2.8.4
   resolution: "@react-navigation/elements@npm:2.8.4"
@@ -2754,6 +2714,26 @@ __metadata:
     "@react-native-masked-view/masked-view":
       optional: true
   checksum: 10c0/6ada8150d27aac531477c2c0157e2f58bfb1f22686bc5f3b25c06cf0fb001f4c6c60dce5d85c782d8bd02a04f1d9eb167e93e757ba429eff22db239fc8fb9135
+  languageName: node
+  linkType: hard
+
+"@react-navigation/elements@npm:^2.9.2":
+  version: 2.9.2
+  resolution: "@react-navigation/elements@npm:2.9.2"
+  dependencies:
+    color: "npm:^4.2.3"
+    use-latest-callback: "npm:^0.2.4"
+    use-sync-external-store: "npm:^1.5.0"
+  peerDependencies:
+    "@react-native-masked-view/masked-view": ">= 0.2.0"
+    "@react-navigation/native": ^7.1.25
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+  peerDependenciesMeta:
+    "@react-native-masked-view/masked-view":
+      optional: true
+  checksum: 10c0/2d25704b785917034b852656a71993b76b900b890abefbafa33c823e8a2f7d8d2da818819f9a38ff813445b718fb8dafdc14aa8685b33c8b7a13adef533c053a
   languageName: node
   linkType: hard
 
@@ -5563,7 +5543,7 @@ __metadata:
     "@expo/metro-runtime": "npm:^6.1.2"
     "@expo/vector-icons": "npm:^15.0.3"
     "@react-navigation/bottom-tabs": "npm:^7.8.8"
-    "@react-navigation/drawer": "npm:^7.6.0"
+    "@react-navigation/drawer": "npm:^7.7.9"
     "@react-navigation/native": "npm:^7.1.8"
     "@react-navigation/stack": "npm:^7.6.8"
     "@shopify/flash-list": "npm:^2.2.0"
