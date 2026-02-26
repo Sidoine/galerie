@@ -22,11 +22,13 @@ namespace GaleriePhotos.Controllers
     {
         private readonly ApplicationDbContext applicationDbContext;
         private readonly GalleryService galleryService;
+        private readonly PhotoService photoService;
 
-        public GalleryController(ApplicationDbContext applicationDbContext, GalleryService galleryService)
+        public GalleryController(ApplicationDbContext applicationDbContext, GalleryService galleryService, PhotoService photoService)
         {
             this.applicationDbContext = applicationDbContext;
             this.galleryService = galleryService;
+            this.photoService = photoService;
         }
 
         [HttpGet("{id}")]
@@ -84,9 +86,16 @@ namespace GaleriePhotos.Controllers
             if (gallery == null) return NotFound();
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, id);
+            if (galleryMember == null) return Forbid();
+
             var query = applicationDbContext.Photos
                 .Include(p => p.Place)
-                .Where(d => d.Directory.GalleryId == id);
+                .Where(d => d.Directory.GalleryId == id)
+                .ApplyRights(galleryMember);
 
             var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToArrayAsync();

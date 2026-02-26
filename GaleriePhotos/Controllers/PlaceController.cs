@@ -22,13 +22,15 @@ namespace Galerie.Server.Controllers
         private readonly ILogger<PlaceController> logger;
         private readonly GalleryService galleryService;
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly PhotoService photoService;
 
-        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService, ApplicationDbContext applicationDbContext)
+        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService, ApplicationDbContext applicationDbContext, PhotoService photoService)
         {
             this.placeService = placeService;
             this.logger = logger;
             this.galleryService = galleryService;
             this.applicationDbContext = applicationDbContext;
+            this.photoService = photoService;
         }
 
         [HttpGet("gallery/{galleryId}/countries")]
@@ -113,6 +115,12 @@ namespace Galerie.Server.Controllers
                 if (gallery == null) return NotFound();
                 if (!User.IsGalleryMember(gallery)) return Forbid();
 
+                var userId = User.GetUserId();
+                if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+                var galleryMember = await photoService.GetGalleryMemberAsync(userId, place.GalleryId);
+                if (galleryMember == null) return Forbid();
+
                 // Build query instead of loading all photos
                 // For countries, include photos from cities within the country
                 IQueryable<Photo> query;
@@ -129,6 +137,7 @@ namespace Galerie.Server.Controllers
                         .Where(p => p.PlaceId == id);
                 }
 
+                query = query.ApplyRights(galleryMember);
                 var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
                 var photos = await orderedQuery.ToArrayAsync();
 

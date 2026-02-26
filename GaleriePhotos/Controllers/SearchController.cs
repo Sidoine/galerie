@@ -35,11 +35,13 @@ namespace GaleriePhotos.Controllers
 
         private readonly ApplicationDbContext applicationDbContext;
         private readonly GalleryService galleryService;
+        private readonly PhotoService photoService;
 
-        public SearchController(ApplicationDbContext applicationDbContext, GalleryService galleryService)
+        public SearchController(ApplicationDbContext applicationDbContext, GalleryService galleryService, PhotoService photoService)
         {
             this.applicationDbContext = applicationDbContext;
             this.galleryService = galleryService;
+            this.photoService = photoService;
         }
 
         [HttpGet("recent")]
@@ -185,7 +187,13 @@ namespace GaleriePhotos.Controllers
                 return Forbid();
             }
 
-            var photosQuery = BuildSearchQuery(gallery, query);
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, galleryId);
+            if (galleryMember == null) return Forbid();
+
+            var photosQuery = BuildSearchQuery(gallery, query, galleryMember);
 
             var count = await photosQuery.CountAsync();
             if (count == 0)
@@ -228,7 +236,13 @@ namespace GaleriePhotos.Controllers
                 return Forbid();
             }
 
-            var photosQuery = BuildSearchQuery(gallery, query);
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, galleryId);
+            if (galleryMember == null) return Forbid();
+
+            var photosQuery = BuildSearchQuery(gallery, query, galleryMember);
 
             var orderedQuery = photosQuery.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToArrayAsync();
@@ -236,25 +250,15 @@ namespace GaleriePhotos.Controllers
             return Ok(photos.Select(p => new PhotoViewModel(p)).ToArray());
         }
 
-        private IQueryable<Photo> BuildSearchQuery(Gallery gallery, string query)
+        private IQueryable<Photo> BuildSearchQuery(Gallery gallery, string query, GalleryMember galleryMember)
         {
             var photos = applicationDbContext.Photos
                 .Include(p => p.Place)
                 .Include(p => p.Directory)
                 .Where(p => p.Directory.GalleryId == gallery.Id &&
                             p.Directory.PhotoDirectoryType != PhotoDirectoryType.Private &&
-                            p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash);
-
-            var userId = User.GetUserId();
-            if (!User.IsGalleryAdministrator(gallery) && userId != null)
-            {
-                var member = gallery.Members.FirstOrDefault(m => m.UserId == userId);
-                if (member != null && !member.IsAdministrator)
-                {
-                    var mask = member.DirectoryVisibility;
-                    photos = photos.Where(p => (p.Directory.Visibility & mask) != 0);
-                }
-            }
+                            p.Directory.PhotoDirectoryType != PhotoDirectoryType.Trash)
+                .ApplyRights(galleryMember);
 
             var tokens = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             foreach (var token in tokens)

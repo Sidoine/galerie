@@ -227,13 +227,20 @@ namespace GaleriePhotos.Controllers
             if (gallery == null) return NotFound();
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var galleryMember = await _photoService.GetGalleryMemberAsync(userId, galleryId);
+            if (galleryMember == null) return Forbid();
+
             var query = applicationDbContext.Faces
                 .Include(f => f.Photo)
                     .ThenInclude(p => p.Place)
                 .Include(f => f.FaceName)
                 .Where(f => f.FaceName != null && f.FaceNameId == id && f.Photo.Directory.GalleryId == galleryId)
                 .Select(f => f.Photo)
-                .Distinct();
+                .Distinct()
+                .ApplyRights(galleryMember);
             
             var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToListAsync();
