@@ -74,20 +74,17 @@ const ImageCard = observer(function ImageCard({
       <Link
         href={getPhotoLink(photo.id)}
         style={[styles.imageLink, { width: size, height: size }]}
-        asChild
       >
-        <View>
-          <Image
-            source={{ uri: thumbnailUri }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-          {photo.video && (
-            <View style={styles.playIcon}>
-              <Text style={styles.playText}>▶</Text>
-            </View>
-          )}
-        </View>
+        <Image
+          source={{ uri: thumbnailUri }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+        {photo.video && (
+          <View style={styles.playIcon}>
+            <Text style={styles.playText}>▶</Text>
+          </View>
+        )}
       </Link>
 
       {showCheckbox && (
