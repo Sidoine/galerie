@@ -5464,13 +5464,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-web-browser@npm:~15.0.9":
-  version: 15.0.9
-  resolution: "expo-web-browser@npm:15.0.9"
+"expo-web-browser@npm:~55.0.9":
+  version: 55.0.9
+  resolution: "expo-web-browser@npm:55.0.9"
   peerDependencies:
     expo: "*"
     react-native: "*"
-  checksum: 10c0/c865cf51b284e4de28568f6dba431a6504dbbd6d12fe6abeb0574ad83082e0e05200659b282a47b95b32952c3ea527e6a1d871dfd92df2e47ebe6e8f93e91f90
+  checksum: 10c0/51962633384bbbb52aec2f0a3793e7f5fbd9e485993508751603306dd56b73648c921c83de3ee087e93cddb7ca3e56dac02927514f8e5e37c4e87d4d2ae09cf4
   languageName: node
   linkType: hard
 
@@ -5835,7 +5835,7 @@ __metadata:
     expo-symbols: "npm:~55.0.4"
     expo-system-ui: "npm:~6.0.8"
     expo-video: "npm:^3.0.14"
-    expo-web-browser: "npm:~15.0.9"
+    expo-web-browser: "npm:~55.0.9"
     folke-service-helpers: "npm:^3.7.0"
     leaflet: "npm:^1.9.4"
     mobx: "npm:^6.13.7"
