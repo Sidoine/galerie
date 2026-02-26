@@ -3,39 +3,32 @@
 
 version: 2
 updates:
-  # NuGet packages for main project
   - package-ecosystem: "nuget"
-    directory: "/GaleriePhotos"
+    directories:
+      - "/GaleriePhotos"
+      - "/GaleriePhotosTest"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-
-  # NuGet packages for test project
-  - package-ecosystem: "nuget"
-    directory: "/GaleriePhotosTest"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+    groups:
+      patch-updates:
+        update-types: [ "patch" ]
+      minor-updates:
+        update-types: [ "minor" ]
     labels:
       - "dependencies"
       
-  # npm packages for ClientApp (main frontend)
   - package-ecosystem: "npm"
-    directory: "/GaleriePhotos/ClientApp"
+    directories:
+      - "/GaleriePhotos/ClientApp"
+      - "/Playwright"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      patch-updates:
+        update-types: [ "patch" ]
+      minor-updates:
+        update-types: [ "minor" ]
     labels:
       - "dependencies"
-      
-  # npm packages for Playwright tests
-  - package-ecosystem: "npm"
-    directory: "/Playwright"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      
