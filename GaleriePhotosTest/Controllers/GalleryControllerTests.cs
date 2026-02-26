@@ -7,10 +7,12 @@ using Galerie.Server.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Xunit;
+using GaleriePhotos;
 
 namespace GaleriePhotosTest.Controllers
 {
@@ -44,7 +46,12 @@ namespace GaleriePhotosTest.Controllers
             // Arrange
             using var context = GetInMemoryContext();
             var galleryService = new GalleryService(context);
-            var controller = new GalleryController(context, galleryService);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(context, galleryService, photoService);
 
             var userId = "user-1";
 
@@ -86,7 +93,12 @@ namespace GaleriePhotosTest.Controllers
             // Arrange
             using var context = GetInMemoryContext();
             var galleryService = new GalleryService(context);
-            var controller = new GalleryController(context, galleryService);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(context, galleryService, photoService);
 
             var userId = "user-1";
 
@@ -129,7 +141,12 @@ namespace GaleriePhotosTest.Controllers
             // Arrange
             using var context = GetInMemoryContext();
             var galleryService = new GalleryService(context);
-            var controller = new GalleryController(context, galleryService);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(context, galleryService, photoService);
 
             var userId = "user-1";
             var otherUserId = "user-2";
@@ -167,7 +184,12 @@ namespace GaleriePhotosTest.Controllers
             // Arrange
             using var context = GetInMemoryContext();
             var galleryService = new GalleryService(context);
-            var controller = new GalleryController(context, galleryService);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(context, galleryService, photoService);
 
             var userId = "user-1";
 
@@ -204,7 +226,12 @@ namespace GaleriePhotosTest.Controllers
             // Arrange
             using var context = GetInMemoryContext();
             var galleryService = new GalleryService(context);
-            var controller = new GalleryController(context, galleryService);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(context, galleryService, photoService);
 
             var userId = "user-1";
 

@@ -22,13 +22,15 @@ namespace Galerie.Server.Controllers
         private readonly ILogger<PlaceController> logger;
         private readonly GalleryService galleryService;
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly PhotoService photoService;
 
-        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService, ApplicationDbContext applicationDbContext)
+        public PlaceController(PlaceService placeService, ILogger<PlaceController> logger, GalleryService galleryService, ApplicationDbContext applicationDbContext, PhotoService photoService)
         {
             this.placeService = placeService;
             this.logger = logger;
             this.galleryService = galleryService;
             this.applicationDbContext = applicationDbContext;
+            this.photoService = photoService;
         }
 
         [HttpGet("gallery/{galleryId}/countries")]
@@ -116,8 +118,7 @@ namespace Galerie.Server.Controllers
                 var userId = User.GetUserId();
                 if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-                var galleryMember = await applicationDbContext.GalleryMembers
-                    .FirstOrDefaultAsync(m => m.GalleryId == place.GalleryId && m.UserId == userId);
+                var galleryMember = await photoService.GetGalleryMemberAsync(userId, place.GalleryId);
                 if (galleryMember == null) return Forbid();
 
                 // Build query instead of loading all photos

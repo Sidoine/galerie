@@ -22,11 +22,13 @@ namespace GaleriePhotos.Controllers
     {
         private readonly ApplicationDbContext applicationDbContext;
         private readonly GalleryService galleryService;
+        private readonly PhotoService photoService;
 
-        public GalleryController(ApplicationDbContext applicationDbContext, GalleryService galleryService)
+        public GalleryController(ApplicationDbContext applicationDbContext, GalleryService galleryService, PhotoService photoService)
         {
             this.applicationDbContext = applicationDbContext;
             this.galleryService = galleryService;
+            this.photoService = photoService;
         }
 
         [HttpGet("{id}")]
@@ -87,8 +89,7 @@ namespace GaleriePhotos.Controllers
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var galleryMember = await applicationDbContext.GalleryMembers
-                .FirstOrDefaultAsync(m => m.GalleryId == id && m.UserId == userId);
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, id);
             if (galleryMember == null) return Forbid();
 
             var query = applicationDbContext.Photos

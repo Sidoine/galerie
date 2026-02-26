@@ -35,11 +35,13 @@ namespace GaleriePhotos.Controllers
 
         private readonly ApplicationDbContext applicationDbContext;
         private readonly GalleryService galleryService;
+        private readonly PhotoService photoService;
 
-        public SearchController(ApplicationDbContext applicationDbContext, GalleryService galleryService)
+        public SearchController(ApplicationDbContext applicationDbContext, GalleryService galleryService, PhotoService photoService)
         {
             this.applicationDbContext = applicationDbContext;
             this.galleryService = galleryService;
+            this.photoService = photoService;
         }
 
         [HttpGet("recent")]
@@ -188,8 +190,7 @@ namespace GaleriePhotos.Controllers
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var galleryMember = await applicationDbContext.GalleryMembers
-                .FirstOrDefaultAsync(m => m.GalleryId == galleryId && m.UserId == userId);
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, galleryId);
             if (galleryMember == null) return Forbid();
 
             var photosQuery = BuildSearchQuery(gallery, query, galleryMember);
@@ -238,8 +239,7 @@ namespace GaleriePhotos.Controllers
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var galleryMember = await applicationDbContext.GalleryMembers
-                .FirstOrDefaultAsync(m => m.GalleryId == galleryId && m.UserId == userId);
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, galleryId);
             if (galleryMember == null) return Forbid();
 
             var photosQuery = BuildSearchQuery(gallery, query, galleryMember);

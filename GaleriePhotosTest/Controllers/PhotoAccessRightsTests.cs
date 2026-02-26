@@ -215,7 +215,12 @@ namespace GaleriePhotosTest.Controllers
         {
             // Arrange
             var galleryService = new GalleryService(_context);
-            var controller = new GalleryController(_context, galleryService)
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(_context, galleryService, photoService)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -238,7 +243,12 @@ namespace GaleriePhotosTest.Controllers
         {
             // Arrange
             var galleryService = new GalleryService(_context);
-            var controller = new GalleryController(_context, galleryService)
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new GalleryController(_context, galleryService, photoService)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -262,11 +272,17 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(_context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(_context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                new DataService());
             var controller = new PlaceController(
                 placeService,
                 new TestLogger<PlaceController>(),
                 galleryService,
-                _context)
+                _context,
+                photoService)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -374,7 +390,12 @@ namespace GaleriePhotosTest.Controllers
         {
             // Arrange
             var galleryService = new GalleryService(_context);
-            var controller = new SearchController(_context, galleryService)
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new SearchController(_context, galleryService, photoService)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -397,7 +418,12 @@ namespace GaleriePhotosTest.Controllers
         {
             // Arrange
             var galleryService = new GalleryService(_context);
-            var controller = new SearchController(_context, galleryService)
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                _context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new SearchController(_context, galleryService, photoService)
             {
                 ControllerContext = new ControllerContext
                 {

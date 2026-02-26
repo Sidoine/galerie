@@ -230,8 +230,7 @@ namespace GaleriePhotos.Controllers
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var galleryMember = await applicationDbContext.GalleryMembers
-                .FirstOrDefaultAsync(m => m.GalleryId == galleryId && m.UserId == userId);
+            var galleryMember = await _photoService.GetGalleryMemberAsync(userId, galleryId);
             if (galleryMember == null) return Forbid();
 
             var query = applicationDbContext.Faces

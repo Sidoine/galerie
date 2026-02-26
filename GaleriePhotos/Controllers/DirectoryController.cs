@@ -99,8 +99,7 @@ namespace Galerie.Server.Controllers
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var galleryMember = await applicationDbContext.GalleryMembers
-                .FirstOrDefaultAsync(m => m.GalleryId == directory.GalleryId && m.UserId == userId);
+            var galleryMember = await photoService.GetGalleryMemberAsync(userId, directory.GalleryId);
             if (galleryMember == null) return Forbid();
 
             // Use query instead of loading all photos into memory
