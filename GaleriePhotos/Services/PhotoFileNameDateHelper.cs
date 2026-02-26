@@ -26,7 +26,7 @@ namespace GaleriePhotos.Services
                     var month = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
                     var day = int.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture);
 
-                    if (year >= 1900 && year <= DateTime.UtcNow.Year + 1)
+                    if (year >= 1900 && year <= DateTime.UtcNow.Year)
                     {
                         return new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
                     }
@@ -46,7 +46,7 @@ namespace GaleriePhotos.Services
                     var month = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
                     var day = int.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture);
 
-                    if (year >= 1900 && year <= DateTime.UtcNow.Year + 1)
+                    if (year >= 1900 && year <= DateTime.UtcNow.Year)
                     {
                         return new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
                     }
