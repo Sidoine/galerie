@@ -63,20 +63,20 @@ const ImageCard = observer(function ImageCard({
       : selectedPhotosStore.count > 0;
 
   return (
-    <Pressable
-      onLongPress={handleLongPress}
-      delayLongPress={500}
-      style={[styles.container, { width: size, height: size }]}
-      // @ts-expect-error - web-only props
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <View style={[styles.container, { width: size, height: size }]}>
       <Link
         href={getPhotoLink(photo.id)}
         style={[styles.imageLink, { width: size, height: size }]}
         asChild
       >
-        <View>
+        <Pressable
+          onLongPress={handleLongPress}
+          delayLongPress={500}
+          style={[styles.imagePressable, { width: size, height: size }]}
+          // @ts-expect-error - web-only props
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           <Image
             source={{ uri: thumbnailUri }}
             style={styles.image}
@@ -87,7 +87,7 @@ const ImageCard = observer(function ImageCard({
               <Text style={styles.playText}>▶</Text>
             </View>
           )}
-        </View>
+        </Pressable>
       </Link>
 
       {showCheckbox && (
@@ -101,7 +101,7 @@ const ImageCard = observer(function ImageCard({
       )}
 
       {isSelected && <View style={styles.selectedOverlay} />}
-    </Pressable>
+    </View>
   );
 });
 
@@ -113,6 +113,10 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   imageLink: {
+    width: "100%",
+    height: "100%",
+  },
+  imagePressable: {
     width: "100%",
     height: "100%",
   },
