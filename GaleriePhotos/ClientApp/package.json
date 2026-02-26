@@ -29,7 +29,7 @@
     "expo-linking": "~8.0.9",
     "expo-router": "~6.0.20",
     "expo-secure-store": "~15.0.7",
-    "expo-sharing": "^14.0.7",
+    "expo-sharing": "^55.0.10",
     "expo-splash-screen": "~31.0.11",
     "expo-status-bar": "~3.0.9",
     "expo-symbols": "~55.0.4",
