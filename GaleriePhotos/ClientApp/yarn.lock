@@ -5418,11 +5418,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-system-ui@npm:~6.0.8":
-  version: 6.0.8
-  resolution: "expo-system-ui@npm:6.0.8"
+"expo-system-ui@npm:~55.0.9":
+  version: 55.0.9
+  resolution: "expo-system-ui@npm:55.0.9"
   dependencies:
-    "@react-native/normalize-colors": "npm:0.81.5"
+    "@react-native/normalize-colors": "npm:0.83.2"
     debug: "npm:^4.3.2"
   peerDependencies:
     expo: "*"
@@ -5431,7 +5431,7 @@ __metadata:
   peerDependenciesMeta:
     react-native-web:
       optional: true
-  checksum: 10c0/6b23524592dbe76c8bdfa519c70303d6c7fb7ec038a54bd6f9d98acf5ddb7a0ff41377ed74b1d363137e1f565df318cb74eb9ca26e6eeab5e72f54970c58cefc
+  checksum: 10c0/bfb8f75e988cb1ad1b5fe3edf4e4c01b8c44ae85200ee97ca96d8f84e3b6753d2bb173f9c99165398b152025c7bd04ac0f50c79f529374491d7b560c911fa0c2
   languageName: node
   linkType: hard
 
@@ -5826,7 +5826,7 @@ __metadata:
     expo-splash-screen: "npm:~31.0.11"
     expo-status-bar: "npm:~3.0.9"
     expo-symbols: "npm:~55.0.4"
-    expo-system-ui: "npm:~6.0.8"
+    expo-system-ui: "npm:~55.0.9"
     expo-video: "npm:^3.0.14"
     expo-web-browser: "npm:~55.0.9"
     folke-service-helpers: "npm:^3.7.0"
