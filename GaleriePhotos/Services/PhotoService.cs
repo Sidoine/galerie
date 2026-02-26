@@ -86,6 +86,17 @@ namespace GaleriePhotos.Services
         }
 
         // Get directory visibility from GalleryMember for a specific gallery
+        public async Task<GalleryMember?> GetGalleryMemberAsync(string userId, int galleryId)
+        {
+            if (string.IsNullOrEmpty(userId)) return null;
+
+            var galleryMember = await applicationDbContext.GalleryMembers
+                .FirstOrDefaultAsync(gm => gm.UserId == userId && gm.GalleryId == galleryId);
+
+            return galleryMember;
+        }
+
+        // Synchronous wrapper for backward compatibility
         private GalleryMember? GetGalleryMember(ClaimsPrincipal claimsPrincipal, int galleryId)
         {
             var userId = claimsPrincipal.GetUserId();

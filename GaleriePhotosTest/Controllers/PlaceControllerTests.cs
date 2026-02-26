@@ -8,12 +8,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Xunit;
+using GaleriePhotos;
 
 namespace GaleriePhotosTest.Controllers
 {
@@ -58,7 +60,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
             var otherUserId = "user-2";
@@ -102,7 +109,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
 
@@ -145,7 +157,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
 
@@ -202,7 +219,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
 
@@ -259,7 +281,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
 
@@ -270,7 +297,7 @@ namespace GaleriePhotosTest.Controllers
 
             var user = new ApplicationUser { Id = userId, UserName = userId };
             context.Users.Add(user);
-            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            var member = new GalleryMember(gallery.Id, userId, 1, isAdministrator: false) // DirectoryVisibility = 1 to see public directories
             {
                 Gallery = gallery,
                 User = user
@@ -299,7 +326,7 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Create photos
-            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery, GalleryId = gallery.Id };
+            var directory = new PhotoDirectory("Test", 1, null, null) { Gallery = gallery, GalleryId = gallery.Id }; // Visibility = 1 (public)
             context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
 
@@ -339,7 +366,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
 
@@ -350,7 +382,7 @@ namespace GaleriePhotosTest.Controllers
 
             var user = new ApplicationUser { Id = userId, UserName = userId };
             context.Users.Add(user);
-            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            var member = new GalleryMember(gallery.Id, userId, 1, isAdministrator: false) // DirectoryVisibility = 1 to see public directories
             {
                 Gallery = gallery,
                 User = user
@@ -379,7 +411,7 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Create photos
-            var directory = new PhotoDirectory("Test", 0, null, null) { Gallery = gallery, GalleryId = gallery.Id };
+            var directory = new PhotoDirectory("Test", 1, null, null) { Gallery = gallery, GalleryId = gallery.Id }; // Visibility = 1 (public)
             context.PhotoDirectories.Add(directory);
             await context.SaveChangesAsync();
 
@@ -418,7 +450,12 @@ namespace GaleriePhotosTest.Controllers
             var httpClient = new HttpClient();
             var placeService = new PlaceService(context, new TestLogger<PlaceService>(), httpClient);
             var galleryService = new GalleryService(context);
-            var controller = new PlaceController(placeService, logger, galleryService, context);
+            var photoService = new PhotoService(
+                Options.Create(new GalerieOptions()),
+                context,
+                new TestLogger<PhotoService>(),
+                new DataService());
+            var controller = new PlaceController(placeService, logger, galleryService, context, photoService);
 
             var userId = "user-1";
 
