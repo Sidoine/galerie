@@ -214,7 +214,7 @@ namespace GaleriePhotosTest.Controllers
             await context.SaveChangesAsync();
 
             // Create a directory for the gallery
-            var directory = new PhotoDirectory("/test", 0, null, null, PhotoDirectoryType.Regular)
+            var directory = new PhotoDirectory("/test", 1, null, null, PhotoDirectoryType.Regular) // Visibility = 1 (public)
             {
                 Gallery = gallery,
                 GalleryId = gallery.Id
@@ -241,7 +241,7 @@ namespace GaleriePhotosTest.Controllers
 
             var user = new ApplicationUser { Id = userId, UserName = userId };
             context.Users.Add(user);
-            var member = new GalleryMember(gallery.Id, userId, 0, isAdministrator: false)
+            var member = new GalleryMember(gallery.Id, userId, 1, isAdministrator: false) // DirectoryVisibility = 1 to see public directories
             {
                 Gallery = gallery,
                 User = user

@@ -96,10 +96,18 @@ namespace Galerie.Server.Controllers
                 return Forbid();
             }
 
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var galleryMember = await applicationDbContext.GalleryMembers
+                .FirstOrDefaultAsync(m => m.GalleryId == directory.GalleryId && m.UserId == userId);
+            if (galleryMember == null) return Forbid();
+
             // Use query instead of loading all photos into memory
             var query = applicationDbContext.Photos
                 .Include(p => p.Place)
-                .Where(p => p.DirectoryId == directory.Id);
+                .Where(p => p.DirectoryId == directory.Id)
+                .ApplyRights(galleryMember);
 
             var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToArrayAsync();

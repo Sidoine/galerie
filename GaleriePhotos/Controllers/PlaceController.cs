@@ -113,6 +113,13 @@ namespace Galerie.Server.Controllers
                 if (gallery == null) return NotFound();
                 if (!User.IsGalleryMember(gallery)) return Forbid();
 
+                var userId = User.GetUserId();
+                if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+                var galleryMember = await applicationDbContext.GalleryMembers
+                    .FirstOrDefaultAsync(m => m.GalleryId == place.GalleryId && m.UserId == userId);
+                if (galleryMember == null) return Forbid();
+
                 // Build query instead of loading all photos
                 // For countries, include photos from cities within the country
                 IQueryable<Photo> query;
@@ -129,6 +136,7 @@ namespace Galerie.Server.Controllers
                         .Where(p => p.PlaceId == id);
                 }
 
+                query = query.ApplyRights(galleryMember);
                 var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
                 var photos = await orderedQuery.ToArrayAsync();
 

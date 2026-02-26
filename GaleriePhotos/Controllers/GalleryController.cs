@@ -84,9 +84,17 @@ namespace GaleriePhotos.Controllers
             if (gallery == null) return NotFound();
             if (!User.IsGalleryMember(gallery)) return Forbid();
 
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var galleryMember = await applicationDbContext.GalleryMembers
+                .FirstOrDefaultAsync(m => m.GalleryId == id && m.UserId == userId);
+            if (galleryMember == null) return Forbid();
+
             var query = applicationDbContext.Photos
                 .Include(p => p.Place)
-                .Where(d => d.Directory.GalleryId == id);
+                .Where(d => d.Directory.GalleryId == id)
+                .ApplyRights(galleryMember);
 
             var orderedQuery = query.ApplySortingAndOffset(sortOrder, offset, count, startDate);
             var photos = await orderedQuery.ToArrayAsync();
