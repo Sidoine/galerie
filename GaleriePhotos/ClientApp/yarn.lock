@@ -1681,6 +1681,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@expo/metro-runtime@npm:^55.0.6":
+  version: 55.0.6
+  resolution: "@expo/metro-runtime@npm:55.0.6"
+  dependencies:
+    "@expo/log-box": "npm:55.0.7"
+    anser: "npm:^1.4.9"
+    pretty-format: "npm:^29.7.0"
+    stacktrace-parser: "npm:^0.1.10"
+    whatwg-fetch: "npm:^3.0.0"
+  peerDependencies:
+    expo: "*"
+    react: "*"
+    react-dom: "*"
+    react-native: "*"
+  peerDependenciesMeta:
+    react-dom:
+      optional: true
+  checksum: 10c0/d2eef66dc5e288bd8a0ad08ad65e5bb75aa9e56f627e7973ac3ee6d82c2502e0f01ba887a7326b64f9a35fd5794e71b8222d518368dadb593b05f25bc10e9709
+  languageName: node
+  linkType: hard
+
 "@expo/metro-runtime@npm:^6.1.2":
   version: 6.1.2
   resolution: "@expo/metro-runtime@npm:6.1.2"
@@ -5728,7 +5749,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "galeriephotos@workspace:."
   dependencies:
-    "@expo/metro-runtime": "npm:^6.1.2"
+    "@expo/metro-runtime": "npm:^55.0.6"
     "@expo/vector-icons": "npm:^15.1.1"
     "@react-navigation/bottom-tabs": "npm:^7.15.2"
     "@react-navigation/drawer": "npm:^7.9.2"
