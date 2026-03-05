@@ -5430,14 +5430,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-video@npm:^3.0.14":
-  version: 3.0.14
-  resolution: "expo-video@npm:3.0.14"
+"expo-video@npm:^55.0.10":
+  version: 55.0.10
+  resolution: "expo-video@npm:55.0.10"
   peerDependencies:
     expo: "*"
     react: "*"
     react-native: "*"
-  checksum: 10c0/3771e41341ad2c73fab7e9fa6f4b29b6409b1d4893d112ad72ffead4e70e71d4c0598ed59283c8cf61f665fa53b7ebb0dd03926da313873f023d0d6064eb8521
+  checksum: 10c0/c4d96a8b87da27633a2b14f3ffe473298b567ae993e2912bd90a8d6b49035ebc0b7adb25144da44f26e550a97307ac58799177cf8e80d527362b55d50289edbd
   languageName: node
   linkType: hard
 
@@ -5813,7 +5813,7 @@ __metadata:
     expo-status-bar: "npm:~3.0.9"
     expo-symbols: "npm:~55.0.4"
     expo-system-ui: "npm:~55.0.9"
-    expo-video: "npm:^3.0.14"
+    expo-video: "npm:^55.0.10"
     expo-web-browser: "npm:~55.0.9"
     folke-service-helpers: "npm:^3.7.0"
     leaflet: "npm:^1.9.4"

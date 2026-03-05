@@ -34,7 +34,7 @@
     "expo-status-bar": "~3.0.9",
     "expo-symbols": "~55.0.4",
     "expo-system-ui": "~55.0.9",
-    "expo-video": "^3.0.14",
+    "expo-video": "^55.0.10",
     "expo-web-browser": "~55.0.9",
     "folke-service-helpers": "^3.7.0",
     "leaflet": "^1.9.4",
