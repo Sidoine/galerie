@@ -103,7 +103,7 @@ export const DirectoryView = observer(function DirectoryView({
   const [firstVisibleDate, setFirstVisibleDate] = useState<DateJump | null>(
     null
   );
-  const hideTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
