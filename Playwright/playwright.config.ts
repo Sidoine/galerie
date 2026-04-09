@@ -1,11 +1,15 @@
 // @ts-nocheck
 /// <reference types="node" />
 import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const env =
   (globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env ?? {};
-const baseURL = env.PLAYWRIGHT_BASE_URL ?? "http://localhost:6009";
+const baseURL = env.PLAYWRIGHT_BASE_URL ?? "http://localhost:8082";
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const clientAppRoot = path.resolve(currentDir, "../GaleriePhotos/ClientApp");
 
 /**
  * Read environment variables from file.
@@ -42,7 +46,7 @@ export default defineConfig({
     trace: "on-first-retry",
 
     screenshot: "only-on-failure",
-    
+
     /* Wait for networkidle to ensure app is fully loaded */
     navigationTimeout: 30000,
     actionTimeout: 15000,
@@ -86,10 +90,16 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  /* Run the Expo web app before starting tests */
+  webServer: {
+    command: "yarn start --web --port 8082",
+    cwd: clientAppRoot,
+    env: {
+      ...env,
+      CI: "1",
+    },
+    url: baseURL,
+    reuseExistingServer: true,
+    timeout: 180000,
+  },
 });
