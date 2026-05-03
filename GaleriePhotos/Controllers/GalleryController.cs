@@ -118,7 +118,7 @@ namespace GaleriePhotos.Controllers
                     .Where(gm => gm.IsAdministrator)
                     .Select(gm => gm.User?.UserName ?? "Unknown")
                     .ToArray();
-                
+
                 return new GallerySettingsViewModel(gallery, administratorNames);
             }).ToArray();
 
@@ -165,13 +165,26 @@ namespace GaleriePhotos.Controllers
 
             // Create the gallery
             var gallery = new Gallery(
-                model.Name, 
-                model.RootDirectory, 
+                model.Name,
+                model.RootDirectory,
                 model.ThumbnailsDirectory,
                 model.DataProvider,
                 model.SeafileServerUrl,
                 model.SeafileApiKey);
             applicationDbContext.Galleries.Add(gallery);
+
+            // Create the root directory
+            var rootDirectory = new PhotoDirectory(
+                "",
+                0,
+                null,
+                null,
+                PhotoDirectoryType.Root)
+            {
+                Gallery = gallery
+            };
+            applicationDbContext.PhotoDirectories.Add(rootDirectory);
+
             await applicationDbContext.SaveChangesAsync();
 
             // Create the gallery member with administrator privileges
