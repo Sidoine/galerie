@@ -30,6 +30,15 @@ export default function SettingsLayout() {
             ),
           }}
         />
+        <Drawer.Screen
+          name="background-services"
+          options={{
+            title: "Services",
+            drawerIcon: ({ color, size }) => (
+              <Icon set="mci" name="server" color={color} size={size} />
+            ),
+          }}
+        />
       </Drawer>
     </UsersStoreProvider>
   );

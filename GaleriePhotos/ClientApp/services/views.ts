@@ -218,6 +218,46 @@ export interface PlaceFull {
     galleryId: number;
 }
 
+export interface FaceAutoNamingState {
+    lastProcessedFaceId: number | null;
+}
+
+export interface PhotoCaptureDateBackfillState {
+    lastProcessedPhotoId: number | null;
+
+    completed: boolean;
+}
+
+export interface GalleryScanStateByGallery {
+    galleryId: number;
+
+    galleryName: string | null;
+
+    lastScannedDirectoryId: number | null;
+
+    lastCompletedScanDate: string | null;
+}
+
+export interface PlaceLocationState {
+    lastProcessedPhotoId: number | null;
+}
+
+export interface PhotoGpsBackfillState {
+    lastProcessedPhotoId: number | null;
+}
+
+export interface BackgroundServicesState {
+    faceAutoNaming: FaceAutoNamingState | null;
+
+    photoCaptureDateBackfill: PhotoCaptureDateBackfillState | null;
+
+    galleryScanByGallery: GalleryScanStateByGallery[];
+
+    placeLocation: PlaceLocationState | null;
+
+    photoGpsBackfill: PhotoGpsBackfillState | null;
+}
+
 export interface AlbumWithoutGpsInfo {
     directoryId: number;
 
