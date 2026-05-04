@@ -1,6 +1,7 @@
 using GaleriePhotos.Data;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
+using System.IO;
 using Xunit;
 
 namespace GaleriePhotosTest;
@@ -12,8 +13,10 @@ namespace GaleriePhotosTest;
 public class PostgreSqlTestFixture : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgreSqlContainer;
-    
+
     public string ConnectionString { get; private set; } = string.Empty;
+    public string TestPhotosDirectory { get; private set; } = string.Empty;
+    public string TestThumbnailsDirectory { get; private set; } = string.Empty;
 
     public async Task InitializeAsync()
     {
@@ -24,19 +27,55 @@ public class PostgreSqlTestFixture : IAsyncLifetime
             .Build();
 
         await _postgreSqlContainer.StartAsync();
-        
+
         ConnectionString = _postgreSqlContainer.GetConnectionString();
-        
+
         // Create the vector extension in the database
         await CreateVectorExtensionAsync();
     }
 
     public async Task DisposeAsync()
     {
+        CleanupTestDirectories();
+
         if (_postgreSqlContainer != null)
         {
             await _postgreSqlContainer.DisposeAsync();
         }
+    }
+
+    /// <summary>
+    /// Creates unique temporary directories for a single test execution.
+    /// Existing test directories are cleaned first if needed.
+    /// </summary>
+    public void CreateTestDirectories()
+    {
+        CleanupTestDirectories();
+
+        TestPhotosDirectory = Path.Combine(Path.GetTempPath(), $"GaleriePhotos_Test_{Guid.NewGuid()}");
+        TestThumbnailsDirectory = Path.Combine(Path.GetTempPath(), $"GaleriePhotos_Thumbs_{Guid.NewGuid()}");
+
+        Directory.CreateDirectory(TestPhotosDirectory);
+        Directory.CreateDirectory(TestThumbnailsDirectory);
+    }
+
+    /// <summary>
+    /// Deletes the temporary directories created for tests.
+    /// </summary>
+    public void CleanupTestDirectories()
+    {
+        if (!string.IsNullOrWhiteSpace(TestPhotosDirectory) && Directory.Exists(TestPhotosDirectory))
+        {
+            Directory.Delete(TestPhotosDirectory, true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(TestThumbnailsDirectory) && Directory.Exists(TestThumbnailsDirectory))
+        {
+            Directory.Delete(TestThumbnailsDirectory, true);
+        }
+
+        TestPhotosDirectory = string.Empty;
+        TestThumbnailsDirectory = string.Empty;
     }
 
     /// <summary>
