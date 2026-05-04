@@ -37,6 +37,11 @@ namespace Galerie.Server.Controllers
             var directory = await photoService.GetPhotoDirectoryAsync(id);
             if (directory == null) return NotFound();
 
+            if (!await photoService.DirectoryExists(directory))
+            {
+                return NotFound();
+            }
+
             if (!photoService.IsDirectoryVisible(User, directory))
             {
                 return Forbid();
@@ -48,10 +53,10 @@ namespace Galerie.Server.Controllers
             var numberOfPhotos = await photoService.GetNumberOfPhotos(directory);
             var numberOfSubDirectories = await photoService.GetNumberOfSubDirectories(directory);
             var (min, max) = await directoryService.GetPhotoDateRangeAsync(directory);
-            
+
             // Get photo query for date jumps - do the calculation in SQL
             var photoQuery = applicationDbContext.Photos.Where(p => p.DirectoryId == directory.Id);
-            
+
             var dirVm = new DirectoryFullViewModel(directory, parentDirectory,
                 numberOfPhotos,
                 numberOfSubDirectories)
