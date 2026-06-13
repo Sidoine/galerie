@@ -13,11 +13,7 @@ import {
 import { ReactNode } from "react";
 import { PaginatedPhotosStore } from "./paginated-photos";
 
-export type PhotoContainer =
-  | Directory
-  | Place
-  | FaceName
-  | Gallery;
+export type PhotoContainer = Directory | Place | FaceName | Gallery;
 
 export type PhotoContainerFull =
   | DirectoryFull
@@ -51,6 +47,7 @@ export interface PhotoContainerStore {
   setParentCover?(containerId: number): Promise<void>;
   renameContainer?(newName: string): Promise<void>;
   deletePhotosFromAlbum?(photoIds: number[]): Promise<void>;
+  deletePhotosFromAlbumLabel?: string;
   childContainersHeader: ReactNode;
   getChildContainerLink(containerId: number): Href;
   getSlideshowLink(): Href;

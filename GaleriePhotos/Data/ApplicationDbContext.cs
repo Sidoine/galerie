@@ -20,6 +20,8 @@ namespace GaleriePhotos.Data
         public DbSet<BackgroundServiceState> BackgroundServiceStates { get; set; } = null!;
         public DbSet<GalleryRecentSearch> GalleryRecentSearches { get; set; } = null!;
         public DbSet<PhotoFavorite> PhotoFavorites { get; set; } = null!;
+        public DbSet<PhotoCollection> PhotoCollections { get; set; } = null!;
+        public DbSet<PhotoCollectionPhoto> PhotoCollectionPhotos { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options) : base(options)
@@ -169,6 +171,44 @@ namespace GaleriePhotos.Data
 
                 // Ensure a user can only favorite a photo once
                 entity.HasIndex(e => new { e.PhotoId, e.UserId }).IsUnique();
+            });
+
+            modelBuilder.Entity<PhotoCollection>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.HasOne(e => e.Gallery)
+                    .WithMany()
+                    .HasForeignKey(e => e.GalleryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.GalleryId, e.UserId, e.Name }).IsUnique();
+            });
+
+            modelBuilder.Entity<PhotoCollectionPhoto>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.PhotoCollection)
+                    .WithMany(c => c.Photos)
+                    .HasForeignKey(e => e.PhotoCollectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Photo)
+                    .WithMany()
+                    .HasForeignKey(e => e.PhotoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.PhotoCollectionId, e.PhotoId }).IsUnique();
             });
         }
     }

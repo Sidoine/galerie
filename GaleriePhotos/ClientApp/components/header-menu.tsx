@@ -15,6 +15,7 @@ import { useGalleryStore } from "@/stores/gallery";
 import { PhotoContainerStore } from "@/stores/photo-container";
 import { Link } from "expo-router";
 import { useAlert } from "./alert";
+import { CollectionAddModal } from "./modals/collection-add-modal";
 
 function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const router = useRouter();
@@ -25,6 +26,7 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     useState(false);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
+  const [collectionModalVisible, setCollectionModalVisible] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
@@ -67,6 +69,14 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     setCreateAlbumModalVisible(false);
   }, []);
 
+  const handleOpenCollectionModal = useCallback(() => {
+    setCollectionModalVisible(true);
+  }, []);
+
+  const handleCloseCollectionModal = useCallback(() => {
+    setCollectionModalVisible(false);
+  }, []);
+
   const handleMoveOrCreateAlbumSuccess = useCallback(
     (directory: Directory) => {
       router.push({
@@ -77,7 +87,7 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
         },
       });
     },
-    [galleryStore.galleryId, router]
+    [galleryStore.galleryId, router],
   );
 
   const handleClearSelection = useCallback(() => {
@@ -97,10 +107,10 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     }
 
     alert(
-      "Supprimer de l'album",
-      `Déplacer ${selectedPhotosStore.count} photo${
+      store.deletePhotosFromAlbumLabel ?? "Supprimer de l'album",
+      `${store.deletePhotosFromAlbumLabel?.startsWith("Supprimer de la collection") ? "Retirer" : "Déplacer"} ${selectedPhotosStore.count} photo${
         selectedPhotosStore.count > 1 ? "s" : ""
-      } vers la racine de la galerie ?`,
+      }${store.deletePhotosFromAlbumLabel?.startsWith("Supprimer de la collection") ? " de la collection ?" : " vers la racine de la galerie ?"}`,
       [
         {
           text: "Annuler",
@@ -119,7 +129,7 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
             }
           },
         },
-      ]
+      ],
     );
   }, [selectedPhotosStore, alert, store]);
 
@@ -129,21 +139,37 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const selectionMenuItems: ActionMenuItem[] = useMemo(() => {
     const items: ActionMenuItem[] = [
       {
-        label: "Changer la date",
-        onPress: handleOpenBulkDateModal,
-        icon: <MaterialIcons name="event" size={18} color="#1976d2" />,
-      },
-      {
-        label: "Changer la position (GPS)",
-        onPress: handleOpenBulkLocationModal,
-        icon: <MaterialIcons name="my-location" size={18} color="#1976d2" />,
+        label: "Ajouter à une collection",
+        onPress: handleOpenCollectionModal,
+        icon: (
+          <MaterialIcons
+            name="collections-bookmark"
+            size={18}
+            color="#1976d2"
+          />
+        ),
       },
     ];
 
+    if (administrator) {
+      items.push(
+        {
+          label: "Changer la date",
+          onPress: handleOpenBulkDateModal,
+          icon: <MaterialIcons name="event" size={18} color="#1976d2" />,
+        },
+        {
+          label: "Changer la position (GPS)",
+          onPress: handleOpenBulkLocationModal,
+          icon: <MaterialIcons name="my-location" size={18} color="#1976d2" />,
+        },
+      );
+    }
+
     // Only show delete option if the function is defined
-    if (store.deletePhotosFromAlbum) {
+    if (administrator && store.deletePhotosFromAlbum) {
       items.push({
-        label: "Supprimer de l'album",
+        label: store.deletePhotosFromAlbumLabel ?? "Supprimer de l'album",
         onPress: handleDeleteFromAlbum,
         icon: <MaterialIcons name="delete-outline" size={18} color="#d32f2f" />,
       });
@@ -157,6 +183,8 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
 
     return items;
   }, [
+    administrator,
+    handleOpenCollectionModal,
     handleOpenBulkDateModal,
     handleOpenBulkLocationModal,
     store.deletePhotosFromAlbum,
@@ -186,24 +214,36 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
           </TouchableOpacity>
         </Link>
       )}
-      {hasSelection && administrator && (
+      {hasSelection && (
         <View style={styles.selectionActions}>
-          <TouchableOpacity
-            onPress={handleOpenMoveModal}
-            style={styles.moveButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityLabel="Déplacer vers un album"
-          >
-            <MaterialIcons name="drive-file-move" size={24} color="#007aff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleOpenCreateAlbumModal}
-            style={styles.createAlbumButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityLabel="Créer un nouvel album"
-          >
-            <MaterialIcons name="create-new-folder" size={24} color="#007aff" />
-          </TouchableOpacity>
+          {administrator && (
+            <>
+              <TouchableOpacity
+                onPress={handleOpenMoveModal}
+                style={styles.moveButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Déplacer vers un album"
+              >
+                <MaterialIcons
+                  name="drive-file-move"
+                  size={24}
+                  color="#007aff"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleOpenCreateAlbumModal}
+                style={styles.createAlbumButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Créer un nouvel album"
+              >
+                <MaterialIcons
+                  name="create-new-folder"
+                  size={24}
+                  color="#007aff"
+                />
+              </TouchableOpacity>
+            </>
+          )}
           <TouchableOpacity
             onPress={handleOpenSelectionMenu}
             style={styles.selectionMenuButton}
@@ -244,6 +284,11 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
         photoIds={selectedPhotosStore.photoIds}
         onClose={handleCloseCreateAlbumModal}
         onSuccess={handleMoveOrCreateAlbumSuccess}
+      />
+      <CollectionAddModal
+        visible={collectionModalVisible}
+        photoIds={selectedPhotosStore.photoIds}
+        onClose={handleCloseCollectionModal}
       />
     </>
   );

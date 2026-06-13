@@ -9,6 +9,7 @@ Galerie Photos is designed to help individuals and organizations organize, manag
 ## Key Features
 
 ### 📸 Media Management
+
 - **Photo & Video Gallery**: Automatically organizes photos and videos from file system directories
 - **Thumbnail Generation**: Automatic thumbnail creation for fast browsing
 - **EXIF Data Extraction**: Reads camera information, date/time, GPS coordinates from image metadata
@@ -16,30 +17,35 @@ Galerie Photos is designed to help individuals and organizations organize, manag
 - **Video Support**: Video thumbnail generation and playback using FFmpeg
 
 ### 🤖 AI-Powered Features
+
 - **Face Detection**: Automatic face detection in photos using AI models
 - **Face Recognition**: Identify and group photos by detected faces
 - **Face Naming**: Assign names to detected faces for easy photo searching
 - **Smart Organization**: Browse photos by recognized people
 
 ### 👥 Multi-User Support
+
 - **User Authentication**: Secure login system with ASP.NET Core Identity
 - **Gallery Sharing**: Control photo visibility and sharing permissions
 - **Member Management**: Invite users to specific galleries with role-based access
 - **Privacy Controls**: Mark photos as private or public
 
 ### 🌐 Modern Interface
+
 - **Mobile-Responsive**: Built with React Native and Expo for cross-platform support
 - **Progressive Web App**: Works seamlessly on desktop and mobile devices
 - **Touch-Friendly**: Intuitive touch gestures for mobile browsing
 - **Real-time Updates**: Live updates using modern web technologies
 
 ### 🗄️ Flexible Storage
+
 - **File System Provider**: Direct access to local file system directories
 - **Seafile Integration**: Support for Seafile cloud storage as data provider
 - **Multiple Galleries**: Manage multiple separate photo collections
 - **Configurable Paths**: Customize root directories and thumbnail storage locations
 
 ### 🗺️ Location Features
+
 - **GPS Mapping**: Display photo locations on interactive maps
 - **Location-based Browsing**: Find photos by geographic location
 - **EXIF GPS Extraction**: Automatic location detection from photo metadata
@@ -48,6 +54,7 @@ Galerie Photos is designed to help individuals and organizations organize, manag
 - **Duplicate Management**: Built-in tool to merge duplicate places (via API endpoint)
 
 ### 🔧 Technical Features
+
 - **REST API**: Comprehensive RESTful API for all operations
 - **Real-time Processing**: Background services for face detection and media processing
 - **Database Storage**: PostgreSQL for metadata and user management
@@ -56,7 +63,7 @@ Galerie Photos is designed to help individuals and organizations organize, manag
 
 ## Architecture
 
-- **Backend**: .NET 9 ASP.NET Core Web API
+- **Backend**: .NET 10 ASP.NET Core Web API
 - **Frontend**: React Native with Expo framework
 - **Database**: PostgreSQL with Entity Framework Core
 - **AI/ML**: FaceAiSharp for face detection and recognition
@@ -71,7 +78,7 @@ Galerie Photos is designed to help individuals and organizations organize, manag
 
 Before installing Galerie Photos, ensure you have the following installed:
 
-- **.NET 9 SDK** - [Download from Microsoft](https://dotnet.microsoft.com/download/dotnet/9.0)
+- **.NET 10 SDK** - [Download from Microsoft](https://dotnet.microsoft.com/download/dotnet/10.0)
 - **Node.js 20.x or later** - [Download from nodejs.org](https://nodejs.org/)
 - **Yarn 4.5.3** - Installed via Corepack (comes with Node.js)
 - **PostgreSQL** - [Download from postgresql.org](https://www.postgresql.org/downloads/)
@@ -80,25 +87,29 @@ Before installing Galerie Photos, ensure you have the following installed:
 ### Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/Sidoine/galerie.git
    cd galerie
    ```
 
 2. **Setup the database**
+
    ```bash
    # Create a PostgreSQL database named 'galerie'
    createdb galerie
    ```
 
 3. **Configure the application**
+
    ```bash
    cd GaleriePhotos
    # Copy and edit the configuration file
    cp appsettings.json appsettings.Development.json
    ```
-   
+
    Edit `appsettings.Development.json` and update the connection string:
+
    ```json
    {
      "ConnectionStrings": {
@@ -108,16 +119,19 @@ Before installing Galerie Photos, ensure you have the following installed:
    ```
 
 4. **Install backend dependencies**
+
    ```bash
    dotnet restore
    ```
 
 5. **Setup the database schema**
+
    ```bash
    dotnet ef database update
    ```
 
 6. **Install frontend dependencies**
+
    ```bash
    cd ClientApp
    corepack enable
@@ -125,11 +139,12 @@ Before installing Galerie Photos, ensure you have the following installed:
    ```
 
 7. **Run the application**
+
    ```bash
    # From the GaleriePhotos directory
    dotnet run
    ```
-   
+
    The application will be available at `https://localhost:5001` or `http://localhost:5000`
 
 ### Docker Deployment
@@ -137,6 +152,7 @@ Before installing Galerie Photos, ensure you have the following installed:
 For production deployment using Docker:
 
 1. **Build the Docker image**
+
    ```bash
    docker build -t galerie .
    ```
@@ -215,10 +231,11 @@ The face recognition system provides advanced AI-powered features:
 - **Smart Search**: Find all photos containing specific individuals
 
 Access face features through:
+
 - Face names list: `/g/:galleryId/face-names`
 - Photos by face: `/g/:galleryId/face-names/:faceNameId`
 - API endpoint: `GET /api/gallery/{galleryId}/face-names/{id}/photos`
-
+
 ## Contributing
 
 1. Fork the repository

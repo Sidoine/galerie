@@ -1,5 +1,49 @@
 import * as enums from "./enums";
 
+export interface PhotoCollection {
+    id: number;
+
+    name: string;
+
+    photoCount: number;
+}
+
+export interface PhotoCollectionCreate {
+    name: string;
+}
+
+export interface PhotoCollectionAddPhotos {
+    photoIds: number[];
+}
+
+export interface PhotoCollectionRemovePhotos {
+    photoIds: number[];
+}
+
+export interface PlaceShort {
+    id: number;
+
+    name: string;
+}
+
+export interface Photo {
+    id: number;
+
+    publicId: string;
+
+    name: string;
+
+    video: boolean;
+
+    directoryId: number;
+
+    dateTime: string;
+
+    place: PlaceShort | null;
+
+    isFavorite: boolean;
+}
+
 export interface Directory {
     id: number;
 
@@ -42,30 +86,6 @@ export interface DirectoryFull {
     numberOfPhotos: number;
 
     numberOfSubDirectories: number;
-}
-
-export interface PlaceShort {
-    id: number;
-
-    name: string;
-}
-
-export interface Photo {
-    id: number;
-
-    publicId: string;
-
-    name: string;
-
-    video: boolean;
-
-    directoryId: number;
-
-    dateTime: string;
-
-    place: PlaceShort | null;
-
-    isFavorite: boolean;
 }
 
 export interface DirectoryPatch {

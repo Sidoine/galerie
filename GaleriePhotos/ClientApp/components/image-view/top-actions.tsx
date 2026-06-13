@@ -18,6 +18,7 @@ import { useFavoritesStore } from "@/stores/favorites";
 import { PhotoMoveModal } from "../modals/photo-move-modal";
 import { useAlert } from "../alert";
 import { useShare } from "../modals/photo-share";
+import { CollectionAddModal } from "../modals/collection-add-modal";
 
 interface TopActionsProps {
   onDetailsToggle: () => void;
@@ -43,6 +44,7 @@ function TopActions({
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
+  const [collectionModalVisible, setCollectionModalVisible] = useState(false);
 
   const openMenu = useCallback(() => setMenuVisible(true), []);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
@@ -52,6 +54,15 @@ function TopActions({
     setMoveModalVisible(true);
   }, [closeMenu]);
   const closeMoveModal = useCallback(() => setMoveModalVisible(false), []);
+
+  const openCollectionModal = useCallback(() => {
+    closeMenu();
+    setCollectionModalVisible(true);
+  }, [closeMenu]);
+  const closeCollectionModal = useCallback(
+    () => setCollectionModalVisible(false),
+    [],
+  );
 
   const handleCoverClick = useCallback(() => {
     closeMenu();
@@ -70,7 +81,7 @@ function TopActions({
       closeMenu();
       await photosStore.rotatePhoto(photo, angle);
     },
-    [closeMenu, photosStore, photo]
+    [closeMenu, photosStore, photo],
   );
   const handleRotateLeft = useCallback(() => handleRotate(270), [handleRotate]);
   const handleRotateRight = useCallback(() => handleRotate(90), [handleRotate]);
@@ -86,7 +97,7 @@ function TopActions({
   const closeDateModal = useCallback(() => setDateModalVisible(false), []);
   const closeLocationModal = useCallback(
     () => setLocationModalVisible(false),
-    []
+    [],
   );
 
   const favoritesStore = useFavoritesStore();
@@ -105,8 +116,10 @@ function TopActions({
     }
 
     alert(
-      "Supprimer de l'album",
-      "Déplacer cette photo vers la racine de la galerie ?",
+      store.deletePhotosFromAlbumLabel ?? "Supprimer de l'album",
+      store.deletePhotosFromAlbumLabel?.startsWith("Supprimer de la collection")
+        ? "Retirer cette photo de la collection ?"
+        : "Déplacer cette photo vers la racine de la galerie ?",
       [
         { text: "Annuler", style: "cancel" },
         {
@@ -120,7 +133,7 @@ function TopActions({
             }
           },
         },
-      ]
+      ],
     );
   }, [alert, closeMenu, photo.id, store]);
 
@@ -141,19 +154,23 @@ function TopActions({
     items.push(
       { label: "Tourner à droite", onPress: handleRotateRight },
       { label: "Tourner à gauche", onPress: handleRotateLeft },
-      { label: "Déplacer vers un album", onPress: openMoveModal }
+      { label: "Déplacer vers un album", onPress: openMoveModal },
     );
     if (store.deletePhotosFromAlbum) {
       items.push({
-        label: "Supprimer de l'album",
+        label: store.deletePhotosFromAlbumLabel ?? "Supprimer de l'album",
         onPress: handleDeleteFromAlbum,
       });
     }
     items.push(
       { label: "Changer la date", onPress: openDateModal },
-      { label: "Changer la localisation", onPress: openLocationModal }
+      { label: "Changer la localisation", onPress: openLocationModal },
     );
   }
+  items.push({
+    label: "Ajouter à une collection",
+    onPress: openCollectionModal,
+  });
   if (canShare) {
     items.push({ label: "Partager...", onPress: handleSystemShareClick });
   }
@@ -246,6 +263,11 @@ function TopActions({
         photoIds={[photo.id]}
         onClose={closeMoveModal}
         onSuccess={handleMoveSuccess}
+      />
+      <CollectionAddModal
+        visible={collectionModalVisible}
+        photoIds={[photo.id]}
+        onClose={closeCollectionModal}
       />
     </View>
   );

@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,13 +26,19 @@ namespace GaleriePhotos
                 return;
             }
 
-            IWebHost webHost = CreateWebHostBuilder(args).Build();
+            var builder = CreateWebApplicationBuilder(args);
+            var app = builder.Build();
 
-            using (var scope = webHost.Services.CreateScope())
+            // Configure the app using Startup.Configure
+            var startup = new Startup(builder.Configuration);
+            startup.Configure(app, app.Environment);
+
+            using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
 
-                try { 
+                try
+                {
                     var seedingService = services.GetRequiredService<SeedingService>();
                     await seedingService.Seed();
                 }
@@ -59,16 +63,17 @@ namespace GaleriePhotos
                     }
                 }
             }
-            webHost.Run();
+            app.Run();
         }
 
         private static void GenerateTypescriptServicesOnly(string[] args)
         {
             Console.WriteLine("Generating TypeScript services...");
-            
-            IWebHost webHost = CreateWebHostBuilder(args).Build();
 
-            using (var scope = webHost.Services.CreateScope())
+            var builder = CreateWebApplicationBuilder(args);
+            var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
 
@@ -87,22 +92,18 @@ namespace GaleriePhotos
             }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        public static WebApplicationBuilder CreateWebApplicationBuilder(string[] args)
         {
-            var builder = WebHost.CreateDefaultBuilder(args);
+            var builder = WebApplication.CreateBuilder(args);
             string? port = Environment.GetEnvironmentVariable("PORT");
             if (port != null)
             {
-                builder.UseUrls($"http://*:{port}");
+                builder.Configuration["ASPNETCORE_URLS"] = $"http://*:{port}";
             }
-            builder.UseStartup<Startup>();
-            builder.ConfigureAppConfiguration((hostContext, builder) =>
-            {
-                //if (hostContext.HostingEnvironment.IsDevelopment())
-                //{
-                //    builder.AddUserSecrets<Program>();
-                //}
-            });
+
+            var startup = new Startup(builder.Configuration);
+            startup.ConfigureServices(builder.Services);
+
             return builder;
         }
 

@@ -1,4 +1,5 @@
 export * from "./backgroundService";
+export * from "./collection";
 export * from "./dashboard";
 export * from "./directory";
 export * from "./directoryVisibility";

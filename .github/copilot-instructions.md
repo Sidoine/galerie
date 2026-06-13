@@ -4,16 +4,16 @@
 
 Galerie Photos is a video/photo gallery application that serves media files from the local file system, where the directory structure represents albums. It consists of:
 
-- **Backend**: C#/.NET 9 ASP.NET Core web API
+- **Backend**: C#/.NET 10 ASP.NET Core web API
 - **Frontend**: TypeScript React application built with Vite
 - **Database**: PostgreSQL for metadata storage
 - **File Storage**: Local file system for media files and thumbnails
 
 ## Architecture
 
-### Backend (C#/.NET 9)
+### Backend (C#/.NET 10)
 
-- **Framework**: ASP.NET Core 9.0 with Entity Framework Core
+- **Framework**: ASP.NET Core 10.0 with Entity Framework Core
 - **Database**: PostgreSQL via Npgsql provider
 - **Authentication**: ASP.NET Core Identity
 - **Image Processing**: SixLabors.ImageSharp for image manipulation
@@ -45,7 +45,7 @@ Galerie Photos is a video/photo gallery application that serves media files from
 
 ### Prerequisites
 
-- .NET 9 SDK
+- .NET 10 SDK
 - Node.js 20.x
 - Yarn 4.5.3 (via Corepack)
 - PostgreSQL database

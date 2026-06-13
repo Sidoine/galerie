@@ -21,6 +21,10 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { SelectedPhotosStoreProvider } from "@/stores/selected-photos";
 import HeaderMenu from "@/components/header-menu";
 import { FavoritesStoreProvider, useFavoritesStore } from "@/stores/favorites";
+import {
+  CollectionsListStoreProvider,
+  useCollectionsListStore,
+} from "@/stores/collections-list";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -33,6 +37,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
   const galleryStore = useGalleryStore();
   const searchStore = useSearchStore();
   const favoritesStore = useFavoritesStore();
+  const collectionsListStore = useCollectionsListStore();
 
   return (
     <Drawer
@@ -261,6 +266,38 @@ const GalleryLayoutContent = observer(function LayoutContent() {
           drawerItemStyle: { display: "none" },
         }}
       />
+      <Drawer.Screen
+        name="collections/index"
+        options={{
+          title: "Collections",
+          drawerIcon: ({ color, size }) => (
+            <Icon set="mci" name="folder-heart" color={color} size={size} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="collections/[collectionId]/index"
+        options={{
+          title: "Collection",
+          drawerItemStyle: { display: "none" },
+        }}
+      />
+      <Drawer.Screen
+        name="collections/[collectionId]/photos/[photoId]"
+        options={{
+          title: "Photo",
+          headerShown: false,
+          drawerItemStyle: { display: "none" },
+        }}
+      />
+      <Drawer.Screen
+        name="collections/[collectionId]/slideshow"
+        options={{
+          title: "Diaporama",
+          drawerItemStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
     </Drawer>
   );
 });
@@ -319,7 +356,11 @@ export default function GalleryLayout() {
                                   order={order}
                                   galleryId={Number(galleryId)}
                                 >
-                                  <GalleryLayoutContent />
+                                  <CollectionsListStoreProvider
+                                    galleryId={Number(galleryId)}
+                                  >
+                                    <GalleryLayoutContent />
+                                  </CollectionsListStoreProvider>
                                 </FavoritesStoreProvider>
                               </SearchStoreProvider>
                             </PlaceStoreProvider>
