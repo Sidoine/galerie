@@ -29,6 +29,12 @@ namespace GaleriePhotos
             var builder = CreateWebApplicationBuilder(args);
             var app = builder.Build();
 
+            string? port = Environment.GetEnvironmentVariable("PORT");
+            if (port != null)
+            {
+                app.Urls.Add($"http://*:{port}");
+            }
+
             // Configure the app using Startup.Configure
             var startup = new Startup(builder.Configuration);
             startup.Configure(app, app.Environment);
@@ -95,11 +101,6 @@ namespace GaleriePhotos
         public static WebApplicationBuilder CreateWebApplicationBuilder(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            string? port = Environment.GetEnvironmentVariable("PORT");
-            if (port != null)
-            {
-                builder.Configuration["ASPNETCORE_URLS"] = $"http://*:{port}";
-            }
 
             var startup = new Startup(builder.Configuration);
             startup.ConfigureServices(builder.Services);

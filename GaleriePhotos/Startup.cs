@@ -51,7 +51,11 @@ namespace GaleriePhotos
                         connectionString = $"Host={server};Port={port};User ID={userName};Password={password};Database={database}";
                     }
                 }
-                options.UseNpgsql(connectionString, x => x.UseVector());
+                options.UseNpgsql(connectionString, x =>
+                {
+                    x.UseVector();
+                    x.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorCodesToAdd: null);
+                });
             });
 
             services.AddIdentityApiEndpoints<ApplicationUser>(options =>
@@ -98,7 +102,7 @@ namespace GaleriePhotos
             services.AddHostedService<PhotoCaptureDateBackfillBackgroundService>();
             services.AddHostedService<GalleryScanBackgroundService>();
             services.AddHostedService<PhotoGpsBackfillBackgroundService>();
-            
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(Policies.Administrator, policy => policy.RequireClaim(Claims.Administrator, true.ToString()));
