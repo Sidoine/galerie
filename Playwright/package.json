@@ -2,7 +2,7 @@
   "name": "galerie-playwright",
   "packageManager": "yarn@4.9.2",
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^25.3.1",
     "typescript": "^5.9.3"
   },
