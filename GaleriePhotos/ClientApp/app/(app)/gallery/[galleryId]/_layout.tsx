@@ -26,7 +26,6 @@ import { SelectedPhotosStoreProvider } from "@/stores/selected-photos";
 import HeaderMenu from "@/components/header-menu";
 import { FavoritesStoreProvider, useFavoritesStore } from "@/stores/favorites";
 import { CollectionsListStoreProvider } from "@/stores/collections-list";
-import { useEffect, useRef } from "react";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -41,48 +40,9 @@ const GalleryLayoutContent = observer(function LayoutContent() {
   const searchStore = useSearchStore();
   const favoritesStore = useFavoritesStore();
 
-  // Fix Drawer navigation history on web platform
-  // Drawer uses replaceState which doesn't create history entries
-  // We intercept replaceState calls and convert them to pushState
-  const historyModifiedRef = useRef(false);
-
-  useEffect(() => {
-    if (Platform.OS !== "web" || historyModifiedRef.current) return;
-
-    historyModifiedRef.current = true;
-
-    // Store original replaceState and pushState
-    const originalReplaceState = window.history.replaceState.bind(
-      window.history,
-    );
-    const originalPushState = window.history.pushState.bind(window.history);
-
-    // Override replaceState to convert Drawer navigation to pushState
-    window.history.replaceState = function (
-      state: unknown,
-      title: string,
-      url?: string | null,
-    ) {
-      // Check if this is a Drawer navigation (replaceState without explicit state)
-      // or if the URL is different from current location (indicating navigation)
-      if (url && typeof url === "string" && url !== window.location.pathname) {
-        // This looks like a navigation, use pushState instead to create history
-        originalPushState(state || { url }, title, url);
-      } else {
-        // For other cases (like hash changes), use original replaceState
-        originalReplaceState(state, title, url);
-      }
-    };
-
-    return () => {
-      // Restore original functions when component unmounts
-      window.history.replaceState = originalReplaceState;
-      window.history.pushState = originalPushState;
-    };
-  }, []);
-
   return (
     <Drawer
+      backBehavior={Platform.OS === "web" ? "history" : undefined}
       screenOptions={{
         drawerType: isLargeScreen ? "permanent" : undefined,
         drawerStyle: {
