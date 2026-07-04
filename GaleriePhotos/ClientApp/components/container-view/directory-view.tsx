@@ -30,7 +30,7 @@ import {
 } from "../photo-date-grouping";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ActionMenu } from "../action-menu";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "expo-router";
 import { DirectoryFlatListItem, gap } from "./item-types";
 import DateHeader from "./date-header";
 import { AlbumRow } from "./album-row";
@@ -76,12 +76,12 @@ export const DirectoryView = observer(function DirectoryView({
       directories && directories.length > 0
         ? splitInRows(directories, Math.max(1, Math.floor(cols / 2)))
         : [],
-    [directories, cols]
+    [directories, cols],
   );
 
   const groupingStrategy = useMemo(
     () => determineGroupingStrategy(store.container),
-    [store.container]
+    [store.container],
   );
   const shouldGroupPhotos = groupingStrategy !== "none";
 
@@ -93,7 +93,7 @@ export const DirectoryView = observer(function DirectoryView({
 
   const isFocused = useIsFocused();
   const [isAppActive, setIsAppActive] = useState(
-    AppState.currentState === "active"
+    AppState.currentState === "active",
   );
   const listRef = useRef<FlashListRef<DirectoryFlatListItem> | null>(null);
   const shouldRestoreScroll = useRef(false);
@@ -101,7 +101,7 @@ export const DirectoryView = observer(function DirectoryView({
   // Date navigation sidebar state
   const [showDateNavigation, setShowDateNavigation] = useState(false);
   const [firstVisibleDate, setFirstVisibleDate] = useState<DateJump | null>(
-    null
+    null,
   );
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -112,7 +112,7 @@ export const DirectoryView = observer(function DirectoryView({
 
     const subscription = AppState.addEventListener(
       "change",
-      handleAppStateChange
+      handleAppStateChange,
     );
 
     return () => {
@@ -181,21 +181,21 @@ export const DirectoryView = observer(function DirectoryView({
             type: "photoRow",
             items: row,
             groupId: "all",
-          })
+          }),
         );
       } else {
         const groups = groupPhotosByDate(
           paginatedPhotos,
           groupingStrategy === "day",
-          order === "date-desc" ? "date-desc" : "date-asc"
+          order === "date-desc" ? "date-desc" : "date-asc",
         );
         groups.forEach((group, groupIndex) => {
           const placeNames = Array.from(
             new Set(
               group.photos
                 .map((photo) => photo.place?.name?.trim())
-                .filter((name): name is string => !!name && name.length > 0)
-            )
+                .filter((name): name is string => !!name && name.length > 0),
+            ),
           );
           // Show date header if:
           // 1. This is not the first group (there are photos from a previous date), OR
@@ -222,7 +222,7 @@ export const DirectoryView = observer(function DirectoryView({
               type: "photoRow",
               items: row,
               groupId: group.id,
-            })
+            }),
           );
         });
       }
@@ -251,7 +251,7 @@ export const DirectoryView = observer(function DirectoryView({
 
   const handleSortDateDesc = useCallback(
     () => store.sort("date-desc"),
-    [store]
+    [store],
   );
   const handleSortDateAsc = useCallback(() => store.sort("date-asc"), [store]);
 
@@ -318,16 +318,16 @@ export const DirectoryView = observer(function DirectoryView({
           return null;
       }
     },
-    [columnWidth, store]
+    [columnWidth, store],
   );
 
   const keyExtractor = useCallback(
     (item: DirectoryFlatListItem) => item.id,
-    []
+    [],
   );
   const getItemType = useCallback(
     (item: DirectoryFlatListItem) => item.type,
-    []
+    [],
   );
 
   const handleEndReached = useCallback(() => {
@@ -364,14 +364,14 @@ export const DirectoryView = observer(function DirectoryView({
         listRef.current.scrollToOffset({ offset: 0, animated: true });
       }
     },
-    [paginatedStore]
+    [paginatedStore],
   );
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       paginatedStore.lastScrollOffset = Math.max(
         0,
-        event.nativeEvent.contentOffset.y
+        event.nativeEvent.contentOffset.y,
       );
 
       // Show date navigation sidebar on scroll if we have date jumps
@@ -389,7 +389,7 @@ export const DirectoryView = observer(function DirectoryView({
         }, 2000);
       }
     },
-    [paginatedStore, store.container]
+    [paginatedStore, store.container],
   );
 
   const handleViewableItemsChanged = useCallback(
@@ -437,7 +437,7 @@ export const DirectoryView = observer(function DirectoryView({
         }
       }
     },
-    [order, store.container?.dateJumps]
+    [order, store.container?.dateJumps],
   );
 
   useEffect(() => {

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "expo-dev-client": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-dev-client/SKILL.md",
+      "computedHash": "dbbf88a0688564e2231b31d63b88dfd913f44f39bf21162c98493cd01edb4f3f"
+    },
+    "upgrading-expo": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/upgrading-expo/SKILL.md",
+      "computedHash": "98d228925a442126789d90783fdd4ae5de33ab690024b575698057d2ffc44b40"
+    }
+  }
+}

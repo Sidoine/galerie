@@ -31,7 +31,7 @@ export const ImageDetails = observer(function ImageDetails({
   const photosStore = usePhotosStore();
   const [editingDescription, setEditingDescription] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState(
-    image.description ?? ""
+    image.description ?? "",
   );
   const [savingDescription, setSavingDescription] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
@@ -57,7 +57,6 @@ export const ImageDetails = observer(function ImageDetails({
   const locationText = hasCoordinates
     ? `Lat: ${image.latitude?.toFixed(5)} / Lon: ${image.longitude?.toFixed(5)}`
     : "Aucune localisation";
-  const locationActionLabel = hasCoordinates ? "Modifier" : "Ajouter";
   const photoForLocationModal = useMemo<Photo>(
     () => ({
       id: image.id,
@@ -78,7 +77,7 @@ export const ImageDetails = observer(function ImageDetails({
       image.publicId,
       image.video,
       image.isFavorite,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -138,7 +137,7 @@ export const ImageDetails = observer(function ImageDetails({
       setEditingDescription(false);
     } catch {
       setDescriptionError(
-        "Impossible d'enregistrer la description. Réessayez."
+        "Impossible d'enregistrer la description. Réessayez.",
       );
     } finally {
       setSavingDescription(false);
@@ -193,7 +192,6 @@ export const ImageDetails = observer(function ImageDetails({
             icon={<Icon name="map-marker" set="mci" size={18} />}
             text={locationText}
             onEdit={handleOpenLocationModal}
-            editLabel={locationActionLabel}
           />
           <Text style={styles.sectionCaption}>Description</Text>
           {editingDescription ? (
@@ -314,12 +312,10 @@ function DetailRow({
   icon,
   text,
   onEdit,
-  editLabel = "Modifier",
 }: {
   icon: React.ReactNode;
   text: string;
   onEdit?: () => void;
-  editLabel?: string;
 }) {
   return (
     <View style={styles.detailRow}>

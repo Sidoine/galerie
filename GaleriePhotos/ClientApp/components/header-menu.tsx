@@ -318,6 +318,7 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     handleOpenBulkDateModal,
     handleOpenBulkLocationModal,
     store.deletePhotosFromAlbum,
+    store.deletePhotosFromAlbumLabel,
     handleDeleteFromAlbum,
     selectedPhotosStore.count,
     handleClearSelection,

@@ -26,7 +26,7 @@ interface MaterialIconsProps extends BaseIconProps {
 
 export interface BaseIconProps {
   size?: number;
-  color?: string;
+  color?: React.ComponentProps<typeof Ionicons>["color"];
   style?: TextStyle;
 }
 type IconProps =

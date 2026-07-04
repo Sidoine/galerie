@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { PhotoFull } from "@/services/views";
 import { useDirectoriesStore } from "@/stores/directories";
 import { useMembersStore } from "@/stores/members";
 import { FaceDetectionStatus } from "@/services/enums";
 import Icon from "../Icon";
-import * as Sharing from "expo-sharing";
-import { Directory, File, Paths } from "expo-file-system";
 import { theme } from "@/stores/theme";
 import { usePhotosStore } from "@/stores/photos";
 import { observer } from "mobx-react-lite";

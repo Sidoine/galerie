@@ -27,6 +27,7 @@ export const FaceNamesListStoreProvider = observer(
     const faceNamesStore = useFaceNamesStore();
 
     const navigateToPhoto = useCallback((photoId: number) => {
+      void photoId;
       // Photos cannot be accessed directly from the face names list
       console.warn("navigateToPhoto is not supported for face names list");
     }, []);

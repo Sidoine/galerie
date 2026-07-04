@@ -6,12 +6,6 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "net.sidoine.galerie",
@@ -24,7 +18,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "net.sidoine.galeriephotos",
       "versionCode": 4
@@ -49,7 +42,14 @@
         {
           "androidGoogleMapsApiKey": "AIzaSyA_nHvWwjYaImYTfSEo9vTNQ7RmhbYaQDE"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-video",
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},

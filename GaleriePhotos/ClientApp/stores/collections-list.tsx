@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { useApiClient } from "folke-service-helpers";
 import { CollectionController } from "@/services/collection";
@@ -30,7 +30,7 @@ class CollectionsListStore {
         this.galleryId,
       );
       if (result.ok) {
-        this.collections = (result as any).value || [];
+        this.collections = result.value;
       } else {
         this.error = result.message || "Failed to load collections";
       }

@@ -42,17 +42,21 @@ export default function CollectionDetailPage() {
     }
   }, [collectionsListStore]);
 
-  if (!galleryId || !collectionId) {
-    return null;
-  }
-
   const resolvedCollectionName = useMemo(() => {
+    if (!collectionId) {
+      return "Collection";
+    }
+
     return (
       collectionsListStore.collections.find(
         (collection) => collection.id === Number(collectionId),
       )?.name ?? "Collection"
     );
   }, [collectionId, collectionsListStore.collections]);
+
+  if (!galleryId || !collectionId) {
+    return null;
+  }
 
   return (
     <CollectionsStoreProvider

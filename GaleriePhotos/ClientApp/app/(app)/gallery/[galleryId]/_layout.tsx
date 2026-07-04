@@ -1,6 +1,6 @@
 import { Drawer } from "expo-router/drawer";
 import { DirectoriesStoreProvider } from "@/stores/directories";
-import { useGlobalSearchParams, useRouter } from "expo-router";
+import { useGlobalSearchParams } from "expo-router";
 import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
@@ -25,10 +25,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { SelectedPhotosStoreProvider } from "@/stores/selected-photos";
 import HeaderMenu from "@/components/header-menu";
 import { FavoritesStoreProvider, useFavoritesStore } from "@/stores/favorites";
-import {
-  CollectionsListStoreProvider,
-  useCollectionsListStore,
-} from "@/stores/collections-list";
+import { CollectionsListStoreProvider } from "@/stores/collections-list";
 import { useEffect, useRef } from "react";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
@@ -43,7 +40,6 @@ const GalleryLayoutContent = observer(function LayoutContent() {
   const galleryStore = useGalleryStore();
   const searchStore = useSearchStore();
   const favoritesStore = useFavoritesStore();
-  const collectionsListStore = useCollectionsListStore();
 
   // Fix Drawer navigation history on web platform
   // Drawer uses replaceState which doesn't create history entries
@@ -63,7 +59,7 @@ const GalleryLayoutContent = observer(function LayoutContent() {
 
     // Override replaceState to convert Drawer navigation to pushState
     window.history.replaceState = function (
-      state: any,
+      state: unknown,
       title: string,
       url?: string | null,
     ) {
