@@ -11,14 +11,13 @@ import {
 import { observer } from "mobx-react-lite";
 import { FaceName } from "../../../../../services/views";
 import { useDirectoriesStore } from "@/stores/directories";
-import { useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useFaceNamesStore } from "@/stores/face-names";
 import { UnnamedFaces } from "@/components/faces/unnamed-faces";
 
 const FaceNamesScreen = observer(function FaceNames() {
   const { galleryId } = useDirectoriesStore();
   const faceNamesStore = useFaceNamesStore();
-  const router = useRouter();
 
   if (faceNamesStore.names === null) {
     return (
@@ -32,24 +31,24 @@ const FaceNamesScreen = observer(function FaceNames() {
   const names = faceNamesStore.names;
 
   const renderFaceName = ({ item }: { item: FaceName }) => (
-    <TouchableOpacity
-      style={styles.faceNameItem}
-      onPress={() =>
-        router.navigate({
-          pathname: "/(app)/gallery/[galleryId]/face-names/[faceNameId]",
-          params: {
-            faceNameId: item.id,
-            galleryId,
-          },
-        })
-      }
+    <Link
+      href={{
+        pathname: "/(app)/gallery/[galleryId]/face-names/[faceNameId]",
+        params: {
+          faceNameId: item.id,
+          galleryId,
+        },
+      }}
+      asChild
     >
-      <Image
-        source={{ uri: faceNamesStore.getFaceNameThumbnailUrl(item.id) }}
-        style={styles.faceImage}
-      />
-      <Text style={styles.faceNameText}>{item.name}</Text>
-    </TouchableOpacity>
+      <TouchableOpacity style={styles.faceNameItem}>
+        <Image
+          source={{ uri: faceNamesStore.getFaceNameThumbnailUrl(item.id) }}
+          style={styles.faceImage}
+        />
+        <Text style={styles.faceNameText}>{item.name}</Text>
+      </TouchableOpacity>
+    </Link>
   );
 
   return (

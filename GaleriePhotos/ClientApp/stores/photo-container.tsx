@@ -41,7 +41,7 @@ export interface PhotoContainerStore {
   order: "date-asc" | "date-desc";
   breadCrumbs: BreadCrumb[];
   container: PhotoContainerFull | null;
-  getPhotoLink(photoId: number): Href;
+  getPhotoLink?(photoId: number): Href;
   paginatedPhotosStore: PaginatedPhotosStore;
   setCover?(photoId: number): Promise<void>;
   setParentCover?(containerId: number): Promise<void>;
@@ -50,5 +50,5 @@ export interface PhotoContainerStore {
   deletePhotosFromAlbumLabel?: string;
   childContainersHeader: ReactNode;
   getChildContainerLink(containerId: number): Href;
-  getSlideshowLink(): Href;
+  getSlideshowLink?(): Href;
 }

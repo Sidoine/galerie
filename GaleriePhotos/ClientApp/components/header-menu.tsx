@@ -115,25 +115,9 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
 
   const alert = useAlert();
 
-  const isFavoritesContext = useMemo(() => {
-    const slideshowLink = store.getSlideshowLink();
-    const slideshowPath =
-      typeof slideshowLink === "string"
-        ? slideshowLink
-        : slideshowLink.pathname;
-    return slideshowPath.includes("/favorites/");
-  }, [store]);
-
-  const canDownloadFirst100FromContext =
-    store.deletePhotosFromAlbum !== undefined || isFavoritesContext;
-
   const getPhotoIdsToZip = useCallback(async () => {
     if (selectedPhotosStore.count > 0) {
       return selectedPhotosStore.photoIds;
-    }
-
-    if (!canDownloadFirst100FromContext) {
-      return [];
     }
 
     const targetCount = 100;
@@ -157,7 +141,6 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   }, [
     selectedPhotosStore.count,
     selectedPhotosStore.photoIds,
-    canDownloadFirst100FromContext,
     store.paginatedPhotosStore,
   ]);
 
@@ -364,7 +347,7 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
 
   return (
     <>
-      {canDisplaySlideshow && (
+      {canDisplaySlideshow && store.getSlideshowLink && (
         <Link href={store.getSlideshowLink()} asChild>
           <TouchableOpacity
             style={styles.slideshowButton}
@@ -376,7 +359,7 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
           </TouchableOpacity>
         </Link>
       )}
-      {!hasSelection && canDownloadFirst100FromContext && (
+      {!hasSelection && (
         <TouchableOpacity
           onPress={handleOpenContextMenu}
           style={styles.contextMenuButton}

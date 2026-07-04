@@ -1,6 +1,6 @@
 import { Drawer } from "expo-router/drawer";
 import { DirectoriesStoreProvider } from "@/stores/directories";
-import { useGlobalSearchParams } from "expo-router";
+import { useGlobalSearchParams, useRouter } from "expo-router";
 import { MembersStoreProvider, useMembersStore } from "@/stores/members";
 import { MeStoreProvider } from "@/stores/me";
 import { DirectoryVisibilitiesStoreProvider } from "@/stores/directory-visibilities";
@@ -12,6 +12,10 @@ import BreadCrumbs from "@/components/bread-crumbs";
 import { DirectoryStoreProvider, useDirectoryStore } from "@/stores/directory";
 import { FaceNameStoreProvider, useFaceNameStore } from "@/stores/face-name";
 import { FaceNamesStoreProvider } from "@/stores/face-names";
+import {
+  FaceNamesListStoreProvider,
+  useFaceNamesListStore,
+} from "@/stores/face-names-list";
 import { PlacesStoreProvider } from "@/stores/places";
 import { PlaceStoreProvider, usePlaceStore } from "@/stores/place";
 import Icon from "@/components/Icon";
@@ -25,6 +29,7 @@ import {
   CollectionsListStoreProvider,
   useCollectionsListStore,
 } from "@/stores/collections-list";
+import { useEffect, useRef } from "react";
 
 const GalleryLayoutContent = observer(function LayoutContent() {
   const membersStore = useMembersStore();
@@ -33,11 +38,52 @@ const GalleryLayoutContent = observer(function LayoutContent() {
 
   const placeStore = usePlaceStore();
   const faceNameStore = useFaceNameStore();
+  const faceNamesListStore = useFaceNamesListStore();
   const directoryStore = useDirectoryStore();
   const galleryStore = useGalleryStore();
   const searchStore = useSearchStore();
   const favoritesStore = useFavoritesStore();
   const collectionsListStore = useCollectionsListStore();
+
+  // Fix Drawer navigation history on web platform
+  // Drawer uses replaceState which doesn't create history entries
+  // We intercept replaceState calls and convert them to pushState
+  const historyModifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || historyModifiedRef.current) return;
+
+    historyModifiedRef.current = true;
+
+    // Store original replaceState and pushState
+    const originalReplaceState = window.history.replaceState.bind(
+      window.history,
+    );
+    const originalPushState = window.history.pushState.bind(window.history);
+
+    // Override replaceState to convert Drawer navigation to pushState
+    window.history.replaceState = function (
+      state: any,
+      title: string,
+      url?: string | null,
+    ) {
+      // Check if this is a Drawer navigation (replaceState without explicit state)
+      // or if the URL is different from current location (indicating navigation)
+      if (url && typeof url === "string" && url !== window.location.pathname) {
+        // This looks like a navigation, use pushState instead to create history
+        originalPushState(state || { url }, title, url);
+      } else {
+        // For other cases (like hash changes), use original replaceState
+        originalReplaceState(state, title, url);
+      }
+    };
+
+    return () => {
+      // Restore original functions when component unmounts
+      window.history.replaceState = originalReplaceState;
+      window.history.pushState = originalPushState;
+    };
+  }, []);
 
   return (
     <Drawer
@@ -135,6 +181,8 @@ const GalleryLayoutContent = observer(function LayoutContent() {
         name="face-names/index"
         options={{
           title: "Visages",
+          headerTitle: () => <BreadCrumbs store={faceNamesListStore} />,
+          headerRight: () => <HeaderMenu store={faceNamesListStore} />,
           drawerIcon: ({ color, size }) => (
             <Icon set="mci" name="face-recognition" color={color} size={size} />
           ),
@@ -320,56 +368,58 @@ export default function GalleryLayout() {
           <DirectoriesStoreProvider galleryId={Number(galleryId)}>
             <DirectoryVisibilitiesStoreProvider galleryId={Number(galleryId)}>
               <FaceNamesStoreProvider galleryId={Number(galleryId)}>
-                <PlacesStoreProvider galleryId={Number(galleryId)}>
-                  <MembersStoreProvider>
-                    <SelectedPhotosStoreProvider>
-                      <GalleryStoreProvider
-                        galleryId={Number(galleryId)}
-                        order={order}
-                      >
-                        <DirectoryStoreProvider
-                          directoryId={
-                            directoryId
-                              ? directoryId === "index"
-                                ? directoryId
-                                : Number(directoryId)
-                              : undefined
-                          }
+                <FaceNamesListStoreProvider>
+                  <PlacesStoreProvider galleryId={Number(galleryId)}>
+                    <MembersStoreProvider>
+                      <SelectedPhotosStoreProvider>
+                        <GalleryStoreProvider
+                          galleryId={Number(galleryId)}
                           order={order}
                         >
-                          <FaceNameStoreProvider
-                            faceNameId={
-                              faceNameId ? Number(faceNameId) : undefined
+                          <DirectoryStoreProvider
+                            directoryId={
+                              directoryId
+                                ? directoryId === "index"
+                                  ? directoryId
+                                  : Number(directoryId)
+                                : undefined
                             }
                             order={order}
                           >
-                            <PlaceStoreProvider
-                              placeId={placeId ? Number(placeId) : undefined}
+                            <FaceNameStoreProvider
+                              faceNameId={
+                                faceNameId ? Number(faceNameId) : undefined
+                              }
                               order={order}
                             >
-                              <SearchStoreProvider
-                                galleryId={Number(galleryId)}
-                                query={query}
+                              <PlaceStoreProvider
+                                placeId={placeId ? Number(placeId) : undefined}
                                 order={order}
                               >
-                                <FavoritesStoreProvider
-                                  order={order}
+                                <SearchStoreProvider
                                   galleryId={Number(galleryId)}
+                                  query={query}
+                                  order={order}
                                 >
-                                  <CollectionsListStoreProvider
+                                  <FavoritesStoreProvider
+                                    order={order}
                                     galleryId={Number(galleryId)}
                                   >
-                                    <GalleryLayoutContent />
-                                  </CollectionsListStoreProvider>
-                                </FavoritesStoreProvider>
-                              </SearchStoreProvider>
-                            </PlaceStoreProvider>
-                          </FaceNameStoreProvider>
-                        </DirectoryStoreProvider>
-                      </GalleryStoreProvider>
-                    </SelectedPhotosStoreProvider>
-                  </MembersStoreProvider>
-                </PlacesStoreProvider>
+                                    <CollectionsListStoreProvider
+                                      galleryId={Number(galleryId)}
+                                    >
+                                      <GalleryLayoutContent />
+                                    </CollectionsListStoreProvider>
+                                  </FavoritesStoreProvider>
+                                </SearchStoreProvider>
+                              </PlaceStoreProvider>
+                            </FaceNameStoreProvider>
+                          </DirectoryStoreProvider>
+                        </GalleryStoreProvider>
+                      </SelectedPhotosStoreProvider>
+                    </MembersStoreProvider>
+                  </PlacesStoreProvider>
+                </FaceNamesListStoreProvider>
               </FaceNamesStoreProvider>
             </DirectoryVisibilitiesStoreProvider>
           </DirectoriesStoreProvider>
