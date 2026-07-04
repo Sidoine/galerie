@@ -14,6 +14,8 @@ using GaleriePhotos.Data;
 using GaleriePhotos.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.IO.Compression;
 
 namespace Galerie.Server.Controllers
 {
@@ -191,6 +193,132 @@ namespace Galerie.Server.Controllers
 
             var isFavorite = await photoService.TogglePhotoFavorite(id, User);
             return Ok(isFavorite);
+        }
+
+        [Authorize]
+        [HttpPost("download-zip")]
+        public async Task<IActionResult> DownloadZip([FromBody] PhotoDownloadZipViewModel viewModel)
+        {
+            if (viewModel.PhotoIds == null || viewModel.PhotoIds.Length == 0)
+                return BadRequest("Aucune photo spécifiée");
+
+            var requestedIds = viewModel.PhotoIds
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
+
+            if (requestedIds.Length == 0)
+                return BadRequest("Aucune photo valide spécifiée");
+
+            var photosById = await applicationDbContext.Photos
+                .Include(x => x.Directory)
+                    .ThenInclude(x => x.Gallery)
+                        .ThenInclude(x => x.Members)
+                .Where(x => requestedIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id);
+
+            var photos = requestedIds
+                .Where(photosById.ContainsKey)
+                .Select(id => photosById[id])
+                .ToArray();
+
+            if (photos.Length == 0)
+                return NotFound("Aucune photo introuvable");
+
+            if (photos.Any(photo => !photoService.IsDirectoryVisible(User, photo.Directory)))
+                return Forbid();
+
+            var providersByGalleryId = new Dictionary<int, IDataProvider>();
+            IDataProvider GetProvider(Photo photo)
+            {
+                if (!providersByGalleryId.TryGetValue(photo.Directory.GalleryId, out var provider))
+                {
+                    provider = dataService.GetDataProvider(photo.Directory.Gallery);
+                    providersByGalleryId[photo.Directory.GalleryId] = provider;
+                }
+
+                return provider;
+            }
+
+            var usedEntryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            await using var zipMemoryStream = new MemoryStream();
+            using (var archive = new ZipArchive(zipMemoryStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var photo in photos)
+                {
+                    var provider = GetProvider(photo);
+                    await using var sourceStream = await provider.OpenFileRead(photo);
+                    if (sourceStream == null)
+                        continue;
+
+                    var baseEntryName = BuildZipEntryName(photo);
+                    var entryName = EnsureUniqueEntryName(baseEntryName, usedEntryNames);
+                    var entry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
+
+                    await using var entryStream = entry.Open();
+                    await sourceStream.CopyToAsync(entryStream);
+                }
+            }
+
+            if (zipMemoryStream.Length == 0)
+                return NotFound("Impossible de récupérer les fichiers demandés");
+
+            var fileName = $"photos-{DateTime.UtcNow:yyyyMMdd-HHmmss}.zip";
+            return File(zipMemoryStream.ToArray(), "application/zip", fileName);
+        }
+
+        private static string BuildZipEntryName(Photo photo)
+        {
+            var sanitizedFileName = SanitizeSegment(photo.FileName);
+            if (string.IsNullOrWhiteSpace(photo.Directory.Path))
+                return sanitizedFileName;
+
+            var pathSegments = photo.Directory.Path
+                .Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(SanitizeSegment)
+                .Where(segment => !string.IsNullOrWhiteSpace(segment));
+
+            var prefix = string.Join("/", pathSegments);
+            if (string.IsNullOrWhiteSpace(prefix))
+                return sanitizedFileName;
+
+            return $"{prefix}/{sanitizedFileName}";
+        }
+
+        private static string SanitizeSegment(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "file";
+
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var sanitized = new string(value.Select(c => invalidChars.Contains(c) ? '_' : c).ToArray()).Trim();
+
+            return string.IsNullOrWhiteSpace(sanitized) ? "file" : sanitized;
+        }
+
+        private static string EnsureUniqueEntryName(string entryName, HashSet<string> usedEntryNames)
+        {
+            if (usedEntryNames.Add(entryName))
+                return entryName;
+
+            var extension = Path.GetExtension(entryName);
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(entryName);
+            var directoryName = Path.GetDirectoryName(entryName)?.Replace('\\', '/');
+
+            var suffix = 1;
+            while (true)
+            {
+                var candidateFileName = $"{fileNameWithoutExtension} ({suffix}){extension}";
+                var candidate = string.IsNullOrEmpty(directoryName)
+                    ? candidateFileName
+                    : $"{directoryName}/{candidateFileName}";
+
+                if (usedEntryNames.Add(candidate))
+                    return candidate;
+
+                suffix++;
+            }
         }
     }
 }

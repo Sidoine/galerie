@@ -1,4 +1,11 @@
-import { TouchableOpacity, Text, StyleSheet, View, Alert } from "react-native";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+  Alert,
+  Platform,
+} from "react-native";
 import { ActionMenu, ActionMenuItem } from "./action-menu";
 import { DirectoryBulkDateModal } from "./modals/directory-bulk-date-modal";
 import { DirectoryBulkLocationModal } from "./modals/directory-bulk-location-modal";
@@ -16,17 +23,21 @@ import { PhotoContainerStore } from "@/stores/photo-container";
 import { Link } from "expo-router";
 import { useAlert } from "./alert";
 import { CollectionAddModal } from "./modals/collection-add-modal";
+import { useApiClient } from "folke-service-helpers";
 
 function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   const router = useRouter();
   const galleryStore = useGalleryStore();
+  const apiClient = useApiClient();
   const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [bulkDateModalVisible, setBulkDateModalVisible] = useState(false);
   const [bulkLocationModalVisible, setBulkLocationModalVisible] =
     useState(false);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [createAlbumModalVisible, setCreateAlbumModalVisible] = useState(false);
   const [collectionModalVisible, setCollectionModalVisible] = useState(false);
+  const [isZipDownloadInProgress, setIsZipDownloadInProgress] = useState(false);
   const selectedPhotosStore = useSelectedPhotosStore();
 
   const handleOpenSelectionMenu = useCallback(() => {
@@ -35,6 +46,14 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
 
   const handleCloseSelectionMenu = useCallback(() => {
     setSelectionMenuVisible(false);
+  }, []);
+
+  const handleOpenContextMenu = useCallback(() => {
+    setContextMenuVisible(true);
+  }, []);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenuVisible(false);
   }, []);
 
   const handleOpenBulkDateModal = useCallback(() => {
@@ -96,6 +115,123 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
 
   const alert = useAlert();
 
+  const isFavoritesContext = useMemo(() => {
+    const slideshowLink = store.getSlideshowLink();
+    const slideshowPath =
+      typeof slideshowLink === "string"
+        ? slideshowLink
+        : slideshowLink.pathname;
+    return slideshowPath.includes("/favorites/");
+  }, [store]);
+
+  const canDownloadFirst100FromContext =
+    store.deletePhotosFromAlbum !== undefined || isFavoritesContext;
+
+  const getPhotoIdsToZip = useCallback(async () => {
+    if (selectedPhotosStore.count > 0) {
+      return selectedPhotosStore.photoIds;
+    }
+
+    if (!canDownloadFirst100FromContext) {
+      return [];
+    }
+
+    const targetCount = 100;
+    let previousLength = -1;
+    while (
+      store.paginatedPhotosStore.photos.length < targetCount &&
+      store.paginatedPhotosStore.hasMore
+    ) {
+      const currentLength = store.paginatedPhotosStore.photos.length;
+      if (currentLength === previousLength) {
+        break;
+      }
+
+      previousLength = currentLength;
+      await store.paginatedPhotosStore.loadMore();
+    }
+
+    return store.paginatedPhotosStore.photos
+      .slice(0, targetCount)
+      .map((photo) => photo.id);
+  }, [
+    selectedPhotosStore.count,
+    selectedPhotosStore.photoIds,
+    canDownloadFirst100FromContext,
+    store.paginatedPhotosStore,
+  ]);
+
+  const downloadZipFromPhotoIds = useCallback(
+    async (photoIds: number[]) => {
+      if (Platform.OS !== "web") {
+        alert(
+          "Téléchargement indisponible",
+          "Le téléchargement ZIP est disponible sur la version web.",
+        );
+        return;
+      }
+
+      const response = await apiClient.fetch(
+        "api/photos/download-zip",
+        "POST",
+        JSON.stringify({ photoIds }),
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Impossible de télécharger le ZIP");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const link = globalThis.document?.createElement("a");
+      if (!link) {
+        URL.revokeObjectURL(objectUrl);
+        throw new Error(
+          "Le téléchargement n'est pas supporté sur ce navigateur",
+        );
+      }
+
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+      link.href = objectUrl;
+      link.download = `photos-${timestamp}.zip`;
+      globalThis.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    },
+    [alert, apiClient],
+  );
+
+  const handleDownloadZip = useCallback(async () => {
+    if (isZipDownloadInProgress) {
+      return;
+    }
+
+    setIsZipDownloadInProgress(true);
+    try {
+      const photoIds = await getPhotoIdsToZip();
+      if (photoIds.length === 0) {
+        alert("Téléchargement ZIP", "Aucune photo disponible à télécharger.");
+        return;
+      }
+
+      await downloadZipFromPhotoIds(photoIds);
+    } catch (error) {
+      console.error("Error downloading zip:", error);
+      Alert.alert("Erreur", "Le téléchargement du ZIP a échoué.");
+    } finally {
+      setIsZipDownloadInProgress(false);
+    }
+  }, [
+    alert,
+    downloadZipFromPhotoIds,
+    getPhotoIdsToZip,
+    isZipDownloadInProgress,
+  ]);
+
   const handleDeleteFromAlbum = useCallback(async () => {
     if (selectedPhotosStore.photoIds.length === 0) {
       alert("Erreur", "Aucune photo sélectionnée");
@@ -138,6 +274,15 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
 
   const selectionMenuItems: ActionMenuItem[] = useMemo(() => {
     const items: ActionMenuItem[] = [
+      {
+        label: isZipDownloadInProgress
+          ? "Préparation du ZIP..."
+          : `Télécharger la sélection (${selectedPhotosStore.count}) en ZIP`,
+        onPress: () => {
+          void handleDownloadZip();
+        },
+        icon: <MaterialIcons name="archive" size={18} color="#1976d2" />,
+      },
       {
         label: "Ajouter à une collection",
         onPress: handleOpenCollectionModal,
@@ -184,6 +329,8 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
     return items;
   }, [
     administrator,
+    isZipDownloadInProgress,
+    handleDownloadZip,
     handleOpenCollectionModal,
     handleOpenBulkDateModal,
     handleOpenBulkLocationModal,
@@ -194,6 +341,21 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
   ]);
 
   const [canDisplaySlideshow, setCanDisplaySlideshow] = useState(false);
+
+  const contextMenuItems: ActionMenuItem[] = useMemo(
+    () => [
+      {
+        label: isZipDownloadInProgress
+          ? "Préparation du ZIP..."
+          : "Télécharger les 100 premières photos en ZIP",
+        onPress: () => {
+          void handleDownloadZip();
+        },
+        icon: <MaterialIcons name="archive" size={18} color="#1976d2" />,
+      },
+    ],
+    [handleDownloadZip, isZipDownloadInProgress],
+  );
 
   useEffect(() => {
     // Enable slideshow button only if there are more than 1 photo
@@ -213,6 +375,17 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
             <MaterialIcons name="slideshow" size={24} color="#007aff" />
           </TouchableOpacity>
         </Link>
+      )}
+      {!hasSelection && canDownloadFirst100FromContext && (
+        <TouchableOpacity
+          onPress={handleOpenContextMenu}
+          style={styles.contextMenuButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Options de téléchargement"
+          accessibilityRole="button"
+        >
+          <MaterialIcons name="more-vert" size={24} color="#007aff" />
+        </TouchableOpacity>
       )}
       {hasSelection && (
         <View style={styles.selectionActions}>
@@ -262,6 +435,11 @@ function HeaderMenu({ store }: { store: PhotoContainerStore }) {
         onClose={handleCloseSelectionMenu}
         items={selectionMenuItems}
       />
+      <ActionMenu
+        visible={contextMenuVisible}
+        onClose={handleCloseContextMenu}
+        items={contextMenuItems}
+      />
       <DirectoryBulkDateModal
         visible={bulkDateModalVisible}
         photoIds={selectedPhotosStore.photoIds}
@@ -298,6 +476,10 @@ export default observer(HeaderMenu);
 
 const styles = StyleSheet.create({
   slideshowButton: {
+    padding: 4,
+    marginRight: 4,
+  },
+  contextMenuButton: {
     padding: 4,
     marginRight: 4,
   },
