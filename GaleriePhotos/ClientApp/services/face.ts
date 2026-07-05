@@ -9,6 +9,10 @@ export class FaceController {
         return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/name`, "POST", JSON.stringify(model));
     }
 
+    acceptAutoNaming = (galleryId: number, faceId: number) => {
+        return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}/accept-auto-name`, "POST", undefined);
+    }
+
     deleteFace = (galleryId: number, faceId: number) => {
         return this.client.fetch(`api/gallery/${galleryId}/faces/${faceId}`, "DELETE", undefined);
     }
@@ -61,4 +65,3 @@ export class FaceController {
         return this.client.fetch(`api/gallery/${galleryId}/face-names/${faceNameId}`, "PATCH", JSON.stringify(model));
     }
 }
-
