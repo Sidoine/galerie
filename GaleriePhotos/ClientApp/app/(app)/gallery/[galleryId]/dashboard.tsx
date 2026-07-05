@@ -155,7 +155,7 @@ const DashboardScreen = observer(function DashboardScreen() {
         autoNamedFacesCount: Math.max(0, previous.autoNamedFacesCount - removedCount),
       };
     });
-  }, []);
+  }, [setStatistics]);
 
   const handleAutoNamedFaceAction = useCallback(
     async (faceId: number, action: "accept" | "reject") => {
@@ -191,7 +191,13 @@ const DashboardScreen = observer(function DashboardScreen() {
         setProcessingFaceIds((previous) => previous.filter((id) => id !== faceId));
       }
     },
-    [faceController, galleryId, removeAutoNamedFacesFromState]
+    [
+      faceController,
+      galleryId,
+      removeAutoNamedFacesFromState,
+      setAutoNamedActionError,
+      setProcessingFaceIds,
+    ]
   );
 
   const handleAutoNamedFacesBulkAction = useCallback(
@@ -230,7 +236,14 @@ const DashboardScreen = observer(function DashboardScreen() {
         );
       }
     },
-    [faceController, galleryId, removeAutoNamedFacesFromState, statistics]
+    [
+      faceController,
+      galleryId,
+      removeAutoNamedFacesFromState,
+      setAutoNamedActionError,
+      setBulkAutoNamingProcessing,
+      statistics,
+    ]
   );
 
   if (!meStore.administrator) {
