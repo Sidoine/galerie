@@ -208,6 +208,12 @@ export default function BackgroundServicesSettingsScreen() {
                   Id galerie: {item.galleryId}
                 </Text>
                 <Text style={styles.stateLine}>
+                  Dossiers: {formatNumber(item.totalDirectories)}
+                </Text>
+                <Text style={styles.stateLine}>
+                  Photos: {formatNumber(item.totalPhotos)}
+                </Text>
+                <Text style={styles.stateLine}>
                   Dernier dossier scanne:{" "}
                   {formatNumber(item.lastScannedDirectoryId)}
                 </Text>

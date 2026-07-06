@@ -36,6 +36,10 @@ namespace GaleriePhotos.ViewModels
         public int? LastScannedDirectoryId { get; set; }
 
         public DateTime? LastCompletedScanDate { get; set; }
+
+        public int TotalPhotos { get; set; }
+
+        public int TotalDirectories { get; set; }
     }
 
     public class PlaceLocationStateViewModel

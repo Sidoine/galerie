@@ -129,6 +129,20 @@ namespace GaleriePhotos.Controllers
                 .Where(x => galleryIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, x => x.Name);
 
+            var directoryCounts = await applicationDbContext.PhotoDirectories
+                .AsNoTracking()
+                .Where(x => galleryIds.Contains(x.GalleryId))
+                .GroupBy(x => x.GalleryId)
+                .Select(g => new { GalleryId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.GalleryId, x => x.Count);
+
+            var photoCounts = await applicationDbContext.Photos
+                .AsNoTracking()
+                .Where(x => galleryIds.Contains(x.Directory.GalleryId))
+                .GroupBy(x => x.Directory.GalleryId)
+                .Select(g => new { GalleryId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.GalleryId, x => x.Count);
+
             return stateMap
                 .Select(kvp =>
                 {
@@ -138,6 +152,8 @@ namespace GaleriePhotos.Controllers
                     {
                         value.GalleryName = galleryName;
                     }
+                    value.TotalDirectories = directoryCounts.TryGetValue(kvp.Key, out var dirCount) ? dirCount : 0;
+                    value.TotalPhotos = photoCounts.TryGetValue(kvp.Key, out var photoCount) ? photoCount : 0;
                     return value;
                 })
                 .OrderBy(x => x.GalleryId)
