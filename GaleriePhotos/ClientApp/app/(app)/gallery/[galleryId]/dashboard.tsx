@@ -24,6 +24,8 @@ import AlbumsWithoutGpsList from "@/components/dashboard/AlbumsWithoutGpsList";
 import AutoNamedFacesCard from "@/components/dashboard/AutoNamedFacesCard";
 import FaceThumbnail from "@/components/faces/face-thumbnail";
 
+const MAX_AUTO_NAMED_FACE_PAIRS_BATCH_SIZE = 20;
+
 const DashboardScreen = observer(function DashboardScreen() {
   const router = useRouter();
   const { galleryId } = useGlobalSearchParams<{ galleryId: string }>();
@@ -48,6 +50,7 @@ const DashboardScreen = observer(function DashboardScreen() {
   const faceController = useMemo(() => new FaceController(apiClient), [apiClient]);
   const [processingFaceIds, setProcessingFaceIds] = useState<number[]>([]);
   const [bulkAutoNamingProcessing, setBulkAutoNamingProcessing] = useState(false);
+  const [loadingMoreAutoNamedFaces, setLoadingMoreAutoNamedFaces] = useState(false);
   const [autoNamedActionError, setAutoNamedActionError] = useState<string | null>(
     null
   );
@@ -157,40 +160,6 @@ const DashboardScreen = observer(function DashboardScreen() {
     });
   }, [setStatistics]);
 
-  const loadMoreAutoNamedFacesSamples = useCallback(
-    async (remainingCount: number) => {
-      if (!galleryId || remainingCount <= 0) {
-        return;
-      }
-
-      try {
-        const response = await faceController.getAutoNamedFacePairs(
-          Number(galleryId),
-          Math.min(20, remainingCount)
-        );
-
-        if (!response.ok) {
-          setAutoNamedActionError("Impossible de charger de nouvelles paires");
-          return;
-        }
-
-        setStatistics((previous) => {
-          if (!previous) return previous;
-          return {
-            ...previous,
-            autoNamedFaceSamples: response.value.map((pair) => ({
-              faceId: pair.faceId,
-              autoNamedFromFaceId: pair.referenceFaceId,
-            })),
-          };
-        });
-      } catch {
-        setAutoNamedActionError("Impossible de charger de nouvelles paires");
-      }
-    },
-    [faceController, galleryId]
-  );
-
   const handleAutoNamedFaceAction = useCallback(
     async (faceId: number, action: "accept" | "reject") => {
       if (!galleryId) return;
@@ -206,15 +175,7 @@ const DashboardScreen = observer(function DashboardScreen() {
             : await faceController.undoAutoNaming(Number(galleryId), faceId);
 
         if (response.ok) {
-          const shouldLoadMoreSamples =
-            (statistics?.autoNamedFaceSamples.length ?? 0) === 1 &&
-            (statistics?.autoNamedFacesCount ?? 0) > 1;
           removeAutoNamedFacesFromState([faceId]);
-          if (shouldLoadMoreSamples) {
-            await loadMoreAutoNamedFacesSamples(
-              (statistics?.autoNamedFacesCount ?? 0) - 1
-            );
-          }
           return;
         }
 
@@ -236,9 +197,7 @@ const DashboardScreen = observer(function DashboardScreen() {
     [
       faceController,
       galleryId,
-      loadMoreAutoNamedFacesSamples,
       removeAutoNamedFacesFromState,
-      statistics,
       setAutoNamedActionError,
       setProcessingFaceIds,
     ]
@@ -271,15 +230,6 @@ const DashboardScreen = observer(function DashboardScreen() {
       setBulkAutoNamingProcessing(false);
       removeAutoNamedFacesFromState(successfulFaceIds);
 
-      const shouldLoadMoreSamples =
-        successfulFaceIds.length === faceIds.length &&
-        (statistics?.autoNamedFacesCount ?? 0) > faceIds.length;
-      if (shouldLoadMoreSamples) {
-        await loadMoreAutoNamedFacesSamples(
-          (statistics?.autoNamedFacesCount ?? 0) - faceIds.length
-        );
-      }
-
       const failedCount = faceIds.length - successfulFaceIds.length;
       if (failedCount > 0) {
         setAutoNamedActionError(
@@ -292,13 +242,88 @@ const DashboardScreen = observer(function DashboardScreen() {
     [
       faceController,
       galleryId,
-      loadMoreAutoNamedFacesSamples,
       removeAutoNamedFacesFromState,
       setAutoNamedActionError,
       setBulkAutoNamingProcessing,
       statistics,
     ]
   );
+
+  useEffect(() => {
+    if (
+      !galleryId ||
+      !statistics ||
+      statistics.autoNamedFacesCount <= 0 ||
+      statistics.autoNamedFaceSamples.length > 0 ||
+      loadingMoreAutoNamedFaces ||
+      bulkAutoNamingProcessing ||
+      processingFaceIds.length > 0
+    ) {
+      return;
+    }
+
+    let isCancelled = false;
+    setLoadingMoreAutoNamedFaces(true);
+    setAutoNamedActionError(null);
+
+    (async () => {
+      try {
+        const response = await faceController.getAutoNamedFacePairs(
+          Number(galleryId),
+          Math.min(
+            MAX_AUTO_NAMED_FACE_PAIRS_BATCH_SIZE,
+            statistics.autoNamedFacesCount
+          )
+        );
+
+        if (!response.ok) {
+          if (!isCancelled) {
+            setAutoNamedActionError("Impossible de charger de nouvelles paires");
+          }
+          return;
+        }
+
+        if (isCancelled) {
+          return;
+        }
+
+        setStatistics((previous) => {
+          if (!previous || previous.autoNamedFaceSamples.length > 0) return previous;
+          const autoNamedFaceSamples = response.value.map((pair) => ({
+            faceId: pair.faceId,
+            autoNamedFromFaceId: pair.referenceFaceId,
+          }));
+          return {
+            ...previous,
+            autoNamedFaceSamples,
+            autoNamedFacesCount:
+              autoNamedFaceSamples.length === 0
+                ? 0
+                : previous.autoNamedFacesCount,
+          };
+        });
+      } catch {
+        if (!isCancelled) {
+          setAutoNamedActionError("Impossible de charger de nouvelles paires");
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingMoreAutoNamedFaces(false);
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    bulkAutoNamingProcessing,
+    faceController,
+    galleryId,
+    loadingMoreAutoNamedFaces,
+    processingFaceIds.length,
+    statistics,
+  ]);
 
   if (!meStore.administrator) {
     return (
