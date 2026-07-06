@@ -416,6 +416,34 @@ namespace GaleriePhotos.Controllers
         }
 
         /// <summary>
+        /// Confirms an auto-assigned face name and removes the auto-naming reference.
+        /// </summary>
+        /// <param name="galleryId">Gallery ID</param>
+        /// <param name="faceId">Face ID to accept auto-naming for</param>
+        [HttpPost("{galleryId}/faces/{faceId}/accept-auto-name")]
+        public async Task<ActionResult> AcceptAutoNaming(int galleryId, int faceId)
+        {
+            var gallery = await _galleryService.Get(galleryId);
+            if (gallery == null) return NotFound();
+            if (!User.IsGalleryAdministrator(gallery)) return Forbid();
+
+            var face = await applicationDbContext.Faces
+                .Include(f => f.Photo)
+                    .ThenInclude(p => p.Directory)
+                .Where(f => f.Id == faceId
+                    && f.Photo.Directory.GalleryId == galleryId
+                    && f.AutoNamedFromFaceId != null)
+                .FirstOrDefaultAsync();
+
+            if (face == null) return NotFound("Face not found or was not auto-named");
+
+            face.AutoNamedFromFaceId = null;
+            await applicationDbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        /// <summary>
         /// Removes the auto-assigned name from a face (undo auto-naming operation).
         /// This keeps the face but removes its name and reference to the model face.
         /// </summary>

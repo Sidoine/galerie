@@ -486,7 +486,140 @@ namespace GaleriePhotosTest.Controllers
 
             var result = await controller.DeleteFace(gallery.Id, face.Id);
             Assert.IsType<NoContentResult>(result);
-            Assert.False(context.Faces.Any());
+            var deletedFace = await context.Faces.FindAsync(face.Id);
+            Assert.Null(deletedFace);
+        }
+
+        [Fact]
+        public async Task AcceptAutoNaming_ReturnsOk_AndClearsOnlyAutoNamingReference()
+        {
+            using var context = GetContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = GenerateUserId("admin");
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var directory = new PhotoDirectory("/", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            var photo = new Photo("p.jpg") { Directory = directory };
+            context.Photos.Add(photo);
+            var faceName = new FaceName { Name = "Alice", Gallery = gallery, GalleryId = gallery.Id };
+            context.FaceNames.Add(faceName);
+            await context.SaveChangesAsync();
+
+            var referenceFace = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = CreateTestVector(0.5f),
+                X = 4,
+                Y = 5,
+                Width = 6,
+                Height = 7,
+                FaceNameId = faceName.Id,
+                NamedAt = DateTime.UtcNow.AddDays(-1)
+            };
+            context.Faces.Add(referenceFace);
+            await context.SaveChangesAsync();
+
+            var namedAt = DateTime.UtcNow;
+            var autoNamedFace = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = CreateTestVector(0.6f),
+                X = 10,
+                Y = 20,
+                Width = 30,
+                Height = 40,
+                FaceNameId = faceName.Id,
+                AutoNamedFromFaceId = referenceFace.Id,
+                NamedAt = namedAt
+            };
+            context.Faces.Add(autoNamedFace);
+            await context.SaveChangesAsync();
+
+            var result = await controller.AcceptAutoNaming(gallery.Id, autoNamedFace.Id);
+
+            Assert.IsType<OkResult>(result);
+            var updatedFace = await context.Faces.FindAsync(autoNamedFace.Id);
+            Assert.NotNull(updatedFace);
+            Assert.Equal(faceName.Id, updatedFace.FaceNameId);
+            Assert.Null(updatedFace.AutoNamedFromFaceId);
+            Assert.Equal(namedAt, updatedFace.NamedAt);
+        }
+
+        [Fact]
+        public async Task AcceptAutoNaming_ReturnsNotFound_WhenFaceIsNotAutoNamed()
+        {
+            using var context = GetContext();
+            var logger = new TestLogger<FaceDetectionService>();
+            var dataService = new DataService();
+            var photoService = new TestPhotoService(context, dataService);
+            var faceDetectionService = new FaceDetectionService(context, logger, dataService, photoService);
+            var galleryService = new GalleryService(context);
+            var controller = new FaceController(context, faceDetectionService, galleryService, photoService);
+
+            var userId = GenerateUserId("admin");
+            var gallery = new Gallery("Test Gallery", "/test", "/test/thumbnails", DataProviderType.FileSystem);
+            context.Galleries.Add(gallery);
+            await context.SaveChangesAsync();
+            var appUser = new ApplicationUser { Id = userId, UserName = userId };
+            context.Users.Add(appUser);
+            context.Add(new GalleryMember(gallery.Id, userId, 0, isAdministrator: true)
+            {
+                Gallery = gallery,
+                User = appUser
+            });
+            await context.SaveChangesAsync();
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = BuildUser(userId) }
+            };
+
+            var directory = new PhotoDirectory("/", 0, null, null) { Gallery = gallery };
+            context.PhotoDirectories.Add(directory);
+            var photo = new Photo("p.jpg") { Directory = directory };
+            context.Photos.Add(photo);
+            await context.SaveChangesAsync();
+
+            var regularNamedFace = new Face
+            {
+                PhotoId = photo.Id,
+                Photo = photo,
+                Embedding = CreateTestVector(0.7f),
+                X = 10,
+                Y = 20,
+                Width = 30,
+                Height = 40
+            };
+            context.Faces.Add(regularNamedFace);
+            await context.SaveChangesAsync();
+
+            var result = await controller.AcceptAutoNaming(gallery.Id, regularNamedFace.Id);
+
+            Assert.IsType<NotFoundObjectResult>(result);
         }
 
         [Fact]

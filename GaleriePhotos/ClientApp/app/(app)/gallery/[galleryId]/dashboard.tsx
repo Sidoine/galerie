@@ -15,6 +15,7 @@ import {
   AlbumWithoutGpsInfo,
   GpsBackfillProgress,
 } from "@/services/services";
+import { FaceController } from "@/services/face";
 import { useMeStore } from "@/stores/me";
 import { useApiClient } from "folke-service-helpers";
 import { palette, radius } from "@/stores/theme";
@@ -22,6 +23,8 @@ import PhotosWithoutGpsCard from "@/components/dashboard/PhotosWithoutGpsCard";
 import AlbumsWithoutGpsList from "@/components/dashboard/AlbumsWithoutGpsList";
 import AutoNamedFacesCard from "@/components/dashboard/AutoNamedFacesCard";
 import FaceThumbnail from "@/components/faces/face-thumbnail";
+
+const MAX_AUTO_NAMED_FACE_PAIRS_BATCH_SIZE = 20;
 
 const DashboardScreen = observer(function DashboardScreen() {
   const router = useRouter();
@@ -44,6 +47,13 @@ const DashboardScreen = observer(function DashboardScreen() {
     () => new DashboardController(apiClient),
     [apiClient]
   );
+  const faceController = useMemo(() => new FaceController(apiClient), [apiClient]);
+  const [processingFaceIds, setProcessingFaceIds] = useState<number[]>([]);
+  const [bulkAutoNamingProcessing, setBulkAutoNamingProcessing] = useState(false);
+  const [loadingMoreAutoNamedFaces, setLoadingMoreAutoNamedFaces] = useState(false);
+  const [autoNamedActionError, setAutoNamedActionError] = useState<string | null>(
+    null
+  );
 
   const albumsWithoutGps = useMemo(
     () => statistics?.albumsWithoutGps ?? [],
@@ -59,6 +69,7 @@ const DashboardScreen = observer(function DashboardScreen() {
       try {
         setShowAlbumsWithoutGps(false);
         setShowAutoNamedFaces(false);
+        setAutoNamedActionError(null);
         if (silent) {
           setRefreshing(true);
         } else {
@@ -131,6 +142,188 @@ const DashboardScreen = observer(function DashboardScreen() {
   const handleRefresh = useCallback(() => {
     loadStatistics({ silent: true });
   }, [loadStatistics]);
+
+  const removeAutoNamedFacesFromState = useCallback((faceIds: number[]) => {
+    if (faceIds.length === 0) return;
+    setStatistics((previous) => {
+      if (!previous) return previous;
+      const ids = new Set(faceIds);
+      const remainingSamples = previous.autoNamedFaceSamples.filter(
+        (sample) => !ids.has(sample.faceId)
+      );
+      const removedCount = previous.autoNamedFaceSamples.length - remainingSamples.length;
+      return {
+        ...previous,
+        autoNamedFaceSamples: remainingSamples,
+        autoNamedFacesCount: Math.max(0, previous.autoNamedFacesCount - removedCount),
+      };
+    });
+  }, [setStatistics]);
+
+  const handleAutoNamedFaceAction = useCallback(
+    async (faceId: number, action: "accept" | "reject") => {
+      if (!galleryId) return;
+
+      setAutoNamedActionError(null);
+      setProcessingFaceIds((previous) =>
+        previous.includes(faceId) ? previous : [...previous, faceId]
+      );
+      try {
+        const response =
+          action === "accept"
+            ? await faceController.acceptAutoNaming(Number(galleryId), faceId)
+            : await faceController.undoAutoNaming(Number(galleryId), faceId);
+
+        if (response.ok) {
+          removeAutoNamedFacesFromState([faceId]);
+          return;
+        }
+
+        setAutoNamedActionError(
+          action === "accept"
+            ? "Impossible d'accepter cette paire"
+            : "Impossible de refuser cette paire"
+        );
+      } catch {
+        setAutoNamedActionError(
+          action === "accept"
+            ? "Erreur lors de l'acceptation de la paire"
+            : "Erreur lors du refus de la paire"
+        );
+      } finally {
+        setProcessingFaceIds((previous) => previous.filter((id) => id !== faceId));
+      }
+    },
+    [
+      faceController,
+      galleryId,
+      removeAutoNamedFacesFromState,
+      setAutoNamedActionError,
+      setProcessingFaceIds,
+    ]
+  );
+
+  const handleAutoNamedFacesBulkAction = useCallback(
+    async (action: "accept" | "reject") => {
+      if (!galleryId || !statistics?.autoNamedFaceSamples.length) return;
+
+      const faceIds = statistics.autoNamedFaceSamples.map((sample) => sample.faceId);
+      const successfulFaceIds: number[] = [];
+
+      setAutoNamedActionError(null);
+      setBulkAutoNamingProcessing(true);
+
+      for (const faceId of faceIds) {
+        try {
+          const response =
+            action === "accept"
+              ? await faceController.acceptAutoNaming(Number(galleryId), faceId)
+              : await faceController.undoAutoNaming(Number(galleryId), faceId);
+          if (response.ok) {
+            successfulFaceIds.push(faceId);
+          }
+        } catch {
+          // Ignored: counted in failures below
+        }
+      }
+
+      setBulkAutoNamingProcessing(false);
+      removeAutoNamedFacesFromState(successfulFaceIds);
+
+      const failedCount = faceIds.length - successfulFaceIds.length;
+      if (failedCount > 0) {
+        setAutoNamedActionError(
+          `${failedCount} paire(s) n'ont pas pu être ${
+            action === "accept" ? "acceptées" : "refusées"
+          }`
+        );
+      }
+    },
+    [
+      faceController,
+      galleryId,
+      removeAutoNamedFacesFromState,
+      setAutoNamedActionError,
+      setBulkAutoNamingProcessing,
+      statistics,
+    ]
+  );
+
+  useEffect(() => {
+    if (
+      !galleryId ||
+      !statistics ||
+      statistics.autoNamedFacesCount <= 0 ||
+      statistics.autoNamedFaceSamples.length > 0 ||
+      loadingMoreAutoNamedFaces ||
+      bulkAutoNamingProcessing ||
+      processingFaceIds.length > 0
+    ) {
+      return;
+    }
+
+    let isCancelled = false;
+    setLoadingMoreAutoNamedFaces(true);
+    setAutoNamedActionError(null);
+
+    (async () => {
+      try {
+        const response = await faceController.getAutoNamedFacePairs(
+          Number(galleryId),
+          Math.min(
+            MAX_AUTO_NAMED_FACE_PAIRS_BATCH_SIZE,
+            statistics.autoNamedFacesCount
+          )
+        );
+
+        if (!response.ok) {
+          if (!isCancelled) {
+            setAutoNamedActionError("Impossible de charger de nouvelles paires");
+          }
+          return;
+        }
+
+        if (isCancelled) {
+          return;
+        }
+
+        setStatistics((previous) => {
+          if (!previous || previous.autoNamedFaceSamples.length > 0) return previous;
+          const autoNamedFaceSamples = response.value.map((pair) => ({
+            faceId: pair.faceId,
+            autoNamedFromFaceId: pair.referenceFaceId,
+          }));
+          return {
+            ...previous,
+            autoNamedFaceSamples,
+            autoNamedFacesCount:
+              autoNamedFaceSamples.length === 0
+                ? 0
+                : previous.autoNamedFacesCount,
+          };
+        });
+      } catch {
+        if (!isCancelled) {
+          setAutoNamedActionError("Impossible de charger de nouvelles paires");
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingMoreAutoNamedFaces(false);
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    bulkAutoNamingProcessing,
+    faceController,
+    galleryId,
+    loadingMoreAutoNamedFaces,
+    processingFaceIds.length,
+    statistics,
+  ]);
 
   if (!meStore.administrator) {
     return (
@@ -239,18 +432,68 @@ const DashboardScreen = observer(function DashboardScreen() {
               <Text style={styles.sampleInfo}>
                 {statistics.autoNamedFaceSamples.length} paires affichées
               </Text>
+              <View style={styles.bulkActionsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.bulkActionButton,
+                    styles.acceptActionButton,
+                    bulkAutoNamingProcessing && styles.disabledActionButton,
+                  ]}
+                  onPress={() => handleAutoNamedFacesBulkAction("accept")}
+                  disabled={bulkAutoNamingProcessing}
+                >
+                  <Text style={styles.actionButtonText}>Tout accepter</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.bulkActionButton,
+                    styles.rejectActionButton,
+                    bulkAutoNamingProcessing && styles.disabledActionButton,
+                  ]}
+                  onPress={() => handleAutoNamedFacesBulkAction("reject")}
+                  disabled={bulkAutoNamingProcessing}
+                >
+                  <Text style={styles.actionButtonText}>Tout refuser</Text>
+                </TouchableOpacity>
+              </View>
+              {autoNamedActionError && (
+                <Text style={styles.autoNamedActionError}>{autoNamedActionError}</Text>
+              )}
               {statistics.autoNamedFaceSamples.map((sample) => (
                 <View key={sample.faceId.toString()} style={styles.sampleItem}>
-                  <Text style={styles.sampleText}>
-                    <FaceThumbnail
-                      galleryId={String(galleryId)}
-                      face={{ id: sample.faceId }}
-                    />{" "}
+                  <View style={styles.sampleFacesRow}>
+                    <FaceThumbnail galleryId={String(galleryId)} face={{ id: sample.faceId }} />
                     <FaceThumbnail
                       galleryId={String(galleryId)}
                       face={{ id: sample.autoNamedFromFaceId }}
                     />
-                  </Text>
+                  </View>
+                  <View style={styles.sampleActionsRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.sampleActionButton,
+                        styles.acceptActionButton,
+                        processingFaceIds.includes(sample.faceId) &&
+                          styles.disabledActionButton,
+                      ]}
+                      onPress={() => handleAutoNamedFaceAction(sample.faceId, "accept")}
+                      disabled={processingFaceIds.includes(sample.faceId)}
+                    >
+                      <Text style={styles.actionButtonText}>Accepter</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.sampleActionButton,
+                        styles.rejectActionButton,
+                        processingFaceIds.includes(sample.faceId) &&
+                          styles.disabledActionButton,
+                      ]}
+                      onPress={() => handleAutoNamedFaceAction(sample.faceId, "reject")}
+                      disabled={processingFaceIds.includes(sample.faceId)}
+                    >
+                      <Text style={styles.actionButtonText}>Refuser</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))}
             </View>
@@ -316,9 +559,51 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: palette.border,
   },
-  sampleText: {
+  sampleFacesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  sampleActionsRow: {
+    flexDirection: "row",
+    marginTop: 8,
+    gap: 8,
+  },
+  sampleActionButton: {
+    flex: 1,
+    borderRadius: radius.sm,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  bulkActionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  bulkActionButton: {
+    flex: 1,
+    borderRadius: radius.sm,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  acceptActionButton: {
+    backgroundColor: "#2e7d32",
+  },
+  rejectActionButton: {
+    backgroundColor: "#c62828",
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  disabledActionButton: {
+    opacity: 0.5,
+  },
+  autoNamedActionError: {
     fontSize: 14,
-    color: palette.textPrimary,
+    color: palette.danger,
+    marginBottom: 8,
   },
   progressCard: {
     backgroundColor: palette.surface,
