@@ -15,7 +15,7 @@
     "@babel/runtime": "^7.28.4",
     "@expo/metro-runtime": "~57.0.3",
     "@expo/vector-icons": "^15.1.1",
-    "@react-navigation/drawer": "^7.12.6",
+    "@react-navigation/drawer": "^7.13.4",
     "@react-navigation/native": "^7.2.2",
     "@shopify/flash-list": "2.3.2",
     "@types/react-leaflet": "^3.0.0",
@@ -47,9 +47,9 @@
     "react-native-maps": "^1.29.0",
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.8.0",
-    "react-native-screens": "4.25.2",
+    "react-native-screens": "4.26.2",
     "react-native-web": "^0.21.2",
-    "react-native-worklets": "0.10.0"
+    "react-native-worklets": "0.11.1"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
@@ -60,7 +60,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1"
+    "typescript-eslint": "^8.65.0"
   },
   "private": true,
   "packageManager": "yarn@4.10.3"
